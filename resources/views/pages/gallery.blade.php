@@ -1,0 +1,214 @@
+<x-public-layout>
+<x-breadcrumbs_page title="Галерея">
+</x-breadcrumbs_page>
+<main x-data="{gallery_modal_open: false, lightbox_open: false}" class="main">
+    <section class="py-12 reggata-list">
+        <div class="max-w-(--breakpoint-2xl) mx-auto">
+            <div class="flex justify-between mb-6">
+                <h2 class="section-title a-font text-5xl">Галерея</h2>
+                <div class="controls flex gap-4">
+                    <div class="calendar-icon">
+                        <select class="border-[#C6C6C6] focus:outline-hidden focus:ring-2 text-[#2E325C] pl-5 w-[100px]" name="year" id="">
+                            <option value="2026">2026</option>
+                        </select>
+                    </div>
+
+                    <select name="team_filter" id="team_filter" class="team_filter">
+                        <option value="">Все акватории</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section>
+        <div class="max-w-(--breakpoint-2xl) mx-auto pb-12">
+            <h2 class="section-title a-font text-5xl">2026</h2>
+            <div class=" grid grid-cols-3 gap-6 mt-6"
+             x-data="{
+                current: 0,
+                images: [
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                ]
+            }"
+            >
+                <template x-for="img in images">
+                    <div class="cursor-pointer group relative" @click="gallery_modal_open = true">
+                        
+                        <img :src="img" alt="" class="absolute w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105">
+                        <div class="bg-[#2E325C] opacity-30 absolute z-40 w-full h-full transition-transform duration-500 group-hover:scale-105"></div>
+                        <div class="info relative z-50 p-6 pt-56 text-white">
+                            <h4 class="title a-font text-2xl mb-3">Кубок залива 2026</h4>
+                            <p class="mb-3">29–30 сентября · Москва</p>
+                            <p>Пироговское водохранилище</p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </section>
+    <section>
+        <div class="max-w-(--breakpoint-2xl) mx-auto pb-12">
+            <h2 class="section-title a-font text-5xl">2025</h2>
+            <div class=" grid grid-cols-3 gap-6 mt-6"
+             x-data="{
+                current: 0,
+                images: [
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                ]
+            }"
+            >
+                <template x-for="img in images">
+                    <div class="cursor-pointer group relative" @click="gallery_modal_open = true">
+                        
+                        <img :src="img" alt="" class="absolute w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105">
+                        <div class="bg-[#2E325C] opacity-30 absolute z-40 w-full h-full transition-transform duration-500 group-hover:scale-105"></div>
+                        <div class="info relative z-50 p-6 pt-56 text-white">
+                            <h4 class="title a-font text-2xl mb-3">Кубок залива 2026</h4>
+                            <p class="mb-3">29–30 сентября · Москва</p>
+                            <p>Пироговское водохранилище</p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </section>
+    <section>
+        <div class="max-w-(--breakpoint-2xl) mx-auto pb-12">
+            <h2 class="section-title a-font text-5xl">2024</h2>
+            <div class=" grid grid-cols-3 gap-6 mt-6"
+             x-data="{
+                current: 0,
+                images: [
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                ]
+            }"
+            >
+                <template x-for="img in images">
+                    <div class="cursor-pointer group relative" @click="gallery_modal_open = true">
+                        
+                        <img :src="img" alt="" class="absolute w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105">
+                        <div class="bg-[#2E325C] opacity-30 absolute z-40 w-full h-full transition-transform duration-500 group-hover:scale-105"></div>
+                        <div class="info relative z-50 p-6 pt-56 text-white">
+                            <h4 class="title a-font text-2xl mb-3">Кубок залива 2026</h4>
+                            <p class="mb-3">29–30 сентября · Москва</p>
+                            <p>Пироговское водохранилище</p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </section>
+    <div x-show="gallery_modal_open" 
+        x-cloak 
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 team-modal">
+        <!-- Модальное окно для подробной информации о команде -->
+        <div @click.away="gallery_modal_open = false"  class="relative p-6 max-w-[1200px] max-h-[80vh] overflow-y-auto bg-white gap-6"
+            
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+        >
+            <div class="flex justify-between mb-4">
+                <h3 class="text-3xl a-font">Кубок залива 2026</h3>
+                <div class="close">
+                    <button @click="gallery_modal_open = false" class="text-2xl font-bold">&times;</button>
+                </div>
+            </div>
+            <p class="text-lg mb-6">
+                23–25 мая · Пироговское водохранилище
+            </p>
+            <div class="flex gap-4 font-medium text-lg mb-6">
+                <button class="p-4 text-center bg-[#2D92CE] text-white">Видео</button>
+                <button class="p-4 text-center bg-[#F8F8F8] text-[#2E325C]">Фотографии</button>
+            </div>
+            <div>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    @foreach(range(1, 24) as $item)
+                    <div class="card bg-[#F8F8F8]"  @click="lightbox_open = true; gallery_modal_open = false">
+                        <img src="{{ asset('images/news/news_1.png') }}" alt="">
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+    <div x-show="lightbox_open" 
+        x-cloak 
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+        x-data="{
+            activeImage: '{{ asset('images/gallery.png') }}',
+            lbImages: [
+                '{{ asset('images/gallery.png') }}',
+                '{{ asset('images/gallery.png') }}',
+                '{{ asset('images/gallery.png') }}',
+                '{{ asset('images/gallery.png') }}',
+                '{{ asset('images/gallery.png') }}',
+                '{{ asset('images/gallery.png') }}',
+                '{{ asset('images/gallery.png') }}',
+                '{{ asset('images/gallery.png') }}',
+                '{{ asset('images/gallery.png') }}',
+                '{{ asset('images/gallery.png') }}',
+                '{{ asset('images/gallery.png') }}',
+                '{{ asset('images/gallery.png') }}',
+            ]
+        }"
+        >
+
+        <div @click.away="lightbox_open = false"  class="relative p-3 max-w-[1200px] max-h-[80vh] gap-6"
+            
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+        >
+
+
+
+            <div
+                x-transition.opacity.duration.300ms
+                class="z-50 flex items-center justify-center"
+                >
+                <!-- Основное изображение -->
+                <img :src="activeImage" 
+                    x-show="lightbox_open"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="scale-90 opacity-0"
+                    x-transition:enter-end="scale-100 opacity-100"
+                    class="w-full max-h-[90vh] rounded-sm shadow-2xl" 
+                    alt="Full size">
+            </div>
+
+            <div class="flex gap-4 overflow-hidden">
+                <template x-for="img in lbImages">
+                    <div class="cursor-pointer  rounded-lg shadow-hover transition-all max-w-[100px] aspect-square">
+                        <img :src="img" 
+                            class="object-contain h-full w-full" 
+                            alt="Preview">
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+    
+</main>
+
+
+
+<x-feedback-section>
+    
+</x-feedback-section>
+</x-public-layout>

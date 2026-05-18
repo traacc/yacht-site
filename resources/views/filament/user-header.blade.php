@@ -1,0 +1,149 @@
+{{-- ===== НАВИГАЦИЯ ===== --}}
+<nav x-data="{ mobileOpen: false }" class="sticky top-0 z-10 bg-white py-4 px-2 2xl:px-0">
+    <div class="max-w-(--breakpoint-2xl) mx-auto">
+        <div class="flex items-center justify-between h-14">
+            {{-- Логотип --}}
+            <a href="/" wire:navigate class="shrink-0">
+                {!! file_get_contents(public_path('images/logo.svg')) !!}
+            </a>
+
+            {{-- Десктоп-меню --}}
+            <div class="hidden md:flex items-center gap-1">
+                <div x-data="{ open: false }" class="relative">
+                    <button @click="open = !open" @click.outside="open = false"
+                        class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
+                        Ассоциация
+                        <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" x-cloak x-transition
+                        class="absolute top-full right-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
+                        <a href="{{ route('charter') }}" wire:navigate class="block px-4 py-2 text-gray-700 hover:bg-brand-light hover:text-brand-red">Устав Ассоциации</a>
+                        <a href="{{ route('management') }}" wire:navigate class="block px-4 py-2 text-gray-700 hover:bg-brand-light hover:text-brand-red">Руководство</a>
+                        <a href="{{ route('trustees') }}" wire:navigate class="block px-4 py-2 text-gray-700 hover:bg-brand-light hover:text-brand-red">Призовой совет</a>
+                        <a href="{{ route('policy') }}" wire:navigate class="block px-4 py-2 text-gray-700 hover:bg-brand-light hover:text-brand-red">Политика Ассоциации</a>
+                        <a href="{{ route('rules') }}" wire:navigate class="block px-4 py-2 text-gray-700 hover:bg-brand-light hover:text-brand-red">Правила вступления</a>
+                        <a href="{{ route('regulations') }}" wire:navigate class="block px-4 py-2 text-gray-700 hover:bg-brand-light hover:text-brand-red">Технический регламент яхт</a>
+                        <a href="{{ route('decisions') }}" wire:navigate class="block px-4 py-2 text-gray-700 hover:bg-brand-light hover:text-brand-red">Решения общего собрания</a></li>
+                    </div>
+                </div>
+                <a href="{{ route('competitions') }}" wire:navigate class="px-3 py-2 text-[#2E325C] transition-colors">Соревнования</a>
+                <a href="{{ route('teams') }}" wire:navigate class="px-3 py-2 text-[#2E325C] transition-colors">Команды</a>
+                <a href="{{ route('yachts') }}" wire:navigate class="px-3 py-2 text-[#2E325C] transition-colors">Яхты</a>
+                <a href="{{ route('ratings') }}" wire:navigate class="px-3 py-2 text-[#2E325C] transition-colors">Рейтинги</a>
+                <a href="{{ route('gallery') }}" wire:navigate class="px-3 py-2 text-[#2E325C] transition-colors">Галерея</a>
+                <a href="{{ route('help') }}" wire:navigate class="px-3 py-2 text-[#2E325C] transition-colors">Помощь</a>
+            </div>
+
+            {{-- Действия --}}
+            <div class="hidden md:flex items-center gap-2">
+                <a href="#" class="text-[#2D92CE] hover:text-white">
+                    {!! file_get_contents(public_path('images/social_icons/tl.svg')) !!}
+                </a>
+                <a href="#" class="text-[#2D92CE] hover:text-white">
+                    {!! file_get_contents(public_path('images/social_icons/vk.svg')) !!}
+                </a>
+
+                @auth
+                <div x-data="{ open: false }" class="relative">
+                    <button @click="open = !open" @click.outside="open = false"
+                        class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors">
+                        <img src="{{ auth()->user()->photo_url ? asset('storage/' . auth()->user()->photo_url) : asset('images/icons/avatar-default.svg') }}"
+                            alt="" class="w-8 h-8 rounded-full object-cover border-2 border-gray-200">
+                        <span class="text-sm font-medium text-[#2E325C] hidden md:inline">{{ auth()->user()->first_name }}</span>
+                        <svg class="w-4 h-4 text-gray-400 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div x-show="open" x-cloak x-transition
+                        class="absolute top-full right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
+                        <div class="px-4 py-2 border-b border-gray-100">
+                            <p class="text-sm font-medium text-[#2E325C]">{{ auth()->user()->full_name }}</p>
+                            <p class="text-xs text-gray-500">{{ auth()->user()->email }}</p>
+                        </div>
+                        @if(auth()->user()->isAdmin() || auth()->user()->isJudge() || auth()->user()->isSecretary() || auth()->user()->isAccountant())
+                            <a href="{{ url('/admin') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Панель управления</a>
+                        @else
+                            <a href="{{ url('/user') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Личный кабинет</a>
+                        @endif
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Выйти</button>
+                        </form>
+                    </div>
+                </div>
+                @else
+                <a href="#" @click="$dispatch('open-login-modal')" class="text-[#2D92CE] text-lg font-semibold px-4 py-2 transition-colors border-[#2D92CE] border flex gap-2">
+                    <img src="{{ asset('images/icons/login.svg') }}" alt=""><span class="hidden md:inline">Войти</span>
+                </a>
+                @endauth
+            </div>
+
+            {{-- Мобильное меню --}}
+            <button @click="mobileOpen = !mobileOpen" class="md:hidden p-2 text-gray-300">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path x-show="!mobileOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    <path x-show="mobileOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    <div
+        x-show="mobileOpen" 
+        x-cloak
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @click="mobileOpen = false"
+        class="md:hidden fixed inset-0 bg-black/50 z-40 w-screen"
+    >
+        <div
+        x-transition:enter="transition transform ease-out duration-300"
+        x-transition:enter-start="translate-y-120 opacity-0"
+        x-transition:enter-end="translate-y-80 opacity-100"
+        x-transition:leave="transition transform ease-in duration-200"
+        x-transition:leave-start="translate-y-80 opacity-100"
+        x-transition:leave-end="translate-y-120 opacity-0"
+        x-transition class="md:hidden bg-[#2E325C] py-2 px-4 space-y-1 w-[60vw] text-white fixed right-0">
+            <div class="flex justify-between items-center">
+                <h3 class="uppercase a-font text-xl">Меню</h3>
+                <button @click="mobileOpen = false" class="text-2xl font-bold">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
+            </div>
+            <div class="space-y-2">
+                <a href="{{ route('competitions') }}" wire:navigate class="block py-2 text-sm">Соревнования</a>
+                <a href="{{ route('teams') }}" wire:navigate class="block py-2 text-sm">Команды</a>
+                <a href="{{ route('yachts') }}" wire:navigate class="block py-2 text-sm">Яхты</a>
+                <a href="{{ route('news') }}" wire:navigate class="block py-2 text-sm">Галерея</a>
+                <a href="{{ route('help') }}" wire:navigate class="block py-2 text-sm">Помощь</a>
+            </div>
+            
+            @auth
+            <div class="flex items-center gap-3 py-2 border-b border-white/20 mb-2">
+                <img src="{{ auth()->user()->photo_url ? asset('storage/' . auth()->user()->photo_url) : asset('images/icons/avatar-default.svg') }}"
+                    alt="" class="w-10 h-10 rounded-full object-cover border-2 border-white/30">
+                <div>
+                    <p class="text-sm font-medium">{{ auth()->user()->first_name }}</p>
+                    <p class="text-xs text-gray-300">{{ auth()->user()->email }}</p>
+                </div>
+            </div>
+            @if(auth()->user()->isAdmin() || auth()->user()->isJudge() || auth()->user()->isSecretary() || auth()->user()->isAccountant())
+                <a href="{{ url('/admin') }}" class="block py-2 text-sm">Панель управления</a>
+            @else
+                <a href="{{ url('/user') }}" class="block py-2 text-sm">Личный кабинет</a>
+            @endif
+            <form method="POST" action="{{ route('logout') }}" class="mt-2">
+                @csrf
+                <button type="submit" class="w-full text-left py-2 text-sm text-red-300 hover:text-red-200">Выйти</button>
+            </form>
+            @else
+            <a href="#" @click="$dispatch('open-login-modal')" class="font-semibold px-4 py-2 transition-colors border-white border flex gap-2">
+                <img src="{{ asset('images/icons/login.svg') }}" alt=""><span class="hidden md:inline">Войти</span>
+            </a>
+            @endauth
+
+        </div>
+    </div>
+
+</nav>

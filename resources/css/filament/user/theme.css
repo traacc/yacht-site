@@ -1,0 +1,41 @@
+
+@import 'tailwindcss';
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+
+@source '../../../../app/Filament/User/**/*';
+@source '../../../../resources/views/filament/user/**/*';
+
+.fi-topbar {
+  display: none;
+}
+
+.fi-layout {
+  @apply max-w-screen-2xl mx-auto;
+
+}
+.fi-header-heading {
+  @apply text-3xl font-medium;
+
+}
+.fi-ta-ctn {
+  --tw-shadow:none;
+}
+.fi-ta-header-toolbar {
+  display: none;
+}
+.fi-sidebar-nav {
+  @apply p-0;
+}
+.fi-sidebar-nav-groups {
+  @apply bg-[#F8F8F8] p-8;
+}
+.fi-sidebar-item.fi-active .fi-sidebar-item-btn{
+  @apply bg-white rounded-none border-l-2 border-[#2D92CE];
+}
+.fi-ta-selection-cell {
+  display: none;
+}
+.fi-pagination {
+  display: none;
+}

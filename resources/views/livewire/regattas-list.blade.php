@@ -1,0 +1,130 @@
+{{-- resources/views/livewire/regattas-list.blade.php --}}
+<section x-data="{view: 'grid'}" class="py-12 reggata-list">
+    <div class="max-w-(--breakpoint-2xl) mx-auto sm:px-6 lg:px-8">
+        <div class="reggata-list__header flex items-center justify-between mb-6">
+            <div class="reggata-list__filter flex gap-4 font-medium">
+                <button class="reggata-list__filter-btn p-4 text-center bg-[#2D92CE] text-white">Все</button>
+                <button class="reggata-list__filter-btn p-4 text-center bg-[#F8F8F8] text-[#2E325C]">Ближайшие</button>
+                <button class="reggata-list__filter-btn p-4 text-center bg-[#F8F8F8] text-[#2E325C]">Планируемые</button>
+                <button class="reggata-list__filter-btn p-4 text-center bg-[#F8F8F8] text-[#2E325C]">Состоявшиеся</button>
+            </div>
+            <div class="flex items-center gap-4">
+                {{-- Выбор года (сезона) --}}
+                <select
+                    wire:model.live="year"
+                    class="border border-[#C6C6C6] bg-white text-[#2E325C] px-4 py-2 rounded-sm focus:outline-hidden focus:ring-2 focus:ring-[#2D92CE] text-sm font-medium"
+                >
+                    <option value="">Все годы</option>
+                    @foreach ($years as $y)
+                        <option value="{{ $y }}">{{ $y }}</option>
+                    @endforeach
+                </select>
+                <div class="reggata-list__view">
+                    <button class="p-2" @click="view = 'grid'" :class="view === 'grid' ? 'text-[#2D92CE]' : 'text-[#2E325C]'">
+                        {!! file_get_contents(public_path('images/icons/grid-view.svg')) !!}
+                    </button>
+                    <button class="p-2" @click="view = 'list'" :class="view === 'list' ? 'text-[#2D92CE]' : 'text-[#2E325C]'">
+                        {!! file_get_contents(public_path('images/icons/list-view.svg')) !!}
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="reggata-list__items grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" x-show="view === 'grid'">
+            @forelse ($regattas as $regatta)
+
+            <div class="bg-[#F8F8F8] overflow-hidden w-full font-sans">
+                <div class="relative">
+                    <img
+                        src="{{ asset('images/news/news_1.png') }}"
+                        alt="{{ $regatta->name }}"
+                        class="w-full h-64 object-cover"
+                    />
+                    @if ($regatta->startsInLessThanMonth())
+                    <div class="absolute top-0 right-0 bg-[#FDE4E3] px-4 py-2">
+                        <span class="text-[#F24842] font-bold text-sm uppercase">БЛИЖАЙШАЯ РЕГАТА</span>
+                    </div>
+                    @elseif ($regatta->isUpcoming())
+                    <div class="absolute top-0 right-0 bg-[#ECECEC] px-4 py-2">
+                        <span class="text-brand-gray-light font-bold text-sm uppercase">Планируемые</span>
+                    </div>
+                    @endif
+                    <div class="absolute bottom-0 left-0 bg-[#F8F8F8] text-[#2E325C] px-4 py-2">
+                        <span class="font-bold text-sm tracking-wide">{{ $regatta->dateRange() }}</span>
+                    </div>
+                </div>
+
+                <div class="px-6 pt-6 pb-7 space-y-4">
+                    <h2 class="text-brand-navy font-semibold text-lg leading-tight">
+                        {{ $regatta->name }}
+                    </h2>
+
+                    <div class="flex items-center gap-3 text-gray-600">
+                        <img src="{{ asset('images/icons/marker.svg') }}" alt=""> {{ $regatta->location }}
+                    </div>
+
+                    <div class="flex items-center gap-3 text-gray-600">
+                        <img src="{{ asset('images/icons/waves.svg') }}" alt=""> {{ $regatta->water_area }}
+                    </div>
+
+                    <a href="{{ route('competition-details', $regatta) }}" class="flex items-center gap-2 text-brand-navy font-bold text-lg hover:gap-3 transition-all duration-200 group">
+                        Подробнее
+                        <span class="text-brand-navy group-hover:translate-x-1 transition-transform duration-200">
+                        </span>
+                    </a>
+                </div>
+
+            </div>
+
+            @empty
+            <div class="col-span-full py-12 text-center text-brand-gray-light text-lg">
+                Регаты не найдены для выбранного года.
+            </div>
+            @endforelse
+        </div>
+        <div class="reggata-list__items" x-show="view === 'list'">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr>
+                        <th class="py-2 a-font text-center text-2xl">Дата</th>
+                        <th class="py-2 a-font text-center text-2xl">Регата</th>
+                        <th class="py-2 a-font text-center text-2xl">Локация</th>
+                        <th class="py-2 a-font text-center text-2xl">Акватория</th>
+                        <th class="py-2 a-font text-center text-2xl">Статус</th>
+                        <th class="py-2 a-font text-center"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($regattas as $regatta)
+                    <tr class="border-t">
+                        <td class="py-2 text-center">{{ $regatta->dateRange() }}</td>
+                        <td class="py-2 text-center font-semibold text-brand-navy">{{ $regatta->name }}</td>
+                        <td class="py-2 text-center">{{ $regatta->location }}</td>
+                        <td class="py-2 text-center">{{ $regatta->water_area }}</td>
+                        <td class="py-2 text-center">
+                            @if ($regatta->startsInLessThanMonth())
+                            <div class="bg-[#FDE4E3] px-3 py-1 text-[#F24842] inline-block font-semibold">Ближайшая регата</div>
+                            @elseif ($regatta->isUpcoming())
+                            <div class="bg-[#ECECEC] px-3 py-1 text-brand-gray-light inline-block font-semibold">Планируемая</div>
+                            @elseif ($regatta->isFinished())
+                            <div class="bg-[#E6F4EA] px-3 py-1 text-[#157949] inline-block font-semibold">Состоявшаяся</div>
+                            @else
+                            <div class="bg-[#FFF3E0] px-3 py-1 text-[#E67E22] inline-block font-semibold">Идёт сейчас</div>
+                            @endif
+                        </td>
+                        <td class="py-2 text-center">
+                            <a href="{{ route('competition-details', $regatta) }}" class="text-[#2D92CE] font-semibold hover:underline">Подробнее</a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="py-8 text-center text-brand-gray-light">Регаты не найдены для выбранного года.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        {{-- Livewire-пагинация --}}
+        <div class="mt-8">
+            {{ $regattas->links() }}
+        </div>
+</section>
