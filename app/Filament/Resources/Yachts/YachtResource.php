@@ -113,7 +113,6 @@ class YachtResource extends Resource
                     ->label('Фото владельца')
                     ->image()
                     ->avatar()
-                    ->circleCrop()
                     ->directory('owners')
                     ->disk('public'),
                 Repeater::make('documents')
