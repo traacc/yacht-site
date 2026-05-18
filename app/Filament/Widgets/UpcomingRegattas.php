@@ -20,14 +20,7 @@ class UpcomingRegattas extends TableWidget
     {
         return $table
             ->query(fn (): Builder => Regatta::query())
-            ->headerActions([
-            Action::make('view_all')
-                    ->label('Все соревнования') // Текст ссылки
-                    ->icon('heroicon-m-arrow-top-right-on-square') // Иконка рядом (по желанию)
-                    ->color('gray') // Цвет (primary, gray, success и т.д.)
-                    ->link() // ТРАНСФОРМИРУЕТ кнопку в аккуратную текстовую ссылку
-                    ->url(fn () => \App\Filament\Resources\RegattaResource::getUrl('index')), 
-            ])
+
             ->columns([
                 TextColumn::make('name')
                     ->searchable()->label('Название'),
@@ -44,7 +37,12 @@ class UpcomingRegattas extends TableWidget
                 //
             ])
             ->headerActions([
-                //
+            Action::make('view_all')
+                    ->label('Все соревнования') // Текст ссылки
+                    ->icon('heroicon-m-arrow-top-right-on-square') // Иконка рядом (по желанию)
+                    ->color('gray') // Цвет (primary, gray, success и т.д.)
+                    ->link() // ТРАНСФОРМИРУЕТ кнопку в аккуратную текстовую ссылку
+                    ->url(fn () => \App\Filament\Resources\Regattas\RegattaResource::getUrl('index')), 
             ])
             ->recordActions([
                 //
