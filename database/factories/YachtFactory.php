@@ -17,7 +17,7 @@ class YachtFactory extends Factory
 
         return [
             'id' => $this->faker->uuid(),
-            'name' => $this->faker->company() . ' ' . $this->faker->randomElement(['Yacht', 'Sail', 'Boat']),
+            'name' => $this->faker->yachtName(),
             'vfps_number' => $this->faker->unique()->bothify('VFPS-#####'),
             'user_id' => $this->faker->boolean(80) ? User::factory() : null,
             'gims_number' => $this->faker->optional(0.7)->bothify('GIMS-####'),

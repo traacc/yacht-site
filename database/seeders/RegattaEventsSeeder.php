@@ -66,7 +66,7 @@ class RegattaEventsSeeder extends Seeder
                         'event_datetime'  => $regatta->date_start?->copy()->addDays($raceDayOffset)->copy()
                         ->addDays($raceDayOffset)
                         ->setTimeFromTimeString('11:00')
-                        ->addHours($raceIndexInDay * 2),
+                        ->addHours($raceNum * 2),
                     ]);
             }
         }

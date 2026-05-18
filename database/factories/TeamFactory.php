@@ -18,7 +18,7 @@ class TeamFactory extends Factory
     {
         return [
             'id' => Str::uuid(),
-            'name' => $this->faker->unique()->company(),
+            'name' => $this->faker->regattaTeamName(),
             'description' => $this->faker->optional()->text(200),
             'organizer_id' => User::factory(), // Creates a new user or can be null
             'is_archived' => false,
