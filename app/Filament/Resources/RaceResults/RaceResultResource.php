@@ -38,16 +38,24 @@ class RaceResultResource extends Resource
         return $schema
             ->components([
                 TextInput::make('event_id')
+                    ->label('Событие')
                     ->required(),
                 TextInput::make('regatta_entry_id')
+                    ->label('Заявка')
                     ->required(),
                 TextInput::make('position')
+                    ->label('Позиция')
+                    ->placeholder('Занятое место')
                     ->numeric(),
                 TextInput::make('points')
+                    ->label('Очки')
+                    ->placeholder('Количество очков')
                     ->required()
                     ->numeric()
                     ->default(0.0),
-                TextInput::make('penalty_code'),
+                TextInput::make('penalty_code')
+                    ->label('Код штрафа')
+                    ->placeholder('Например: DNF, DSQ'),
             ]);
     }
 
@@ -59,16 +67,21 @@ class RaceResultResource extends Resource
                     ->label('ID')
                     ->searchable(),
                 TextColumn::make('event_id')
+                    ->label('Событие')
                     ->searchable(),
                 TextColumn::make('regatta_entry_id')
+                    ->label('Заявка')
                     ->searchable(),
                 TextColumn::make('position')
+                    ->label('Позиция')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('points')
+                    ->label('Очки')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('penalty_code')
+                    ->label('Штраф')
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()

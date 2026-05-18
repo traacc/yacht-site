@@ -50,41 +50,65 @@ class UserResource extends Resource
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label('Имя пользователя')
+                    ->placeholder('Имя пользователя')
                     ->required(),
                 TextInput::make('first_name')
+                    ->label('Имя')
+                    ->placeholder('Имя')
                     ->required(),
                 TextInput::make('last_name')
+                    ->label('Фамилия')
+                    ->placeholder('Фамилия')
                     ->required(),
-                DatePicker::make('birth_date'),
-                TextInput::make('sport_rank'),
+                DatePicker::make('birth_date')
+                    ->label('Дата рождения'),
+                TextInput::make('sport_rank')
+                    ->label('Спортивный разряд')
+                    ->placeholder('Спортивный разряд'),
                 TextInput::make('email')
-                    ->label('Email address')
+                    ->label('Email')
+                    ->placeholder('email@example.com')
                     ->email()
                     ->required(),
-                DateTimePicker::make('email_verified_at'),
+                DateTimePicker::make('email_verified_at')
+                    ->label('Email подтверждён'),
                 TextInput::make('phone')
+                    ->label('Телефон')
+                    ->placeholder('+7 (999) 123-45-67')
                     ->tel(),
-                DateTimePicker::make('phone_verified_at'),
+                DateTimePicker::make('phone_verified_at')
+                    ->label('Телефон подтверждён'),
                 TextInput::make('password')
+                    ->label('Пароль')
+                    ->placeholder('Пароль')
                     ->password()
                     ->required(),
                 TextInput::make('photo_url')
+                    ->label('URL фото')
+                    ->placeholder('https://example.com/photo.jpg')
                     ->url(),
                 Select::make('system_role')
+                    ->label('Системная роль')
+                    ->placeholder('Выберите роль')
                     ->options([
-            'user' => 'User',
-            'admin' => 'Admin',
-            'judge' => 'Judge',
-            'secretary' => 'Secretary',
-            'accountant' => 'Accountant',
-        ])
+                        'user' => 'Пользователь',
+                        'admin' => 'Администратор',
+                        'judge' => 'Судья',
+                        'secretary' => 'Секретарь',
+                        'accountant' => 'Бухгалтер',
+                    ])
                     ->default('user')
                     ->required(),
                 Toggle::make('is_banned')
-                    ->required(),
+                    ->label('Забанен'),
                 Textarea::make('ban_reason')
+                    ->label('Причина бана')
+                    ->placeholder('Причина бана')
                     ->columnSpanFull(),
                 Textarea::make('ban_comment')
+                    ->label('Комментарий к бану')
+                    ->placeholder('Комментарий к бану')
                     ->columnSpanFull(),
             ]);
     }
@@ -97,42 +121,56 @@ class UserResource extends Resource
                     ->label('ID')
                     ->searchable(),
                 TextColumn::make('name')
+                    ->label('Имя пользователя')
                     ->searchable(),
                 TextColumn::make('first_name')
+                    ->label('Имя')
                     ->searchable(),
                 TextColumn::make('last_name')
+                    ->label('Фамилия')
                     ->searchable(),
                 TextColumn::make('birth_date')
+                    ->label('Дата рождения')
                     ->date()
                     ->sortable(),
                 TextColumn::make('sport_rank')
+                    ->label('Спортивный разряд')
                     ->searchable(),
                 TextColumn::make('email')
-                    ->label('Email address')
+                    ->label('Email')
                     ->searchable(),
                 TextColumn::make('email_verified_at')
+                    ->label('Email подтверждён')
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('phone')
+                    ->label('Телефон')
                     ->searchable(),
                 TextColumn::make('phone_verified_at')
+                    ->label('Телефон подтверждён')
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('photo_url')
+                    ->label('Фото (URL)')
                     ->searchable(),
                 TextColumn::make('system_role')
+                    ->label('Роль')
                     ->badge(),
                 IconColumn::make('is_banned')
+                    ->label('Забанен')
                     ->boolean(),
                 TextColumn::make('created_at')
+                    ->label('Создано')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label('Обновлено')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('deleted_at')
+                    ->label('Удалено')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

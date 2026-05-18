@@ -50,32 +50,64 @@ class YachtResource extends Resource
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label('Название')
+                    ->placeholder('Название яхты')
                     ->required(),
                 TextInput::make('vfps_number')
+                    ->label('Номер ВФПС')
+                    ->placeholder('Номер ВФПС')
                     ->required(),
-                TextInput::make('user_id'),
-                TextInput::make('gims_number'),
+                TextInput::make('user_id')
+                    ->label('Пользователь (ID)')
+                    ->placeholder('ID пользователя'),
+                TextInput::make('gims_number')
+                    ->label('Номер ГИМС')
+                    ->placeholder('Номер ГИМС'),
                 TextInput::make('orc_cert_url')
+                    ->label('ORC-сертификат (URL)')
+                    ->placeholder('https://example.com/cert.pdf')
                     ->url(),
-                TextInput::make('class'),
-                TextInput::make('project'),
+                TextInput::make('class')
+                    ->label('Класс')
+                    ->placeholder('Класс яхты'),
+                TextInput::make('project')
+                    ->label('Проект')
+                    ->placeholder('Проект яхты'),
                 TextInput::make('year')
+                    ->label('Год выпуска')
+                    ->placeholder('Год выпуска')
                     ->numeric(),
-                TextInput::make('reg_place'),
+                TextInput::make('reg_place')
+                    ->label('Место регистрации')
+                    ->placeholder('Место регистрации'),
                 TextInput::make('current_mass_kg')
+                    ->label('Масса (кг)')
+                    ->placeholder('Масса в кг')
                     ->numeric(),
                 Select::make('approval_status')
-                    ->options(['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected'])
+                    ->label('Статус одобрения')
+                    ->placeholder('Выберите статус')
+                    ->options(['pending' => 'На рассмотрении', 'approved' => 'Одобрена', 'rejected' => 'Отклонена'])
                     ->default('pending')
                     ->required(),
-                TextInput::make('rejection_reason'),
-                TextInput::make('rejection_comment'),
+                TextInput::make('rejection_reason')
+                    ->label('Причина отклонения')
+                    ->placeholder('Причина отклонения'),
+                TextInput::make('rejection_comment')
+                    ->label('Комментарий к отклонению')
+                    ->placeholder('Комментарий к отклонению'),
                 Toggle::make('is_archived')
-                    ->required(),
-                TextInput::make('owner_name'),
+                    ->label('Архивная'),
+                TextInput::make('owner_name')
+                    ->label('Имя владельца')
+                    ->placeholder('Имя владельца'),
                 TextInput::make('owner_email')
+                    ->label('Email владельца')
+                    ->placeholder('email@example.com')
                     ->email(),
                 TextInput::make('owner_phone')
+                    ->label('Телефон владельца')
+                    ->placeholder('+7 (999) 123-45-67')
                     ->tel(),
                 FileUpload::make('owner_photo')
                     ->label('Фото владельца')
@@ -136,53 +168,73 @@ class YachtResource extends Resource
                     ->label('ID')
                     ->searchable(),
                 TextColumn::make('name')
+                    ->label('Название')
                     ->searchable(),
                 TextColumn::make('vfps_number')
+                    ->label('Номер ВФПС')
                     ->searchable(),
                 TextColumn::make('user_id')
+                    ->label('Пользователь (ID)')
                     ->searchable(),
                 TextColumn::make('gims_number')
+                    ->label('Номер ГИМС')
                     ->searchable(),
                 TextColumn::make('orc_cert_url')
+                    ->label('ORC-сертификат')
                     ->searchable(),
                 TextColumn::make('class')
+                    ->label('Класс')
                     ->searchable(),
                 TextColumn::make('project')
+                    ->label('Проект')
                     ->searchable(),
                 TextColumn::make('year')
+                    ->label('Год выпуска')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('reg_place')
+                    ->label('Место регистрации')
                     ->searchable(),
                 TextColumn::make('current_mass_kg')
+                    ->label('Масса (кг)')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('approval_status')
+                    ->label('Статус')
                     ->badge(),
                 TextColumn::make('rejection_reason')
+                    ->label('Причина отклонения')
                     ->searchable(),
                 TextColumn::make('rejection_comment')
+                    ->label('Комментарий')
                     ->searchable(),
                 IconColumn::make('is_archived')
+                    ->label('Архивная')
                     ->boolean(),
                 TextColumn::make('owner_name')
+                    ->label('Владелец')
                     ->searchable(),
                 TextColumn::make('owner_email')
+                    ->label('Email владельца')
                     ->searchable(),
                 TextColumn::make('owner_phone')
+                    ->label('Телефон владельца')
                     ->searchable(),
                 ImageColumn::make('owner_photo')
                     ->label('Фото')
                     ->circular(),
                 TextColumn::make('created_at')
+                    ->label('Создано')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label('Обновлено')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('deleted_at')
+                    ->label('Удалено')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

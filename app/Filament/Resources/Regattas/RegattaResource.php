@@ -51,42 +51,66 @@ class RegattaResource extends Resource
         return $schema
             ->components([
                 Select::make('season_id')
+                    ->label('Сезон')
                     ->relationship('season', 'id')
                     ->required(),
                 Select::make('series_id')
+                    ->label('Серия')
                     ->relationship('series', 'name'),
                 TextInput::make('name')
+                    ->label('Название')
+                    ->placeholder('Название регаты')
                     ->required(),
                 TextInput::make('level_coefficient')
+                    ->label('Коэффициент уровня')
+                    ->placeholder('1.0')
                     ->required()
                     ->numeric()
                     ->default(1.0),
                 DatePicker::make('date_start')
+                    ->label('Дата начала')
                     ->required(),
                 DatePicker::make('date_end')
+                    ->label('Дата окончания')
                     ->required(),
                 FileUpload::make('background_image')
-                    ->image(),
-                TextInput::make('location'),
-                TextInput::make('water_area'),
+                    ->label('Фоновое изображение'),
+                TextInput::make('location')
+                    ->label('Местоположение')
+                    ->placeholder('Город, страна'),
+                TextInput::make('water_area')
+                    ->label('Акватория')
+                    ->placeholder('Название акватории'),
                 Textarea::make('description')
+                    ->label('Описание')
+                    ->placeholder('Описание регаты')
                     ->columnSpanFull(),
                 Textarea::make('regulations')
+                    ->label('Положение')
+                    ->placeholder('Текст положения')
                     ->columnSpanFull(),
                 Textarea::make('map_html')
+                    ->label('Карта (HTML)')
+                    ->placeholder('HTML-код карты')
                     ->columnSpanFull(),
                 TextInput::make('race_days_count')
+                    ->label('Количество гоночных дней')
+                    ->placeholder('1')
                     ->required()
                     ->numeric()
                     ->default(1),
                 TextInput::make('races_count')
+                    ->label('Количество гонок')
+                    ->placeholder('1')
                     ->required()
                     ->numeric()
                     ->default(1),
                 Textarea::make('prizes')
+                    ->label('Призы')
+                    ->placeholder('Описание призового фонда')
                     ->columnSpanFull(),
                 Toggle::make('is_archived')
-                    ->required(),
+                    ->label('Архивная'),
             ]);
     }
 
@@ -98,42 +122,57 @@ class RegattaResource extends Resource
                     ->label('ID')
                     ->searchable(),
                 TextColumn::make('season.id')
+                    ->label('Сезон')
                     ->searchable(),
                 TextColumn::make('series.name')
+                    ->label('Серия')
                     ->searchable(),
                 TextColumn::make('name')
+                    ->label('Название')
                     ->searchable(),
                 TextColumn::make('level_coefficient')
+                    ->label('Коэффициент уровня')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('date_start')
+                    ->label('Дата начала')
                     ->date()
                     ->sortable(),
                 TextColumn::make('date_end')
+                    ->label('Дата окончания')
                     ->date()
                     ->sortable(),
-                ImageColumn::make('background_image'),
+                ImageColumn::make('background_image')
+                    ->label('Фоновое изображение'),
                 TextColumn::make('location')
+                    ->label('Местоположение')
                     ->searchable(),
                 TextColumn::make('water_area')
+                    ->label('Акватория')
                     ->searchable(),
                 TextColumn::make('race_days_count')
+                    ->label('Гоночных дней')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('races_count')
+                    ->label('Количество гонок')
                     ->numeric()
                     ->sortable(),
                 IconColumn::make('is_archived')
+                    ->label('Архивная')
                     ->boolean(),
                 TextColumn::make('created_at')
+                    ->label('Создано')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label('Обновлено')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('deleted_at')
+                    ->label('Удалено')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

@@ -40,17 +40,26 @@ class RegattaEventsResource extends Resource
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label('Название')
+                    ->placeholder('Введите название события')
                     ->required(),
-                TextInput::make('description'),
+                TextInput::make('description')
+                    ->label('Описание')
+                    ->placeholder('Введите описание события'),
                 Select::make('regatta_id')
+                    ->label('Регата')
                     ->relationship('regatta', 'name')
                     ->required(),
                 TextInput::make('event_number')
+                    ->label('Номер события')
+                    ->placeholder('Порядковый номер')
                     ->required()
                     ->numeric(),
-                DateTimePicker::make('event_datetime'),
+                DateTimePicker::make('event_datetime')
+                    ->label('Дата и время'),
                 Select::make('event_type')
-                    ->options(['schedule' => 'Schedule', 'race' => 'Race'])
+                    ->label('Тип события')
+                    ->options(['schedule' => 'Расписание', 'race' => 'Гонка'])
                     ->default('schedule')
                     ->required(),
             ]);
@@ -61,21 +70,27 @@ class RegattaEventsResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label('Название')
                     ->searchable(),
                 TextColumn::make('description')
+                    ->label('Описание')
                     ->searchable(),
                 TextColumn::make('id')
                     ->label('ID')
                     ->searchable(),
                 TextColumn::make('regatta.name')
+                    ->label('Регата')
                     ->searchable(),
                 TextColumn::make('event_number')
+                    ->label('Номер')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('event_datetime')
+                    ->label('Дата/время')
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('event_type')
+                    ->label('Тип')
                     ->badge(),
                 TextColumn::make('created_at')
                     ->dateTime()

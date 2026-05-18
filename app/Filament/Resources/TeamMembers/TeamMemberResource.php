@@ -39,20 +39,27 @@ class TeamMemberResource extends Resource
         return $schema
             ->components([
                 Select::make('team_id')
+                    ->label('Команда')
                     ->relationship('team', 'name')
                     ->required(),
                 Select::make('user_id')
+                    ->label('Пользователь')
                     ->relationship('user', 'name')
                     ->required(),
                 Select::make('role')
-                    ->options(['organizer' => 'Organizer', 'admin' => 'Admin', 'member' => 'Member'])
+                    ->label('Роль')
+                    ->placeholder('Выберите роль')
+                    ->options(['organizer' => 'Организатор', 'admin' => 'Администратор', 'member' => 'Участник'])
                     ->default('member')
                     ->required(),
                 Select::make('status')
-                    ->options(['invited' => 'Invited', 'active' => 'Active', 'declined' => 'Declined'])
+                    ->label('Статус')
+                    ->placeholder('Выберите статус')
+                    ->options(['invited' => 'Приглашён', 'active' => 'Активен', 'declined' => 'Отклонён'])
                     ->default('invited')
                     ->required(),
-                DateTimePicker::make('joined_at'),
+                DateTimePicker::make('joined_at')
+                    ->label('Дата присоединения'),
             ]);
     }
 
@@ -64,21 +71,28 @@ class TeamMemberResource extends Resource
                     ->label('ID')
                     ->searchable(),
                 TextColumn::make('team.name')
+                    ->label('Команда')
                     ->searchable(),
                 TextColumn::make('user.name')
+                    ->label('Пользователь')
                     ->searchable(),
                 TextColumn::make('role')
+                    ->label('Роль')
                     ->badge(),
                 TextColumn::make('status')
+                    ->label('Статус')
                     ->badge(),
                 TextColumn::make('joined_at')
+                    ->label('Дата присоединения')
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('created_at')
+                    ->label('Создано')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label('Обновлено')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

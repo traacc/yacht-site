@@ -39,23 +39,28 @@ class RegattaEntryResource extends Resource
         return $schema
             ->components([
                 Select::make('regatta_id')
+                    ->label('Регата')
                     ->relationship('regatta', 'name')
                     ->required(),
                 Select::make('team_id')
+                    ->label('Команда')
                     ->relationship('team', 'name')
                     ->required(),
                 Select::make('yacht_id')
+                    ->label('Яхта')
                     ->relationship('yacht', 'name'),
                 Select::make('status')
+                    ->label('Статус')
                     ->options([
-            'pending' => 'Pending',
-            'approved' => 'Approved',
-            'rejected' => 'Rejected',
-            'withdrawn' => 'Withdrawn',
+            'pending' => 'На рассмотрении',
+            'approved' => 'Одобрена',
+            'rejected' => 'Отклонена',
+            'withdrawn' => 'Отозвана',
         ])
                     ->default('pending')
                     ->required(),
-                DateTimePicker::make('submitted_at'),
+                DateTimePicker::make('submitted_at')
+                    ->label('Дата подачи'),
             ]);
     }
 
@@ -67,14 +72,19 @@ class RegattaEntryResource extends Resource
                     ->label('ID')
                     ->searchable(),
                 TextColumn::make('regatta.name')
+                    ->label('Регата')
                     ->searchable(),
                 TextColumn::make('team.name')
+                    ->label('Команда')
                     ->searchable(),
                 TextColumn::make('yacht.name')
+                    ->label('Яхта')
                     ->searchable(),
                 TextColumn::make('status')
+                    ->label('Статус')
                     ->badge(),
                 TextColumn::make('submitted_at')
+                    ->label('Подана')
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('created_at')

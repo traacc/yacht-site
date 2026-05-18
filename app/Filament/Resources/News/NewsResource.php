@@ -52,23 +52,33 @@ class NewsResource extends Resource
         return $schema
             ->components([
                 Select::make('author_id')
+                    ->label('Автор')
                     ->relationship('author', 'name'),
                 Select::make('type')
-                    ->options(['manual' => 'Manual', 'external' => 'External'])
+                    ->label('Тип')
+                    ->options(['manual' => 'Ручная', 'external' => 'Внешняя'])
                     ->default('manual')
                     ->required(),
                 TextInput::make('title')
+                    ->label('Заголовок')
+                    ->placeholder('Введите заголовок новости')
                     ->required(),
                 Textarea::make('content')
+                    ->label('Содержание')
+                    ->placeholder('Введите текст новости')
                     ->required()
                     ->columnSpanFull(),
                 TextInput::make('external_url')
+                    ->label('Внешняя ссылка')
+                    ->placeholder('https://example.com')
                     ->url(),
                 FileUpload::make('cover_image_url')
+                    ->label('Обложка')
                     ->image(),
                 Toggle::make('published_to_tg')
-                    ->required(),
-                DateTimePicker::make('published_at'),
+                    ->label('Опубликовано в Telegram'),
+                DateTimePicker::make('published_at')
+                    ->label('Дата публикации'),
             ]);
     }
 
@@ -80,17 +90,24 @@ class NewsResource extends Resource
                     ->label('ID')
                     ->searchable(),
                 TextColumn::make('author.name')
+                    ->label('Автор')
                     ->searchable(),
                 TextColumn::make('type')
+                    ->label('Тип')
                     ->badge(),
                 TextColumn::make('title')
+                    ->label('Заголовок')
                     ->searchable(),
                 TextColumn::make('external_url')
+                    ->label('Внешняя ссылка')
                     ->searchable(),
-                ImageColumn::make('cover_image_url'),
+                ImageColumn::make('cover_image_url')
+                    ->label('Обложка'),
                 IconColumn::make('published_to_tg')
+                    ->label('Telegram')
                     ->boolean(),
                 TextColumn::make('published_at')
+                    ->label('Опубликовано')
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('created_at')

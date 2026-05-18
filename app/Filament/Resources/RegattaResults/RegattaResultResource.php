@@ -41,19 +41,26 @@ class RegattaResultResource extends Resource
         return $schema
             ->components([
                 Select::make('regatta_id')
+                    ->label('Регата')
                     ->relationship('regatta', 'name')
                     ->required(),
                 Select::make('team_id')
+                    ->label('Команда')
                     ->relationship('team', 'name')
                     ->required(),
                 Select::make('yacht_id')
+                    ->label('Яхта')
                     ->relationship('yacht', 'name')
                     ->required(),
                 TextInput::make('total_points')
+                    ->label('Общее количество очков')
+                    ->placeholder('Сумма очков за все гонки')
                     ->required()
                     ->numeric()
                     ->default(0.0),
                 TextInput::make('final_position')
+                    ->label('Итоговое место')
+                    ->placeholder('Занятое место в регате')
                     ->numeric(),
             ]);
     }
@@ -90,15 +97,20 @@ class RegattaResultResource extends Resource
                     ->label('ID')
                     ->searchable(),
                 TextColumn::make('regatta.name')
+                    ->label('Регата')
                     ->searchable(),
                 TextColumn::make('team.name')
+                    ->label('Команда')
                     ->searchable(),
                 TextColumn::make('yacht.name')
+                    ->label('Яхта')
                     ->searchable(),
                 TextColumn::make('total_points')
+                    ->label('Очки')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('final_position')
+                    ->label('Место')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('created_at')

@@ -56,19 +56,30 @@ class TeamResource extends Resource
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label('Название')
+                    ->placeholder('Название команды')
                     ->required(),
                 Textarea::make('description')
+                    ->label('Описание')
+                    ->placeholder('Описание команды')
                     ->columnSpanFull(),
                 Select::make('organizer_id')
+                    ->label('Организатор')
                     ->relationship('organizer', 'name'),
                 Toggle::make('is_archived')
-                    ->required(),
+                    ->label('Архивная'),
                 Select::make('approval_status')
-                    ->options(['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected'])
+                    ->label('Статус одобрения')
+                    ->placeholder('Выберите статус')
+                    ->options(['pending' => 'На рассмотрении', 'approved' => 'Одобрена', 'rejected' => 'Отклонена'])
                     ->default('pending')
                     ->required(),
-                TextInput::make('rejection_reason'),
-                TextInput::make('rejection_comment'),
+                TextInput::make('rejection_reason')
+                    ->label('Причина отклонения')
+                    ->placeholder('Причина отклонения'),
+                TextInput::make('rejection_comment')
+                    ->label('Комментарий к отклонению')
+                    ->placeholder('Комментарий к отклонению'),
             ]);
     }
 
@@ -81,29 +92,38 @@ class TeamResource extends Resource
                     ->label('ID')
                     ->searchable(),
                 TextColumn::make('name')
+                    ->label('Название')
                     ->searchable(),
                 TextColumn::make('active_members_count')
                     ->label('Участники')
                     ->sortable(),
                 TextColumn::make('organizer.name')
+                    ->label('Организатор')
                     ->searchable(),
                 IconColumn::make('is_archived')
+                    ->label('Архивная')
                     ->boolean(),
                 TextColumn::make('approval_status')
+                    ->label('Статус')
                     ->badge(),
                 TextColumn::make('rejection_reason')
+                    ->label('Причина отклонения')
                     ->searchable(),
                 TextColumn::make('rejection_comment')
+                    ->label('Комментарий')
                     ->searchable(),
                 TextColumn::make('created_at')
+                    ->label('Создано')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label('Обновлено')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('deleted_at')
+                    ->label('Удалено')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

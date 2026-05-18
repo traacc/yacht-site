@@ -40,17 +40,27 @@ class FeedbackRequestsResource extends Resource
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label('Имя')
+                    ->placeholder('Введите имя')
                     ->required(),
                 TextInput::make('phone')
+                    ->label('Телефон')
                     ->tel()
+                    ->placeholder('+7 (999) 123-45-67')
                     ->required(),
                 TextInput::make('email')
-                    ->label('Email address')
+                    ->label('Email')
+                    ->placeholder('user@example.com')
                     ->email(),
                 Textarea::make('message')
+                    ->label('Сообщение')
+                    ->placeholder('Введите текст сообщения')
                     ->columnSpanFull(),
-                TextInput::make('source'),
+                TextInput::make('source')
+                    ->label('Источник')
+                    ->placeholder('Откуда пришла заявка'),
                 Select::make('user_id')
+                    ->label('Пользователь')
                     ->relationship('user', 'name'),
             ]);
     }
@@ -63,15 +73,19 @@ class FeedbackRequestsResource extends Resource
                     ->label('ID')
                     ->searchable(),
                 TextColumn::make('name')
+                    ->label('Имя')
                     ->searchable(),
                 TextColumn::make('phone')
+                    ->label('Телефон')
                     ->searchable(),
                 TextColumn::make('email')
-                    ->label('Email address')
+                    ->label('Email')
                     ->searchable(),
                 TextColumn::make('source')
+                    ->label('Источник')
                     ->searchable(),
                 TextColumn::make('user.name')
+                    ->label('Пользователь')
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()
