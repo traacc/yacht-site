@@ -42,11 +42,15 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
 
     // Расписание: группируем события (races) по дням
     $scheduleDays = $regatta->races
-        ->groupBy(fn ($event) => $event->event_date?->format('j F') ?? '')
+        ->sortBy('event_datetime') // 1. Гарантируем хронологический порядок событий
+        ->groupBy(function ($event) {
+            // 2. Используем isoFormat для поддержки русского языка (Carbon)
+            return $event->event_datetime ? $event->event_datetime->isoFormat('D MMMM') : 'Дата не указана';
+        })
         ->map(fn ($events, $dateLabel) => [
             'date' => $dateLabel,
             'events' => $events->map(fn ($e) => [
-                'time' => $e->event_date?->format('H:i') ?? '',
+                'time' => $e->event_datetime ? $e->event_datetime->isoFormat('HH:mm') : '',
                 'title' => $e->name,
                 'description' => $e->description ?? '',
             ])->values()->toArray(),
