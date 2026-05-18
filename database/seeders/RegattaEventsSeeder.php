@@ -27,9 +27,9 @@ class RegattaEventsSeeder extends Seeder
         foreach ($regattas as $regatta) {
             // --- Schedule events (non-race) ---
             $scheduleEvents = [
-                ['name' => 'Регистрация участников', 'event_number' => 0],
-                ['name' => 'Открытие регаты',       'event_number' => 1],
-                ['name' => 'Брифинг для рулевых',   'event_number' => 2],
+                ['name' => 'Регистрация участников', 'event_number' => 0, 'time' => '08:00'],
+                ['name' => 'Открытие регаты',        'event_number' => 1, 'time' => '09:30'],
+                ['name' => 'Брифинг для рулевых',    'event_number' => 2, 'time' => '10:00'],
             ];
 
             foreach ($scheduleEvents as $i => $event) {
@@ -44,7 +44,9 @@ class RegattaEventsSeeder extends Seeder
                             : ($i === 1
                                 ? 'Торжественная церемония открытия соревнований.'
                                 : 'Обсуждение условий гонок, погоды и дистанций.'),
-                        'event_datetime' => $regatta->date_start,
+                        'event_datetime' => $regatta->date_start
+                        ->copy()
+                        ->setTimeFromTimeString($event['time']),
                     ]);
             }
 
@@ -61,7 +63,10 @@ class RegattaEventsSeeder extends Seeder
                     ->create([
                         'name'        => "Гонка №{$raceNum}",
                         'description' => "Гоночный заезд №{$raceNum} регаты «{$regatta->name}».",
-                        'event_datetime'  => $regatta->date_start?->copy()->addDays($raceDayOffset),
+                        'event_datetime'  => $regatta->date_start?->copy()->addDays($raceDayOffset)->copy()
+                        ->addDays($raceDayOffset)
+                        ->setTimeFromTimeString('11:00')
+                        ->addHours($raceIndexInDay * 2),
                     ]);
             }
         }
