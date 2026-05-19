@@ -1,8 +1,19 @@
-<section style="background-image: url('{{ asset('images/bg/feedback_bg.png') }}');" class="feedback-form bg-[#2E325C] bg-top-right
-    bg-no-repeat pt-24 relative">
-    
+<style>
+    .feedback-form {
+        background-image: url('{{ asset('images/bg/feedback_bg.png') }}');
+    }
+    @media (max-width:768px) {
+        .feedback-form {
+            background-image: none;
+        }
+        
+    }
+</style>
+<section class="feedback-form bg-[#2E325C] bg-top-right
+    bg-no-repeat md:pt-24 relative">
+
     <div class="max-w-(--breakpoint-2xl) m-auto pt-5">
-        <div class="form-wrapper bg-white max-w-lg p-6 z-20 relative"
+        <div class="form-wrapper bg-white max-w-lg p-3.5 md:p-6 mx-3 z-20 relative"
              x-data="{
                 submitted: false,
                 loading: false,
@@ -42,8 +53,8 @@
                     }
                 },
              }">
-            <h3 class="a-font text-4xl pb-6">Остались вопросы?</h3>
-            <p class="text-brand-gray pb-6">По вопросам участия в соревнованиях, вступления в Ассоциацию и другим организационным вопросам вы можете обратиться к нам.</p>
+            <h3 class="a-font text-2xl md:text-4xl md:pb-6">Остались вопросы?</h3>
+            <p class="text-brand-gray pb-6 text-sm md:text-base">По вопросам участия в соревнованиях, вступления в Ассоциацию и другим организационным вопросам вы можете обратиться к нам.</p>
 
             {{-- Сообщение об успехе (AJAX) --}}
             <div x-show="submitted" x-cloak
@@ -64,12 +75,12 @@
                 </div>
             @endif
 
-            <form @submit.prevent="submitForm()" x-show="!submitted">
+            <form @submit.prevent="submitForm()" x-show="!submitted" class="">
                 @csrf
-                <input class="block appearance-none border-0 border-b border-b-[#C6C6C6] w-full mb-4"
+                <input class="block appearance-none border-0 border-b border-b-[#C6C6C6] w-full mb-4 text-sm md:text-base"
                        type="text" name="name" placeholder="Ваше имя" required maxlength="255"
                        x-ref="name">
-                <input class="block appearance-none border-0 border-b border-b-[#C6C6C6] w-full mb-4"
+                <input class="block appearance-none border-0 border-b border-b-[#C6C6C6] w-full mb-4 text-sm md:text-base"
                        type="tel" name="phone" placeholder="Ваш номер телефона" required maxlength="20"
                        x-ref="phone">
                 <button class="bg-[#2D92CE] text-white text-center w-full py-4 font-semibold mt-4"
