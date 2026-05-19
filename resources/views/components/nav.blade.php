@@ -157,8 +157,8 @@
                 <button type="submit" class="w-full text-left py-2 text-sm text-red-300 hover:text-red-200">Выйти</button>
             </form>
             @else
-            <a href="#" @click="$dispatch('open-login-modal')" class="font-semibold px-4 py-2 transition-colors border-white border flex gap-2">
-                <img src="{{ asset('images/icons/login.svg') }}" alt=""><span class="hidden md:inline">Войти</span>
+            <a href="#" @click="$dispatch('open-login-modal')" class="font-semibold px-4 py-2 transition-colors border-white border text-white justify-center flex gap-2">
+                <img src="{{ asset('images/icons/login.svg') }}" alt="">Войти
             </a>
             @endauth
 
