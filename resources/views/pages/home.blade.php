@@ -44,7 +44,11 @@
     .page-dot { transition: width 0.3s ease, background-color 0.3s ease; }
   </style>
 
+<div class="mx-auto max-w-(--breakpoint-2xl)">
 <livewire:regattas-calendar :show-selector="false" />
+
+</div>
+
 
 {{-- ===== РЕЗУЛЬТАТЫ РЕГАТ ===== --}}
 {{-- @livewire('regatta.results') --}}

@@ -18,7 +18,7 @@
 <x-nav />
 
 {{ $slot }}
-
+<x-request-modal></x-request-modal>
 <x-footer />
 <livewire:auth.login-modal />
 <livewire:join-regatta-modal />
