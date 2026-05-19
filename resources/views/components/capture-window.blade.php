@@ -43,7 +43,7 @@
              x-transition:leave="ease-in duration-200"
              x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
              x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-             class="p-6 relative overflow-hidden transition-all bg-white max-w-[1000px] w-full z-30">
+             class="p-6 relative overflow-hidden transition-all bg-white max-w-[1000px] w-full z-30 top-1/2 left-1/2 -translate-1/2">
             
 
             <!-- Контент формы захвата -->

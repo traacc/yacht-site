@@ -1,77 +1,81 @@
 <x-public-layout>
 <x-breadcrumbs_page title="Помощь">
 </x-breadcrumbs_page>
-<main x-data="{help_modal_open: false}" class="main">
+<main x-data="{
+    help_modal_open: false,
+    activeCategory: 'electric',
+    categories: {
+        electric: {
+            title: 'Электрика и механика на яхте',
+            items: [
+                { title: 'Проверка электросистем перед регатой', desc: 'Диагностика и обслуживание электрических систем яхты.', name: 'Игорь Скалин' },
+                { title: 'Ремонт подвесных моторов', desc: 'Обслуживание и ремонт лодочных моторов.', name: 'Алексей Петров' }
+            ]
+        },
+        construct: {
+            title: 'Конструктив, отделка, косметика',
+            items: [
+                { title: 'Полировка корпуса', desc: 'Восстановление блеска и защита гелькоута.', name: 'Марина Иванова' }
+            ]
+        },
+        rigging: {
+            title: 'Такелажные работы',
+            items: [
+                { title: 'Замена стоячего такелажа', desc: 'Профессиональная замена вант и штагов.', name: 'Дмитрий Сидоров' }
+            ]
+        },
+        sails: {
+            title: 'Паруса и парусные мастера',
+            items: [
+                { title: 'Ремонт парусов', desc: 'Ремонт разрывов и замена люверсов.', name: 'Елена Кузнецова' }
+            ]
+        }
+    }
+}" class="main">
     <section class="py-12 reggata-list">
         <div class="max-w-(--breakpoint-2xl) mx-auto">
             <h2 class="section-title a-font text-5xl">Помощь</h2>
         </div>
     </section>
     <section class="flex gap-8 max-w-(--breakpoint-2xl) mx-auto">
-        <div class="p-4 bg-[#F8F8F8] max-w-[340px]">
-            <div class="bg-white border-l-2 font-medium text-lg border-l-[#2D92CE] p-4">Электрика и механика на яхте</div>
-            <div class="font-medium text-lg  p-4">Конструктив, отделка, косметика</div>
-            <div class="font-medium text-lg p-4">Такелажные работы</div>
-            <div class="font-medium text-lg p-4">Паруса и парусные мастера</div>
+        <div class="p-4 bg-[#F8F8F8] max-w-[340px] w-full">
+            <template x-for="(cat, key) in categories" :key="key">
+                <div @click="activeCategory = key"
+                     :class="activeCategory === key ? 'bg-white border-l-2 border-l-[#2D92CE]' : ''"
+                     class="font-medium text-lg p-4 cursor-pointer hover:bg-white transition-colors"
+                     x-text="cat.title"></div>
+            </template>
         </div>
-        <div class="mb-8">
-            <h3 class="section-title a-font text-5xl mb-8">Электрика и механика на яхте</h3>
+        <div class="mb-8 w-full">
+            <h3 class="section-title a-font text-5xl mb-8" x-text="categories[activeCategory].title"></h3>
             <div class="searchbar flex flex-col md:flex-row gap-4 mb-6">
                 <input class="w-full border-0 py-4 pl-12 bg-[#F8F8F8] focus:outline-hidden " type="text" placeholder="Поиск по объявлению">
             </div>
             <div class="help__list w-full">
-                <div class="help__item flex gap-6 bg-[#F8F8F8] p-4 mb-4">
-                    <div class="pr-6 max-w-[620px]">
-                        <h4 class="font-semibold text-[#2E325C] text-lg mb-4">Проверка электросистем перед регатой</h4>
-                        <p class="text-[#2E325C]">Диагностика и обслуживание электрических систем яхты перед тренировками и регатами. Проверка аккумуляторов, навигационного оборудования, освещения и бортовой сети. Подготовка яхты к безопасному выходу на воду.</p>
+                <template x-for="(item, index) in categories[activeCategory].items" :key="index">
+                    <div class="help__item flex justify-between gap-6 bg-[#F8F8F8] p-4 mb-4">
+                        <div class="pr-6 max-w-[620px]">
+                            <h4 class="font-semibold text-[#2E325C] text-lg mb-4" x-text="item.title"></h4>
+                            <p class="text-[#2E325C]" x-text="item.desc"></p>
+                        </div>
+                        <div class="pl-6 pr-6 border-l border-l-[#EAEAEA]">
+                            <h3 class="text-lg font-semibold mb-4" x-text="item.name"></h3>
+                            <ul class="space-y-2 text-sm">
+                                <li class="flex items-center gap-2">
+                                    {!! file_get_contents(public_path('images/icons/phone.svg')) !!}
+                                    <span x-text="item.phone || '+7 (000) 000-00-00'"></span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    {!! file_get_contents(public_path('images/icons/mail.svg')) !!}
+                                    <span x-text="item.email || 'contact@mail.ru'"></span>
+                                </li>
+                            </ul>
+                            <button @click="help_modal_open = true" class="mt-6 bg-[#2D92CE] w-full text-white py-2 px-6 hover:bg-[#0074CC] transition-colors text-lg font-semibold">
+                                Связаться
+                            </button>
+                        </div>
                     </div>
-                    <div class="pl-6 border-l border-l-[#EAEAEA]">
-                        <h3 class="text-lg font-semibold mb-4">Игорь Скалин</h3>
-                        <ul class="space-y-5">
-                            <li class="flex items-center gap-2">
-                                {!! file_get_contents(public_path('images/icons/phone.svg')) !!}
-                                +7 (000) 000-60-00
-                            </li>
-                            <li class="flex items-center gap-2">
-                                {!! file_get_contents(public_path('images/icons/mail.svg')) !!}
-                                contact@mail.ru
-                            </li>
-                            <li class="flex items-center gap-2">
-                                {!! file_get_contents(public_path('images/icons/marker.svg')) !!}
-                                Москва
-                            </li>
-                        </ul>
-                        <button @click="help_modal_open = true" class="mt-6 bg-[#2D92CE] w-full text-white py-2 px-6 hover:bg-[#0074CC] transition-colors text-lg font-semibold">
-                            Связаться
-                        </button>
-                    </div>
-                </div>
-                <div class="help__item flex gap-6 bg-[#F8F8F8] p-4">
-                    <div class="pr-6 max-w-[620px]">
-                        <h4 class="font-semibold text-[#2E325C] text-lg mb-4">Проверка электросистем перед регатой</h4>
-                        <p class="text-[#2E325C]">Диагностика и обслуживание электрических систем яхты перед тренировками и регатами. Проверка аккумуляторов, навигационного оборудования, освещения и бортовой сети. Подготовка яхты к безопасному выходу на воду.</p>
-                    </div>
-                    <div class="pl-6 border-l border-l-[#EAEAEA]">
-                        <h3 class="text-lg font-semibold mb-4">Игорь Скалин</h3>
-                        <ul class="space-y-5">
-                            <li class="flex items-center gap-2">
-                                {!! file_get_contents(public_path('images/icons/phone.svg')) !!}
-                                +7 (000) 000-60-00
-                            </li>
-                            <li class="flex items-center gap-2">
-                                {!! file_get_contents(public_path('images/icons/mail.svg')) !!}
-                                contact@mail.ru
-                            </li>
-                            <li class="flex items-center gap-2">
-                                {!! file_get_contents(public_path('images/icons/marker.svg')) !!}
-                                Москва
-                            </li>
-                        </ul>
-                        <button @click="help_modal_open = true"  class="mt-6 bg-[#2D92CE] w-full text-white py-2 px-6 hover:bg-[#0074CC] transition-colors text-lg font-semibold">
-                            Связаться
-                        </button>
-                    </div>
-                </div>
+                </template>
             </div>
         </div>
     </section>
