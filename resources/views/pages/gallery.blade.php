@@ -8,7 +8,7 @@
                 <h2 class="section-title a-font text-5xl">Галерея</h2>
                 <div class="controls flex gap-4">
                     <div class="calendar-icon">
-                        <select class="border-[#C6C6C6] focus:outline-hidden focus:ring-2 text-[#2E325C] pl-5 w-[100px]" name="year" id="">
+                        <select class="border-[#C6C6C6] focus:outline-hidden h-full focus:ring-2 text-[#2E325C] pl-5 min-w-[140px]" name="year" id="">
                             <option value="2026">2026</option>
                         </select>
                     </div>
