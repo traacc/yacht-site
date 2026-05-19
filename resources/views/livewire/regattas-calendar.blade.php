@@ -10,9 +10,9 @@
 
 <div x-data="regattaCalendar()" data-current-month="{{ now()->format('n') - 1 }}" class="py-12 bg-brand-light">
     <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between mb-6 flex-col md:flex-row">
+        <div class="flex md:items-center justify-between mb-6 flex-col md:flex-row">
             <h2 class="section-title a-font mb-4 md:mb-0">Календарь регат сезона</h2>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4 flex-col md:flex-row">
                 {{-- Легенда --}}
                 <div class="flex items-center gap-4 text-[#2E325C]">
                     <span class="flex items-center gap-1.5 text-xs md:font-base"><span class="size-2 md:size-4 rounded-full bg-[#157949] inline-block"></span>Состоявшиеся</span>
@@ -21,11 +21,11 @@
                 </div>
                 {{-- Выбор года --}}
                     @if ($showSelector)
-                    <div class="calendar-icon">
+                    <div class="calendar-icon w-full md:w-auto">
                 
                     <select
                         wire:model.live="year"
-                        class="border border-[#C6C6C6] bg-white text-[#2E325C] px-4 py-2 min-w-[120px] focus:outline-hidden focus:ring-2 focus:ring-[#2D92CE] text-sm font-medium"
+                        class="border border-[#C6C6C6] bg-white w-full text-[#2E325C] px-4 py-2 min-w-[120px] focus:outline-hidden focus:ring-2 focus:ring-[#2D92CE] text-sm font-medium"
                     >
                         @foreach ($years as $y)
                             <option value="{{ $y }}">{{ $y }}</option>
