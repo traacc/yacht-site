@@ -6,7 +6,7 @@
     @if($regatta)
     <div class="max-w-(--breakpoint-2xl) mx-auto relative mt-4">
         {{-- Карточка ближайшей регаты --}}
-        <div class="absolute top-8 left-8 bg-[#00000080] backdrop-blur-xs p-5 w-full md:w-auto md:max-w-3xl shadow-2xl">
+        <div class="md:absolute md:top-8 md:left-8 mx-4 md:mx-0 mt-6 bg-[#00000080] backdrop-blur-xs p-3 md:p-5  md:w-auto md:max-w-3xl shadow-2xl">
             <div class="flex items-center gap-2 mb-1 md:mb-3">
                 <span class="rounded-full bg-[#F24842] text-center text-white flex justify-center items-center shrink-0 aspect-square size-6 p-1 md:p-0 md:size-11">
                     {!!  file_get_contents(public_path('images/icons/calendar.svg')) !!}
@@ -16,8 +16,8 @@
                 </span>
             </div>
             <div class="grid justify-between items-center gap-2 md:gap-4 grid-cols-1 md:grid-cols-2">
-                <h3 class="font-display text-white text-2xl md:text-4xl font-bold a-font">{{ $regatta->name }}</h3>
-                <div class="flex flex-col gap-2 md:gap-0 mb-3 justify-between text-white font-medium text-sm md:text-lg md:row-span-2 h-full">
+                <h3 class="font-display text-white text-2xl/7 mb-2 md:mb-0 md:text-4xl font-bold a-font">{{ $regatta->name }}</h3>
+                <div class="flex flex-col gap-2 md:gap-0 mb-4 justify-between text-white font-medium text-sm md:text-lg md:row-span-2 h-full">
                     <div class="flex items-center gap-2">
                         {!!  file_get_contents(public_path('images/icons/calendar.svg')) !!}
                         {{ $regatta->dateRange() }}
