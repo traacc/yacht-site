@@ -28,7 +28,7 @@
     <section>
         <div class="max-w-(--breakpoint-2xl) mx-auto pb-12">
             <h2 class="section-title a-font text-5xl">2026</h2>
-            <div class=" grid grid-cols-3 gap-6 mt-6"
+            <div class=" grid md:grid-cols-3 gap-6 mt-6"
              x-data="{
                 current: 0,
                 images: [
@@ -59,7 +59,7 @@
     <section>
         <div class="max-w-(--breakpoint-2xl) mx-auto pb-12">
             <h2 class="section-title a-font text-5xl">2025</h2>
-            <div class=" grid grid-cols-3 gap-6 mt-6"
+            <div class=" grid md:grid-cols-3 gap-6 mt-6"
              x-data="{
                 current: 0,
                 images: [
@@ -102,7 +102,7 @@
                     '{{ asset('images/news/news_1.png') }}',
                 ]
             }"
-            class=" grid grid-cols-3 gap-6 mt-6">
+            class=" grid md:grid-cols-3 gap-6 mt-6">
                 <template x-for="img in images">
                     <div class="cursor-pointer group relative" @click="gallery_modal_open = true">
                         
