@@ -27,7 +27,7 @@
             <p class="text-brand-gray text-lg">Прибрежная гонка сезона с участием команд класса Carter 30.</p>
             <button @click="$dispatch('open-join-regatta-modal', { regattaId: 'demo-regatta-id' })"
                     class="mt-6 bg-[#2D92CE] text-white py-2 px-6 hover:bg-[#2D92CE] transition-colors text-lg font-semibold cursor-pointer">
-                Подать заявку
+                Подать заявку  →
             </button>
         </div>
         <div class="pic max-w-[720px]">

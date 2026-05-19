@@ -254,7 +254,7 @@
                         Зарегистрированные экипажи Carter 30, состав команд и участие в регатах сезона.
                     </p>
                     <a href="{{ route('teams') }}" wire:navigate class="md:text-lg text-sm font-semibold justify-start text-white">
-                        Смотреть команды
+                        Смотреть команды  →
                     </a>
                 </div>
             </div>
@@ -270,7 +270,7 @@
                         Список яхт ассоциации, технические параметры, владельцы и история участия в регатах.
                     </p>
                     <a href="{{ route('yachts') }}" wire:navigate class="md:text-lg text-sm  font-semibold justify-start text-[#2E325C]">
-                        Смотреть яхты
+                        Смотреть яхты  →
                     </a>
                 </div>
             </div>
