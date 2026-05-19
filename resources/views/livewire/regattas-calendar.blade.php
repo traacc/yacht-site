@@ -20,16 +20,19 @@
                     <span class="flex items-center gap-1.5 text-xs md:font-base"><span class="size-2 md:size-4 rounded-full bg-[#C6C6C6] inline-block"></span>Планируемые</span>
                 </div>
                 {{-- Выбор года --}}
-                @if ($showSelector)
-                <select
-                    wire:model.live="year"
-                    class="border border-[#C6C6C6] bg-white text-[#2E325C] px-4 py-2 rounded-sm focus:outline-hidden focus:ring-2 focus:ring-[#2D92CE] text-sm font-medium"
-                >
-                    @foreach ($years as $y)
-                        <option value="{{ $y }}">{{ $y }}</option>
-                    @endforeach
-                </select>
-                @endif
+                    @if ($showSelector)
+                    <div class="calendar-icon">
+                
+                    <select
+                        wire:model.live="year"
+                        class="border border-[#C6C6C6] bg-white text-[#2E325C] px-4 py-2 min-w-[120px] focus:outline-hidden focus:ring-2 focus:ring-[#2D92CE] text-sm font-medium"
+                    >
+                        @foreach ($years as $y)
+                            <option value="{{ $y }}">{{ $y }}</option>
+                        @endforeach
+                    </select>
+                    @endif
+                </div>
             </div>
         </div>
 
