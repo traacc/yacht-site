@@ -11,8 +11,16 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
     yacht_modal_open: false,
     selectedYacht: null,
     yachtsData: {{ $yachtsJson }},
-    openYachtModal(index) {
-        this.selectedYacht = this.yachtsData[index];
+    search: '',
+    get filteredYachts() {
+        return this.yachtsData.filter(yacht =>
+            yacht.name.toLowerCase().includes(this.search.toLowerCase()) ||
+            yacht.vfps_number.toLowerCase().includes(this.search.toLowerCase()) ||
+            (yacht.owner_name && yacht.owner_name.toLowerCase().includes(this.search.toLowerCase()))
+        );
+    },
+    openYachtModal(yacht) {
+        this.selectedYacht = yacht;
         this.yacht_modal_open = true;
     }
 }" class="main">
@@ -21,6 +29,9 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
             <div class="flex items-center justify-between mb-6">
                 <h2 class="section-title a-font">Список яхт</h2>
                 <button class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту</button>
+            </div>
+            <div class="searchbar bg-[#F8F8F8] mb-2">
+                <input x-model="search" class="w-full pl-8 bg-[#F8F8F8] border-none" type="text" placeholder="Поиск">
             </div>
             <div class="reggata-list__items">
                 <table class="w-full text-left border-collapse">
@@ -35,28 +46,30 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($yachts as $index => $yacht)
+                        <template x-for="yacht in filteredYachts" :key="yacht.id">
                         <tr class="border-t">
-                            <td class="py-2 text-center">{{ $yacht->name }}</td>
-                            <td class="py-2 text-center">{{ $yacht->vfps_number }}</td>
-                            <td class="py-2 text-center">{{ $yacht->owner_name ?? '—' }}</td>
+                            <td class="py-2 text-center" x-text="yacht.name"></td>
+                            <td class="py-2 text-center" x-text="yacht.vfps_number"></td>
+                            <td class="py-2 text-center" x-text="yacht.owner_name || '—'"></td>
                             <td class="py-2 text-center">—</td>
                             <td class="py-2 text-center">
-                                @if($yacht->orc_cert_url)
-                                    <a href="{{ $yacht->orc_cert_url }}" target="_blank" class="text-[#2D92CE] font-semibold hover:underline">Скачать</a>
-                                @else
+                                <template x-if="yacht.orc_cert_url">
+                                    <a :href="yacht.orc_cert_url" target="_blank" class="text-[#2D92CE] font-semibold hover:underline">Скачать</a>
+                                </template>
+                                <template x-if="!yacht.orc_cert_url">
                                     <span class="text-gray-400">—</span>
-                                @endif
+                                </template>
                             </td>
                             <td class="py-2 text-center">
-                                <a href="#" @click.prevent="openYachtModal({{ $index }})" class="text-[#2D92CE] font-semibold hover:underline">Подробнее</a>
+                                <a href="#" @click.prevent="openYachtModal(yacht)" class="text-[#2D92CE] font-semibold hover:underline">Подробнее</a>
                             </td>
                         </tr>
-                        @empty
+                        </template>
+                        <template x-if="filteredYachts.length === 0">
                         <tr>
-                            <td colspan="6" class="py-8 text-center text-gray-500">Нет зарегистрированных яхт</td>
+                            <td colspan="6" class="py-8 text-center text-gray-500">Яхты не найдены</td>
                         </tr>
-                        @endforelse
+                        </template>
                     </tbody>
                 </table>
             </div>
