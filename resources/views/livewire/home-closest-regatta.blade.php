@@ -1,5 +1,5 @@
 <section class="relative h-[480px] overflow-hidden">
-    <video autoplay mute playsinline loop src="{{ '/videos/hero_video.mp4' }}"  class="absolute inset-0 w-full h-full object-cover"></video>
+    <video autoplay muted playsinline loop src="{{ '/videos/hero_video_2.mp4' }}"  class="absolute inset-0 w-full h-full object-cover"></video>
 
     <div class="hero-overlay absolute inset-0"></div>
 
