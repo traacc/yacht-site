@@ -1,7 +1,12 @@
 <x-public-layout>
 <x-breadcrumbs_page title="Галерея">
 </x-breadcrumbs_page>
-<main x-data="{gallery_modal_open: false, lightbox_open: false}" class="main">
+<main x-data="{
+    gallery_modal_open: false,
+    lightbox_open: false,
+    activeImage: '',
+    lbImages: []
+}" class="main">
     <section class="py-12 reggata-list">
         <div class="max-w-(--breakpoint-2xl) mx-auto">
             <div class="flex justify-between mb-6">
@@ -85,8 +90,8 @@
     <section>
         <div class="max-w-(--breakpoint-2xl) mx-auto pb-12">
             <h2 class="section-title a-font text-5xl">2024</h2>
-            <div class=" grid grid-cols-3 gap-6 mt-6"
-             x-data="{
+            <div 
+            x-data="{
                 current: 0,
                 images: [
                     '{{ asset('images/news/news_1.png') }}',
@@ -97,7 +102,7 @@
                     '{{ asset('images/news/news_1.png') }}',
                 ]
             }"
-            >
+            class=" grid grid-cols-3 gap-6 mt-6">
                 <template x-for="img in images">
                     <div class="cursor-pointer group relative" @click="gallery_modal_open = true">
                         
@@ -118,7 +123,25 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 team-modal">
         <!-- Модальное окно для подробной информации о команде -->
         <div @click.away="gallery_modal_open = false"  class="relative p-6 max-w-[1200px] max-h-[80vh] overflow-y-auto bg-white gap-6"
-            
+            x-data="{
+                activeTab: 'video',
+                video: [
+                    '{{ asset('images/news/news_2.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_2.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_2.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                ],
+                images: [
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_2.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_2.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                    '{{ asset('images/news/news_1.png') }}',
+                ]
+            }"
             x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95"
             x-transition:enter-end="opacity-100 scale-100"
@@ -133,40 +156,32 @@
                 23–25 мая · Пироговское водохранилище
             </p>
             <div class="flex gap-4 font-medium text-lg mb-6">
-                <button class="p-4 text-center bg-[#2D92CE] text-white">Видео</button>
-                <button class="p-4 text-center bg-[#F8F8F8] text-[#2E325C]">Фотографии</button>
+                <button @click="activeTab = 'video'" :class="activeTab === 'video' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="p-4 text-center">Видео</button>
+                <button @click="activeTab = 'photo'" :class="activeTab === 'photo' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="p-4 text-center">Фотографии</button>
             </div>
-            <div>
+            <div x-show="activeTab === 'video'">
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    @foreach(range(1, 24) as $item)
-                    <div class="card bg-[#F8F8F8]"  @click="lightbox_open = true; gallery_modal_open = false">
-                        <img src="{{ asset('images/news/news_1.png') }}" alt="">
-                    </div>
-                    @endforeach
+                    <template x-for="item in video">
+                        <div class="card bg-[#F8F8F8]"  @click="lightbox_open = true; gallery_modal_open = false; activeImage = item; lbImages = video">
+                            <img :src="item" alt="">
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div x-show="activeTab === 'photo'">
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <template x-for="item in images">
+                        <div class="card bg-[#F8F8F8]"  @click="lightbox_open = true; gallery_modal_open = false; activeImage = item; lbImages = images">
+                            <img :src="item" alt="">
+                        </div>
+                    </template>
                 </div>
             </div>
         </div>
     </div>
-    <div x-show="lightbox_open" 
-        x-cloak 
+    <div x-show="lightbox_open"
+        x-cloak
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-        x-data="{
-            activeImage: '{{ asset('images/gallery.png') }}',
-            lbImages: [
-                '{{ asset('images/gallery.png') }}',
-                '{{ asset('images/gallery.png') }}',
-                '{{ asset('images/gallery.png') }}',
-                '{{ asset('images/gallery.png') }}',
-                '{{ asset('images/gallery.png') }}',
-                '{{ asset('images/gallery.png') }}',
-                '{{ asset('images/gallery.png') }}',
-                '{{ asset('images/gallery.png') }}',
-                '{{ asset('images/gallery.png') }}',
-                '{{ asset('images/gallery.png') }}',
-                '{{ asset('images/gallery.png') }}',
-                '{{ asset('images/gallery.png') }}',
-            ]
-        }"
         >
 
         <div @click.away="lightbox_open = false"  class="relative p-3 max-w-[1200px] max-h-[80vh] gap-6"
@@ -194,9 +209,9 @@
 
             <div class="flex gap-4 overflow-hidden">
                 <template x-for="img in lbImages">
-                    <div class="cursor-pointer  rounded-lg shadow-hover transition-all max-w-[100px] aspect-square">
-                        <img :src="img" 
-                            class="object-contain h-full w-full" 
+                    <div class="cursor-pointer rounded-lg shadow-hover transition-all max-w-[100px] aspect-square" @click="activeImage = img">
+                        <img :src="img"
+                            class="object-contain h-full w-full"
                             alt="Preview">
                     </div>
                 </template>
