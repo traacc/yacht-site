@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 class Season extends Model
 {
@@ -60,4 +61,17 @@ class Season extends Model
                      ->whereDate('end_date', '>=', now())
                      ->first();
     }
+
+    /** @return Collection<Team> */
+    public function topTeams(int $limit = 3): Collection
+    {
+        return $this->ratings()
+            ->team()
+            ->ranked()
+            ->with('team')
+            ->take($limit)
+            ->get()
+            ->pluck('team');
+    }
+    
 }
