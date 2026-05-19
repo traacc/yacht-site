@@ -19,7 +19,7 @@ bgImage="{{ asset('images/bg/management.png') }}"
                     <div class="info p-4">
                         <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Игорь Скалин</h4>
                         <div class="text-lg text-brand-gray mb-4 h-14">Президент Ассоциации</div>
-                        <a @click="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
                     </div>
                 </div>
                 <div class="card bg-[#F8F8F8]">
@@ -27,7 +27,7 @@ bgImage="{{ asset('images/bg/management.png') }}"
                     <div class="info p-4">
                         <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Владимир Капитонов</h4>
                         <div class="text-lg text-brand-gray mb-4 h-14">Вице-президент</div>
-                        <a @click="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
                     </div>
                 </div>
                 <div class="card bg-[#F8F8F8]">
@@ -35,7 +35,7 @@ bgImage="{{ asset('images/bg/management.png') }}"
                     <div class="info p-4">
                         <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Дмитрий Леонтьев</h4>
                         <div class="text-lg text-brand-gray mb-4 h-14">Технический директор</div>
-                        <a @click="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
                     </div>
                 </div>
                 <div class="card bg-[#F8F8F8]">
@@ -43,7 +43,7 @@ bgImage="{{ asset('images/bg/management.png') }}"
                     <div class="info p-4">
                         <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Александр Пульков</h4>
                         <div class="text-lg text-brand-gray mb-4 h-14">Спортивный директор</div>
-                        <a @click="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
                     </div>
                 </div>
                 <div class="card bg-[#F8F8F8]">
@@ -51,7 +51,7 @@ bgImage="{{ asset('images/bg/management.png') }}"
                     <div class="info p-4">
                         <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Анна Капитонова</h4>
                         <div class="text-lg text-brand-gray mb-4 h-14">Руководитель по работе с участниками</div>
-                        <a @click="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
                     </div>
                 </div>
                 <div class="card bg-[#F8F8F8]">
@@ -59,7 +59,7 @@ bgImage="{{ asset('images/bg/management.png') }}"
                     <div class="info p-4">
                         <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Андрей Чупров</h4>
                         <div class="text-lg text-brand-gray mb-4 h-14">Финансовый директор</div>
-                        <a @click="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
                     </div>
                 </div>
                 <div class="card bg-[#F8F8F8]">
@@ -67,7 +67,7 @@ bgImage="{{ asset('images/bg/management.png') }}"
                     <div class="info p-4">
                         <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Сергей Морозов</h4>
                         <div class="text-lg text-brand-gray mb-4 h-14">Исполнительный директор</div>
-                        <a @click="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
                     </div>
                 </div>
                 <div class="card bg-[#F8F8F8]">
@@ -75,7 +75,7 @@ bgImage="{{ asset('images/bg/management.png') }}"
                     <div class="info p-4">
                         <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Екатерина Воронова</h4>
                         <div class="text-lg text-brand-gray mb-4 h-14">Руководитель по коммуникациям</div>
-                        <a @click="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
                     </div>
                 </div>
 

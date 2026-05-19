@@ -18,7 +18,7 @@ bgImage="{{ asset('images/bg/trustees.png') }}"
                     <div class="info p-4">
                         <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Алексей Смирнов</h4>
                         <div class="text-lg text-brand-gray mb-4 h-14">Председатель попечительского совета</div>
-                        <a @click="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
                     </div>
                 </div>
                 <div class="card bg-[#F8F8F8]">
@@ -26,7 +26,7 @@ bgImage="{{ asset('images/bg/trustees.png') }}"
                     <div class="info p-4">
                         <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Дмитрий Воронов</h4>
                         <div class="text-lg text-brand-gray mb-4 h-14">Член попечительского совета</div>
-                        <a @click="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
                     </div>
                 </div>
                 <div class="card bg-[#F8F8F8]">
@@ -34,7 +34,7 @@ bgImage="{{ asset('images/bg/trustees.png') }}"
                     <div class="info p-4">
                         <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Максим Жолудов</h4>
                         <div class="text-lg text-brand-gray mb-4 h-14">Член попечительского совета</div>
-                        <a @click="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
                     </div>
                 </div>
                 <div class="card bg-[#F8F8F8]">
@@ -42,7 +42,7 @@ bgImage="{{ asset('images/bg/trustees.png') }}"
                     <div class="info p-4">
                         <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Сергей Морозов</h4>
                         <div class="text-lg text-brand-gray mb-4 h-14">Член попечительского совета</div>
-                        <a @click="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
                     </div>
                 </div>
                 <div>
@@ -52,7 +52,7 @@ bgImage="{{ asset('images/bg/trustees.png') }}"
                     <div class="info p-4">
                         <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Анна Капитонова</h4>
                         <div class="text-lg text-brand-gray mb-4 h-14">Член попечительского совета</div>
-                        <a @click="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
                     </div>
                 </div>
                 <div class="card bg-[#F8F8F8]">
@@ -60,7 +60,7 @@ bgImage="{{ asset('images/bg/trustees.png') }}"
                     <div class="info p-4">
                         <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Игорь Чупров</h4>
                         <div class="text-lg text-brand-gray mb-4 h-14">Член попечительского совета</div>
-                        <a @click="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
                     </div>
                 </div>
             </div>
