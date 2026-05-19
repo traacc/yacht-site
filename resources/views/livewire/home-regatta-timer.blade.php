@@ -29,7 +29,7 @@
                 <img src="{{ $regatta->background_image ? asset('storage/' . $regatta->background_image) : asset('images/regatas/reg_preview.png') }}"
                      alt="{{ $regatta->name }}" class=" w-full h-full object-cover">
             </div>
-            <div class="flex-1 h-auto flex flex-col justify-between gap-5 px-3 md:px-0">
+            <div class="flex-1 h-auto flex flex-col justify-between  gap-4 md:gap-5 px-3 md:px-0">
                 <div class="flex items-center gap-2 mb-1">
                     <span class="bg-[#F2484226] text-[#F24842] font-bold px-2.5 py-1 uppercase text-xs">Ближайшая регата</span>
                 </div>
