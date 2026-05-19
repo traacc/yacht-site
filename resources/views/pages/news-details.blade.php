@@ -3,7 +3,7 @@
 </x-breadcrumbs_page>
 <main class="main">
     <section class="py-12">
-        <div class="max-w-(--breakpoint-2xl) mx-auto flex gap-12">
+        <div class="max-w-(--breakpoint-2xl) mx-auto flex flex-col md:flex-row gap-12">
             <div class="content max-w-[902px]">
                 <h2 class="section-title a-font text-5xl mb-4">Открыта регистрация на Кубок Carter Pro</h2>
                 <p class="date text-brand-gray-light mb-4">10 июня 2026</p>
