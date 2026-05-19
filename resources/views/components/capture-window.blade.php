@@ -1,0 +1,72 @@
+<div x-data="{ 
+        isOpen: false, 
+        init() {
+            // Запускаем таймер после загрузки страницы
+            setTimeout(() => {
+                // Проверяем, не открывал ли пользователь его ранее (опционально)
+                //if (!localStorage.getItem('modal_shown'))
+                    this.isOpen = true;
+
+            }, 1000); // 5000 миллисекунд = 5 секунд
+        },
+        closeModal() {
+            this.isOpen = false;
+            // Запоминаем выбор, чтобы не спамить пользователя при перезагрузке
+            localStorage.setItem('modal_shown', 'true');
+        }
+     }"
+     x-show="isOpen"
+     style="display: none;"
+     class="fixed inset-0 z-50 overflow-y-auto"
+     aria-labelledby="modal-title" 
+     role="dialog" 
+     aria-modal="true">
+    
+    <div 
+            x-show="isOpen"
+            x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 transition-opacity bg-black/50 z-20" 
+    class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        
+
+        <!-- Само модальное окно -->
+        <div x-show="isOpen"
+            @click.outside="isOpen = false"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+             class="p-6 relative overflow-hidden transition-all bg-white max-w-[1000px] w-full z-30">
+            
+
+            <!-- Контент формы захвата -->
+            <img class="absolute right-0 top-0 z-0 h-full md:h-auto " src="{!! asset('images/bg/capture-form.png') !!}" alt="">
+            <button @click="isOpen = false" class="text-2xl md:text-white text-[#2E325C] absolute right-0 top-0 font-bold z-30">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
+            <div class="absolute hidden md:block inset-0 left-[40%] w-[60%] bg-linear-to-r from-[#FFFFFF] to-[#FFFFFF]/40 z-2"></div>
+            <div class="absolute block md:hidden inset-0 left-[0%] w-full bg-linear-to-r from-[#FFFFFF] to-[#FFFFFF]/80 z-2"></div>
+            <div class="max-w-[562px] relative z-10">
+                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                    <h3 class="text-4xl text-[#2E325C] a-font" id="modal-title">
+                        Хотите гоняться с нами?
+                    </h3>
+
+                    <p class="text-lg text-[#444]">
+                        Переходите в официальные сообщества CarterPro, чтобы получать анонсы регат, новости и обновления сезона.
+                    </p>
+
+                    <div class="social">
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

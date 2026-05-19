@@ -1,5 +1,7 @@
 <x-public-layout>
 
+<x-capture-window></x-capture-window>
+
 {{-- ===== ШАПКА С ПОДЗАГОЛОВКОМ ===== --}}
 <div class="">
     <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row items-start md:items-center gap-4 justify-center text-[#2E325C] ">
