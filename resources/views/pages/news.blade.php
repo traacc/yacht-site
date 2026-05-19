@@ -28,7 +28,7 @@
                             <h4 class="text-xl font-semibold mb-4">Открыта регистрация на Кубок Carter Pro</h4>
                             <p class="mb-4 font-medium">Организаторы команд уже могут подать заявку на участие в ближайшей регате сезона через личный кабинет.</p>
                             <div class="date mb-4 text-brand-gray-light">10 июня 2026</div>
-                            <a href="#" class="text-lg font-semibold hover:underline">Все галерея →</a>
+                            <a href="{{ route('news-details') }}" class="text-lg font-semibold hover:underline">Все галерея →</a>
                         </div>
                     </div>
                 </div>
@@ -41,7 +41,7 @@
                             <h4 class="text-xl font-semibold mb-3">Открыта регистрация на Кубок Carter Pro</h4>
                             <p class="mb-3 font-medium">На сайте опубликованы уточнения п</p>
                             <div class="date mb-3 text-brand-gray-light">10 июня 2026</div>
-                            <a href="#" class="text-lg font-semibold hover:underline">Все галерея →</a>
+                            <a href="{{ route('news-details') }}" class="text-lg font-semibold hover:underline">Все галерея →</a>
                         </div>
                     </div>
                     <div class="item flex gap-2">
@@ -52,7 +52,7 @@
                             <h4 class="text-xl font-semibold mb-3">Открыта регистрация на Кубок Carter Pro</h4>
                             <p class="mb-3 font-medium">На сайте опубликованы уточнения п</p>
                             <div class="date mb-3 text-brand-gray-light">10 июня 2026</div>
-                            <a href="#" class="text-lg font-semibold hover:underline">Все галерея →</a>
+                            <a href="{{ route('news-details') }}" class="text-lg font-semibold hover:underline">Все галерея →</a>
                         </div>
                     </div>
                     <div class="item flex gap-2">
@@ -63,7 +63,7 @@
                             <h4 class="text-xl font-semibold mb-3">Открыта регистрация на Кубок Carter Pro</h4>
                             <p class="mb-3 font-medium">На сайте опубликованы уточнения п</p>
                             <div class="date mb-3 text-brand-gray-light">10 июня 2026</div>
-                            <a href="#" class="text-lg font-semibold hover:underline">Все галерея →</a>
+                            <a href="{{ route('news-details') }}" class="text-lg font-semibold hover:underline">Все галерея →</a>
                         </div>
                     </div>
                 </div>
@@ -81,7 +81,7 @@
                     <h4 class="text-xl font-semibold mb-4">Открыта регистрация на Кубок Carter Pro</h4>
                     <p class="mb-4 font-medium">На сайте опубликованы уточнения п</p>
                     <div class="date mb-4 text-brand-gray-light">10 июня 2026</div>
-                    <a href="#" class="text-lg font-semibold hover:underline">Все галерея →</a>
+                    <a href="{{ route('news-details') }}" class="text-lg font-semibold hover:underline">Все галерея →</a>
                 </div>
             </div>
             @endforeach

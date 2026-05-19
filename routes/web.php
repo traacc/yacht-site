@@ -217,7 +217,7 @@ Route::get('/ratings', function () {
 Route::view('/gallery', 'pages/gallery')->name('gallery');
 Route::view('/help', 'pages/help')->name('help');
 Route::view('/news', 'pages/news')->name('news');
-Route::view('/news/{uuid}', 'pages/news-details')->name('news-details');
+Route::view('/news-details', 'pages/news-details')->name('news-details');
 
 Route::post('/feedback', function (Request $request) {
     $validated = $request->validate([
