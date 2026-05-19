@@ -26,7 +26,7 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
 }" class="main">
     <section class="py-12 reggata-list">
         <div class="max-w-(--breakpoint-2xl) mx-auto sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center flex-col md:flex-row justify-between mb-6">
                 <h2 class="section-title a-font">Список яхт</h2>
                 <a href="/user" class="bg-[#2D92CE] cursor-pointer text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту</a>
             </div>
@@ -34,7 +34,7 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                 <input x-model="search" class="w-full pl-8 bg-[#F8F8F8] border-none" type="text" placeholder="Поиск">
             </div>
             <div class="reggata-list__items">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left border-collapse responsive-table">
                     <thead>
                         <tr>
                             <th class="py-2 a-font text-center text-2xl">Название</th>
@@ -48,11 +48,11 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                     <tbody>
                         <template x-for="yacht in filteredYachts" :key="yacht.id">
                         <tr class="border-t">
-                            <td class="py-2 text-center" x-text="yacht.name"></td>
-                            <td class="py-2 text-center" x-text="yacht.vfps_number"></td>
-                            <td class="py-2 text-center" x-text="yacht.owner_name || '—'"></td>
-                            <td class="py-2 text-center">—</td>
-                            <td class="py-2 text-center">
+                            <td data-label="Название" class="py-2 text-center" x-text="yacht.name"></td>
+                            <td data-label="Парус №" class="py-2 text-center" x-text="yacht.vfps_number"></td>
+                            <td data-label="Владелец" class="py-2 text-center" x-text="yacht.owner_name || '—'"></td>
+                            <td data-label="Балл ORC" class="py-2 text-center">—</td>
+                            <td data-label="Сертификат ORC" class="py-2 text-center">
                                 <template x-if="yacht.orc_cert_url">
                                     <a :href="yacht.orc_cert_url" target="_blank" class="text-[#2D92CE] font-semibold hover:underline">Скачать</a>
                                 </template>
@@ -139,7 +139,7 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                         </div>
                     </div>
                     <p class="mb-6" x-text="'Яхта «' + selectedYacht.name + '» зарегистрирована в Ассоциации Carter Pro и принимает участие в регатах сезона.'"></p>
-                    <div class="flex gap-24">
+                    <div class="flex gap-24 flex-col md:flex-row">
                         <table>
                             <tr>
                                 <td class="font-semibold py-2 w-64">Парус №</td>
@@ -172,7 +172,7 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
 
                 <div class="owner mb-8">
                     <h3 class="text-3xl a-font mb-6">Владелец лодки</h3>
-                    <div class="flex gap-3 items-center bg-[#F8F8F8]">
+                    <div class="flex flex-col md:flex-row gap-3 items-center bg-[#F8F8F8]">
                         <div class="owner__pic">
                             <img :src="selectedYacht.owner_photo" alt="">
                         </div>
@@ -220,9 +220,9 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
 
                 <div class="mb-8" x-show="selectedYacht.documents.length > 0">
                     <h3 class="text-3xl a-font mb-6">Документы</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <template x-for="doc in selectedYacht.documents">
-                            <div class="bg-[#F8F8F8] flex gap-4 hover:shadow-md transition-shadow cursor-pointer p-4">
+                            <!--<div class="bg-[#F8F8F8] flex gap-4 hover:shadow-md transition-shadow cursor-pointer p-4">
                                 <div class="max-w-16">
                                     <img class="w-full" src="{{ asset('images/icons/pdf.png') }}" alt="">
                                 </div>
@@ -232,6 +232,16 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                                         <img src="{{ asset('images/icons/download.svg') }}" alt="">
                                         <span>Скачать PDF</span>
                                     </a>
+                                </div>
+                            </div>-->
+                            <div class="bg-[#F8F8F8] flex gap-4 hover:shadow-md transition-shadow cursor-pointer p-4">
+                                <div class="max-w-10 md:max-w-16">
+                                    <img class="w-full" src="{{ asset('images/icons/pdf.png') }}" alt="">
+                                </div>
+                                <div class="">
+                                    <div class="text-[#2E325C] text-sm md:text-lg font-semibold mb-4" x-text='doc.title'></div>
+                                    <div class="text-brand-gray-light font-medium mb-4 text-xs md:text-base" x-text='doc.desc'></div>
+                                    <a x-bind:href="doc.path" class="text-[#2E325C] text-sm md:text-lg font-semibold flex gap-4 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> <span>Скачать PDF</span></a>
                                 </div>
                             </div>
                         </template>
@@ -257,12 +267,12 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                 <div class="participation mb-8" x-show="selectedYacht.participation.length > 0">
                     <div class="participation-header flex items-center justify-between mb-6">
                         <h5 class="a-font text-3xl">Участие в регатах</h5>
-                        <a href="#" class="text-[#2E325C] text-lg font-semibold flex gap-2 items-center">
+                        <a href="#" class="text-[#2E325C] text-lg font-semibold gap-2 items-center hidden md:flex">
                             <img src="{{ asset('images/icons/download.svg') }}" alt="">
                             <span>Скачать историю участия</span>
                         </a>
                     </div>
-                    <div class="overflow-y-auto max-h-[180px] relative custom-scroll">
+                    <div class="overflow-y-auto max-h-[180px] relative custom-scroll responsive-table">
                         <table class="w-full border-collapse bg-[#F8F8F8]">
                             <thead>
                                 <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
@@ -275,14 +285,18 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                             <tbody class="divide-y text-center font-medium">
                                 <template x-for="(p, i) in selectedYacht.participation" :key="i">
                                     <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
-                                        <td class="py-3" x-text="p.regatta"></td>
-                                        <td class="py-3" x-text="p.date_event"></td>
-                                        <td class="py-3" x-text="p.team"></td>
-                                        <td class="py-3" x-html="participation_status(p.status)"></td>
+                                        <td data-label="Регата" class="py-3" x-text="p.regatta"></td>
+                                        <td data-label="Дата" class="py-3" x-text="p.date_event"></td>
+                                        <td data-label="Команда" class="py-3" x-text="p.team"></td>
+                                        <td data-label="Статус" class="py-3" x-html="participation_status(p.status)"></td>
                                     </tr>
                                 </template>
                             </tbody>
                         </table>
+                        <a href="#" class="text-[#2E325C] text-lg font-semibold gap-2 block text-center items-center flex md:hidden">
+                            <img src="{{ asset('images/icons/download.svg') }}" alt="">
+                            <span>Скачать историю участия</span>
+                        </a>
                     </div>
                 </div>
             </div>

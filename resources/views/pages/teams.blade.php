@@ -10,7 +10,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
 <main x-data="teamsApp()" class="main">
     <section class="py-12 reggata-list">
         <div class="max-w-(--breakpoint-2xl) mx-auto sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between mb-6">
+            <div class="flex flex-col md:flex-row items-center justify-between mb-6">
                 <h2 class="section-title a-font">Зарегистрированные команды</h2>
                 <div class="flex gap-2">
                     <button class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать команду</button>
@@ -30,7 +30,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                     <option value="">Рейтинг: по убыванию</option>
                 </select>
             </div>
-            <div class="reggata-list__items grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" x-show="view === 'grid'">
+            <div class="reggata-list__items grid grid-cols-2 lg:grid-cols-3 gap-6" x-show="view === 'grid'">
                 @foreach($teams as $team)
 
                 <div class="bg-[#F8F8F8] overflow-hidden w-full font-sans">
@@ -43,7 +43,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                     </div>
 
                     <div class="px-4 pt-4 pb-7 space-y-4">
-                        <div class="text-brand-navy font-semibold leading-tight flex justify-between items-center">
+                        <div class="text-brand-navy font-semibold leading-tight flex flex-col md:flex-row justify-between md:items-center">
                             <div class="font-semibold text-lg">{{ $team->name }}</div>
                             <div class="text-base">
                                 <span class="font-semibold">
@@ -150,12 +150,12 @@ bgImage="{{ asset('images/bg/teams.png') }}"
             <p class="mb-6" x-text="activeTeam?.description"></p>
         </div>
         <div class="members">
-            <div class="members-header flex items-center justify-between mb-6">
+            <div class="members-header flex flex-col md:flex-row items-center justify-between mb-6">
                 <h5 class=" a-font text-3xl">Состав команды</h5>
                 <div class="download flex gap-2 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> Скачать историю команды</div>
             </div>
             <div class="overflow-y-auto max-h-[180px] relative custom-scroll mb-8">
-            <table class="w-full border-collapse bg-[#F8F8F8]">
+            <table class="w-full border-collapse bg-[#F8F8F8] responsive-table">
                 <thead>
                     <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
                         <th class="pt-2 pb-2 text-center font-medium a-font">Участник</th>
@@ -167,9 +167,9 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                     <template x-if="activeTeam?.members?.length">
                         <template x-for="(member, i) in activeTeam.members" :key="i">
                             <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
-                                <td class="py-3" x-text="member.name"></td>
-                                <td class="py-3" x-text="member.birthday"></td>
-                                <td class="py-3" x-text="member.category"></td>
+                                <td data-label="Участник" class="py-3" x-text="member.name"></td>
+                                <td data-label="Дата рождения" class="py-3" x-text="member.birthday"></td>
+                                <td data-label="Разряд" class="py-3" x-text="member.category"></td>
                             </tr>
                         </template>
                     </template>
@@ -236,7 +236,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
 
             </div>
                 <div class="overflow-y-auto max-h-[180px] relative custom-scroll">
-                    <table class="w-full border-collapse bg-[#F8F8F8]">
+                    <table class="w-full border-collapse bg-[#F8F8F8] responsive-table">
                         <thead>
                             <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
                                 <th class="pt-2 pb-2 text-center font-medium a-font">Регата</th>
@@ -250,11 +250,11 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                             <template x-if="filteredParticipation.length">
                                 <template x-for="(p, i) in filteredParticipation" :key="i">
                                     <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
-                                        <td class="py-3" x-text="p.regatta"></td>
-                                        <td class="py-3" x-text="p.yacht"></td>
-                                        <td class="py-3" x-text="p.date_event"></td>
-                                        <td class="py-3" x-text="p.date_registration"></td>
-                                        <td class="py-3" x-html="participation_status(p)"></td>
+                                        <td data-label="Регата" class="py-3" x-text="p.regatta"></td>
+                                        <td data-label="Яхта" class="py-3" x-text="p.yacht"></td>
+                                        <td data-label="Дата регаты" class="py-3" x-text="p.date_event"></td>
+                                        <td data-label="Дата регистрации" class="py-3" x-text="p.date_registration"></td>
+                                        <td data-label="Статус" class="py-3" x-html="participation_status(p)"></td>
                                     </tr>
                                 </template>
                             </template>
