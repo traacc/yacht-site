@@ -47,7 +47,7 @@
 {{-- ===== РЕЗУЛЬТАТЫ РЕГАТ ===== --}}
 {{-- @livewire('regatta.results') --}}
 <section class="py-12">
-    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8 bg-[#F8F8F8]">
+    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8 py-4 bg-[#F8F8F8]">
         <div class="flex items-center justify-between mb-6">
             <h2 class="section-title a-font">Результаты регат</h2>
             <a href="#" class="text-[#2E325C] text-lg font-semibold hover:underline">Все результаты →</a>
@@ -246,7 +246,7 @@
                 <div class="absolute inset-0 bg-linear-to-r from-brand-navy/90 to-brand-navy/40"></div>
                 <div class="relative p-8 h-full flex flex-col justify-center text-white max-w-[500px]">
                     <h3 class="font-display text-5xl font-medium mb-2 a-font">Команды ассоциации</h3>
-                    <p class="text-lg max-w-xs leading-relaxed mb-5">
+                    <p class="text-lg max-w-xs leading-[1.3] mb-5">
                         Зарегистрированные экипажи Carter 30, состав команд и участие в регатах сезона.
                     </p>
                     <a href="{{ route('teams') }}" wire:navigate class="text-lg font-semibold justify-start text-white">
@@ -259,10 +259,10 @@
             <div class="relative overflow-hidden min-h-[440px] group cursor-pointer">
                 <img src="{{ asset('images/main/main-r.png') }}"
                      alt="Яхты Carter Pro" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
-                <div class="absolute inset-0 bg-linear-to-r from-brand-navy/90 to-brand-navy/40"></div>
+                <div class="absolute inset-0 bg-linear-to-r from-[#F8F8F8]/0 to-[#F8F8F8]/40"></div>
                 <div class="relative p-8 h-full flex flex-col justify-center text-[#2E325C] max-w-[500px]">
                     <h3 class="font-display text-5xl font-medium mb-2 a-font">Яхты CarterPro</h3>
-                    <p class="text-lg max-w-xs leading-relaxed mb-5">
+                    <p class="text-lg max-w-xs leading-[1.3] mb-5">
                         Список яхт ассоциации, технические параметры, владельцы и история участия в регатах.
                     </p>
                     <a href="{{ route('yachts') }}" wire:navigate class="text-lg font-semibold justify-start text-[#2E325C]">

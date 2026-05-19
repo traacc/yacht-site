@@ -8,7 +8,7 @@
     .page-dot { transition: width 0.3s ease, background-color 0.3s ease; }
 </style>
 
-<div x-data="regattaCalendar()" class="py-12 bg-brand-light">
+<div x-data="regattaCalendar()" data-current-month="{{ now()->format('n') - 1 }}" class="py-12 bg-brand-light">
     <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between mb-6">
             <h2 class="section-title a-font">Календарь регат сезона</h2>
@@ -45,8 +45,10 @@
                     class="slides flex gap-4 will-change-transform"
                     :style="`transform: translateX(calc(-${offset} * (100% + ${gap}px) / ${visible}))`">
                     @foreach ($months as $month)
-                        <div class="rounded-xl p-4 shadow-xs transition-all duration-200 month-card bg-[#F8F8F8]">
-                            <h3 class="text-[#2E325C] font-medium text-2xl pb-4 mb-3 a-font border-b border-b-[#EAEAEA]">
+                        <div class="p-4 shadow-xs transition-all duration-200 month-card
+                            {{ $month['is_current'] ? 'bg-[#2D92CE26]' : 'bg-[#F8F8F8]' }}">
+                            <h3 class="text-[#2E325C] font-medium text-2xl pb-4 mb-3 a-font border-b
+                                {{ $month['is_current'] ? 'text-[#2D92CE] border-b-[#2D92CE]/30' : 'border-b-[#EAEAEA]' }}">
                                 {{ $month['name'] }}
                             </h3>
                             <div class="space-y-3">
@@ -121,6 +123,8 @@ function regattaCalendar() {
 
         init() {
             this.updateVisible();
+            const currentMonthIdx = parseInt(this.$el.dataset.currentMonth) || 0;
+            this.offset = Math.min(currentMonthIdx, this.maxOffset);
             window.addEventListener('resize', () => this.updateVisible());
         },
         updateVisible() {

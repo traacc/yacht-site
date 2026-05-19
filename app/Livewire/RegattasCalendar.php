@@ -57,10 +57,13 @@ class RegattasCalendar extends Component
         // Группируем. Убедитесь, что date_start кастится к Carbon в модели!
         $grouped = $regattas->groupBy(fn (Regatta $r) => (int) \Carbon\Carbon::parse($r->date_start)->format('n'));
 
+        $currentMonth = (int) now()->format('n');
+
         $months = [];
         foreach ($monthNames as $num => $name) {
             $months[] = [
                 'name' => $name,
+                'is_current' => $num === $currentMonth,
                 'events' => $grouped->has($num)
                     ? $grouped->get($num)->map(fn (Regatta $r) => [
                         'date' => $r->dateRange(), // Проверьте, что метод существует в модели
