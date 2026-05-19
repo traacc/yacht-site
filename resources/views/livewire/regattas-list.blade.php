@@ -1,8 +1,8 @@
 {{-- resources/views/livewire/regattas-list.blade.php --}}
-<section x-data="{view: 'grid'}" class="py-12 reggata-list">
+<section x-data="{view: 'grid'}" class="py-12 reggata-list px-4 sm:px-6 lg:px-8">
     <div class="max-w-(--breakpoint-2xl) mx-auto sm:px-6 lg:px-8">
-        <div class="reggata-list__header flex items-center justify-between mb-6">
-            <div class="reggata-list__filter flex gap-4 font-medium">
+        <div class="reggata-list__header flex flex-col-reverse md:flex-row md:items-center justify-between mb-6">
+            <div class="reggata-list__filter md:flex gap-4 flex-col md:flex-row font-medium hidden">
                 <button wire:click="setFilter('all')" class="reggata-list__filter-btn p-4 cursor-pointer text-center {{ $filter === 'all' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Все</button>
                 <button wire:click="setFilter('upcoming')" class="reggata-list__filter-btn p-4 cursor-pointer text-center {{ $filter === 'upcoming' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Ближайшие</button>
                 <button wire:click="setFilter('planned')" class="reggata-list__filter-btn p-4 cursor-pointer text-center {{ $filter === 'planned' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Планируемые</button>
@@ -31,7 +31,7 @@
                 </div>
             </div>
         </div>
-        <div class="reggata-list__items grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" x-show="view === 'grid'">
+        <div class="reggata-list__items grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6" x-show="view === 'grid'">
             @forelse ($regattas as $regatta)
 
             <div class="bg-[#F8F8F8] overflow-hidden w-full font-sans">
@@ -42,33 +42,33 @@
                         class="w-full h-64 object-cover"
                     />
                     @if ($regatta->startsInLessThanMonth())
-                    <div class="absolute top-0 right-0 bg-[#FDE4E3] px-4 py-2">
+                    <div class="absolute top-0 right-0 bg-[#FDE4E3] px-4 py-2 text-[10px] text-sm">
                         <span class="text-[#F24842] font-bold text-sm uppercase">БЛИЖАЙШАЯ РЕГАТА</span>
                     </div>
                     @elseif ($regatta->isUpcoming())
-                    <div class="absolute top-0 right-0 bg-[#ECECEC] px-4 py-2">
+                    <div class="absolute top-0 right-0 bg-[#ECECEC] px-4 py-2 text-[10px] text-sm">
                         <span class="text-brand-gray-light font-bold text-sm uppercase">Планируемые</span>
                     </div>
                     @endif
-                    <div class="absolute bottom-0 left-0 bg-[#F8F8F8] text-[#2E325C] px-4 py-2">
+                    <div class="absolute bottom-0 left-0 bg-[#F8F8F8] text-[#2E325C] px-4 py-2  text-[10px] text-sm">
                         <span class="font-bold text-sm tracking-wide">{{ $regatta->dateRange() }}</span>
                     </div>
                 </div>
 
-                <div class="px-6 pt-6 pb-7 space-y-4">
-                    <h2 class="text-brand-navy font-semibold text-lg leading-tight">
+                <div class="md:px-6 md:pt-6 md:pb-7 p-2 space-y-4">
+                    <h2 class="text-brand-navy font-semibold text-sm md:text-lg leading-tight">
                         {{ $regatta->name }}
                     </h2>
 
-                    <div class="flex items-center gap-3 text-gray-600">
+                    <div class="flex items-center gap-3 text-gray-600 text-[10px] md:text-base text-sm max-w-4 md:max-w-full">
                         <img src="{{ asset('images/icons/marker.svg') }}" alt=""> {{ $regatta->location }}
                     </div>
 
-                    <div class="flex items-center gap-3 text-gray-600">
+                    <div class="flex items-center gap-3 text-gray-600 text-[10px] md:text-base text-sm max-w-4 md:max-w-full">
                         <img src="{{ asset('images/icons/waves.svg') }}" alt=""> {{ $regatta->water_area }}
                     </div>
 
-                    <a href="{{ route('competition-details', $regatta) }}" class="flex items-center gap-2 text-brand-navy font-bold text-lg hover:gap-3 transition-all duration-200 group">
+                    <a href="{{ route('competition-details', $regatta) }}" class="flex items-center gap-2 text-brand-navy font-bold text-sm md:text-lg hover:gap-3 transition-all duration-200 group">
                         Подробнее
                         <span class="text-brand-navy group-hover:translate-x-1 transition-transform duration-200">
                         </span>
