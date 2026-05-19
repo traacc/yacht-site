@@ -73,5 +73,17 @@ class Season extends Model
             ->get()
             ->pluck('team');
     }
+
+    /** @return Collection<User> */
+    public function topUsers(int $limit = 3): Collection
+    {
+        return $this->ratings()
+            ->personal()
+            ->ranked()
+            ->with('user')
+            ->take($limit)
+            ->get()
+            ->pluck('user');
+    }
     
 }
