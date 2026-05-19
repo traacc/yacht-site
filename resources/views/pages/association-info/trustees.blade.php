@@ -8,7 +8,7 @@ bgImage="{{ asset('images/bg/trustees.png') }}"
     
 </x-hero-section>
 {{-- ===== Попечительский совет ===== --}}
-<main class="main pb-12" x-data="{
+<main class="main pb-12 px-4 md:px-2" x-data="{
     open: false,
     selectedPerson: null,
     people: [
@@ -102,9 +102,9 @@ bgImage="{{ asset('images/bg/trustees.png') }}"
                     <div class="card bg-[#F8F8F8]">
                         <img :src="'{{ asset('images/trustees') }}/' + person.image" :alt="person.name">
                         <div class="info p-4">
-                            <h4 class="text-[#2E325C] font-semibold text-xl mb-4" x-text="person.name"></h4>
-                            <div class="text-lg text-brand-gray mb-4 h-14" x-text="person.position"></div>
-                            <a @click.prevent="selectedPerson = person; open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                            <h4 class="text-[#2E325C] font-semibold md:text-xl text-sm mb-4" x-text="person.name"></h4>
+                            <div class="md:text-xl text-xs text-brand-gray mb-4 h-14" x-text="person.position"></div>
+                            <a @click.prevent="selectedPerson = person; open = true" class="md:text-xl text-sm font-semibold" href="#">Подробнее →</a>
                         </div>
                     </div>
                 </template>
