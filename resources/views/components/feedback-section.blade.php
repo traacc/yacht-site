@@ -1,7 +1,8 @@
 <section style="background-image: url('{{ asset('images/bg/feedback_bg.png') }}');" class="feedback-form bg-[#2E325C] bg-top-right
-    bg-no-repeat py-24">
+    bg-no-repeat pt-24 relative">
+    
     <div class="max-w-(--breakpoint-2xl) m-auto pt-5">
-        <div class="form-wrapper bg-white max-w-lg p-6"
+        <div class="form-wrapper bg-white max-w-lg p-6 z-20 relative"
              x-data="{
                 submitted: false,
                 loading: false,
