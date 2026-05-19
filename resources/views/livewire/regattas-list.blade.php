@@ -84,7 +84,7 @@
             @endforelse
         </div>
         <div class="reggata-list__items" x-show="view === 'list'">
-            <table class="w-full text-left border-collapse">
+            <table class="w-full text-left border-collapse responsive-table">
                 <thead>
                     <tr>
                         <th class="py-2 a-font text-center text-2xl">Дата</th>
@@ -98,11 +98,11 @@
                 <tbody>
                     @forelse ($regattas as $regatta)
                     <tr class="border-t">
-                        <td class="py-2 text-center">{{ $regatta->dateRange() }}</td>
-                        <td class="py-2 text-center font-semibold text-brand-navy">{{ $regatta->name }}</td>
-                        <td class="py-2 text-center">{{ $regatta->location }}</td>
-                        <td class="py-2 text-center">{{ $regatta->water_area }}</td>
-                        <td class="py-2 text-center">
+                        <td data-label="Дата" class="py-2 text-center">{{ $regatta->dateRange() }}</td>
+                        <td data-label="Регата" class="py-2 text-center font-semibold text-brand-navy">{{ $regatta->name }}</td>
+                        <td data-label="Локация" class="py-2 text-center">{{ $regatta->location }}</td>
+                        <td data-label="Акватория" class="py-2 text-center">{{ $regatta->water_area }}</td>
+                        <td data-label="Статус" class="py-2 text-center">
                             @if ($regatta->startsInLessThanMonth())
                             <div class="bg-[#FDE4E3] px-3 py-1 text-[#F24842] inline-block font-semibold">Ближайшая регата</div>
                             @elseif ($regatta->isUpcoming())
