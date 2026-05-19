@@ -29,12 +29,12 @@
                 <img src="{{ $regatta->background_image ? asset('storage/' . $regatta->background_image) : asset('images/regatas/reg_preview.png') }}"
                      alt="{{ $regatta->name }}" class=" w-full h-full object-cover">
             </div>
-            <div class="flex-1 h-auto flex flex-col justify-between gap-5">
+            <div class="flex-1 h-auto flex flex-col justify-between gap-5 px-3 md:px-0">
                 <div class="flex items-center gap-2 mb-1">
-                    <span class="bg-[#F2484226] text-[#F24842] font-bold px-2.5 py-1 uppercase">Ближайшая регата</span>
+                    <span class="bg-[#F2484226] text-[#F24842] font-bold px-2.5 py-1 uppercase text-xs">Ближайшая регата</span>
                 </div>
-                <h2 class="font-display text-brand-navy text-5xl mt-2 a-font text-[#2E325C]">{{ $regatta->name }}</h2>
-                <div class="flex flex-col gap-4 text-lg text-brand-gray mt-2 font-medium">
+                <h2 class="font-display text-brand-navy md:text-5xl text-3xl mt-2 a-font">{{ $regatta->name }}</h2>
+                <div class="flex flex-col gap-3 md:gap-4 text-sm md:text-lg text-brand-gray mt-2 font-medium">
                     <span class="flex items-center gap-1.5">
                         <img src="{{ asset('images/icons/marker.svg') }}" alt="">
                         {{ $regatta->location }}
@@ -44,8 +44,8 @@
                         {{ $regatta->water_area }}
                     </span>
                 </div>
-                <p class="text-lg text-brand-gray mt-2">{{ $regatta->description }}</p>
-                <a href="{{ route('competition-details', ['regatta' => $regatta->id]) }}" class="inline-block mt-3 text-[#2E325C] text-xl font-semibold hover:underline">Подробнее о регате →</a>
+                <p class="text-sm md:text-lg text-brand-gray mt-2">{{ $regatta->description }}</p>
+                <a href="{{ route('competition-details', ['regatta' => $regatta->id]) }}" class="inline-block mt-3 text-[#2E325C] text-sm md:text-xl font-semibold hover:underline">Подробнее о регате →</a>
             </div>
 
             {{-- Таймер обратного отсчёта --}}

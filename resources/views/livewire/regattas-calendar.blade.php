@@ -2,7 +2,7 @@
 <style>
     .month-card { flex: 0 0 calc((100% - 4 * 1rem) / 5); }
     @media (max-width: 1023px) { .month-card { flex: 0 0 calc((100% - 2 * 1rem) / 3); } }
-    @media (max-width: 639px)  { .month-card { flex: 0 0 calc((100% - 1 * 1rem) / 2); } }
+    @media (max-width: 639px)  { .month-card { flex: 0 0 85%; } }
 
     .slides   { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
     .page-dot { transition: width 0.3s ease, background-color 0.3s ease; }
@@ -129,7 +129,7 @@ function regattaCalendar() {
         },
         updateVisible() {
             const w = window.innerWidth;
-            this.visible = w < 640 ? 2 : w < 1024 ? 3 : 5;
+            this.visible = w < 640 ? 1.25 : w < 1024 ? 3 : 5;
             if (this.offset > this.maxOffset) this.offset = Math.max(0, this.maxOffset);
         },
     }
