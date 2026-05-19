@@ -68,7 +68,7 @@
                     </li>
                 </ul>
                 <a href="#" @click="$dispatch('open-login-modal')" class="font-semibold color-white px-4 py-2 mt-6 transition-colors justify-center border-white border flex gap-2 md:hidden">
-                    <img src="{{ asset('images/icons/login.svg') }}" alt="">Войти
+                    {!! file_get_contents(public_path('images/icons/login.svg')) !!} Войти
                 </a>
             </div>
         </div>

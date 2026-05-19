@@ -73,7 +73,7 @@
                 </div>
                 @else
                 <a href="#" @click="$dispatch('open-login-modal')" class="text-[#2D92CE] text-lg font-semibold px-4 py-2 transition-colors border-[#2D92CE] border flex gap-2">
-                    <img src="{{ asset('images/icons/login.svg') }}" alt=""><span class="hidden md:inline">Войти</span>
+                    {!! file_get_contents(public_path('images/icons/login.svg')) !!} <span class="hidden md:inline">Войти</span>
                 </a>
                 @endauth
             </div>
@@ -139,7 +139,7 @@
             </form>
             @else
             <a href="#" @click="$dispatch('open-login-modal')" class="font-semibold px-4 py-2 transition-colors border-white border flex gap-2">
-                <img src="{{ asset('images/icons/login.svg') }}" alt=""><span class="hidden md:inline">Войти</span>
+                {!! file_get_contents(public_path('images/icons/login.svg')) !!} <span class="hidden md:inline">Войти</span>
             </a>
             @endauth
 
