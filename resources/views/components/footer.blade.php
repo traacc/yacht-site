@@ -3,7 +3,7 @@
     <div class="max-w-(--breakpoint-2xl) mx-auto py-12">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
             {{-- Лого и описание --}}
-            <div class="col-span-2 md:col-span-1">
+            <div class="col-span-2 md:col-span-1 font-light">
                 <a href="/" wire:navigate class="shrink-0 block mb-6">
                     {!! file_get_contents(public_path('images/logo.svg')) !!}
                 </a>
@@ -19,7 +19,7 @@
             {{-- Навигация --}}
             <div>
                 <h4 class="font-semibold mb-6">Навигация</h4>
-                <ul class="space-y-4">
+                <ul class="space-y-4 font-light">
                     <li><a href="{{ route('competitions') }}" wire:navigate class="hover:text-white transition-colors">Соревнования</a></li>
                     <li><a href="{{ route('teams') }}" wire:navigate class="hover:text-white transition-colors">Команды</a></li>
                     <li><a href="{{ route('yachts') }}" wire:navigate class="hover:text-white transition-colors">Яхты</a></li>
@@ -31,7 +31,7 @@
             {{-- Ассоциация --}}
             <div>
                 <h4 class="font-semibold mb-6">Ассоциация</h4>
-                <ul class="space-y-4">
+                <ul class="space-y-4 font-light">
                     <li><a href="{{ route('charter') }}" wire:navigate class="hover:text-white transition-colors">Устав Ассоциации</a></li>
                     <li><a href="{{ route('management') }}" wire:navigate class="hover:text-white transition-colors">Руководство</a></li>
                     <li><a href="{{ route('trustees') }}" wire:navigate class="hover:text-white transition-colors">Призовой совет</a></li>
