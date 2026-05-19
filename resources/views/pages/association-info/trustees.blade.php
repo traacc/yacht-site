@@ -8,99 +8,143 @@ bgImage="{{ asset('images/bg/trustees.png') }}"
     
 </x-hero-section>
 {{-- ===== Попечительский совет ===== --}}
-<main class="main pb-12" x-data="{ open: false }">
+<main class="main pb-12" x-data="{
+    open: false,
+    selectedPerson: null,
+    people: [
+        {
+            id: 1,
+            name: 'Алексей Смирнов',
+            position: 'Председатель попечительского совета',
+            image: 'person_1.png',
+            description: 'Алексей Смирнов имеет многолетний опыт руководства и стратегического планирования. В попечительском совете отвечает за общее направление развития Ассоциации, привлечение партнёров и обеспечение ресурсной базы для реализации программ.',
+            responsibilities: [
+                'стратегическое развитие Ассоциации',
+                'привлечение партнёров и спонсоров',
+                'контроль целевого использования средств',
+                'обеспечение ресурсной базы программ',
+                'взаимодействие с руководством Ассоциации'
+            ]
+        },
+        {
+            id: 2,
+            name: 'Дмитрий Воронов',
+            position: 'Член попечительского совета',
+            image: 'person_2.png',
+            description: 'Дмитрий Воронов обладает опытом в управлении проектами и организации мероприятий. В попечительском совете участвует в развитии инфраструктуры и поддержке соревновательной деятельности Ассоциации.',
+            responsibilities: [
+                'развитие инфраструктуры яхт-клуба',
+                'поддержка соревновательной деятельности',
+                'участие в разработке программ развития',
+                'содействие в организации мероприятий'
+            ]
+        },
+        {
+            id: 3,
+            name: 'Максим Жолудов',
+            position: 'Член попечительского совета',
+            image: 'person_3.png',
+            description: 'Максим Жолудов имеет значительный опыт в бизнесе и управлении. В попечительском совете способствует укреплению финансовой устойчивости Ассоциации и расширению партнёрской сети.',
+            responsibilities: [
+                'укрепление финансовой устойчивости',
+                'расширение партнёрской сети',
+                'консультирование по вопросам развития',
+                'поддержка молодёжных программ'
+            ]
+        },
+        {
+            id: 4,
+            name: 'Сергей Морозов',
+            position: 'Член попечительского совета',
+            image: 'person_4.png',
+            description: 'Сергей Морозов обладает опытом в организации спортивных проектов и работе с сообществами. В попечительском совете участвует в развитии парусного спорта и поддержке инициатив участников.',
+            responsibilities: [
+                'развитие парусного спорта в регионе',
+                'поддержка клубных инициатив',
+                'организация социальных проектов',
+                'взаимодействие с яхтенными сообществами'
+            ]
+        },
+        {
+            id: 5,
+            name: 'Анна Капитонова',
+            position: 'Член попечительского совета',
+            image: 'person_5.png',
+            description: 'Анна Капитонова имеет опыт в коммуникациях и организации культурно-массовых мероприятий. В попечительском совете отвечает за развитие имиджа Ассоциации и привлечение внимания к парусному спорту.',
+            responsibilities: [
+                'развитие имиджа Ассоциации',
+                'организация публичных мероприятий',
+                'привлечение внимания к парусному спорту',
+                'взаимодействие со СМИ и общественностью'
+            ]
+        },
+        {
+            id: 6,
+            name: 'Игорь Чупров',
+            position: 'Член попечительского совета',
+            image: 'person_6.png',
+            description: 'Игорь Чупров обладает компетенциями в области права и финансов. В попечительском совете участвует в правовом сопровождении деятельности и контроле соблюдения уставных норм.',
+            responsibilities: [
+                'правовое сопровождение деятельности',
+                'контроль соблюдения уставных норм',
+                'аудит финансовой отчётности',
+                'консультирование по нормативным вопросам'
+            ]
+        }
+    ]
+}">
     <section class="py-10">
         <div class="max-w-(--breakpoint-2xl) mx-auto">
             <h2 class="section-title a-font mb-8">Попечительский совет</h2>
             <div class="list grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <div class="card bg-[#F8F8F8]">
-                    <img src="{{ asset('images/trustees/person_1.png') }}" alt="">
-                    <div class="info p-4">
-                        <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Алексей Смирнов</h4>
-                        <div class="text-lg text-brand-gray mb-4 h-14">Председатель попечительского совета</div>
-                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+
+                <template x-for="person in people" :key="person.id">
+                    <div class="card bg-[#F8F8F8]">
+                        <img :src="'{{ asset('images/trustees') }}/' + person.image" :alt="person.name">
+                        <div class="info p-4">
+                            <h4 class="text-[#2E325C] font-semibold text-xl mb-4" x-text="person.name"></h4>
+                            <div class="text-lg text-brand-gray mb-4 h-14" x-text="person.position"></div>
+                            <a @click.prevent="selectedPerson = person; open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
+                        </div>
                     </div>
-                </div>
-                <div class="card bg-[#F8F8F8]">
-                    <img src="{{ asset('images/trustees/person_2.png') }}" alt="">
-                    <div class="info p-4">
-                        <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Дмитрий Воронов</h4>
-                        <div class="text-lg text-brand-gray mb-4 h-14">Член попечительского совета</div>
-                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
-                    </div>
-                </div>
-                <div class="card bg-[#F8F8F8]">
-                    <img src="{{ asset('images/trustees/person_3.png') }}" alt="">
-                    <div class="info p-4">
-                        <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Максим Жолудов</h4>
-                        <div class="text-lg text-brand-gray mb-4 h-14">Член попечительского совета</div>
-                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
-                    </div>
-                </div>
-                <div class="card bg-[#F8F8F8]">
-                    <img src="{{ asset('images/trustees/person_4.png') }}" alt="">
-                    <div class="info p-4">
-                        <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Сергей Морозов</h4>
-                        <div class="text-lg text-brand-gray mb-4 h-14">Член попечительского совета</div>
-                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
-                    </div>
-                </div>
-                <div>
-                </div>
-                <div class="card bg-[#F8F8F8]">
-                    <img src="{{ asset('images/trustees/person_5.png') }}" alt="">
-                    <div class="info p-4">
-                        <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Анна Капитонова</h4>
-                        <div class="text-lg text-brand-gray mb-4 h-14">Член попечительского совета</div>
-                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
-                    </div>
-                </div>
-                <div class="card bg-[#F8F8F8]">
-                    <img src="{{ asset('images/trustees/person_6.png') }}" alt="">
-                    <div class="info p-4">
-                        <h4 class="text-[#2E325C] font-semibold text-xl mb-4">Игорь Чупров</h4>
-                        <div class="text-lg text-brand-gray mb-4 h-14">Член попечительского совета</div>
-                        <a @click.prevent="open = true" class="text-lg font-semibold" href="#">Подробнее →</a>
-                    </div>
-                </div>
+                </template>
+
             </div>
 
         </div>
     </section>
-<div x-show="open" 
-        x-cloak 
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-    <div class="flex relative p-6 max-w-[1000px] bg-white gap-6"
-        @click.away="open = false" 
-        x-transition:enter="transition ease-out duration-300"
-        x-transition:enter-start="opacity-0 scale-95"
-        x-transition:enter-end="opacity-100 scale-100"
-    >
-        <div class="photo max-w-1/2 shrink-0">
-            <img class="max-w-full" src="{{ asset('images/management/person_1.png') }}" alt="">
-        </div>
-        <div class="info">
-            <div class="info__header flex justify-between items-start mb-4">
-                <h4 class="a-font text-3xl text-[#2E325C]">Игорь Скалин</h4>
-                <div class="close">
-                    <button @click="open = false" class="text-2xl font-bold">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
-                </div>
+
+    <div x-show="open" 
+            x-cloak 
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 person-modal">
+        <div class="flex relative p-6 max-w-[1000px] bg-white gap-6"
+            @click.away="open = false" 
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+        >
+            <div class="photo max-w-1/2 shrink-0">
+                <img class="max-w-full" :src="'{{ asset('images/trustees') }}/' + (selectedPerson ? selectedPerson.image : '')" :alt="selectedPerson?.name">
             </div>
-            
-            <div class="text-lg font-semibold text-[#2E325C] mb-4">Президент Ассоциации</div>
-            <h5 class="font-semibold text-[#2E325C] mb-6">О руководителе</h5>
-            <p class="text-brand-gray mb-6">Игорь Скалин имеет опыт участия в парусных соревнованиях и организационной работы в спортивных проектах. В Ассоциации отвечает за общее направление развития, коммуникацию с участниками и формирование устойчивой структуры сезона.</p>
-            <h5 class="font-semibold text-[#2E325C] mb-6">Зоны ответственности в Ассоциации</h5>
-            <ul class="text-brand-gray list-disc pl-6 space-y-3.5">
-                <li>стратегическое развитие Ассоциации яхт</li>
-                <li>координация календаря регат</li>
-                <li>взаимодействие с партнёрами и спонсорами</li>
-                <li>утверждение ключевых организационных решений</li>
-                <li>развитие сообщества владельцев и экипажей</li>
-                <li>контроль работы руководящего состава</li>
-            </ul>
+            <div class="info">
+                <div class="info__header flex justify-between items-start mb-4">
+                    <h4 class="a-font text-3xl text-[#2E325C]" x-text="selectedPerson?.name"></h4>
+                    <div class="close">
+                        <button @click="open = false" class="text-2xl font-bold">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
+                    </div>
+                </div>
+                
+                <div class="text-lg font-semibold text-[#2E325C] mb-4" x-text="selectedPerson?.position"></div>
+                <h5 class="font-semibold text-[#2E325C] mb-6">О попечителе</h5>
+                <p class="text-brand-gray mb-6" x-text="selectedPerson?.description"></p>
+                <h5 class="font-semibold text-[#2E325C] mb-6">Зоны ответственности в Ассоциации</h5>
+                <ul class="text-brand-gray list-disc pl-6 space-y-3.5">
+                    <template x-for="responsibility in selectedPerson?.responsibilities" :key="responsibility">
+                        <li x-text="responsibility"></li>
+                    </template>
+                </ul>
+            </div>
         </div>
-    </div>
 
     </div>
 </main>
