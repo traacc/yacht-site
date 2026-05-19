@@ -6,7 +6,7 @@
             after:from-[#2E325C] 
             after:to-transparent">
     <div class="max-w-(--breakpoint-2xl) m-auto text-white pt-80 relative z-40 pb-8">
-        <h2 class="a-font text-2xl md:text-6xl">{{ $title }}</h2>
-        <p class="max-w-[768px] text-sm md:text-base">{{ $desc }}</p>
+        <h2 class="a-font text-2xl/5 mb-3 md:text-6xl">{{ $title }}</h2>
+        <p class="max-w-[768px] text-sm md:text-2xl">{{ $desc }}</p>
     </div>
 </section>
