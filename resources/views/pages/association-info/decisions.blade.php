@@ -187,7 +187,7 @@ bgImage="{{ asset('images/bg/decisions.png') }}"
         <p class="text-brand-gray font-medium text-lg">Все решения фиксируются в протоколах и являются обязательными для исполнения участниками Ассоциации.</p>
     </div>
     <div class="pic max-w-[720px] shrink-0">
-        <img class="w-full" src="{{ asset('images/rules/rules_pic_1.png') }}" alt="">
+        <img class="w-full" src="{{ asset('images/decisions.png') }}" alt="">
     </div>
 </div>
 </section>
