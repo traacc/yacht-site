@@ -43,26 +43,31 @@
              x-transition:leave="ease-in duration-200"
              x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
              x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-             class="p-6 relative overflow-hidden transition-all bg-white max-w-[1000px] w-full z-30 top-1/2 left-1/2 -translate-1/2">
+             class="px-6 py-12 relative overflow-hidden transition-all bg-white max-w-[1000px] w-full z-30 top-1/2 left-1/2 -translate-1/2">
             
 
             <!-- Контент формы захвата -->
             <img class="absolute right-0 top-0 z-0 h-full md:h-auto " src="{!! asset('images/bg/capture-form.png') !!}" alt="">
             <button @click="isOpen = false" class="text-2xl md:text-white text-[#2E325C] absolute right-0 top-0 font-bold z-30">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
-            <div class="absolute hidden md:block inset-0 left-[40%] w-[60%] bg-linear-to-r from-[#FFFFFF] to-[#FFFFFF]/40 z-2"></div>
+            <div class="absolute hidden md:block inset-0 left-[40%] w-[60%] bg-linear-to-r from-[#FFFFFF] to-[#FFFFFF]/75 z-2"></div>
             <div class="absolute block md:hidden inset-0 left-[0%] w-full bg-linear-to-r from-[#FFFFFF] to-[#FFFFFF]/80 z-2"></div>
             <div class="max-w-[562px] relative z-10">
                 <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                    <h3 class="text-4xl text-[#2E325C] a-font" id="modal-title">
+                    <h3 class="text-4xl text-[#2E325C] a-font mb-5">
                         Хотите гоняться с нами?
                     </h3>
 
-                    <p class="text-lg text-[#444]">
+                    <p class="text-lg text-[#444] mb-5">
                         Переходите в официальные сообщества CarterPro, чтобы получать анонсы регат, новости и обновления сезона.
                     </p>
 
-                    <div class="social">
-
+                    <div class="social flex gap-2">
+                        <a href="#" class="text-[#2D92CE] hover:text-white">
+                            {!! file_get_contents(public_path('images/social_icons/tl.svg')) !!}
+                        </a>
+                        <a href="#" class="text-[#2D92CE] hover:text-white">
+                            {!! file_get_contents(public_path('images/social_icons/vk.svg')) !!}
+                        </a>
                     </div>
 
                 </div>
