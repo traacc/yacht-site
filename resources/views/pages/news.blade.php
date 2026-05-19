@@ -4,11 +4,11 @@
 <main class="main">
     <section class="py-12 reggata-list">
         <div class="max-w-(--breakpoint-2xl) mx-auto">
-            <div class="flex justify-between mb-6">
+            <div class="flex justify-between mb-6 flex-col md:flex-row">
                 <h2 class="section-title a-font text-5xl">Новости ассоциации</h2>
                 <div class="controls flex gap-4">
                     <div class="calendar-icon">
-                        <select class="border-[#C6C6C6] focus:outline-hidden focus:ring-2 text-[#2E325C] pl-5 w-[100px]" name="year" id="">
+                        <select class="border-[#C6C6C6] focus:outline-hidden focus:ring-2 text-[#2E325C] pl-5 w-[150px]" name="year" id="">
                             <option value="2026">2026</option>
                         </select>
                     </div>
@@ -18,7 +18,7 @@
     </section>
     <section class="py-12">
         <div class="flex max-w-(--breakpoint-2xl) mx-auto mb-6">
-            <div class="row flex gap-6">
+            <div class="row flex flex-col md:flex-row gap-6">
                 <div class="col max-w-[710px]">
                     <div class="item">
                         <div class="img">
@@ -71,10 +71,10 @@
             </div>
 
         </div>
-        <div class="grid grid-cols-4 gap-6  max-w-(--breakpoint-2xl) mx-auto">
+        <div class="grid md:grid-cols-4 gap-6  max-w-(--breakpoint-2xl) mx-auto">
             @foreach(range(1, 8) as $item)
-            <div class="item">
-                <div class="img">
+            <div class="item flex md:flex-col">
+                <div class="img max-w-[300px] md:max-w-full">
                     <img class="w-full" src="{{ asset('images/gallery.png') }}" alt="">
                 </div>
                 <div class="info mt-4 bg-[#F8F8F8]">
