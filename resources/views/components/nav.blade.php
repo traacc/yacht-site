@@ -96,7 +96,7 @@
         x-transition:leave="transition ease-in duration-200"
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
-        @click="mobileOpen = false"
+        
         class="md:hidden fixed inset-0 bg-black/50 z-40 w-screen"
     >
         <div
@@ -106,27 +106,29 @@
         x-transition:leave="transition transform ease-in duration-200"
         x-transition:leave-start="translate-y-80 opacity-100"
         x-transition:leave-end="translate-y-120 opacity-0"
-        x-transition class="md:hidden bg-[#2E325C] py-2 px-4 space-y-1 w-[60vw] h-full text-white fixed right-0">
-            <div class="flex justify-between items-center mt-4">
+        x-transition class="md:hidden bg-[#2E325C] py-2 px-4 space-y-1  min-w-[220px] h-full text-white fixed right-0"
+        @click.outside="mobileOpen=false"
+        >
+            <div class="flex justify-between items-center mt-4 mb-4">
                 <h3 class="uppercase a-font text-xl">Меню</h3>
                 <button @click="mobileOpen = false" class="text-2xl font-bold">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
             </div>
             <div class="space-y-2">
                 <div x-data="{ open: false }" class="relative">
-                    <button @click="open = !open" @click.outside="open = false"
-                        class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
+                    <button @click="open = !open"
+                        class="flex items-center gap-1  py-2 text-sm transition-colors">
                         Ассоциация
                         <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="open" x-cloak x-transition
-                        class="absolute top-full right-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
-                        <a href="{{ route('charter') }}" wire:navigate class="block px-4 py-2 text-gray-700">Устав Ассоциации</a>
-                        <a href="{{ route('management') }}" wire:navigate class="block px-4 py-2 text-gray-700">Руководство</a>
-                        <a href="{{ route('trustees') }}" wire:navigate class="block px-4 py-2 text-gray-700">Попечительский совет</a>
-                        <a href="{{ route('policy') }}" wire:navigate class="block px-4 py-2 text-gray-700">Политика Ассоциации</a>
-                        <a href="{{ route('rules') }}" wire:navigate class="block px-4 py-2 text-gray-700">Правила вступления</a>
-                        <a href="{{ route('regulations') }}" wire:navigate class="block px-4 py-2 text-gray-700">Технический регламент яхт</a>
-                        <a href="{{ route('decisions') }}" wire:navigate class="block px-4 py-2 text-gray-700">Решения общего собрания</a></li>
+                        class="">
+                        <a href="{{ route('charter') }}" wire:navigate class="block px-4 py-2 text-sm">Устав Ассоциации</a>
+                        <a href="{{ route('management') }}" wire:navigate class="block px-4 py-2 text-sm">Руководство</a>
+                        <a href="{{ route('trustees') }}" wire:navigate class="block px-4 py-2 text-sm">Попечительский совет</a>
+                        <a href="{{ route('policy') }}" wire:navigate class="block px-4 py-2 text-sm">Политика Ассоциации</a>
+                        <a href="{{ route('rules') }}" wire:navigate class="block px-4 py-2 text-sm">Правила вступления</a>
+                        <a href="{{ route('regulations') }}" wire:navigate class="block px-4 py-2 text-sm">Технический регламент яхт</a>
+                        <a href="{{ route('decisions') }}" wire:navigate class="block px-4 py-2 text-sm">Решения общего собрания</a></li>
                     </div>
                 </div>
                 <a href="{{ route('competitions') }}" wire:navigate class="block py-2 text-sm">Соревнования</a>
