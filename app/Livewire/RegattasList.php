@@ -13,6 +13,8 @@ class RegattasList extends Component
 
     public string $search = '';
 
+    public string $filter = 'all';
+
     public string $sortField = 'date_start';
 
     public string $sortDirection = 'desc';
@@ -44,6 +46,12 @@ class RegattasList extends Component
         $this->resetPage();
     }
 
+    public function setFilter(string $filter): void
+    {
+        $this->filter = $filter;
+        $this->resetPage();
+    }
+
     /** Установить год фильтрации */
     public function setYear(?int $year): void
     {
@@ -69,6 +77,9 @@ class RegattasList extends Component
             )
             ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%")
             )
+            ->when($this->filter === 'upcoming', fn ($q) => $q->where('date_start', '>', now())->where('date_start', '<=', now()->addMonth()))
+            ->when($this->filter === 'planned', fn ($q) => $q->where('date_start', '>', now()))
+            ->when($this->filter === 'finished', fn ($q) => $q->where('date_end', '<', now()))
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 

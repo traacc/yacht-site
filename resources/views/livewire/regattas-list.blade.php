@@ -3,10 +3,10 @@
     <div class="max-w-(--breakpoint-2xl) mx-auto sm:px-6 lg:px-8">
         <div class="reggata-list__header flex items-center justify-between mb-6">
             <div class="reggata-list__filter flex gap-4 font-medium">
-                <button class="reggata-list__filter-btn p-4 text-center bg-[#2D92CE] text-white">Все</button>
-                <button class="reggata-list__filter-btn p-4 text-center bg-[#F8F8F8] text-[#2E325C]">Ближайшие</button>
-                <button class="reggata-list__filter-btn p-4 text-center bg-[#F8F8F8] text-[#2E325C]">Планируемые</button>
-                <button class="reggata-list__filter-btn p-4 text-center bg-[#F8F8F8] text-[#2E325C]">Состоявшиеся</button>
+                <button wire:click="setFilter('all')" class="reggata-list__filter-btn p-4 text-center {{ $filter === 'all' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Все</button>
+                <button wire:click="setFilter('upcoming')" class="reggata-list__filter-btn p-4 text-center {{ $filter === 'upcoming' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Ближайшие</button>
+                <button wire:click="setFilter('planned')" class="reggata-list__filter-btn p-4 text-center {{ $filter === 'planned' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Планируемые</button>
+                <button wire:click="setFilter('finished')" class="reggata-list__filter-btn p-4 text-center {{ $filter === 'finished' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Состоявшиеся</button>
             </div>
             <div class="flex items-center gap-4">
                 {{-- Выбор года (сезона) --}}
