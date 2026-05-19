@@ -50,7 +50,7 @@
     <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8 py-4 bg-[#F8F8F8]">
         <div class="flex items-center justify-between mb-6">
             <h2 class="section-title a-font">Результаты регат</h2>
-            <a href="#" class="text-[#2E325C] text-lg font-semibold hover:underline">Все результаты →</a>
+            <a href="#" class="text-[#2E325C] text-lg font-semibold hover:underline hidden md:block">Все результаты →</a>
         </div>
 
         {{-- Таблица этапа --}}
@@ -59,7 +59,7 @@
                 Кубок Федерации. 1-й этап
             </h3>
             <div class="overflow-x-auto p-6 bg-white">
-                <table class="w-full">
+                <table class="w-full responsive-table">
                     <thead>
                         <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]">
                             <th class="pb-2 text-center font-medium w-16 a-font">Место</th>
@@ -80,8 +80,8 @@
                     }" 
                     x-for="(place, i) in results" :key="i">
                         <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
-                            <td class="py-3">
-                                <div class="flex items-center justify-center gap-3" :class="{
+                            <td data-label="Место" class="py-3">
+                                <div class="flex items-center md:justify-center gap-3" :class="{
                                     'text-[#C2A36B]': place.place_num == 1,
                                     'text-[#9FA6AD]': place.place_num == 2,
                                     'text-[#B56A3A]': place.place_num == 3,}
@@ -90,17 +90,18 @@
                                     <span class="text-brand-gray" x-text="place.place_num"></span>
                                 </div>
                             </td>
-                            <td class="py-3" x-text="place.team"></td>
-                            <td class="py-3" x-text="place.capitan"></td>
-                            <td class="py-3" x-text="place.yacht"></td>
-                            <td class="py-3" x-text="place.sail"></td>
-                            <td class="py-3" ><a href="#" class="text-[#2D92CE] font-medium underline hover:no-underline" x-text="place.participants + ' участников '"></a></td>
-                            <td class="py-3" x-text="place.points"></td>
+                            <td class="py-3" data-label="Команда" x-text="place.team"></td>
+                            <td class="py-3" class="hidden! md:table-cell" data-label="Капитан" x-text="place.capitan"></td>
+                            <td class="py-3" class="hidden! md:table-cell" data-label="Яхта" x-text="place.yacht"></td>
+                            <td class="py-3" class="hidden! md:table-cell" data-label="Парус №" x-text="place.sail"></td>
+                            <td class="py-3" class="hidden! md:table-cell" data-label="Участники" ><a href="#" class="text-[#2D92CE] font-medium underline hover:no-underline" x-text="place.participants + ' участников '"></a></td>
+                            <td class="py-3" data-label="Очки" x-text="place.points"></td>
                         </tr>
                     </template>
                     </tbody>
                 </table>
             </div>
+            <a href="#" class="text-[#2E325C] text-lg font-semibold hover:underline md:hidden">Все результаты →</a>
         </div>
 
         {{-- Топ-3 рейтинги --}}

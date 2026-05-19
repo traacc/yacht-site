@@ -170,4 +170,45 @@
     margin-left: 8px;
     transition: transform 0.3s ease;
   }
+
+  @media screen and (max-width: 768px) {
+    .responsive-table thead {
+      display: none;
+    }
+
+    .responsive-table tr {
+      display: block;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #EAEAEA;
+      padding: 10px;
+      background: #fff;
+    }
+    
+    .responsive-table td {
+      display: block;
+      text-align: left; /* Текст ячейки прижимаем к правому краю */
+      position: relative;
+      padding-left: 50%; /* Освобождаем левую половину под заголовок */
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+    
+    .responsive-table td:last-child {
+      border-bottom: 0;
+    }
+    
+
+    .responsive-table td::before {
+      content: attr(data-label);
+      position: absolute;
+      left: 10px;
+      font-size: 16px;
+      width: 45%;
+      text-align: left;
+      color: #2E325C;
+
+      font-family: 'Bank Gothic', sans;
+      font-weight: 500;
+    }
+  }
 }
