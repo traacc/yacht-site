@@ -140,7 +140,7 @@
   }
 
   .section-title {
-    @apply text-5xl text-brand-dark;
+    @apply text-3xl md:text-5xl text-brand-dark;
   }
 
   select {

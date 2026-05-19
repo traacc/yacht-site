@@ -10,14 +10,14 @@
 
 <div x-data="regattaCalendar()" data-current-month="{{ now()->format('n') - 1 }}" class="py-12 bg-brand-light">
     <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="section-title a-font">Календарь регат сезона</h2>
+        <div class="flex items-center justify-between mb-6 flex-col md:flex-row">
+            <h2 class="section-title a-font mb-4 md:mb-0">Календарь регат сезона</h2>
             <div class="flex items-center gap-4">
                 {{-- Легенда --}}
                 <div class="flex items-center gap-4 text-[#2E325C]">
-                    <span class="flex items-center gap-1.5"><span class="size-4 rounded-full bg-[#157949] inline-block"></span>Состоявшиеся</span>
-                    <span class="flex items-center gap-1.5"><span class="size-4 rounded-full bg-[#C2A36B] inline-block"></span>Ближайшие</span>
-                    <span class="flex items-center gap-1.5"><span class="size-4 rounded-full bg-[#C6C6C6] inline-block"></span>Планируемые</span>
+                    <span class="flex items-center gap-1.5 text-xs md:font-base"><span class="size-2 md:size-4 rounded-full bg-[#157949] inline-block"></span>Состоявшиеся</span>
+                    <span class="flex items-center gap-1.5 text-xs md:font-base"><span class="size-2 md:size-4 rounded-full bg-[#C2A36B] inline-block"></span>Ближайшие</span>
+                    <span class="flex items-center gap-1.5 text-xs md:font-base"><span class="size-2 md:size-4 rounded-full bg-[#C6C6C6] inline-block"></span>Планируемые</span>
                 </div>
                 {{-- Выбор года --}}
                 @if ($showSelector)
