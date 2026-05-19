@@ -148,19 +148,24 @@ class Regatta extends Model
             return '';
         }
 
+        // Single day event: "19 May 2026" / "May 19, 2026"
         if (! $end || $start->isSameDay($end)) {
-            return $start->format('j F Y');
+            return $start->isoFormat('ll');
         }
 
+        // Same month and year: "14–16 May 2026"
         if ($start->isSameMonth($end) && $start->isSameYear($end)) {
-            return $start->format('j').'–'.$end->format('j F Y');
+            return $start->isoFormat('D') . '–' . $end->isoFormat('D MMMM');
         }
 
+        // Same year, different months: "28 May – 2 June 2026"
         if ($start->isSameYear($end)) {
-            return $start->format('j F').' – '.$end->format('j F Y');
+            // 'll' is the short/standard date without the year (e.g., "28 May" or "May 28")
+            return $start->isoFormat('D MMMM') . ' – ' . $end->isoFormat('D MMMM');
         }
 
-        return $start->format('j F Y').' – '.$end->format('j F Y');
+        // Different years: "30 December 2026 – 3 January 2027"
+        return $start->isoFormat('LL') . ' – ' . $end->isoFormat('LL');
     }
     
     
