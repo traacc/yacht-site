@@ -3,22 +3,24 @@
     <div class="max-w-(--breakpoint-2xl) mx-auto sm:px-6 lg:px-8">
         <div class="reggata-list__header flex items-center justify-between mb-6">
             <div class="reggata-list__filter flex gap-4 font-medium">
-                <button wire:click="setFilter('all')" class="reggata-list__filter-btn p-4 text-center {{ $filter === 'all' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Все</button>
-                <button wire:click="setFilter('upcoming')" class="reggata-list__filter-btn p-4 text-center {{ $filter === 'upcoming' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Ближайшие</button>
-                <button wire:click="setFilter('planned')" class="reggata-list__filter-btn p-4 text-center {{ $filter === 'planned' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Планируемые</button>
-                <button wire:click="setFilter('finished')" class="reggata-list__filter-btn p-4 text-center {{ $filter === 'finished' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Состоявшиеся</button>
+                <button wire:click="setFilter('all')" class="reggata-list__filter-btn p-4 cursor-pointer text-center {{ $filter === 'all' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Все</button>
+                <button wire:click="setFilter('upcoming')" class="reggata-list__filter-btn p-4 cursor-pointer text-center {{ $filter === 'upcoming' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Ближайшие</button>
+                <button wire:click="setFilter('planned')" class="reggata-list__filter-btn p-4 cursor-pointer text-center {{ $filter === 'planned' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Планируемые</button>
+                <button wire:click="setFilter('finished')" class="reggata-list__filter-btn p-4 cursor-pointer text-center {{ $filter === 'finished' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Состоявшиеся</button>
             </div>
             <div class="flex items-center gap-4">
                 {{-- Выбор года (сезона) --}}
+                <div class="calendar-icon">
                 <select
                     wire:model.live="year"
-                    class="border border-[#C6C6C6] bg-white text-[#2E325C] px-4 py-2 rounded-sm focus:outline-hidden focus:ring-2 focus:ring-[#2D92CE] text-sm font-medium"
+                    class="border border-[#C6C6C6] bg-white text-[#2E325C] px-4 py-2 min-w-[160px] rounded-sm focus:outline-hidden focus:ring-2 focus:ring-[#2D92CE] text-sm font-medium"
                 >
                     <option value="">Все годы</option>
                     @foreach ($years as $y)
                         <option value="{{ $y }}">{{ $y }}</option>
                     @endforeach
                 </select>
+                </div>
                 <div class="reggata-list__view">
                     <button class="p-2" @click="view = 'grid'" :class="view === 'grid' ? 'text-[#2D92CE]' : 'text-[#2E325C]'">
                         {!! file_get_contents(public_path('images/icons/grid-view.svg')) !!}
