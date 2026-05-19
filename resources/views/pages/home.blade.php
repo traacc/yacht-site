@@ -262,7 +262,7 @@
                 <div class="absolute inset-0 bg-linear-to-r from-[#F8F8F8]/0 to-[#F8F8F8]/40"></div>
                 <div class="relative p-8 h-full flex flex-col justify-center text-[#2E325C] max-w-[500px]">
                     <h3 class="font-display text-5xl font-medium mb-2 a-font">Яхты CarterPro</h3>
-                    <p class="text-lg max-w-xs leading-[1.3] mb-5">
+                    <p class="text-lg max-w-sm leading-[1.3] mb-5">
                         Список яхт ассоциации, технические параметры, владельцы и история участия в регатах.
                     </p>
                     <a href="{{ route('yachts') }}" wire:navigate class="text-lg font-semibold justify-start text-[#2E325C]">
