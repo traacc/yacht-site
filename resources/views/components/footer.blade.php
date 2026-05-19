@@ -1,7 +1,7 @@
 {{-- ===== ФУТЕР ===== --}}
 <footer class="bg-[#2E325C] text-white">
     <div class="max-w-(--breakpoint-2xl) mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 text-sm">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 text-sm md:text-base">
             {{-- Лого и описание --}}
             <div class="col-span-2 md:col-span-1 font-light">
                 <a href="/" wire:navigate class="shrink-0 block mb-6">
@@ -43,7 +43,7 @@
             </div>
 
             {{-- Контакты --}}
-            <div class="col-span-2">
+            <div class="col-span-2 md:col-span-1">
                 <h4 class="font-semibold mb-6">Контакты</h4>
                 <ul class="space-y-4">
                     <li class="flex items-center gap-2">
