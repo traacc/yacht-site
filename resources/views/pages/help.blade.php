@@ -37,7 +37,7 @@
             <h2 class="section-title a-font text-5xl">Помощь</h2>
         </div>
     </section>
-    <section class="flex gap-8 max-w-(--breakpoint-2xl) mx-auto">
+    <section class="flex md:flex-row flex-col gap-8 max-w-(--breakpoint-2xl) mx-auto">
         <div class="p-4 bg-[#F8F8F8] max-w-[340px] w-full">
             <template x-for="(cat, key) in categories" :key="key">
                 <div @click="activeCategory = key"
@@ -53,7 +53,7 @@
             </div>
             <div class="help__list w-full">
                 <template x-for="(item, index) in categories[activeCategory].items" :key="index">
-                    <div class="help__item flex justify-between gap-6 bg-[#F8F8F8] p-4 mb-4">
+                    <div class="help__item flex md:flex-row flex-col justify-between gap-6 bg-[#F8F8F8] p-4 mb-4">
                         <div class="pr-6 max-w-[620px]">
                             <h4 class="font-semibold text-[#2E325C] text-lg mb-4" x-text="item.title"></h4>
                             <p class="text-[#2E325C]" x-text="item.desc"></p>
