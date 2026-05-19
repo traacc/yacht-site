@@ -48,12 +48,12 @@
             <div class="max-w-(--breakpoint-2xl) mx-auto lg:p-6 bg-brand-light-bg">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="section-title a-font">Заявленные команды</h2>
-                    <a href="#" class="text-brand-dark text-lg font-semibold hover:underline flex items-center gap-4">
+                    <a href="#" class="text-brand-dark text-lg font-semibold hover:underline items-center gap-4 hidden md:flex">
                         <x-icon-2 name="download" /> Скачать список команд
                     </a>
                 </div>
                 <div class="overflow-x-auto p-6 bg-white">
-                    <table class="w-full">
+                    <table class="w-full responsive-table">
                         <thead>
                             <tr class="text-2xl text-brand-dark border-b border-brand-border">
                                 <th class="pb-2 text-center font-medium w-16 a-font">№</th>
@@ -66,11 +66,11 @@
                         <tbody class="divide-y text-center font-medium">
                             @forelse($entries as $index => $entry)
                                 <tr class="hover:bg-white transition-colors border-b border-brand-border">
-                                    <td class="py-3">{{ $index + 1 }}</td>
-                                    <td class="py-3">{{ $entry->yacht?->name ?? '—' }}</td>
-                                    <td class="py-3">{{ $entry->team?->name ?? '—' }}</td>
-                                    <td class="py-3">{{ $entry->team?->organizer?->full_name ?? '—' }}</td>
-                                    <td class="py-3">
+                                    <td label="№" class="py-3">{{ $index + 1 }}</td>
+                                    <td label="Яхта" class="py-3">{{ $entry->yacht?->name ?? '—' }}</td>
+                                    <td label="Команда" class="py-3">{{ $entry->team?->name ?? '—' }}</td>
+                                    <td label="Капитан" class="py-3">{{ $entry->team?->organizer?->full_name ?? '—' }}</td>
+                                    <td label="Состав команды" class="py-3">
                                         <a @click="team_modal_open = true; activeTeamIndex = {{ $index }}"
                                            href="#"
                                            class="text-brand-blue font-medium underline hover:no-underline">
@@ -86,6 +86,9 @@
                         </tbody>
                     </table>
                 </div>
+                    <a href="#" class="text-brand-dark text-lg justify-center font-semibold hover:underline items-center gap-4 md:hidden flex">
+                        <x-icon-2 name="download" /> Скачать список команд
+                    </a>
             </div>
         </section>
         @endif
@@ -264,7 +267,7 @@
                 <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8" x-data="regattaCalendar(@js($otherRegattasData))">
                     <div class="flex justify-between">
                         <h2 class="section-title a-font pb-8">Другие регаты сезона</h2>
-                        <div class="control-btns flex gap-4">
+                        <div class="control-btns md:flex gap-4 hidden">
                             <button @click="prev()" :disabled="offset === 0"
                                 class="z-10 bg-brand-blue rounded-full w-9 h-9 flex items-center justify-center text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                 aria-label="Назад">
