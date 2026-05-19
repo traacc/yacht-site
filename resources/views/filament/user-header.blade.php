@@ -19,7 +19,7 @@
                         class="absolute top-full right-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
                         <a href="{{ route('charter') }}" wire:navigate class="block px-4 py-2 text-gray-700 hover:bg-brand-light hover:text-brand-red">Устав Ассоциации</a>
                         <a href="{{ route('management') }}" wire:navigate class="block px-4 py-2 text-gray-700 hover:bg-brand-light hover:text-brand-red">Руководство</a>
-                        <a href="{{ route('trustees') }}" wire:navigate class="block px-4 py-2 text-gray-700 hover:bg-brand-light hover:text-brand-red">Призовой совет</a>
+                        <a href="{{ route('trustees') }}" wire:navigate class="block px-4 py-2 text-gray-700 hover:bg-brand-light hover:text-brand-red">Попечительский совет</a>
                         <a href="{{ route('policy') }}" wire:navigate class="block px-4 py-2 text-gray-700 hover:bg-brand-light hover:text-brand-red">Политика Ассоциации</a>
                         <a href="{{ route('rules') }}" wire:navigate class="block px-4 py-2 text-gray-700 hover:bg-brand-light hover:text-brand-red">Правила вступления</a>
                         <a href="{{ route('regulations') }}" wire:navigate class="block px-4 py-2 text-gray-700 hover:bg-brand-light hover:text-brand-red">Технический регламент яхт</a>

@@ -34,7 +34,7 @@
                 <ul class="space-y-4">
                     <li><a href="{{ route('charter') }}" wire:navigate class="hover:text-white transition-colors">Устав Ассоциации</a></li>
                     <li><a href="{{ route('management') }}" wire:navigate class="hover:text-white transition-colors">Руководство</a></li>
-                    <li><a href="{{ route('trustees') }}" wire:navigate class="hover:text-white transition-colors">Призовой совет</a></li>
+                    <li><a href="{{ route('trustees') }}" wire:navigate class="hover:text-white transition-colors">Попечительский совет</a></li>
                     <li><a href="{{ route('policy') }}" wire:navigate class="hover:text-white transition-colors">Политика Ассоциации</a></li>
                     <li><a href="{{ route('rules') }}" wire:navigate class="hover:text-white transition-colors">Правила вступления</a></li>
                     <li><a href="{{ route('regulations') }}" wire:navigate class="hover:text-white transition-colors">Технический регламент яхт</a></li>
