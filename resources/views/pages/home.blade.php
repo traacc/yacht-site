@@ -293,14 +293,17 @@
             <h2 class="section-title a-font">Галерея</h2>
             <div class="flex items-center gap-3">
                 <a href="{{ route('gallery') }}" wire:navigate class="text-lg font-semibold hover:underline">Все галерея →</a>
-                <button @click="current = Math.max(0, current-1)"
-                    class="bg-[#2D92CE] rounded-full w-8 h-8 flex items-center justify-center shadow-sm hover:shadow-md text-white hover:text-brand-red transition-all">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                </button>
-                <button @click="current = Math.min(images.length - 3, current+1)"
-                    class="bg-[#2D92CE] rounded-full w-8 h-8 flex items-center justify-center shadow-sm hover:shadow-md text-white transition-all">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                </button>
+                <div class="hidden md:flex items-center gap-2">
+                    <button @click="current = Math.max(0, current-1)"
+                        class="bg-[#2D92CE] rounded-full w-8 h-8 flex items-center justify-center shadow-sm hover:shadow-md text-white hover:text-brand-red transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <button @click="current = Math.min(images.length - 3, current+1)"
+                        class="bg-[#2D92CE] rounded-full w-8 h-8 flex items-center justify-center shadow-sm hover:shadow-md text-white transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+
             </div>
         </div>
         <div class="grid grid-cols-3 gap-4 overflow-hidden">
@@ -334,7 +337,7 @@
                 </button>
             </div>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-4 gap-4">
             <template x-data="{sponsors: [1,2,3,4]}" x-for="s in sponsors" :key="s">
                 <div class="bg-[#E2E2E2] h-20 flex items-center justify-center hover:shadow-md transition-shadow cursor-pointer">
                     <span class="text-gray-300 font-display text-lg font-bold uppercase tracking-wider"></span>

@@ -1,7 +1,7 @@
 {{-- ===== ФУТЕР ===== --}}
 <footer class="bg-[#2E325C] text-white">
-    <div class="max-w-(--breakpoint-2xl) mx-auto py-12">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+    <div class="max-w-(--breakpoint-2xl) mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 text-sm">
             {{-- Лого и описание --}}
             <div class="col-span-2 md:col-span-1 font-light">
                 <a href="/" wire:navigate class="shrink-0 block mb-6">
@@ -43,7 +43,7 @@
             </div>
 
             {{-- Контакты --}}
-            <div>
+            <div class="col-span-2">
                 <h4 class="font-semibold mb-6">Контакты</h4>
                 <ul class="space-y-4">
                     <li class="flex items-center gap-2">
@@ -67,6 +67,9 @@
                         </a>
                     </li>
                 </ul>
+                <a href="#" @click="$dispatch('open-login-modal')" class="font-semibold color-white px-4 py-2 mt-6 transition-colors justify-center border-white border flex gap-2 md:hidden">
+                    <img src="{{ asset('images/icons/login.svg') }}" alt="">Войти
+                </a>
             </div>
         </div>
     </div>
