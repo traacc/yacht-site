@@ -9,6 +9,6 @@ class RaceResultSeeder extends Seeder
 {
     public function run(): void
     {
-        RaceResult::factory()->count(50)->create();
+        RaceResult::factory()->count(15)->create();
     }
 }

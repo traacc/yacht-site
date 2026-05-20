@@ -18,10 +18,11 @@ class RegattaResultFactory extends Factory
     {
         return [
             'id' => fake()->uuid(),
-            'regatta_id' => Regatta::factory(),
-            'team_id' => Team::factory(),
+            'regatta_id' => Regatta::query()->inRandomOrder()->first()?->id ?? Regatta::factory(),
+            'team_id' => Team::query()->inRandomOrder()->first()?->id ?? Team::factory(),
             'total_points' => fake()->randomFloat(3, 0, 100),
             'final_position' => fake()->numberBetween(1, 50),
         ];
     }
 }
+

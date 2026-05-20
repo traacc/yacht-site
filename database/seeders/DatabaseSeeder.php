@@ -40,6 +40,8 @@ class DatabaseSeeder extends Seeder
             gc_collect_cycles();
         }
 
+        $this->call(TeamMemberSeeder::class);
+        
         /*
         foreach (range(1, 3) as $i) {
             Team::factory(2)->create();

@@ -206,7 +206,7 @@ class YachtResource extends Resource
                     ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])->stackedOnMobile();
     }
 
     public static function getPages(): array

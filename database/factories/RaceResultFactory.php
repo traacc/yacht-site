@@ -21,7 +21,7 @@ class RaceResultFactory extends Factory
             'regatta_entry_id' => RegattaEntry::factory(),
             'position' => $this->faker->numberBetween(1, 20),
             'points' => $this->faker->randomFloat(1, 0, 50),
-            'penalty_code' => $this->faker->optional()->randomElement(array_column(PenaltyCode::cases(), 'value')),
+            //'penalty_code' => $this->faker->optional()->randomElement(array_column(PenaltyCode::cases(), 'value')),
         ];
     }
 }

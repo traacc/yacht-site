@@ -31,7 +31,7 @@ class RegattaFactory extends Factory
             'level_coefficient' => fake()->randomFloat(2, 0.50, 3.00),
             'date_start'        => $start->format('Y-m-d'),
             'date_end'          => $end->format('Y-m-d'),
-            'location'          => fake()->state(),
+            'location'          => fake()->country(),
             'water_area'        => fake()->city(),
             'description'       => fake()->paragraph(),
             //'schedule'          => fake()->paragraphs(2, true),
