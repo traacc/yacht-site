@@ -8,7 +8,7 @@ bgImage="{{ asset('images/bg/results.png') }}"
 </x-hero-section>
 
 <main class="main">
-    @forelse($finishedRegattas as $regatta)
+    @forelse($regattas as $regatta)
         <section class="rating_1 mb-12">
             <div class="max-w-(--breakpoint-2xl) mx-auto bg-[#F8F8F8] p-6">
                 <div class="flex justify-between mb-6 flex-col md:flex-row">
@@ -23,11 +23,19 @@ bgImage="{{ asset('images/bg/results.png') }}"
                         {!! file_get_contents(public_path('images/icons/calendar.svg')) !!}
                         {{ $regatta->dateRange() }}
                     </div>
-                    <div class="bg-[#15794933] px-3 py-1 text-[#157949] inline-block font-semibold max-w-[120px] w-full">
-                        Завершено
-                    </div>
+                    @if($regatta->isFinished())
+                        <div class="bg-[#15794933] px-3 py-1 text-[#157949] inline-block font-semibold max-w-[120px] w-full">
+                            Завершено
+                        </div>
+                    @else
+                        <div class="bg-[#FFA50033] px-3 py-1 text-[#FF8C00] inline-block font-semibold max-w-[120px] w-full">
+                            предварительные
+                        </div>
+                    @endif
                 </div>
+                @if(!$regatta->isFinished())
                 <p class="mb-6">Таблица обновляется по мере обработки результатов. Финальные очки будут опубликованы после утверждения итогов соревнования.</p>
+                @endif
                 <div class="overflow-x-auto relative p-6 bg-white responsive-table">
                     <table class="w-full">
                         <thead>
@@ -79,7 +87,7 @@ bgImage="{{ asset('images/bg/results.png') }}"
     @empty
         <section class="py-12">
             <div class="max-w-(--breakpoint-2xl) mx-auto text-center">
-                <p class="text-brand-gray text-xl">Нет завершённых регат с опубликованными результатами.</p>
+                <p class="text-brand-gray text-xl">Нет регат с опубликованными результатами.</p>
             </div>
         </section>
     @endforelse

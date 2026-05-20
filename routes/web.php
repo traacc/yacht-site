@@ -195,18 +195,24 @@ Route::get('/yachts', function () {
     return view('pages.yachts', compact('yachts', 'yachtsJson'));
 })->name('yachts');
 Route::get('/ratings', function () {
-    $finishedRegattas = Regatta::with([
+    $regattas = Regatta::with([
         'results' => fn ($q) => $q->orderBy('final_position'),
         'results.team.organizer',
         'results.team.activeMembers',
         'results.yacht',
         'season',
     ])
-        ->where('date_end', '<', now())
+        ->where(function ($query) {
+            $query->where('date_end', '<', now())
+                  ->orWhere(function ($q) {
+                      $q->where('date_start', '<=', now())
+                        ->where('date_end', '>=', now());
+                  });
+        })
         ->orderBy('date_end', 'desc')
         ->get();
 
-    return view('pages.ratings', compact('finishedRegattas'));
+    return view('pages.ratings', compact('regattas'));
 })->name('ratings');
 Route::view('/gallery', 'pages/gallery')->name('gallery');
 Route::view('/help', 'pages/help')->name('help');
