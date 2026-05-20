@@ -97,7 +97,7 @@ bgImage="{{ asset('images/bg/regulations.png') }}"
         Подать заявку →
         </button>
     </div>
-    <div class="pic">
+    <div class="pic shrink-0">
         <img class="w-full" src="{{ asset('images/regulation.png') }}" alt="">
     </div>
 </div>
