@@ -31,7 +31,7 @@
                     <p class="text-brand-gray text-lg">{{ $regatta->description }}</p>
                     <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"
                             class="mt-6 bg-brand-blue text-white py-2 px-6 hover:bg-brand-blue transition-colors text-lg font-semibold cursor-pointer">
-                        Подать заявку →
+                        Подать заявку 
                     </button>
                 </div>
                 <div class="pic max-w-[720px]">
@@ -52,7 +52,7 @@
                         <x-icon-2 name="download" /> Скачать список команд
                     </a>
                 </div>
-                <div class="overflow-x-auto p-6 bg-white">
+                <div class="overflow-x-auto p-3 md:p-6 bg-white">
                     <table class="w-full responsive-table">
                         <thead>
                             <tr class="text-2xl text-brand-dark border-b border-brand-border">
@@ -66,11 +66,11 @@
                         <tbody class="divide-y text-center font-medium">
                             @forelse($entries as $index => $entry)
                                 <tr class="hover:bg-white transition-colors border-b border-brand-border">
-                                    <td label="№" class="py-3">{{ $index + 1 }}</td>
-                                    <td label="Яхта" class="py-3">{{ $entry->yacht?->name ?? '—' }}</td>
-                                    <td label="Команда" class="py-3">{{ $entry->team?->name ?? '—' }}</td>
-                                    <td label="Капитан" class="py-3">{{ $entry->team?->organizer?->full_name ?? '—' }}</td>
-                                    <td label="Состав команды" class="py-3">
+                                    <td data-label="№" class="py-3">{{ $index + 1 }}</td>
+                                    <td data-label="Яхта" class="py-3">{{ $entry->yacht?->name ?? '—' }}</td>
+                                    <td data-label="Команда" class="py-3">{{ $entry->team?->name ?? '—' }}</td>
+                                    <td data-label="Капитан" class="py-3">{{ $entry->team?->organizer?->full_name ?? '—' }}</td>
+                                    <td data-label="Состав команды" class="py-3">
                                         <a @click="team_modal_open = true; activeTeamIndex = {{ $index }}"
                                            href="#"
                                            class="text-brand-blue font-medium underline hover:no-underline">
@@ -102,7 +102,7 @@
                     <a class="text-[#2E325C] text-lg font-semibold flex gap-2 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> <span>Скачать результаты PDF</span></a>
                 </div>
                 <div class="overflow-x-auto relative p-6 bg-white">
-                    <table class="w-full">
+                    <table class="w-full responsive-table">
                         <thead>
                             <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] ">
                                 <th class="pb-2 text-center font-medium w-16 a-font">Место</th>
@@ -354,7 +354,7 @@
                         <button @click="team_modal_open = false" class="text-2xl font-bold">&times;</button>
                     </div>
                 </div>
-                <table class="w-full bg-brand-light-bg">
+                <table class="w-full bg-brand-light-bg responsive-table">
                     <thead>
                         <tr class="text-2xl text-brand-dark border-b border-brand-border">
                             <th class="pb-2 text-center font-medium a-font">Участник</th>
@@ -365,9 +365,9 @@
                     <tbody class="divide-y text-center font-medium">
                         <template x-for="(member, i) in (activeTeamIndex !== null ? (entriesJson[activeTeamIndex]?.crew || []) : [])" :key="i">
                             <tr class="hover:bg-white transition-colors border-b border-brand-border">
-                                <td class="py-3" x-text="member.name"></td>
-                                <td class="py-3" x-text="member.birthday"></td>
-                                <td class="py-3" x-text="member.rank"></td>
+                                <td data-label="Участник" class="py-3" x-text="member.name"></td>
+                                <td data-label="Дата рождения" class="py-3" x-text="member.birthday"></td>
+                                <td data-label="Разряд" class="py-3" x-text="member.rank"></td>
                             </tr>
                         </template>
                     </tbody>
