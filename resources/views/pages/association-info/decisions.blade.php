@@ -40,7 +40,7 @@ bgImage="{{ asset('images/bg/decisions.png') }}"
 
         <div class="pagination flex justify-center items-center mt-10 gap-1.5" x-show="totalPages > 1">
             <button
-                class="w-10 h-10 flex items-center justify-center rounded-lg text-lg text-[#2E325C] font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                class="w-10 h-10 flex items-center justify-center rounded-lg text-lg text-[#2E325C] font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors cursor-pointer"
                 @click.prevent="prevPage"
                 :disabled="currentPage === 1"
             >
@@ -55,7 +55,7 @@ bgImage="{{ asset('images/bg/decisions.png') }}"
                         x-show="item.type === 'page'"
                         x-text="item.label"
                         @click.prevent="goToPage(item.value)"
-                        class="w-10 h-10 text-lg font-medium transition-colors"
+                        class="w-10 h-10 text-lg font-medium transition-colors cursor-pointer"
                         :class="item.value === currentPage
                             ? 'border-b-[#2D92CE] border-b text-[#2D92CE]'
                             : 'text-brand-gray-light '"
@@ -65,7 +65,7 @@ bgImage="{{ asset('images/bg/decisions.png') }}"
             </template>
 
             <button
-                class="w-10 h-10 flex items-center justify-center rounded-lg text-lg text-[#2E325C] font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                class="w-10 h-10 flex items-center justify-center rounded-lg text-lg text-[#2E325C] font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors cursor-pointer"
                 @click.prevent="nextPage"
                 :disabled="currentPage === totalPages"
             >
@@ -154,21 +154,21 @@ bgImage="{{ asset('images/bg/decisions.png') }}"
             goToPage(page) {
                 if (page >= 1 && page <= this.totalPages) {
                     this.currentPage = page;
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    //window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
             },
 
             prevPage() {
                 if (this.currentPage > 1) {
                     this.currentPage--;
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    //window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
             },
 
             nextPage() {
                 if (this.currentPage < this.totalPages) {
                     this.currentPage++;
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    //window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
             },
 

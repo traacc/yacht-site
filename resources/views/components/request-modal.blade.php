@@ -74,7 +74,21 @@
                     }
                 },
              }">
+            @guest
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-medium text-[#2E325C] a-font">Сначала зарегистрируетесь</h3>
+                    <button @click="isRequestModalOpen=false" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
+                </div>
+                <div class="text-center py-6">
+                    <p class="text-gray-600 mb-6">Чтобы подать заявку на вступление, необходимо войти в аккаунт участника Ассоциации.</p>
+                    <button @click="$dispatch('open-login-modal');isRequestModalOpen=false; "
+                            class="inline-flex justify-center bg-[#2D92CE] px-4 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90">
+                        Войти или зарегистрироваться
+                    </button>
+                </div>
+            @else
                 <h3 class="a-font text-2xl md:text-4xl md:pb-6">Подайте заявку</h3>
+            
                 <p class="text-brand-gray pb-6 text-sm md:text-base">По вопросам участия в соревнованиях, вступления в Ассоциацию и другим организационным вопросам вы можете обратиться к нам.</p>
 
                 {{-- Сообщение об успехе (AJAX) --}}
@@ -187,6 +201,7 @@
                     </div>
                 </form>
             </div>
+            @endguest
         </div>
     </div>
 </div>
