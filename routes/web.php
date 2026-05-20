@@ -166,7 +166,7 @@ Route::get('/yachts', function () {
             default => '—',
         },
         'current_mass_kg' => $yacht->current_mass_kg ?? '—',
-        'orc_cert_url' => $yacht->orc_cert_url ?? null,
+        'has_orc_cert' => !empty($yacht->orc_cert_url),
         'registered_at' => $yacht->created_at?->format('Y') ?? '—',
         'documents' => $yacht->documents->map(fn ($doc) => [
             'title' => $doc->title,
@@ -187,14 +187,8 @@ Route::get('/yachts', function () {
             ['label' => 'Класс',       'value' => $yacht->class ?? 'Carter 30'],
             ['label' => 'Парус №',     'value' => $yacht->vfps_number],
             ['label' => 'Год выпуска', 'value' => $yacht->year ?? '—'],
-            ['label' => 'Проект',      'value' => $yacht->project ?? '—'],
-            ['label' => 'Тип парусов', 'value' => match ($yacht->sail_type) {
-                'dacron' => 'Дакрон',
-                'laminate' => 'Ламинат',
-                'mixed' => 'Смешанный',
-                default => '—',
-            }],
-            ['label' => 'Масса (кг)',   'value' => $yacht->current_mass_kg ?? '—'],
+            ['label' => 'Место регистрации',      'value' => $yacht->project ?? '—'],
+            ['label' => 'Масса',   'value' => $yacht->current_mass_kg ?? '—'],
         ],
     ])->values()->toJson();
 

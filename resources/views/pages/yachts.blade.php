@@ -53,11 +53,11 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                             <td data-label="Владелец" class="py-2 text-center" x-text="yacht.owner_name || '—'"></td>
                             <td data-label="Балл ORC" class="py-2 text-center">—</td>
                             <td data-label="Сертификат ORC" class="py-2 text-center">
-                                <template x-if="yacht.orc_cert_url">
-                                    <a :href="yacht.orc_cert_url" target="_blank" class="text-[#2D92CE] font-semibold hover:underline">Скачать</a>
+                                <template x-if="yacht.has_orc_cert">
+                                    <span class="">Есть</span>
                                 </template>
-                                <template x-if="!yacht.orc_cert_url">
-                                    <span class="text-gray-400">—</span>
+                                <template x-if="!yacht.has_orc_cert">
+                                    <span class="">Нет</span>
                                 </template>
                             </td>
                             <td class="py-2 text-center">
@@ -150,21 +150,29 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                                 <td x-text="selectedYacht.class"></td>
                             </tr>
                             <tr>
-                                <td class="font-semibold py-2 w-64">Порт приписки:</td>
-                                <td x-text="selectedYacht.reg_place"></td>
+                                <td class="font-semibold py-2 w-64">Участие в регатах:</td>
+                                <td x-text="selectedYacht.participation_count + ' регат(ы)'"></td>
                             </tr>
                         </table>
                         <table>
                             <tr>
-                                <td class="font-semibold py-2 w-64">Участие в регатах:</td>
-                                <td x-text="selectedYacht.participation_count + ' регат(ы)'"></td>
+                                <td class="font-semibold py-2 w-64">Номер ГИМС:</td>
+                                <td x-text="selectedYacht.reg_place"></td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold py-2 w-64">Сертификат ORC:</td>
+                                <td>
+                                    <template x-if="selectedYacht.has_orc_cert">
+                                        <span class="">Есть</span>
+                                    </template>
+                                    <template x-if="!selectedYacht.has_orc_cert">
+                                        <span class="">Нет</span>
+                                    </template>
+                                </td>
                             </tr>
                             <tr>
                                 <td class="font-semibold py-2 w-64">Балл ORC:</td>
                                 <td>—</td>
-                            </tr>
-                            <tr>
-                                <td class="font-semibold py-2 w-64">⠀</td><td>⠀</td>
                             </tr>
                         </table>
                     </div>
@@ -172,7 +180,7 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
 
                 <div class="owner mb-8">
                     <h3 class="text-3xl a-font mb-6">Владелец яхты</h3>
-                    <div class="flex flex-col md:flex-row gap-3 items-center bg-[#F8F8F8]">
+                    <div class="flex flex-col md:flex-row gap-4 items-center bg-[#F8F8F8]">
                         <div class="owner__pic">
                             <img :src="selectedYacht.owner_photo" alt="">
                         </div>
