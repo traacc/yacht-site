@@ -1,5 +1,5 @@
 {{-- resources/views/livewire/regattas-list.blade.php --}}
-<section x-data="{view: 'grid'}" class="py-12 reggata-list px-4 sm:px-6 lg:px-8">
+<section x-data="{view: @entangle('view')}" class="py-12 reggata-list px-4 sm:px-6 lg:px-8">
     <div class="max-w-(--breakpoint-2xl) mx-auto sm:px-6 lg:px-8">
         <div class="reggata-list__header flex flex-col-reverse md:flex-row md:items-center justify-between mb-6">
             <div class="reggata-list__filter md:flex gap-4 flex-col md:flex-row font-medium hidden">
@@ -22,10 +22,10 @@
                 </select>
                 </div>
                 <div class="reggata-list__view">
-                    <button class="p-2" @click="view = 'grid'" :class="view === 'grid' ? 'text-[#2D92CE]' : 'text-[#2E325C]'">
+                    <button class="p-2" wire:click="setView('grid')" :class="view === 'grid' ? 'text-[#2D92CE]' : 'text-[#2E325C]'">
                         {!! file_get_contents(public_path('images/icons/grid-view.svg')) !!}
                     </button>
-                    <button class="p-2" @click="view = 'list'" :class="view === 'list' ? 'text-[#2D92CE]' : 'text-[#2E325C]'">
+                    <button class="p-2" wire:click="setView('list')" :class="view === 'list' ? 'text-[#2D92CE]' : 'text-[#2E325C]'">
                         {!! file_get_contents(public_path('images/icons/list-view.svg')) !!}
                     </button>
                 </div>

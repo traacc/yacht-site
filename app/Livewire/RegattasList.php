@@ -11,6 +11,8 @@ class RegattasList extends Component
 {
     use WithPagination;
 
+    protected $queryString = ['view', 'search', 'filter', 'year'];
+
     public string $search = '';
 
     public string $filter = 'all';
@@ -67,6 +69,17 @@ class RegattasList extends Component
             $this->sortField = $field;
             $this->sortDirection = 'asc';
         }
+    }
+
+    public function mount(): void
+    {
+        $this->view = request()->query('view', session('regattas_view', 'grid'));
+    }
+
+    public function setView(string $view): void
+    {
+        $this->view = $view;
+        session(['regattas_view' => $view]);
     }
 
     public function render()
