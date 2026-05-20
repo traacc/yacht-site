@@ -122,7 +122,7 @@ class NewsResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
+            ])->stackedOnMobile()
             ->filters([
                 TrashedFilter::make(),
             ])

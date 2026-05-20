@@ -176,7 +176,7 @@ class RegattaResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
+            ])->stackedOnMobile()
             ->filters([
                 TrashedFilter::make(),
             ])
