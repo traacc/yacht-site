@@ -7,7 +7,7 @@ bgImage="{{ asset('images/bg/rules.png') }}"
 >
     
 </x-hero-section>
-<main class="main">
+<main class="main" x-data>
   <section class="md:py-10 py-6 bg-white">
     <div class="max-w-(--breakpoint-2xl) mx-auto bg-[#F8F8F8] flex flex-col md:flex-row gap-10 items-center px-4 md:px-2">
         <div class="info px-4 sm:px-6 lg:px-8">
@@ -18,7 +18,7 @@ bgImage="{{ asset('images/bg/rules.png') }}"
                 <li>участники экипажей</li>
                 <li>лица, заинтересованные в развитии класса</li>
             </ul>
-            <button @click="$dispatch('requestModal', {isRequestModalOpen:true})" class="mt-6 bg-[#2D92CE] text-white cursor-pointer py-2 px-6 hover:bg-[#0074CC] w-full md:max-w-[300px] transition-colors text-lg font-semibold">
+            <button @click="isRequestModalOpen=true" class="mt-6 bg-[#2D92CE] text-white cursor-pointer py-2 px-6 hover:bg-[#0074CC] w-full md:max-w-[300px] transition-colors text-lg font-semibold">
             Подать заявку →
             </button>
         </div>
@@ -113,7 +113,7 @@ bgImage="{{ asset('images/bg/rules.png') }}"
   </section>
   <section style="background-image: url('{{ asset('images/rules/rules_want.png') }}')" class="max-w-(--breakpoint-2xl) mx-auto bg-cover bg-center py-20 px-3 md:px-0 mt-10 flex flex-col items-center text-center mb-8">
     <h2 class="a-font text-white text-3xl md:text-5xl max-w-4xl">Хотите присоединиться к Ассоциации и принимать участие в её деятельности?</h2>
-    <button @click="$dispatch('requestModal')" class="mt-6 bg-white cursor-pointer text-[#2E325C] py-2 px-9 hover:bg-[#E8E8E8] transition-colors text-lg font-semibold w-full md:w-auto ms">
+    <button @click="isRequestModalOpen=true" class="mt-6 bg-white cursor-pointer text-[#2E325C] py-2 px-9 hover:bg-[#E8E8E8] transition-colors text-lg font-semibold w-full md:w-auto ms">
         Подать заявку  →
     </button>
   </section>

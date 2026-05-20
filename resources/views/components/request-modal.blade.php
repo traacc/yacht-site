@@ -1,9 +1,8 @@
 <div x-data="{ 
-        isRequestModalOpen: true, 
+        
      }"
-     @requestModal.window="isRequestModalOpen = true" 
+
      x-show="isRequestModalOpen"
-     style="display: none;"
      class="fixed inset-0 z-50 overflow-y-auto"
      aria-labelledby="modal-title" 
      role="dialog" 

@@ -13,7 +13,7 @@
         .nav-link { @apply text-sm font-medium text-gray-700 hover:text-brand-red transition-colors; }
     </style>
 </head>
-<body class="font-sans bg-white text-[#2E325C] antialiased">
+<body class="font-sans bg-white text-[#2E325C] antialiased" x-data="{isRequestModalOpen: false }">
 
 <x-nav />
 
