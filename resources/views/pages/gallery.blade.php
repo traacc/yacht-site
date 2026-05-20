@@ -7,10 +7,10 @@
     activeImage: '',
     lbImages: []
 }" class="main">
-    <section class="py-12 reggata-list">
+    <section class="py-12 reggata-list px-2 2xl:px-0">
         <div class="max-w-(--breakpoint-2xl) mx-auto">
-            <div class="flex justify-between mb-6">
-                <h2 class="section-title a-font text-5xl">Галерея</h2>
+            <div class="flex justify-between mb-6 flex-col md:flex-row">
+                <h2 class="section-title a-font text-3xl md:text-5xl mb-4 md:mb-0">Галерея</h2>
                 <div class="controls flex gap-4">
                     <div class="calendar-icon">
                         <select class="border-[#C6C6C6] focus:outline-hidden h-full focus:ring-2 text-[#2E325C] pl-5 min-w-[140px]" name="year" id="">
@@ -26,7 +26,7 @@
         </div>
     </section>
     <section>
-        <div class="max-w-(--breakpoint-2xl) mx-auto pb-12">
+        <div class="max-w-(--breakpoint-2xl) mx-auto pb-12 px-2 2xl:px-0">
             <h2 class="section-title a-font text-5xl">2026</h2>
             <div class=" grid md:grid-cols-3 gap-6 mt-6"
              x-data="{
@@ -181,35 +181,64 @@
     </div>
     <div x-show="lightbox_open"
         x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        x-data="{
+            get currentIndex() {
+                return this.lbImages.indexOf(this.activeImage);
+            },
+            prevImage() {
+                if (this.lbImages.length === 0) return;
+                const newIndex = (this.currentIndex - 1 + this.lbImages.length) % this.lbImages.length;
+                this.activeImage = this.lbImages[newIndex];
+            },
+            nextImage() {
+                if (this.lbImages.length === 0) return;
+                const newIndex = (this.currentIndex + 1) % this.lbImages.length;
+                this.activeImage = this.lbImages[newIndex];
+            }
+        }"
+        @keydown.left.window="prevImage()"
+        @keydown.right.window="nextImage()"
         >
-
-        <div @click.away="lightbox_open = false"  class="relative p-3 max-w-[1200px] max-h-[80vh] gap-6"
-            
+        <div @click.away="lightbox_open = false" class="relative max-w-[1200px] max-h-[80vh] gap-6"
             x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95"
             x-transition:enter-end="opacity-100 scale-100"
         >
+            <!-- Кнопка закрытия -->
+            <button @click="lightbox_open = false" class="md:absolute fixed md:-top-10 md:right-0 top-5 right-5 text-white text-3xl z-50 hover:opacity-70">&times;</button>
 
+            <!-- Контейнер с изображением и стрелками -->
+            <div class="relative flex items-center justify-center">
+                <!-- Стрелка назад -->
+                <button @click="prevImage()"
+                    class="absolute -left-6 z-50 p-3 text-white bg-[#2D92CE] hover:bg-[#2D92CE] rounded-full transition-all hidden md:block">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
 
-
-            <div
-                x-transition.opacity.duration.300ms
-                class="z-50 flex items-center justify-center"
-                >
-                <!-- Основное изображение -->
-                <img :src="activeImage" 
+                <img :src="activeImage"
                     x-show="lightbox_open"
                     x-transition:enter="transition ease-out duration-300"
                     x-transition:enter-start="scale-90 opacity-0"
                     x-transition:enter-end="scale-100 opacity-100"
-                    class="w-full max-h-[90vh] rounded-sm shadow-2xl" 
+                    class="w-full rounded-sm shadow-2xl"
                     alt="Full size">
+
+                <!-- Стрелка вперёд -->
+                <button @click="nextImage()"
+                    class="absolute -right-6 z-50 p-3 text-white bg-[#2D92CE] hover:bg-[#2D92CE] rounded-full transition-all hidden md:block">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
             </div>
 
-            <div class="flex gap-4 overflow-hidden">
+            <!-- Превью (миниатюры) -->
+            <div class="flex gap-4 overflow-hidden mt-4 justify-center">
                 <template x-for="img in lbImages">
-                    <div class="cursor-pointer rounded-lg shadow-hover transition-all max-w-[100px] aspect-square" @click="activeImage = img">
+                    <div class="cursor-pointer rounded-lg shadow-hover transition-all max-w-[100px] aspect-square"
+                        
+                        @click="activeImage = img">
                         <img :src="img"
                             class="object-contain h-full w-full"
                             alt="Preview">
