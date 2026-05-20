@@ -49,31 +49,34 @@
             </div>
 
             {{-- Таймер обратного отсчёта --}}
-            <div x-data="countdown('{{ $regatta->date_start->format('Y-m-d\TH:i:s') }}')" class="shrink-0 text-center bg-white md:px-6 md:py-16 py-3 px-8 md:mr-4">
-                <p class="text-2xl md:text-4xl font-display text-[#2E325C] font-semibold mb-1 a-font">{{ $regatta->dateRange() }}</p>
-                <p class="text-sm md:text-lg mb-4 text-[#2E325C]">До начала регаты осталось</p>
-                <div class="flex items-start gap-3 bg-[#F8F8F8] p-2">
-                    <div class="text-center border-r border-[#EAEAEA] pr-3">
-                        <div class="text-2xl md:text-5xl countdown-digit text-[#2E325C] a-font" x-text="String(days).padStart(2,'0')">00</div>
-                        <div class="text-brand-gray-light mt-3 pl-2 text-[10px] md:text-base">Дней</div>
+            <div class="h-full p-6">
+                <div x-data="countdown('{{ $regatta->date_start->format('Y-m-d\TH:i:s') }}')" class="shrink-0 text-center bg-white p-6 md:mr-4 h-full">
+                    <p class="text-2xl md:text-4xl font-display text-[#2E325C] font-semibold mb-1 a-font">{{ $regatta->dateRange() }}</p>
+                    <p class="text-sm md:text-lg mb-4 text-[#2E325C]">До начала регаты осталось</p>
+                    <div class="flex items-start gap-3 bg-[#F8F8F8] p-2">
+                        <div class="text-center border-r border-[#EAEAEA] pr-3">
+                            <div class="text-2xl md:text-5xl countdown-digit text-[#2E325C] a-font" x-text="String(days).padStart(2,'0')">00</div>
+                            <div class="text-brand-gray-light mt-3 pl-2 text-[10px] md:text-base">Дней</div>
+                        </div>
+                        <div class="text-center border-r border-[#EAEAEA] pr-3">
+                            <div class="text-2xl md:text-5xl countdown-digit text-[#2E325C] a-font" x-text="String(hours).padStart(2,'0')">00</div>
+                            <div class="text-brand-gray-light mt-3 pl-2 text-[10px] md:text-base">Часов</div>
+                        </div>
+                        <div class="text-center border-r border-[#EAEAEA] pr-3">
+                            <div class="text-2xl md:text-5xl countdown-digit text-[#2E325C] a-font" x-text="String(minutes).padStart(2,'0')">00</div>
+                            <div class="text-brand-gray-light mt-3 pl-2 text-[10px] md:text-base">Минут</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl md:text-5xl countdown-digit text-[#2E325C] a-font" x-text="String(seconds).padStart(2,'0')">00</div>
+                            <div class="text-brand-gray-light mt-3 pl-1 text-[10px] md:text-base">Секунд</div>
+                        </div>
                     </div>
-                    <div class="text-center border-r border-[#EAEAEA] pr-3">
-                        <div class="text-2xl md:text-5xl countdown-digit text-[#2E325C] a-font" x-text="String(hours).padStart(2,'0')">00</div>
-                        <div class="text-brand-gray-light mt-3 pl-2 text-[10px] md:text-base">Часов</div>
-                    </div>
-                    <div class="text-center border-r border-[#EAEAEA] pr-3">
-                        <div class="text-2xl md:text-5xl countdown-digit text-[#2E325C] a-font" x-text="String(minutes).padStart(2,'0')">00</div>
-                        <div class="text-brand-gray-light mt-3 pl-2 text-[10px] md:text-base">Минут</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xl md:text-5xl countdown-digit text-[#2E325C] a-font" x-text="String(seconds).padStart(2,'0')">00</div>
-                        <div class="text-brand-gray-light mt-3 pl-1 text-[10px] md:text-base">Секунд</div>
-                    </div>
+                    <a href="{{ route('competition-details', ['regatta' => $regatta->id]) }}" class="mt-5 bg-[#2D92CE] text-white md:text-lg text-sm font-semibold py-2.5 px-6 transition-colors flex gap-2 items-center justify-center">
+                        Подать заявку {!! file_get_contents(public_path('images/icons/l-arrow-right.svg')) !!}
+                    </a>
                 </div>
-                <a href="{{ route('competition-details', ['regatta' => $regatta->id]) }}" class="mt-5 bg-[#2D92CE] text-white md:text-lg text-sm font-semibold py-2.5 px-6 transition-colors flex gap-2 items-center justify-center">
-                    Подать заявку {!! file_get_contents(public_path('images/icons/l-arrow-right.svg')) !!}
-                </a>
             </div>
+
         </div>
         @else
         <div class="text-center py-16 text-brand-gray-light text-lg">
