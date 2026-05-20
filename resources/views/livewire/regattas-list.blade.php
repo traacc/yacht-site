@@ -99,7 +99,7 @@
                     @forelse ($regattas as $regatta)
                     <tr class="border-t">
                         <td data-label="Дата" class="py-2 text-center">{{ $regatta->dateRange() }}</td>
-                        <td data-label="Регата" class="py-2 text-center font-semibold text-brand-navy">{{ $regatta->name }}</td>
+                        <td data-label="Регата" class="py-2 text-center text-brand-navy">{{ $regatta->name }}</td>
                         <td data-label="Локация" class="py-2 text-center">{{ $regatta->location }}</td>
                         <td data-label="Акватория" class="py-2 text-center">{{ $regatta->water_area }}</td>
                         <td data-label="Статус" class="py-2 text-center">
@@ -114,7 +114,7 @@
                             @endif
                         </td>
                         <td class="py-2 text-center">
-                            <a href="{{ route('competition-details', $regatta) }}" class="text-[#2D92CE] font-semibold hover:underline">Подробнее</a>
+                            <a href="{{ route('competition-details', $regatta) }}" class="text-[#2D92CE] font-semibold hover:underline flex items-center gap-3">Подробнее {!! file_get_contents(public_path('images/icons/l-arrow-right.svg')) !!}</a>
                         </td>
                     </tr>
                     @empty
