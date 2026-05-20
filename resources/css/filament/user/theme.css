@@ -39,3 +39,30 @@
 .fi-pagination {
   display: none;
 }
+
+@media (max-width: 768px) {
+  .fi-ta-cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.fi-ac-btn-action {
+  border-radius: 0px;
+  background-color: #2D92CE;
+  color: #fff;
+}
+.fi-input-wrp {
+  border-radius: 0px;
+  border: 0px;
+}
+.fi-input-wrp-content-ctn {
+  border-radius: 0px;
+  border: none;
+}
+.fi-input-wrp-content-ctn input{
+  background-color: #F8F8F8;
+  border-radius: 0px;
+  border: none;
+}
