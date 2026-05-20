@@ -104,7 +104,7 @@ bgImage="{{ asset('images/bg/trustees.png') }}"
                         <div class="info p-2 md:p-4">
                             <h4 class="text-[#2E325C] font-semibold md:text-xl text-sm mb-2 md:mb-4" x-text="person.name"></h4>
                             <div class="md:text-xl text-xs text-brand-gray mb-2 md:mb-4 md:h-14" x-text="person.position"></div>
-                            <a @click.prevent="selectedPerson = person; open = true" class="md:text-xl text-sm font-semibold" href="#">Подробнее →</a>
+                            <a @click.prevent="selectedPerson = person; open = true" class="md:text-xl text-sm font-semibold flex items-center gap-2" href="#">Подробнее {!! file_get_contents(public_path('images/icons/l-arrow-right.svg')) !!}</a>
                         </div>
                     </div>
                 </template>

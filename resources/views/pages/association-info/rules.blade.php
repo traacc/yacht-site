@@ -18,8 +18,8 @@ bgImage="{{ asset('images/bg/rules.png') }}"
                 <li>участники экипажей</li>
                 <li>лица, заинтересованные в развитии класса</li>
             </ul>
-            <button @click="isRequestModalOpen=true" class="mt-6 bg-[#2D92CE] text-white cursor-pointer py-2 px-6 hover:bg-[#0074CC] w-full md:max-w-[300px] transition-colors text-lg font-semibold">
-            Подать заявку →
+            <button @click="isRequestModalOpen=true" class="mt-6 bg-[#2D92CE] text-white cursor-pointer py-2 px-6 hover:bg-[#0074CC] w-full md:max-w-[300px] transition-colors text-lg font-semibold flex items-center gap-2 justify-center">
+            Подать заявку {!! file_get_contents(public_path('images/icons/l-arrow-right.svg')) !!}
             </button>
         </div>
         <div class="pic">
@@ -113,8 +113,8 @@ bgImage="{{ asset('images/bg/rules.png') }}"
   </section>
   <section style="background-image: url('{{ asset('images/rules/rules_want.png') }}')" class="max-w-(--breakpoint-2xl) mx-auto bg-cover bg-center py-20 px-3 md:px-0 mt-10 flex flex-col items-center text-center mb-8">
     <h2 class="a-font text-white text-3xl md:text-5xl max-w-4xl">Хотите присоединиться к Ассоциации и принимать участие в её деятельности?</h2>
-    <button @click="isRequestModalOpen=true" class="mt-6 bg-white cursor-pointer text-[#2E325C] py-2 px-9 hover:bg-[#E8E8E8] transition-colors text-lg font-semibold w-full md:w-auto ms">
-        Подать заявку  →
+    <button @click="isRequestModalOpen=true" class="mt-6 bg-white cursor-pointer text-[#2E325C] py-2 px-9 hover:bg-[#E8E8E8] transition-colors text-lg font-semibold w-full md:w-auto ms flex items-center justify-center gap-2">
+        Подать заявку  {!! file_get_contents(public_path('images/icons/l-arrow-right.svg')) !!}
     </button>
   </section>
 </main>

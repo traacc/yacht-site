@@ -45,7 +45,7 @@
                     </span>
                 </div>
                 <p class="text-sm md:text-lg text-brand-gray mt-2">{{ $regatta->description }}</p>
-                <a href="{{ route('competition-details', ['regatta' => $regatta->id]) }}" class="inline-block mt-3 text-[#2E325C] text-sm md:text-xl font-semibold hover:underline">Подробнее о регате →</a>
+                <a href="{{ route('competition-details', ['regatta' => $regatta->id]) }}" class="flex items-center gap-2 mt-3 text-[#2E325C] text-sm md:text-xl font-semibold hover:underline">Подробнее о регате {!! file_get_contents(public_path('images/icons/l-arrow-right.svg')) !!}</a>
             </div>
 
             {{-- Таймер обратного отсчёта --}}
@@ -70,8 +70,8 @@
                         <div class="text-brand-gray-light mt-3 pl-1 text-[10px] md:text-base">Секунд</div>
                     </div>
                 </div>
-                <a href="{{ route('competition-details', ['regatta' => $regatta->id]) }}" class="mt-5 block bg-[#2D92CE] text-white md:text-lg text-sm font-semibold py-2.5 px-6 transition-colors">
-                    Подать заявку
+                <a href="{{ route('competition-details', ['regatta' => $regatta->id]) }}" class="mt-5 bg-[#2D92CE] text-white md:text-lg text-sm font-semibold py-2.5 px-6 transition-colors flex gap-2 items-center justify-center">
+                    Подать заявку {!! file_get_contents(public_path('images/icons/l-arrow-right.svg')) !!}
                 </a>
             </div>
         </div>
