@@ -26,10 +26,30 @@ class RegattaEntryFactory extends Factory
         ];
     }
 
+    public function pending(): self
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => EntryStatus::Pending->value,
+        ]);
+    }
     public function approved(): self
     {
         return $this->state(fn (array $attributes) => [
             'status' => EntryStatus::Approved->value,
+        ]);
+    }
+
+    public function rejected(): self
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => EntryStatus::Rejected->value,
+        ]);
+    }
+
+    public function withdrawn(): self
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => EntryStatus::Withdrawn->value,
         ]);
     }
 }

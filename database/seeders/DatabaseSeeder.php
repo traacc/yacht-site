@@ -61,5 +61,7 @@ class DatabaseSeeder extends Seeder
         $this->call(RegattaEventsSeeder::class);
         $this->call(RegattaEntrySeeder::class);
 
+        $this->call(RaceResultSeeder::class);
+        $this->call(RegattaResultSeeder::class);
     }
 }

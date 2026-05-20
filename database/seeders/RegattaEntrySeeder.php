@@ -20,7 +20,9 @@ class RegattaEntrySeeder extends Seeder
 
         foreach ($regattas as $regatta) {
             $teams->random(rand(1, min(5, $teams->count())))->each(function ($team) use ($regatta) {
-                RegattaEntry::factory()->create([
+                $status = ['approved'][array_rand(['approved'])];
+
+                RegattaEntry::factory()->$status()->create([
                     'regatta_id' => $regatta->id,
                     'team_id' => $team->id,
                 ]);
