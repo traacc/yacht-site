@@ -43,7 +43,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                     </div>
 
                     <div class="px-4 pt-4 pb-7 space-y-4">
-                        <div class="text-brand-navy font-semibold leading-tight flex flex-col md:flex-row justify-between md:items-center">
+                        <div class="text-brand-navy font-semibold leading-tight flex flex-col md:flex-row justify-between md:items-start md:h-[58px]">
                             <div class="font-semibold text-lg">{{ $team->name }}</div>
                             <div class="text-base">
                                 <span class="font-semibold">
