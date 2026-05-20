@@ -207,7 +207,7 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                 </div>
 
                 <h3 class="text-3xl a-font mb-6">Параметры яхты</h3>
-                <div class="overflow-y-auto max-h-[180px] relative custom-scroll mb-8">
+                <div class="overflow-y-auto relative custom-scroll mb-8">
                     <table class="w-full border-collapse bg-[#F8F8F8]">
                         <thead>
                             <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">

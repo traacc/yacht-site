@@ -187,7 +187,7 @@ Route::get('/yachts', function () {
             ['label' => 'Класс',       'value' => $yacht->class ?? 'Carter 30'],
             ['label' => 'Парус №',     'value' => $yacht->vfps_number],
             ['label' => 'Год выпуска', 'value' => $yacht->year ?? '—'],
-            ['label' => 'Место регистрации',      'value' => $yacht->project ?? '—'],
+            ['label' => 'Место регистрации',      'value' => $yacht->reg_place ?? '—'],
             ['label' => 'Масса',   'value' => $yacht->current_mass_kg ?? '—'],
         ],
     ])->values()->toJson();
