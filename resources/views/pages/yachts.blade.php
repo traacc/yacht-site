@@ -171,7 +171,7 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                 </div>
 
                 <div class="owner mb-8">
-                    <h3 class="text-3xl a-font mb-6">Владелец лодки</h3>
+                    <h3 class="text-3xl a-font mb-6">Владелец яхты</h3>
                     <div class="flex flex-col md:flex-row gap-3 items-center bg-[#F8F8F8]">
                         <div class="owner__pic">
                             <img :src="selectedYacht.owner_photo" alt="">
