@@ -1,25 +1,42 @@
-<div x-data="{ 
-        isOpen: false, 
+<div x-data="{
+        isOpen: false,
+        intervalId: null,
         init() {
-            // Запускаем таймер после загрузки страницы
-            setTimeout(() => {
-                // Проверяем, не открывал ли пользователь его ранее (опционально)
-                if (!localStorage.getItem('modal_shown'))
-                    this.isOpen = true;
-
-            }, 10000); // 5000 миллисекунд = 5 секунд
+            const checkAndShow = () => {
+                let nextShowTime = localStorage.getItem('capture_window_next_show');
+                let now = Date.now();
+                
+                if (!nextShowTime || now >= parseInt(nextShowTime)) {
+                    if (!this.isOpen) {
+                        this.isOpen = true;
+                        // Устанавливаем время следующего показа через 10 минут
+                        localStorage.setItem('capture_window_next_show', now + 10 * 60 * 1000);
+                    }
+                }
+            };
+            
+            // Проверяем сразу с задержкой для UX
+            setTimeout(() => checkAndShow(), 2000);
+            
+            // Проверяем каждую минуту, не пора ли показать окно
+            this.intervalId = setInterval(() => checkAndShow(), 60000);
+            
+            // Очистка интервала при уничтожении компонента
+            this.$cleanup = () => {
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                }
+            };
         },
         closeModal() {
             this.isOpen = false;
-            // Запоминаем выбор, чтобы не спамить пользователя при перезагрузке
-            localStorage.setItem('modal_shown', 'true');
         }
      }"
      x-show="isOpen"
      style="display: none;"
      class="fixed inset-0 z-50 overflow-y-auto"
-     aria-labelledby="modal-title" 
-     role="dialog" 
+     aria-labelledby="modal-title"
+     role="dialog"
      aria-modal="true">
     
     <div 
