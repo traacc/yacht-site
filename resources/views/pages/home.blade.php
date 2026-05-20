@@ -302,17 +302,26 @@
         '{{ asset('images/news/news_2.png') }}',
     ]
 }" class="py-12 bg-brand-light">
-    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8">
+<style>
+    .month-card { flex: 0 0 calc((100% - 4 * 1rem) / 5); }
+    @media (max-width: 1023px) { .month-card { flex: 0 0 calc((100% - 2 * 1rem) / 3); } }
+    @media (max-width: 639px)  { .month-card { flex: 0 0 85%; } }
+
+    .slides   { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .page-dot { transition: width 0.3s ease, background-color 0.3s ease; }
+</style>
+
+    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8" x-data="regattaCalendar()" data-current-month="{{ now()->format('n') - 1 }}">
         <div class="flex items-center justify-between mb-6">
             <h2 class="section-title a-font">Галерея</h2>
             <div class="flex items-center gap-3">
                 <a href="{{ route('gallery') }}" wire:navigate class="text-lg font-semibold hover:underline">Все галерея →</a>
                 <div class="hidden md:flex items-center gap-2">
-                    <button @click="current = Math.max(0, current-1)"
+                    <button @click="prev()" :disabled="offset === 0"
                         class="bg-[#2D92CE] rounded-full w-8 h-8 flex items-center justify-center shadow-sm hover:shadow-md text-white hover:bg-[#0074CC] transition-all cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                     </button>
-                    <button @click="current = Math.min(images.length - 3, current+1)"
+                    <button @click="next()" :disabled="offset >= maxOffset"
                         class="bg-[#2D92CE] rounded-full w-8 h-8 flex items-center justify-center shadow-sm hover:shadow-md text-white hover:bg-[#0074CC] transition-all cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                     </button>
@@ -328,14 +337,49 @@
             </template>
         </div>
         <div class="flex justify-center gap-1.5 mt-5">
-            <template x-for="i in images.length - 2" :key="i">
-                <button @click="current = i - 1"
-                    :class="current === i-1 ? 'bg-[#2D92CE] w-5' : 'bg-gray-300 w-2'"
-                    class="h-2 rounded-full transition-all duration-300"></button>
+            <template x-for="(_, idx) in Array.from({ length: maxOffset + 1 })" :key="idx">
+                <button
+                    class="page-dot h-1.5 rounded-full border-0 cursor-pointer"
+                    :class="idx === offset ? 'w-5 bg-[#2D92CE]' : 'w-1.5 bg-slate-300'"
+                    @click="goTo(idx)"
+                    :aria-label="`Месяц ${idx + 1}`">
+                </button>
             </template>
         </div>
     </div>
 </section>
+{{-- Alpine-логика слайдера --}}
+<script>
+function regattaCalendar() {
+    return {
+        visible: 5,
+        gap: 16,
+        offset: 0,
+
+        get maxOffset() {
+            return Math.max(0, 12 - this.visible);
+        },
+
+        prev() { if (this.offset > 0) this.offset--; },
+        next() { if (this.offset < this.maxOffset) this.offset++; },
+        goTo(idx) {
+            this.offset = Math.min(Math.max(idx, 0), this.maxOffset);
+        },
+
+        init() {
+            this.updateVisible();
+            const currentMonthIdx = parseInt(this.$el.dataset.currentMonth) || 0;
+            this.offset = Math.min(currentMonthIdx, this.maxOffset);
+            window.addEventListener('resize', () => this.updateVisible());
+        },
+        updateVisible() {
+            const w = window.innerWidth;
+            this.visible = w < 640 ? 1.25 : w < 1024 ? 3 : 5;
+            if (this.offset > this.maxOffset) this.offset = Math.max(0, this.maxOffset);
+        },
+    }
+}
+</script>
 
 {{-- ===== СПОНСОРЫ ===== --}}
 <section class="py-10 bg-white">
