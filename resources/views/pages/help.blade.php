@@ -55,7 +55,7 @@
                 <template x-for="(item, index) in categories[activeCategory].items" :key="index">
                     <div class="help__item flex md:flex-row flex-col justify-between gap-6 bg-[#F8F8F8] p-4 mb-4">
                         <div class="pr-6 max-w-[620px]">
-                            <h4 class="font-semibold text-[#2E325C] text-lg mb-4" x-text="item.title"></h4>
+                            <h4 @click="help_modal_open = true" class="font-semibold text-[#2E325C] text-lg mb-4 cursor-pointer" x-text="item.title"></h4>
                             <p class="text-[#2E325C]" x-text="item.desc"></p>
                         </div>
                         <div class="pl-6 pr-6 border-l border-l-[#EAEAEA]">
@@ -92,7 +92,7 @@
             <div class="flex mb-6 justify-between items-center">
                 <h3 class="text-3xl a-font max-w-[720px]">Проверка электросистем перед регатой</h3>
                 <div class="close">
-                    <button @click="yacht_modal_open = false" class="text-2xl font-bold">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
+                    <button @click="help_modal_open = false" class="text-2xl font-bold">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
                 </div>
             </div>
             <p class="mb-6">Проверка электросистем перед регатой</p>
