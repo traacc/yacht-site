@@ -77,8 +77,12 @@
                     <p class="text-lg text-[#444] mb-5">
                         Переходите в официальные сообщества CarterPro, чтобы получать анонсы регат, новости и обновления сезона.
                     </p>
-
-                    <div class="social flex gap-2">
+                    <style>
+                        .social a svg {
+                            width: 64px;
+                        }
+                    </style>
+                    <div class="social mt-2 flex gap-2">
                         <a href="#" class="text-[#2D92CE] hover:text-white">
                             {!! file_get_contents(public_path('images/social_icons/tl.svg')) !!}
                         </a>
