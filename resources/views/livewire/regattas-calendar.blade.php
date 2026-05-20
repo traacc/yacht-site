@@ -37,9 +37,9 @@
         </div>
 
         {{-- Слайдер месяцев --}}
-        <div class="relative">
+        <div class="relative px-4 sm:px-6 lg:px-8">
             <button @click="prev()" :disabled="offset === 0"
-                class="absolute -left-4 top-1/2 -translate-y-1/2 z-10 bg-[#2D92CE] rounded-full w-9 h-9 flex items-center justify-center text-white hover:text-brand-red disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                class="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-[#2D92CE] hover:bg-[#0074CC] cursor-pointer rounded-full w-9 h-9 flex items-center justify-center text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
             </button>
 
@@ -85,7 +85,7 @@
                 @click="next()"
                 :disabled="offset >= maxOffset"
                 aria-label="Вперёд"
-                class="absolute -right-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center bg-[#2D92CE] text-white rounded-full shadow-md hover:bg-brand-red disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-brand-blue transition-colors duration-200">
+                class="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center cursor-pointer bg-[#2D92CE] hover:bg-[#0074CC] text-white rounded-full shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                 </svg>
