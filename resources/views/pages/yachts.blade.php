@@ -139,7 +139,7 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                         </div>
                     </div>
                     <p class="mb-6" x-text="'Яхта «' + selectedYacht.name + '» зарегистрирована в Ассоциации Carter Pro и принимает участие в регатах сезона.'"></p>
-                    <div class="flex gap-24 flex-col md:flex-row">
+                    <div class="flex md:gap-24 flex-col md:flex-row">
                         <table>
                             <tr>
                                 <td class="font-semibold py-2 w-64">Парус №</td>
