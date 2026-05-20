@@ -14,9 +14,6 @@ return new class extends Migration
             $table->string('slug');
             $table->timestamps();
             $table->softDeletes();
-
-            $table->index('published_at');
-            $table->index('type');
         });
     }
 
