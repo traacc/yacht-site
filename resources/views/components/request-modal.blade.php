@@ -74,7 +74,7 @@
                     }
                 },
              }">
-            @guest
+                @guest
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-medium text-[#2E325C] a-font">Сначала зарегистрируетесь</h3>
                     <button @click="isRequestModalOpen=false" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
@@ -86,7 +86,7 @@
                         Войти или зарегистрироваться
                     </button>
                 </div>
-            @else
+                @else
                 <h3 class="a-font text-2xl md:text-4xl md:pb-6">Подайте заявку</h3>
             
                 <p class="text-brand-gray pb-6 text-sm md:text-base">По вопросам участия в соревнованиях, вступления в Ассоциацию и другим организационным вопросам вы можете обратиться к нам.</p>
@@ -200,8 +200,9 @@
                         
                     </div>
                 </form>
+                @endguest
             </div>
-            @endguest
+            
         </div>
     </div>
 </div>
