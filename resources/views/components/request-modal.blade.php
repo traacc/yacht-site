@@ -1,5 +1,5 @@
 <div x-data="{ 
-        isRequestModalOpen: false, 
+        isRequestModalOpen: true, 
      }"
      @requestModal.window="isRequestModalOpen = true" 
      x-show="isRequestModalOpen"
@@ -18,7 +18,7 @@
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
              class="fixed inset-0 transition-opacity bg-black/50 z-20" 
-    class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+    class="flex items-center justify-center min-h-screen p-4 pb-20 text-center sm:block sm:p-0">
         
 
         <!-- Само модальное окно -->
@@ -30,10 +30,10 @@
              x-transition:leave="ease-in duration-200"
              x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
              x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-             class="px-6 py-12 relative overflow-hidden transition-all bg-white w-full z-30 top-1/2 left-1/2 -translate-1/2">
+             class="px-3 py-3 relative overflow-hidden transition-all bg-white w-full max-w-[500px] z-30 top-1/2 left-1/2 -translate-1/2">
             
 
-        <div class="form-wrapper bg-white max-w-lg p-3.5 md:p-6 mx-3 z-20 relative"
+        <div class="form-wrapper bg-white max-w-lg p-3.5 md:p-2 mx-3 z-20 relative"
              x-data="{
                 submitted: false,
                 loading: false,
