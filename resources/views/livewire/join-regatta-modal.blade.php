@@ -100,7 +100,7 @@
                     <button type="submit"
                             wire:loading.attr="disabled"
                             class="inline-flex w-full justify-center bg-[#2D92CE] px-3 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90 disabled:opacity-50">
-                        <span wire:loading.remove>Подать заявку</span>
+                        <span wire:loading.remove>Подать заявку →</span>
                         <span wire:loading>Отправка...</span>
                     </button>
                 </div>
