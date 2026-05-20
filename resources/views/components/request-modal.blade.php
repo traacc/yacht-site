@@ -6,7 +6,9 @@
      class="fixed inset-0 z-50 overflow-y-auto"
      aria-labelledby="modal-title" 
      role="dialog" 
-     aria-modal="true">
+     aria-modal="true"
+     style="display:none"
+     >
     
     <div 
             x-show="isRequestModalOpen"
@@ -72,7 +74,7 @@
                     }
                 },
              }">
-                <h3 class="a-font text-2xl md:text-4xl md:pb-6">Остались вопросы?</h3>
+                <h3 class="a-font text-2xl md:text-4xl md:pb-6">Подайте заявку</h3>
                 <p class="text-brand-gray pb-6 text-sm md:text-base">По вопросам участия в соревнованиях, вступления в Ассоциацию и другим организационным вопросам вы можете обратиться к нам.</p>
 
                 {{-- Сообщение об успехе (AJAX) --}}

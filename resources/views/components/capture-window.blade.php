@@ -4,10 +4,10 @@
             // Запускаем таймер после загрузки страницы
             setTimeout(() => {
                 // Проверяем, не открывал ли пользователь его ранее (опционально)
-                //if (!localStorage.getItem('modal_shown'))
+                if (!localStorage.getItem('modal_shown'))
                     this.isOpen = true;
 
-            }, 1000); // 5000 миллисекунд = 5 секунд
+            }, 10000); // 5000 миллисекунд = 5 секунд
         },
         closeModal() {
             this.isOpen = false;
