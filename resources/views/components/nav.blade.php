@@ -72,7 +72,7 @@
                     </div>
                 </div>
                 @else
-                <a href="#" @click="$dispatch('open-login-modal')" class="text-[#2D92CE] text-lg font-semibold px-4 py-2 transition-colors border-[#2D92CE] border flex gap-2">
+                <a href="#" @click="$dispatch('open-login-modal')" class="text-[#2D92CE] text-lg font-semibold px-4 py-2 transition-colors border-[#2D92CE] border flex gap-2 login-btn items-center">
                     {!! file_get_contents(public_path('images/icons/login.svg')) !!} <span class="hidden md:inline">Войти</span>
                 </a>
                 @endauth
@@ -157,7 +157,7 @@
                 <button type="submit" class="w-full text-left py-2 text-sm text-red-300 hover:text-red-200">Выйти</button>
             </form>
             @else
-            <a href="#" @click="$dispatch('open-login-modal')" class="font-semibold px-4 py-2 transition-colors border-white border text-white justify-center flex gap-2">
+            <a href="#" @click="$dispatch('open-login-modal')" class="login-btn font-semibold px-4 py-2 transition-colors border-white border text-white justify-center flex items-center gap-2">
                 {!! file_get_contents(public_path('images/icons/login.svg')) !!} Войти
             </a>
             @endauth
