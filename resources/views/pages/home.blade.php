@@ -64,17 +64,17 @@
             <h3 class="font-display text-[#2E325C] text-3xl mb-4 a-font">
                 Кубок Федерации. 1-й этап
             </h3>
-            <div class="overflow-x-auto md:p-6 bg-white">
+            <div class="overflow-x-auto md:p-6 md:pt-0 bg-white md:max-h-[220px]">
                 <table class="w-full responsive-table">
-                    <thead>
+                    <thead class="sticky top-0 bg-white">
                         <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]">
-                            <th class="pb-2 text-center font-medium w-16 a-font">Место</th>
-                            <th class="pb-2 text-center font-medium a-font">Команда</th>
-                            <th class="pb-2 text-center font-medium a-font">Капитан</th>
-                            <th class="pb-2 text-center font-medium a-font">Яхта</th>
-                            <th class="pb-2 text-center font-medium a-font">Парус №</th>
-                            <th class="pb-2 text-center font-medium a-font">Участники</th>
-                            <th class="pb-2 text-center font-medium a-font">Очки</th>
+                            <th class="pb-2 text-center font-medium w-16 a-font pt-6">Место</th>
+                            <th class="pb-2 text-center font-medium a-font pt-6">Команда</th>
+                            <th class="pb-2 text-center font-medium a-font pt-6">Капитан</th>
+                            <th class="pb-2 text-center font-medium a-font pt-6">Яхта</th>
+                            <th class="pb-2 text-center font-medium a-font pt-6">Парус №</th>
+                            <th class="pb-2 text-center font-medium a-font pt-6">Участники</th>
+                            <th class="pb-2 text-center font-medium a-font pt-6">Очки</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y text-center font-medium">
@@ -82,6 +82,12 @@
                     {place_num: 1, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
                     {place_num: 2, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
                     {place_num: 3, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
+                    {place_num: 4, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
+                    {place_num: 5, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
+                    {place_num: 6, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
+                    {place_num: 7, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
+                    {place_num: 8, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
+                    {place_num: 9, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
                     ] 
                     }" 
                     x-for="(place, i) in results" :key="i">
@@ -90,7 +96,9 @@
                                 <div class="flex items-center md:justify-center gap-3" :class="{
                                     'text-[#C2A36B]': place.place_num == 1,
                                     'text-[#9FA6AD]': place.place_num == 2,
-                                    'text-[#B56A3A]': place.place_num == 3,}
+                                    'text-[#B56A3A]': place.place_num == 3,
+                                    'text-transparent': place.place_num > 3,
+                                    }
                                 ">
                                     {!! file_get_contents(public_path('images/icons/cup.svg')) !!}
                                     <span class="text-brand-gray" x-text="place.place_num"></span>
@@ -113,14 +121,14 @@
         
 
         
-        <div class="grid md:grid-cols-2 gap-5">
+        <div class="grid md:grid-cols-2 gap-4">
 
-            <div class="bg-brand-light rounded-xl md:p-5">
+            <div class="bg-brand-light rounded-xl md:p-4 md:pr-0">
                 <h3 class="font-display  text-[#2E325C] text-3xl mb-4 a-font">ТОП-3 команд сезона</h3>
                 <div class="overflow-x-auto md:p-6 bg-white">
-                    <table class="w-full text-sm responsive-table">
+                    <table class="w-full text-sm responsive-table md:max-h-[220px]">
                         <thead>
-                            <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]">
+                            <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0">
                                 <th class="pb-2 text-center font-medium a-font w-16">Место</th>
                                 <th class="pb-2 text-center font-medium a-font">Команда</th>
                                 <th class="pb-2 text-center font-medium a-font">Очки</th>
@@ -144,12 +152,12 @@
                 </div>
 
             </div>
-            <div class="bg-brand-light rounded-xl md:p-5">
+            <div class="bg-brand-light rounded-xl md:p-4">
                 <h3 class="font-display  text-[#2E325C]  text-3xl mb-4 a-font">ТОП-3 участников</h3>
                 <div class="overflow-x-auto md:p-6 bg-white">
-                    <table class="w-full text-sm responsive-table">
+                    <table class="w-full text-sm responsive-table md:max-h-[220px]">
                         <thead>
-                            <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]">
+                            <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0">
                                 <th class="pb-2 text-center font-medium a-font w-16">Место</th>
                                 <th class="pb-2 text-center font-medium a-font">Участник</th>
                                 <th class="pb-2 text-center font-medium a-font">Очки</th>
