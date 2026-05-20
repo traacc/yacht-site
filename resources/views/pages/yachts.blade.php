@@ -28,7 +28,11 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
         <div class="max-w-(--breakpoint-2xl) mx-auto sm:px-6 lg:px-8">
             <div class="flex items-center flex-col md:flex-row justify-between mb-6">
                 <h2 class="section-title a-font">Список яхт</h2>
-                <a href="/user" class="bg-[#2D92CE] cursor-pointer text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту  →</a>
+                @guest
+                <a href="#" @click.prevent="$dispatch('open-login-modal')" class="bg-[#2D92CE] cursor-pointer text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту  →</a>
+                @else
+                <a href="/user/yacht" class="bg-[#2D92CE] cursor-pointer text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту  →</a>
+                @endguest
             </div>
             <div class="searchbar bg-[#F8F8F8] mb-2">
                 <input x-model="search" class="w-full pl-8 bg-[#F8F8F8] border-none" type="text" placeholder="Поиск">
