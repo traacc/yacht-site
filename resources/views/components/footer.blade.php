@@ -1,6 +1,6 @@
 {{-- ===== ФУТЕР ===== --}}
 
-<footer class="bg-[#2E325C] text-white">
+<footer class="bg-[#2E325C] text-white" x-data="">
     <div class="max-w-(--breakpoint-2xl) mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 text-sm md:text-base">
             {{-- Лого и описание --}}
@@ -68,7 +68,7 @@
                         </a>
                     </li>
                 </ul>
-                <a href="#" @click="$dispatch('open-login-modal')" class="font-semibold color-white px-4 py-2 mt-6 transition-colors justify-center border-white border flex gap-2 md:hidden">
+                <a href="#" @click.prevent="$dispatch('open-login-modal')" class="font-semibold color-white px-4 py-2 mt-6 transition-colors justify-center border-white border flex gap-2 md:hidden">
                     {!! file_get_contents(public_path('images/icons/login.svg')) !!} Войти
                 </a>
             </div>
