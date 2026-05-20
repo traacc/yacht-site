@@ -8,12 +8,28 @@ bgImage="{{ asset('images/bg/results.png') }}"
 </x-hero-section>
 
 <main class="main">
+    <section class="max-w-(--breakpoint-2xl) mx-auto mb-3 md:mb-8 mt-4 flex justify-between flex-col md:flex-row gap-y-2 px-4 md:px-2">
+        <h2 class="a-font md:text-5xl text-2xl">Результаты регат</h2>
+        <div class="controls flex gap-3">
+            <div class="calendar-icon">
+                <select class="border-[#C6C6C6] focus:outline-hidden h-full focus:ring-2 text-[#2E325C] pl-5 min-w-[140px]" name="year" id="">
+                    <option value="2026">2026</option>
+                </select>
+            </div>
+
+            <select name="team_filter" id="team_filter" class="team_filter">
+                <option value="">Все статусы</option>
+                <option value="">Предварительные</option>
+                <option value="">Завершенные</option>
+            </select>
+        </div>
+    </section>
     @forelse($regattas as $regatta)
         <section class="rating_1 mb-12">
             <div class="max-w-(--breakpoint-2xl) mx-auto bg-[#F8F8F8] p-6">
                 <div class="flex justify-between mb-6 flex-col md:flex-row">
                     <h3 class="a-font text-3xl">{{ $regatta->name }}</h3>
-                    <a class="text-[#2E325C] text-lg font-semibold flex gap-2 items-center">
+                    <a class="text-[#2E325C] text-lg font-semibold gap-2 items-center hidden md:flex">
                         <img src="{{ asset('images/icons/download.svg') }}" alt="">
                         <span>Скачать результаты PDF</span>
                     </a>
@@ -24,12 +40,12 @@ bgImage="{{ asset('images/bg/results.png') }}"
                         {{ $regatta->dateRange() }}
                     </div>
                     @if($regatta->isFinished())
-                        <div class="bg-[#15794933] px-3 py-1 text-[#157949] inline-block font-semibold max-w-[120px] w-full">
+                        <div class="bg-[#15794933] px-3 py-1 text-[#157949] inline-block font-semibold max-w-[140px] w-full uppercase">
                             Завершено
                         </div>
                     @else
-                        <div class="bg-[#FFA50033] px-3 py-1 text-[#FF8C00] inline-block font-semibold max-w-[120px] w-full">
-                            предварительные
+                        <div class="bg-[#C2A36B26] px-3 py-1 text-[#C2A36B] inline-block font-semibold max-w-[350px] w-full uppercase">
+                            Предварительные результаты
                         </div>
                     @endif
                 </div>
@@ -82,6 +98,10 @@ bgImage="{{ asset('images/bg/results.png') }}"
                         </tbody>
                     </table>
                 </div>
+                <a class="text-[#2E325C] text-sm font-semibold gap-2 items-center flex md:hidden justify-center mt-4">
+                    <img src="{{ asset('images/icons/download.svg') }}" alt="">
+                    <span>Скачать результаты PDF</span>
+                </a>
             </div>
         </section>
     @empty
