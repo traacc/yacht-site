@@ -163,7 +163,7 @@ bgImage="{{ asset('images/bg/management.png') }}"
             x-transition:enter-end="opacity-100 scale-100"
         >
             <div class="photo hidden md:block max-w-1/2 shrink-0">
-                <img class="max-w-full" :src="'{{ asset('images/management') }}/' + (selectedPerson ? selectedPerson.image : '')" :alt="selectedPerson?.name">
+                <img class="max-w-full h-full object-cover" :src="'{{ asset('images/management') }}/' + (selectedPerson ? selectedPerson.image : '')" :alt="selectedPerson?.name">
             </div>
             <div class="info">
                 <div class="info__header flex justify-between items-start md:mb-4">
