@@ -78,7 +78,7 @@ class NewsResource extends Resource
                 Toggle::make('published_to_tg')
                     ->label('Опубликовано в Telegram'),
                 DateTimePicker::make('published_at')
-                    ->label('Дата публикации'),
+                    ->label('Дата публикации')->maxDate(now()->addMonths(3)),
             ]);
     }
 

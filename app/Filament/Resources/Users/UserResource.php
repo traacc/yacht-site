@@ -72,13 +72,13 @@ class UserResource extends Resource
                     ->email()
                     ->required(),
                 DateTimePicker::make('email_verified_at')
-                    ->label('Email подтверждён'),
+                    ->label('Email подтверждён')->maxDate(now()->addMonths(3)),
                 TextInput::make('phone')
                     ->label('Телефон')
                     ->placeholder('+7 (999) 123-45-67')
                     ->tel(),
                 DateTimePicker::make('phone_verified_at')
-                    ->label('Телефон подтверждён'),
+                    ->label('Телефон подтверждён')->maxDate(now()->addMonths(3)),
                 TextInput::make('password')
                     ->label('Пароль')
                     ->placeholder('Пароль')

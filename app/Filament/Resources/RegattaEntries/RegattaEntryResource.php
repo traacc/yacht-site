@@ -60,7 +60,7 @@ class RegattaEntryResource extends Resource
                     ->default('pending')
                     ->required(),
                 DateTimePicker::make('submitted_at')
-                    ->label('Дата подачи'),
+                    ->label('Дата подачи')->maxDate(now()->addMonths(3)),
             ]);
     }
 

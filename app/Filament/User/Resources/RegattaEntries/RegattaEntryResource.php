@@ -56,7 +56,7 @@ class RegattaEntryResource extends Resource
                     ->required(),
                 Select::make('yacht_id')
                     ->relationship('yacht', 'name')->label('Яхта'),
-                DateTimePicker::make('submitted_at'),
+                DateTimePicker::make('submitted_at')->maxDate(now()->addMonths(3)),
             ]);
     }
 
