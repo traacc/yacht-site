@@ -50,46 +50,27 @@ class RegattaResource extends Resource
     {
         return $schema
             ->components([
+                TextInput::make('name')
+                    ->label('Название')
+                    ->placeholder('Введите название регаты')
+                    ->required(),
                 Select::make('season_id')
                     ->label('Сезон')
                     ->relationship('season', 'year')
                     ->required(),
-                TextInput::make('name')
-                    ->label('Название')
-                    ->placeholder('Название регаты')
-                    ->required(),
                 TextInput::make('level_coefficient')
-                    ->label('Коэффициент уровня')
-                    ->placeholder('1.0')
+                    ->label('Коэффициент соревнований')
+                    ->placeholder('Введите коэффициент соревнований')
                     ->required()
                     ->numeric()
-                    ->default(1.0),
+                    ->default(1.0)->columnSpanFull(),
                 DatePicker::make('date_start')
                     ->label('Дата начала')
                     ->required(),
                 DatePicker::make('date_end')
                     ->label('Дата окончания')
                     ->required(),
-                FileUpload::make('background_image')
-                    ->label('Фоновое изображение'),
-                TextInput::make('location')
-                    ->label('Местоположение')
-                    ->placeholder('Город, страна'),
-                TextInput::make('water_area')
-                    ->label('Акватория')
-                    ->placeholder('Название акватории'),
-                Textarea::make('description')
-                    ->label('Описание')
-                    ->placeholder('Описание регаты')
-                    ->columnSpanFull(),
-                Textarea::make('regulations')
-                    ->label('Положение')
-                    ->placeholder('Текст положения')
-                    ->columnSpanFull(),
-                Textarea::make('map_html')
-                    ->label('Карта (HTML)')
-                    ->placeholder('HTML-код карты')
-                    ->columnSpanFull(),
+
                 TextInput::make('race_days_count')
                     ->label('Количество гоночных дней')
                     ->placeholder('1')
@@ -102,9 +83,31 @@ class RegattaResource extends Resource
                     ->required()
                     ->numeric()
                     ->default(1),
+
+                TextInput::make('location')
+                    ->label('Локацию')
+                    ->placeholder('Выберите локацию'),
+                TextInput::make('water_area')
+                    ->label('Акватория')
+                    ->placeholder('Введите акваторию'),
+                Textarea::make('description')
+                    ->label('О регате')
+                    ->placeholder('Описание о регате')
+                    ->columnSpanFull(),
+                FileUpload::make('background_image')
+                    ->label('Загрузить обложку'),
+
+                Textarea::make('map_html')
+                    ->label('Карта (HTML)')
+                    ->placeholder('HTML-код карты')
+                    ->columnSpanFull(),
                 Textarea::make('prizes')
                     ->label('Призы')
                     ->placeholder('Описание призового фонда')
+                    ->columnSpanFull(),
+                Textarea::make('regulations')
+                    ->label('Регламент')
+                    ->placeholder('Описание регламента')
                     ->columnSpanFull(),
                 Toggle::make('is_archived')
                     ->label('Архивная'),
@@ -122,7 +125,7 @@ class RegattaResource extends Resource
                     ->label('Сезон')
                     ->searchable(),
                 TextColumn::make('date')
-                    ->label('Дата начала')
+                    ->label('Дата')
                     ->getStateUsing(function (Regatta $regatta): string {
                         // Доступ к текущей строке (модели) через $record
                         return $regatta->dateRange();
@@ -130,6 +133,28 @@ class RegattaResource extends Resource
                 TextColumn::make('water_area')
                     ->label('Акватория')
                     ->searchable(),
+                TextColumn::make('status')
+                    ->label('Статус')->badge()
+                ->getStateUsing(function (Regatta $regatta): string {
+                    if($regatta->startsInLessThanMonth())
+                        return 'closest';
+                    else if ($regatta->isUpcoming()) {
+                        return 'planned';
+                    } else if ($regatta->isFinished()) {
+                        return 'completed';
+                    }
+                })
+                ->formatStateUsing(fn (string $state): string => match ($state) {
+                    'closest' => 'Ближайшая',
+                    'planned' => 'Планируемая',
+                    'completed' => 'Завершена',
+                    default => $state,
+                })->color(fn (string $state): string => match ($state) {
+                    'planned' => 'warning',
+                    'completed' => 'success',
+                    'closest' => 'danger',
+                    default => 'gray',
+                }),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
                 TrashedFilter::make(),
