@@ -40,6 +40,10 @@
                     <div class="absolute top-0 right-0 bg-[#ECECEC] px-4 py-2 text-[10px] text-sm">
                         <span class="text-brand-gray-light font-bold text-sm uppercase">Планируемые</span>
                     </div>
+                    @elseif ($regatta->isFinished())
+                    <div class="absolute top-0 right-0 bg-[#E6F4EA] px-4 py-2 text-[10px] text-sm">
+                        <span class="text-[#157949] font-bold text-sm uppercase">Завершена</span>
+                    </div>
                     @endif
                     <div class="absolute bottom-0 left-0 bg-[#F8F8F8] text-[#2E325C] px-4 py-2  text-[10px] text-sm">
                         <span class="font-bold text-sm tracking-wide">{{ $regatta->dateRange() }}</span>
@@ -74,9 +78,9 @@
             </div>
             @endforelse
         </div>
-        <div class="reggata-list__items" x-show="view === 'list'">
-            <table class="w-full text-left border-collapse responsive-table">
-                <thead class="sticky top-0 bg-white md:max-h-[220px]">
+        <div class="reggata-list__items bg-[#F8F8F8] pb-3" x-show="view === 'list'">
+            <table class="w-full text-left border-collapse responsive-table bg-[#F8F8F8]">
+                <thead class="sticky top-0 bg-[#F8F8F8] md:max-h-[220px]">
                     <tr>
                         <th class="py-2 a-font text-center text-2xl">Дата</th>
                         <th class="py-2 a-font text-center text-2xl">Регата</th>
@@ -95,13 +99,13 @@
                         <td data-label="Акватория" class="py-2 text-center">{{ $regatta->water_area }}</td>
                         <td data-label="Статус" class="py-2 text-center">
                             @if ($regatta->startsInLessThanMonth())
-                            <div class="bg-[#FDE4E3] px-3 py-1 text-[#F24842] inline-block font-semibold">Ближайшая регата</div>
+                            <div class="bg-[#FDE4E3] px-3 py-1 w-full max-w-[200px] text-[#F24842] inline-block font-semibold">Ближайшая регата</div>
                             @elseif ($regatta->isUpcoming())
-                            <div class="bg-[#ECECEC] px-3 py-1 text-brand-gray-light inline-block font-semibold">Планируемая</div>
+                            <div class="bg-[#ECECEC] px-3 py-1 w-full max-w-[200px] text-brand-gray-light inline-block font-semibold">Планируемая</div>
                             @elseif ($regatta->isFinished())
-                            <div class="bg-[#E6F4EA] px-3 py-1 text-[#157949] inline-block font-semibold">Состоявшаяся</div>
+                            <div class="bg-[#E6F4EA] px-3 py-1 w-full max-w-[200px] text-[#157949] inline-block font-semibold">Состоявшаяся</div>
                             @else
-                            <div class="bg-[#FFF3E0] px-3 py-1 text-[#E67E22] inline-block font-semibold">Идёт сейчас</div>
+                            <div class="bg-[#FFF3E0] px-3 py-1 w-full max-w-[200px] text-[#E67E22] inline-block font-semibold">Идёт сейчас</div>
                             @endif
                         </td>
                         <td class="py-2 text-center">
