@@ -82,7 +82,7 @@
                             width: 64px;
                         }
                     </style>
-                    <div class="social mt-2 flex gap-2">
+                    <div class="social mt-2 flex gap-2 justify-center">
                         <a href="#" class="text-[#2D92CE] hover:text-white">
                             {!! file_get_contents(public_path('images/social_icons/tl.svg')) !!}
                         </a>
