@@ -14,6 +14,7 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -29,6 +30,8 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+
+use Filament\Forms\Components\Repeater;
 
 class RegattaResource extends Resource
 {
@@ -109,6 +112,29 @@ class RegattaResource extends Resource
                     ->label('Регламент')
                     ->placeholder('Описание регламента')
                     ->columnSpanFull(),
+
+                Repeater::make('regatta_events') // Имя отношения из модели Regatta
+                ->relationship('races') // Указываем Filament автоматически управлять связью
+                ->label('Расписание регаты')
+                ->schema([
+                    TextInput::make('name')
+                        ->label('Событие')
+                        ->required(),
+                    DateTimePicker::make('event_datetime')
+                        ->label('Время')
+                        ->required(),
+                    TextInput::make('description')
+                        ->label('Описание')
+                        ->required(),
+
+                ])->itemLabel(fn (array $state): ?string => (!empty($state['event_datetime']) && !empty($state['name']))
+            ? " {$state['event_datetime']} — {$state['name']}"
+            : 'Новое событие')
+                ->columns(3) // Разместим поля ввода внутри карточки в 3 колонки для компактности
+                ->columnSpanFull()
+                ->addActionLabel('Добавить пункт расписания') // Текст на кнопке добавления
+                ->collapsible(), // Позволит сворачивать пункты, чтобы не занимали много места
+
             ]);
     }
 
