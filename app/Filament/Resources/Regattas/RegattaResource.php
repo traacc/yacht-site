@@ -52,11 +52,8 @@ class RegattaResource extends Resource
             ->components([
                 Select::make('season_id')
                     ->label('Сезон')
-                    ->relationship('season', 'id')
+                    ->relationship('season', 'year')
                     ->required(),
-                Select::make('series_id')
-                    ->label('Серия')
-                    ->relationship('series', 'name'),
                 TextInput::make('name')
                     ->label('Название')
                     ->placeholder('Название регаты')
@@ -118,17 +115,11 @@ class RegattaResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID')
-                    ->searchable(),
-                TextColumn::make('season.id')
-                    ->label('Сезон')
-                    ->searchable(),
-                TextColumn::make('series.name')
-                    ->label('Серия')
-                    ->searchable(),
                 TextColumn::make('name')
                     ->label('Название')
+                    ->searchable(),
+                TextColumn::make('season.year')
+                    ->label('Сезон')
                     ->searchable(),
                 TextColumn::make('level_coefficient')
                     ->label('Коэффициент уровня')
