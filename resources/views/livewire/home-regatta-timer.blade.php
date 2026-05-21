@@ -25,32 +25,35 @@
     <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8">
         @if($regatta)
         <div class="flex flex-col md:flex-row gap-8 items-center bg-[#F8F8F8] pb-6 md:pb-0">
-            <div class="md:max-w-96 shrink-0">
+            <div class="shrink-0">
                 <img src="{{ $regatta->background_image ? asset('storage/' . $regatta->background_image) : asset('images/regatas/reg_preview.png') }}"
                      alt="{{ $regatta->name }}" class=" w-full h-full object-cover">
             </div>
             <div class="flex-1 h-auto flex flex-col justify-between  gap-4 md:gap-5 px-3 md:px-0">
-                <div class="flex items-center gap-2 mb-1">
-                    <span class="bg-[#F2484226] text-[#F24842] font-bold px-2.5 py-1 uppercase text-xs">Ближайшая регата</span>
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="bg-[#F2484226] text-[#F24842] font-bold px-2.5 py-1 uppercase text-xs">Ближайшая регата</span>
+                    </div>
+                    <h2 class="font-display text-brand-navy md:text-5xl text-3xl mt-2 a-font">{{ $regatta->name }}</h2>
+                    <div class="flex flex-col gap-3 md:gap-4 text-sm md:text-lg text-brand-gray mt-2 font-medium">
+                        <span class="flex items-center gap-1.5">
+                            <img src="{{ asset('images/icons/marker.svg') }}" alt="">
+                            {{ $regatta->location }}
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <img src="{{ asset('images/icons/waves.svg') }}" alt="">
+                            {{ $regatta->water_area }}
+                        </span>
+                    </div>
+                    <p class="text-sm md:text-lg text-brand-gray mt-2">{{ $regatta->description }}</p>
+                    <a href="{{ route('competition-details', ['regatta' => $regatta->id]) }}" class="flex items-center gap-2 mt-3 text-[#2E325C] text-sm md:text-xl font-semibold hover:underline">Подробнее о регате {!! file_get_contents(public_path('images/icons/l-arrow-right.svg')) !!}</a>
                 </div>
-                <h2 class="font-display text-brand-navy md:text-5xl text-3xl mt-2 a-font">{{ $regatta->name }}</h2>
-                <div class="flex flex-col gap-3 md:gap-4 text-sm md:text-lg text-brand-gray mt-2 font-medium">
-                    <span class="flex items-center gap-1.5">
-                        <img src="{{ asset('images/icons/marker.svg') }}" alt="">
-                        {{ $regatta->location }}
-                    </span>
-                    <span class="flex items-center gap-1.5">
-                        <img src="{{ asset('images/icons/waves.svg') }}" alt="">
-                        {{ $regatta->water_area }}
-                    </span>
-                </div>
-                <p class="text-sm md:text-lg text-brand-gray mt-2">{{ $regatta->description }}</p>
-                <a href="{{ route('competition-details', ['regatta' => $regatta->id]) }}" class="flex items-center gap-2 mt-3 text-[#2E325C] text-sm md:text-xl font-semibold hover:underline">Подробнее о регате {!! file_get_contents(public_path('images/icons/l-arrow-right.svg')) !!}</a>
+
             </div>
 
             {{-- Таймер обратного отсчёта --}}
             <div class="h-full p-6">
-                <div x-data="countdown('{{ $regatta->date_start->format('Y-m-d\TH:i:s') }}')" class="shrink-0 text-center bg-white p-6 md:mr-4 h-full">
+                <div x-data="countdown('{{ $regatta->date_start->format('Y-m-d\TH:i:s') }}')" class="shrink-0 text-center bg-white p-6 md:py-20 h-full">
                     <p class="text-2xl md:text-4xl font-display text-[#2E325C] font-semibold mb-1 a-font">{{ $regatta->dateRange() }}</p>
                     <p class="text-sm md:text-lg mb-4 text-[#2E325C]">До начала регаты осталось</p>
                     <div class="flex items-start gap-3 bg-[#F8F8F8] p-2">
