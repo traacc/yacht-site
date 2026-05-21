@@ -47,7 +47,9 @@
     justify-content: space-between;
   }
 }
-
+.fi-fo-field {
+  grid-template-columns: 1fr;
+}
 .fi-ac-btn-action {
   border-radius: 0px;
   background-color: #2D92CE;

@@ -30,7 +30,7 @@ class EditProfile extends BaseEditProfile
     {
         return $schema
             ->components([
-                Section::make('Основная информация')
+                Section::make('Профиль')
                     ->schema([
 
                         FileUpload::make('photo_url')
@@ -71,11 +71,6 @@ class EditProfile extends BaseEditProfile
                             ->options([
                                 'mc' => 'МС',
                             ]),
-                    ])->columns(2),
-
-                Section::make('Контакты')
-                    ->schema([
-
                     ])->columns(2),
 
 
