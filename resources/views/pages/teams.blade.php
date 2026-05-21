@@ -47,7 +47,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                     </div>
 
                     <div class="px-4 pt-4 pb-7 space-y-4">
-                        <div class="text-brand-navy font-semibold leading-tight flex flex-col md:flex-row justify-between md:items-start md:h-[58px]">
+                        <div class="text-brand-navy font-semibold leading-tight flex flex-col justify-between md:items-start md:h-[58px]">
                             <div class="font-semibold text-lg">{{ $team->name }}</div>
                             <div class="text-base">
                                 <span class="font-semibold">
@@ -71,7 +71,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                 @endforeach
             </div>
             <div class="reggata-list__items" x-show="view === 'list'">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left border-collapse bg-[#F8F8F8]">
                     <thead>
                         <tr>
                             <th class="py-2 a-font text-center text-2xl">Команда</th>

@@ -34,11 +34,11 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                 <a href="/user/yacht" class="bg-[#2D92CE] cursor-pointer text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту →</a>
                 @endguest
             </div>
-            <div class="searchbar bg-[#F8F8F8] mb-2">
+            <div class="searchbar bg-[#F8F8F8] mb-6">
                 <input x-model="search" class="w-full pl-8 bg-[#F8F8F8] border-none" type="text" placeholder="Поиск">
             </div>
             <div class="reggata-list__items">
-                <table class="w-full text-left border-collapse responsive-table">
+                <table class="w-full text-left border-collapse responsive-table bg-[#F8F8F8]">
                     <thead>
                         <tr>
                             <th class="py-2 a-font text-center text-2xl">Название</th>
