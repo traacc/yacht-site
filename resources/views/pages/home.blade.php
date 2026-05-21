@@ -60,62 +60,7 @@
         </div>
 
         {{-- Таблица этапа --}}
-        <div class="mb-6">
-            <h3 class="font-display text-[#2E325C] text-3xl mb-4 a-font">
-                Кубок Федерации. 1-й этап
-            </h3>
-            <div class="overflow-x-auto md:p-6 md:pt-0 bg-white md:max-h-[220px]">
-                <table class="w-full responsive-table">
-                    <thead class="sticky top-0 bg-white">
-                        <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]">
-                            <th class="pb-2 text-center font-medium w-16 a-font pt-6">Место</th>
-                            <th class="pb-2 text-center font-medium a-font pt-6">Команда</th>
-                            <th class="pb-2 text-center font-medium a-font pt-6">Капитан</th>
-                            <th class="pb-2 text-center font-medium a-font pt-6">Яхта</th>
-                            <th class="pb-2 text-center font-medium a-font pt-6">Парус №</th>
-                            <th class="pb-2 text-center font-medium a-font pt-6">Участники</th>
-                            <th class="pb-2 text-center font-medium a-font pt-6">Очки</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y text-center font-medium">
-                    <template x-data="{ results: [
-                    {place_num: 1, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
-                    {place_num: 2, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
-                    {place_num: 3, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
-                    {place_num: 4, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
-                    {place_num: 5, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
-                    {place_num: 6, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
-                    {place_num: 7, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
-                    {place_num: 8, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
-                    {place_num: 9, team: 'Барс', capitan: 'Игорь Скалин', yacht: 'Барс', sail: 471,  participants: 8, points: '7.0'},
-                    ] 
-                    }" 
-                    x-for="(place, i) in results" :key="i">
-                        <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
-                            <td data-label="Место" class="py-3">
-                                <div class="flex items-center md:justify-center gap-3" :class="{
-                                    'text-[#C2A36B]': place.place_num == 1,
-                                    'text-[#9FA6AD]': place.place_num == 2,
-                                    'text-[#B56A3A]': place.place_num == 3,
-                                    'text-transparent': place.place_num > 3,
-                                    }
-                                ">
-                                    {!! file_get_contents(public_path('images/icons/cup.svg')) !!}
-                                    <span class="text-brand-gray" x-text="place.place_num"></span>
-                                </div>
-                            </td>
-                            <td class="py-3" data-label="Команда" x-text="place.team"></td>
-                            <td class="py-3" class="hidden! md:table-cell" data-label="Капитан" x-text="place.capitan"></td>
-                            <td class="py-3" class="hidden! md:table-cell" data-label="Яхта" x-text="place.yacht"></td>
-                            <td class="py-3" class="hidden! md:table-cell" data-label="Парус №" x-text="place.sail"></td>
-                            <td class="py-3" class="hidden! md:table-cell" data-label="Участники" ><a href="#" class="text-[#2D92CE] font-medium underline hover:no-underline" x-text="place.participants + ' участников '"></a></td>
-                            <td class="py-3" data-label="Очки" x-text="place.points"></td>
-                        </tr>
-                    </template>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+
 
         {{-- Топ-3 рейтинги --}}
         
