@@ -15,9 +15,9 @@
             <div class="flex items-center gap-4 flex-col md:flex-row">
                 {{-- Легенда --}}
                 <div class="flex items-center gap-4 text-[#2E325C]">
-                    <span class="flex items-center gap-1.5 text-xs md:font-base"><span class="size-2 md:size-4 rounded-full bg-[#157949] inline-block"></span>Состоявшиеся</span>
-                    <span class="flex items-center gap-1.5 text-xs md:font-base"><span class="size-2 md:size-4 rounded-full bg-[#C2A36B] inline-block"></span>Ближайшие</span>
-                    <span class="flex items-center gap-1.5 text-xs md:font-base"><span class="size-2 md:size-4 rounded-full bg-[#C6C6C6] inline-block"></span>Планируемые</span>
+                    <span class="flex items-center gap-1.5 text-xs md:text-base"><span class="size-2 md:size-4 rounded-full bg-[#157949] inline-block"></span>Состоявшиеся</span>
+                    <span class="flex items-center gap-1.5 text-xs md:text-base"><span class="size-2 md:size-4 rounded-full bg-[#C2A36B] inline-block"></span>Ближайшие</span>
+                    <span class="flex items-center gap-1.5 text-xs md:text-base"><span class="size-2 md:size-4 rounded-full bg-[#C6C6C6] inline-block"></span>Планируемые</span>
                 </div>
                 {{-- Выбор года --}}
                     @if ($showSelector)
@@ -48,7 +48,7 @@
                     class="slides flex gap-4 will-change-transform"
                     :style="`transform: translateX(calc(-${offset} * (100% + ${gap}px) / ${visible}))`">
                     @foreach ($months as $month)
-                        <div class="p-4 shadow-xs transition-all duration-200 month-card
+                        <div class="p-4 shadow-xs transition-all duration-200 month-card hover:bg-[#2D92CE26]
                             {{ $month['is_current'] ? 'bg-[#2D92CE26]' : 'bg-[#F8F8F8]' }}">
                             <h3 class="text-[#2E325C] font-medium text-2xl pb-4 mb-3 a-font border-b
                                 {{ $month['is_current'] ? 'text-[#2D92CE] border-b-[#2D92CE]/30' : 'border-b-[#EAEAEA]' }}">
@@ -66,7 +66,7 @@
                                         </div>
                                         <div class="flex flex-col gap-1">
                                             <p class="text-[#2E325C] text-sm">{{ $event['date'] }}</p>
-                                            <p class="text-[#2E325C] font-bold mt-0.5">{{ $event['title'] }}</p>
+                                            <p class="text-[#2E325C] font-bold mt-0.5"><a class="hover:underline" href="{{ $event['url'] }}">{{ $event['title'] }}</a></p>
                                             <p class="text-brand-gray-light text-sm">{{ $event['city'] }}</p>
                                         </div>
                                     </div>

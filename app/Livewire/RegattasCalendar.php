@@ -72,6 +72,7 @@ class RegattasCalendar extends Component
                         'status' => $r->isFinished()
                                     ? 'completed'
                                     : ($r->isActive() ? 'upcoming' : 'planned'),
+                        'url' => route('competition-details', $r->id),
                     ])->values()->toArray()
                     : [],
             ];
