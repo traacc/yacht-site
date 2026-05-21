@@ -6,6 +6,7 @@ use Filament\Auth\Pages\EditProfile as BaseEditProfile;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -54,13 +55,6 @@ class EditProfile extends BaseEditProfile
                         DatePicker::make('birth_date')
                             ->label('Дата рождения')
                             ->native(false),
-                        TextInput::make('sport_rank')
-                            ->label('Спортивный разряд')
-                            ->maxLength(255),
-                    ])->columns(2),
-
-                Section::make('Контакты')
-                    ->schema([
                         TextInput::make('email')
                             ->label('Email')
                             ->email()
@@ -71,6 +65,16 @@ class EditProfile extends BaseEditProfile
                             ->label('Телефон')
                             ->tel()
                             ->maxLength(255),
+                        Select::make('sport_category')
+                            ->label('Спортивный разряд')
+                            ->options([
+                                'mc' => 'МС',
+                            ]),
+                    ])->columns(2),
+
+                Section::make('Контакты')
+                    ->schema([
+
                     ])->columns(2),
 
 
