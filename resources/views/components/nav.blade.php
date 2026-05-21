@@ -35,13 +35,21 @@
             </div>
 
             {{-- Действия --}}
-            <div class="hidden md:flex items-center gap-2">
-                <a href="#" class="text-[#2D92CE] hover:text-white">
-                    {!! file_get_contents(public_path('images/social_icons/tl.svg')) !!}
-                </a>
-                <a href="#" class="text-[#2D92CE] hover:text-white">
-                    {!! file_get_contents(public_path('images/social_icons/vk.svg')) !!}
-                </a>
+                    <style>
+                        .nav-social a svg {
+                            width: 32px;
+                        }
+                    </style>
+            <div class="hidden nav-social md:flex items-center gap-2">
+                <div class="hidden nav-social md:flex items-center gap-2">
+                    <a href="#" class="text-[#2D92CE]">
+                        {!! file_get_contents(public_path('images/social_icons/tl.svg')) !!}
+                    </a>
+                    <a href="#" class="text-[#2D92CE]">
+                        {!! file_get_contents(public_path('images/social_icons/vk.svg')) !!}
+                    </a>
+                </div>
+
 
                 @auth
                 <div x-data="{ open: false }" class="relative">
