@@ -109,8 +109,6 @@ class RegattaResource extends Resource
                     ->label('Регламент')
                     ->placeholder('Описание регламента')
                     ->columnSpanFull(),
-                Toggle::make('is_archived')
-                    ->label('Архивная'),
             ]);
     }
 
