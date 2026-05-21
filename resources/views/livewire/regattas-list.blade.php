@@ -82,7 +82,7 @@
         </div>
         <div class="reggata-list__items" x-show="view === 'list'">
             <table class="w-full text-left border-collapse responsive-table">
-                <thead>
+                <thead class="sticky top-0 bg-white md:max-h-[220px]">
                     <tr>
                         <th class="py-2 a-font text-center text-2xl">Дата</th>
                         <th class="py-2 a-font text-center text-2xl">Регата</th>

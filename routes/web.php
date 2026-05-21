@@ -7,7 +7,26 @@ use App\Models\Yacht;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'pages/home')->name('home');
+Route::get('/', function() {
+    $regatta = Regatta::with([
+        'results' => fn ($q) => $q->orderBy('final_position'),
+        'results.team.organizer',
+        'results.team.activeMembers',
+        'results.yacht',
+        'season',
+    ])
+        ->where(function ($query) {
+            $query->where('date_end', '<', now())
+                  ->orWhere(function ($q) {
+                      $q->where('date_start', '<=', now())
+                        ->where('date_end', '>=', now());
+                  });
+        })
+        ->orderBy('date_end', 'desc')
+        ->first();
+
+    return view('pages.home', compact('regatta'));
+})->name('home');
 Route::view('/association/charter', 'pages/association-info/charter')->name('charter');
 Route::view('/association/management', 'pages/association-info/management')->name('management');
 Route::view('/association/trustees', 'pages/association-info/trustees')->name('trustees');

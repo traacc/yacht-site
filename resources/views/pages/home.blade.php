@@ -52,7 +52,7 @@
 
 {{-- ===== РЕЗУЛЬТАТЫ РЕГАТ ===== --}}
 {{-- @livewire('regatta.results') --}}
-<section class="py-12">
+<section class="py-12" x-data="{team_modal_open: false, activeTeam: null}">
     <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8 py-4 bg-[#F8F8F8]">
         <div class="flex items-center justify-between mb-6">
             <h2 class="section-title a-font">Результаты регат</h2>
@@ -61,6 +61,160 @@
 
         {{-- Таблица этапа --}}
 
+        <section class="rating_1 mb-12">
+            <div class="max-w-(--breakpoint-2xl) mx-auto bg-[#F8F8F8] p-6">
+                <div class="flex justify-between mb-6 flex-col md:flex-row">
+                    <h3 class="a-font text-3xl">{{ $regatta->name }}</h3>
+                </div>
+                <div class="flex gap-6 items-center mb-6">
+                    <div class="date flex gap-2 text-lg font-medium">
+                        {!! file_get_contents(public_path('images/icons/calendar.svg')) !!}
+                        {{ $regatta->dateRange() }}
+                    </div>
+                    @if($regatta->isFinished())
+                        <div class="bg-[#15794933] px-3 py-1 text-[#157949] inline-block font-semibold max-w-[140px] w-full uppercase">
+                            Завершено
+                        </div>
+                    @else
+                        <div class="bg-[#C2A36B26] px-3 py-1 text-[#C2A36B] inline-block font-semibold max-w-[350px] w-full uppercase">
+                            Предварительные результаты
+                        </div>
+                    @endif
+                </div>
+                @if(!$regatta->isFinished())
+                <p class="mb-6">Таблица обновляется по мере обработки результатов. Финальные очки будут опубликованы после утверждения итогов соревнования.</p>
+                @endif
+                <div class="overflow-x-auto relative p-6 bg-white responsive-table md:max-h-[220px]">
+                    <table class="w-full">
+                        <thead class="sticky top-0 bg-white">
+                            <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] ">
+                                <th class="pb-2 text-center font-medium w-16 a-font">Место</th>
+                                <th class="pb-2 text-center font-medium a-font">Команда</th>
+                                <th class="pb-2 text-center font-medium a-font">Капитан</th>
+                                <th class="pb-2 text-center font-medium a-font">Яхта</th>
+                                <th class="pb-2 text-center font-medium a-font">Парус №</th>
+                                <th class="pb-2 text-center font-medium a-font">Участники</th>
+                                <th class="pb-2 text-center font-medium a-font">Очки</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y text-center font-medium">
+                            @forelse($regatta->results as $result)
+                                <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
+                                    <td data-label="Место" class="py-3">
+                                        <div @class([
+                                            'flex items-center justify-center gap-3',
+                                            'text-[#C2A36B]' => $result->final_position == 1,
+                                            'text-[#9FA6AD]' => $result->final_position == 2,
+                                            'text-[#B56A3A]' => $result->final_position == 3,
+                                            'text-transparent' => !in_array($result->final_position, [1, 2, 3]),
+                                        ])>
+                                            {!! file_get_contents(public_path('images/icons/cup.svg')) !!}
+                                            <span class="text-brand-gray">{{ $result->final_position }}</span>
+                                        </div>
+                                    </td>
+                                    <td data-label="Команда" class="py-3">{{ $result->team?->name ?? '—' }}</td>
+                                    <td data-label="Капитан" class="py-3">{{ $result->team?->organizer?->full_name ?? '—' }}</td>
+                                    <td data-label="Яхта" class="py-3">{{ $result->yacht?->name ?? '—' }}</td>
+                                    <td data-label="Парус №" class="py-3">{{ $result->yacht?->vfps_number ?? '—' }}</td>
+                                    <td data-label="Участники" class="py-3">
+                                        <a @click.prevent="team_modal_open = true; activeTeam = {{ Js::from($result->team) }} " href="#" class="text-[#2D92CE] font-medium underline hover:no-underline">
+                                            {{ $result->team?->activeMembers?->count() ?? 0 }} участников
+                                        </a>
+                                    </td>
+                                    <td data-label="Очки" class="py-3">{{ $result->total_points }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="py-6 text-gray-400">Нет результатов</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                <a class="text-[#2E325C] text-sm font-semibold gap-2 items-center flex md:hidden justify-center mt-4">
+                    <img src="{{ asset('images/icons/download.svg') }}" alt="">
+                    <span>Скачать результаты PDF</span>
+                </a>
+            </div>
+        </section>
+
+    <div x-show="team_modal_open"
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 team-modal">
+        <!-- Модальное окно для подробной информации о команде -->
+    <div @click.away="team_modal_open = false"  class="relative p-6 max-w-[1000px] max-h-[80vh] overflow-y-auto bg-white gap-6"
+
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+    >
+        <div class="info flex flex-col md:flex-row gap-6 mb-8">
+            <div class="photo max-w-1/2 shrink-0">
+                <img class="max-w-full" :src="activeTeam?.photo" alt="">
+            </div>
+            <div class="content">
+                <div class="flex mb-6">
+                    <h4 class="a-font text-3xl text-[#2E325C]" x-text="activeTeam?.name"></h4>
+                    <button @click="team_modal_open = false" class="ml-auto text-2xl font-bold">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
+                </div>
+                <p class="mb-6" x-text="activeTeam?.description"></p>
+                <table>
+                    <tr>
+                        <td class="pr-4">Статус</td>
+                        <td x-text="activeTeam?.status"></td>
+                    </tr>
+                    <tr>
+                        <td class="pr-4">Капитан</td>
+                        <td x-text="activeTeam?.captain"></td>
+                    </tr>
+                    <tr>
+                        <td class="pr-4">Рейтинг</td>
+                        <td x-text="activeTeam?.rating"></td>
+                    </tr>
+                    <tr>
+                        <td class="pr-4">Участие в регатах</td>
+                        <td x-text="activeTeam?.participation_count + ' регат' + (activeTeam?.participation_count === 1 ? 'а' : (activeTeam?.participation_count >= 2 && activeTeam?.participation_count <= 4 ? 'ы' : ''))"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="about text-[#2E325C] p-4 bg-[#F8F8F8] mb-8">
+            <h5 class=" a-font text-3xl mb-6">О команде</h5>
+            <p class="mb-6" x-text="activeTeam?.description"></p>
+        </div>
+        <div class="members">
+            <div class="members-header flex flex-col md:flex-row items-center justify-between mb-6">
+                <h5 class=" a-font text-3xl">Состав команды</h5>
+                <div class="download flex gap-2 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> Скачать историю команды</div>
+            </div>
+            <div class="overflow-y-auto max-h-[180px] relative custom-scroll mb-8">
+            <table class="w-full border-collapse bg-[#F8F8F8] responsive-table">
+                <thead>
+                    <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
+                        <th class="pt-2 pb-2 text-center font-medium a-font">Участник</th>
+                        <th class="pt-2 pb-2 text-center font-medium a-font">Дата рождения</th>
+                        <th class="pt-2 pb-2 text-center font-medium a-font">Разряд</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y text-center font-medium">
+                    <template x-if="activeTeam?.members?.length">
+                        <template x-for="(member, i) in activeTeam.members" :key="i">
+                            <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
+                                <td data-label="Участник" class="py-3" x-text="member.name"></td>
+                                <td data-label="Дата рождения" class="py-3" x-text="member.birthday"></td>
+                                <td data-label="Разряд" class="py-3" x-text="member.category"></td>
+                            </tr>
+                        </template>
+                    </template>
+                    <template x-if="!activeTeam?.members?.length">
+                        <tr>
+                            <td class="py-3 text-center" colspan="3">Нет данных</td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+            </div>
+        </div>
 
         {{-- Топ-3 рейтинги --}}
         

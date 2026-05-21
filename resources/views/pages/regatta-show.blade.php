@@ -122,7 +122,8 @@
                             @endphp
                             <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
                                 <td class="py-3">
-                                    <div class="flex items-center justify-center gap-3 text-transparent" "@class([
+                                    <div "@class([
+                                        'flex items-center justify-center gap-3 text-transparent',
                                         'text-[#C2A36B]' => $result->final_position == 1,
                                         'text-[#9FA6AD]' => $result->final_position == 2,
                                         'text-[#B56A3A]' => $result->final_position == 3,
