@@ -157,3 +157,7 @@
   flex-direction: row-reverse;
   max-width: 320px;
 }
+.photo_wrapper .fi-fo-field-label-col .fi-fo-field-label-ctn .fi-fo-field-label-content{
+  font-weight: 600;
+  color: #2E325C;
+}
