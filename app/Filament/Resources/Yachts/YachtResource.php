@@ -163,17 +163,14 @@ class YachtResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID')
-                    ->searchable(),
                 TextColumn::make('name')
                     ->label('Название')
                     ->searchable(),
                 TextColumn::make('vfps_number')
                     ->label('Номер ВФПС')
                     ->searchable(),
-                TextColumn::make('user_id')
-                    ->label('Пользователь (ID)')
+                TextColumn::make('user.name')
+                    ->label('Пользователь')
                     ->searchable(),
                 TextColumn::make('gims_number')
                     ->label('Номер ГИМС')
@@ -200,7 +197,20 @@ class YachtResource extends Resource
                     ->sortable(),
                 TextColumn::make('approval_status')
                     ->label('Статус')
-                    ->badge(),
+                    ->badge()->formatStateUsing(fn (string $state): string => match ($state) {
+                    'pending' => 'На рассмотрении',
+                    'approved' => 'Одобрена',
+                    'rejected' => 'Отклонена',
+                    'withdrawn' => 'Отозвана',
+                    default => $state,
+                })
+                ->color(fn (string $state): string => match ($state) {
+                    'pending' => 'warning',
+                    'approved' => 'success',
+                    'rejected' => 'danger',
+                    'withdrawn' => 'gray',
+                    default => 'gray',
+                }),
                 TextColumn::make('rejection_reason')
                     ->label('Причина отклонения')
                     ->searchable(),

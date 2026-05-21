@@ -100,12 +100,22 @@ class TeamResource extends Resource
                 TextColumn::make('organizer.name')
                     ->label('Организатор')
                     ->searchable(),
-                IconColumn::make('is_archived')
-                    ->label('Архивная')
-                    ->boolean(),
                 TextColumn::make('approval_status')
                     ->label('Статус')
-                    ->badge(),
+                    ->badge()->formatStateUsing(fn (string $state): string => match ($state) {
+                    'pending' => 'На рассмотрении',
+                    'approved' => 'Одобрена',
+                    'rejected' => 'Отклонена',
+                    'withdrawn' => 'Отозвана',
+                    default => $state,
+                })
+                ->color(fn (string $state): string => match ($state) {
+                    'pending' => 'warning',
+                    'approved' => 'success',
+                    'rejected' => 'danger',
+                    'withdrawn' => 'gray',
+                    default => 'gray',
+                }),
                 TextColumn::make('rejection_reason')
                     ->label('Причина отклонения')
                     ->searchable(),

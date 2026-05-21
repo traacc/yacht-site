@@ -49,7 +49,7 @@ class Yacht extends Model
     // Relationships
     // ──────────────────────────────────────────────
 
-    public function registered(): BelongsTo
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
