@@ -29,11 +29,11 @@ class StatsOverview extends BaseWidget
         $newApplicationsCount = RegattaEntry::where('created_at', '>=', now()->subDays(3))->count();
 
         return [
-            $this->createCustomStat('Регаты', Regatta::count(), 'heroicon-o-trophy', 'text-blue-500/10'),
-            $this->createCustomStat('Новые заявки', RegattaEntry::where('status', 'new')->count(), 'heroicon-o-clipboard-document-list', 'text-amber-500/10'),
-            $this->createCustomStat('Пользователи', User::count(), 'heroicon-o-users', 'text-emerald-500/10'),
-            $this->createCustomStat('Яхты', Yacht::count(), 'heroicon-o-map', 'text-cyan-500/10'),
-            $this->createCustomStat('Команды', Team::count(), 'heroicon-o-flag', 'text-rose-500/10'),
+            $this->createCustomStat('Регаты', Regatta::count(), 'dashboard_regatta_count', 'text-blue-500/10'),
+            $this->createCustomStat('Новые заявки', RegattaEntry::where('status', 'new')->count(), 'dashboard_entry', 'text-amber-500/10'),
+            $this->createCustomStat('Пользователи', User::count(), 'dashboard_users', 'text-emerald-500/10'),
+            $this->createCustomStat('Яхты', Yacht::count(), 'dashboard_yachts', 'text-cyan-500/10'),
+            $this->createCustomStat('Команды', Team::count(), 'dashboard_teams', 'text-rose-500/10'),
         ];
     }
 
