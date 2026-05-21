@@ -237,7 +237,7 @@ class YachtResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])->stackedOnMobile()
+            ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
                 TrashedFilter::make(),
             ])
