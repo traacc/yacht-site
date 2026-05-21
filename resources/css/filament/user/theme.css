@@ -68,6 +68,9 @@
   
 
 }
+.fi-modal-window{
+  border-radius: 0px;
+}
 .fi-header-heading {
   @apply text-3xl font-medium;
 
