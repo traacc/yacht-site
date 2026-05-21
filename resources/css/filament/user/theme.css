@@ -6,6 +6,10 @@
 @source '../../../../app/Filament/User/**/*';
 @source '../../../../resources/views/filament/user/**/*';
 
+
+.fi-body {
+  background-color: #fff;
+}
 .fi-topbar {
   display: none;
 }
@@ -47,8 +51,22 @@
     justify-content: space-between;
   }
 }
+
+.fi-section {
+  border: none;
+  box-shadow: none;
+  border-radius: 0px;
+
+  background-color: #F8F8F8;
+}
+
 .fi-fo-field {
   grid-template-columns: 1fr;
+}
+.fi-fo-field-label .fi-fo-field-label-content{
+  font-weight: 400;
+  color: #828282;
+  font-size: 16px;
 }
 .fi-ac-btn-action {
   border-radius: 0px;
@@ -58,14 +76,17 @@
 .fi-input-wrp {
   border-radius: 0px;
   border: 0px;
+  box-shadow: none;
 }
 .fi-input-wrp-content-ctn {
   border-radius: 0px;
+  box-shadow: none;
   border: none;
 }
 .fi-input-wrp-content-ctn input{
-  background-color: #F8F8F8;
+  background-color: #FFFFFF;
   border-radius: 0px;
+  box-shadow: none;
   border: none;
 }
 
