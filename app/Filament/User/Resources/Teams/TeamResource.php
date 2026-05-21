@@ -90,10 +90,10 @@ class TeamResource extends Resource
             ])
             ->filters([
                 TrashedFilter::make(),
-            ])
+            ])->emptyStateHeading('Записей пока нет')
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()->hiddenLabel(),
+                DeleteAction::make()->hiddenLabel(),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
             ])

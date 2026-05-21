@@ -97,9 +97,9 @@ class RegattaResultResource extends Resource
             ])->stackedOnMobile()
             ->filters([
                 //
-            ])
+            ])->emptyStateHeading('Записей пока нет')
             ->recordActions([
-                ViewAction::make(),
+                ViewAction::make()->hiddenLabel(),
                 //EditAction::make(),
                 //DeleteAction::make(),
             ])

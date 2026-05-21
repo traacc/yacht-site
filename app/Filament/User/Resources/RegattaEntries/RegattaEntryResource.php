@@ -93,7 +93,7 @@ class RegattaEntryResource extends Resource
             ])->stackedOnMobile()
             ->filters([
                 //
-            ])
+            ])->emptyStateHeading('Записей пока нет')
             ->recordActions([
                 //EditAction::make(),
                 //DeleteAction::make(),
