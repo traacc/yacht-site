@@ -15,7 +15,7 @@ use Filament\Support\Icons\Heroicon;
 
 class EditProfile extends BaseEditProfile
 {
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUser;
+    protected static string|BackedEnum|null $navigationIcon = 'profile';
     protected static ?string $navigationLabel = 'Профиль';          // название вкладки
     protected static ?int $navigationSort = -1;
 

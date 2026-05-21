@@ -44,7 +44,7 @@ class UserPanelProvider extends PanelProvider
             ->navigationItems([
                 NavigationItem::make('Профиль')
                     ->url(fn (): string => \App\Filament\User\Pages\EditProfile::getUrl(), shouldOpenInNewTab: false)
-                    ->icon('heroicon-o-globe-alt')
+                    ->icon('profile')
                     ->isActiveWhen(fn () => request()->routeIs('filament.user.auth.profile'))
                     
             ])
