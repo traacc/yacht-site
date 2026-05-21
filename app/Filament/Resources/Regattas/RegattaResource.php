@@ -116,57 +116,20 @@ class RegattaResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->label('Название')
+                    ->label('Регата')
                     ->searchable(),
                 TextColumn::make('season.year')
                     ->label('Сезон')
                     ->searchable(),
-                TextColumn::make('level_coefficient')
-                    ->label('Коэффициент уровня')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('date_start')
+                TextColumn::make('date')
                     ->label('Дата начала')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('date_end')
-                    ->label('Дата окончания')
-                    ->date()
-                    ->sortable(),
-                ImageColumn::make('background_image')
-                    ->label('Фоновое изображение'),
-                TextColumn::make('location')
-                    ->label('Местоположение')
-                    ->searchable(),
+                    ->getStateUsing(function (Regatta $regatta): string {
+                        // Доступ к текущей строке (модели) через $record
+                        return $regatta->dateRange();
+                    }),
                 TextColumn::make('water_area')
                     ->label('Акватория')
                     ->searchable(),
-                TextColumn::make('race_days_count')
-                    ->label('Гоночных дней')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('races_count')
-                    ->label('Количество гонок')
-                    ->numeric()
-                    ->sortable(),
-                IconColumn::make('is_archived')
-                    ->label('Архивная')
-                    ->boolean(),
-                TextColumn::make('created_at')
-                    ->label('Создано')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->label('Обновлено')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('deleted_at')
-                    ->label('Удалено')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
                 TrashedFilter::make(),
