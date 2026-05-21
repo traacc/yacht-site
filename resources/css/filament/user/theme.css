@@ -7,6 +7,55 @@
 @source '../../../../resources/views/filament/user/**/*';
 
 
+  @font-face {
+    font-family: 'Bank Gothic';
+    src: url('../../../fonts/BankGothic-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'Montserrat';
+    src: url('../../../fonts/Montserrat-Bold.woff2') format('woff2');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'Montserrat';
+    src: url('../../../fonts/Montserrat-Light.woff2') format('woff2');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'Montserrat';
+    src: url('../../../fonts/Montserrat-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'Montserrat';
+    src: url('../../../fonts/Montserrat-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'Montserrat';
+    src: url('../../../fonts/Montserrat-SemiBold.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+  }
+
+
 .fi-body {
   background-color: #fff;
 }
@@ -15,7 +64,8 @@
 }
 
 .fi-layout {
-  @apply max-w-screen-2xl mx-auto;
+  @apply max-w-screen-2xl mx-auto mt-6 mb-6;
+  
 
 }
 .fi-header-heading {
@@ -52,7 +102,13 @@
   }
 }
 
-.fi-section {
+.fi-header {
+  padding-left: 24px;
+  font-family: 'Bank Gothic';
+  @apply text-3xl;
+}
+
+.fi-section, .fi-page-header-main-ctn {
   border: none;
   box-shadow: none;
   border-radius: 0px;
@@ -77,11 +133,13 @@
   border-radius: 0px;
   border: 0px;
   box-shadow: none;
+  padding: 6px;
 }
 .fi-input-wrp-content-ctn {
   border-radius: 0px;
   box-shadow: none;
   border: none;
+
 }
 .fi-input-wrp-content-ctn input{
   background-color: #FFFFFF;
@@ -89,11 +147,14 @@
   box-shadow: none;
   border: none;
 }
-
+.fi-ac {
+  background-color: #F8F8F8;
+  padding-left: 24px;
+}
 .photo_wrapper {
   display: flex;
   align-items: center;
   column-gap: 2em;
   flex-direction: row-reverse;
-  max-width: 255px;
+  max-width: 320px;
 }
