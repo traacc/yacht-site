@@ -72,12 +72,6 @@ class RegattaResultResource extends Resource
                 TextEntry::make('final_position')
                     ->numeric()
                     ->placeholder('-')->label('Место'),
-                TextEntry::make('created_at')
-                    ->dateTime()
-                    ->placeholder('-'),
-                TextEntry::make('updated_at')
-                    ->dateTime()
-                    ->placeholder('-'),
             ]);
     }
 
@@ -100,14 +94,6 @@ class RegattaResultResource extends Resource
                 TextColumn::make('final_position')
                     ->numeric()
                     ->sortable()->label('Место'),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])->stackedOnMobile()
             ->filters([
                 //

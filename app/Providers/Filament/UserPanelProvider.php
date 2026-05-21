@@ -43,8 +43,9 @@ class UserPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/User/Pages'), for: 'App\Filament\User\Pages')
             ->navigationItems([
                 NavigationItem::make('Профиль')
-                    ->url('/user/profile', shouldOpenInNewTab: false)
+                    ->url(fn (): string => \App\Filament\User\Pages\EditProfile::getUrl(), shouldOpenInNewTab: false)
                     ->icon('heroicon-o-globe-alt')
+                    ->isActiveWhen(fn () => request()->routeIs('filament.user.auth.profile'))
                     
             ])
             ->renderHook(
