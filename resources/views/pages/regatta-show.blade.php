@@ -313,7 +313,7 @@
                                             </div>
                                             <a :href="regatta.url"
                                                class="flex items-center gap-2 text-brand-navy font-bold text-lg hover:gap-3 transition-all duration-200 group">
-                                                Подробнее
+                                                Подробнее  →
                                                 <span class="text-brand-navy group-hover:translate-x-1 transition-transform duration-200">&rarr;</span>
                                             </a>
                                         </div>

@@ -60,7 +60,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                         </div>
 
                         <button @click="setTeam({{ $loop->index }})" class="flex items-center gap-2 text-brand-navy font-semibold text-lg hover:gap-3 transition-all duration-200 group">
-                            Подробнее
+                            Подробнее  →
                             <span class="text-brand-navy group-hover:translate-x-1 transition-transform duration-200">
                             </span>
                         </button>
@@ -97,7 +97,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                             <td class="py-2 text-center">{{ $team->regattaEntries->count() }} регат{{ $team->regattaEntries->count() === 1 ? 'а' : ($team->regattaEntries->count() >= 2 && $team->regattaEntries->count() <= 4 ? 'ы' : '') }}</td>
                             <td class="py-2 text-center">{{ $team->ratings->where('rating_type', 'team')->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first()?->rank_position ?? '—' }}</td>
                             <td class="py-2 text-center">
-                                <a href="#" @click.prevent="setTeam({{ $loop->index }})" class="text-[#2D92CE] font-semibold hover:underline">Подробнее</a>
+                                <a href="#" @click.prevent="setTeam({{ $loop->index }})" class="text-[#2D92CE] font-semibold hover:underline">Подробнее  →</a>
                             </td>
                         </tr>
                         @endforeach

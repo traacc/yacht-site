@@ -29,9 +29,9 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
             <div class="flex items-center flex-col md:flex-row justify-between mb-6">
                 <h2 class="section-title a-font">Список яхт</h2>
                 @guest
-                <a href="#" @click.prevent="$dispatch('open-login-modal')" class="bg-[#2D92CE] cursor-pointer text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту  →</a>
+                <a href="#" @click.prevent="$dispatch('open-login-modal')" class="bg-[#2D92CE] cursor-pointer text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту →</a>
                 @else
-                <a href="/user/yacht" class="bg-[#2D92CE] cursor-pointer text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту  →</a>
+                <a href="/user/yacht" class="bg-[#2D92CE] cursor-pointer text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту →</a>
                 @endguest
             </div>
             <div class="searchbar bg-[#F8F8F8] mb-2">
@@ -65,7 +65,7 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                                 </template>
                             </td>
                             <td class="py-2 text-center">
-                                <a href="#" @click.prevent="openYachtModal(yacht)" class="text-[#2D92CE] font-semibold hover:underline">Подробнее</a>
+                                <a href="#" @click.prevent="openYachtModal(yacht)" class="text-[#2D92CE] font-semibold hover:underline">Подробнее  →</a>
                             </td>
                         </tr>
                         </template>
