@@ -11,6 +11,11 @@
             <div class="flex items-center gap-4">
                 {{-- Выбор года (сезона) --}}
                 <div class="calendar-icon">
+                    <x-custom-select 
+                        name="delivery"
+                        :options="$years" 
+                        placeholder="Способ доставки"
+                    />
                 <select
                     wire:model.live="year"
                     class="border border-[#C6C6C6] bg-white text-[#2E325C] px-4 py-2 min-w-[160px] rounded-sm focus:outline-hidden focus:ring-2 focus:ring-[#2D92CE] text-sm font-medium"
