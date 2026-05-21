@@ -10,14 +10,8 @@
             </div>
             <div class="flex items-center gap-4">
                 {{-- Выбор года (сезона) --}}
-                <div class="calendar-icon">
-                    <x-custom-select 
-                        name="season_year"
-                        :options="$years" 
-                        placeholder="Все годы"
-                        wire:model.live="year"
-                    />
-                </div>
+                
+
                 <div class="reggata-list__view">
                     <button class="p-2" wire:click="setView('grid')" :class="view === 'grid' ? 'text-[#2D92CE]' : 'text-[#2E325C]'">
                         {!! file_get_contents(public_path('images/icons/grid-view.svg')) !!}

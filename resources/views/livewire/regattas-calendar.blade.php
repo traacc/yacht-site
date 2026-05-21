@@ -21,16 +21,16 @@
                 </div>
                 {{-- Выбор года --}}
                     @if ($showSelector)
-                    <div class="calendar-icon w-full md:w-auto">
+                <div class="calendar-icon w-full md:w-auto">
                 
-                    <select
-                        wire:model.live="year"
-                        class="border border-[#C6C6C6] bg-white w-full text-[#2E325C] px-4 py-2 min-w-[120px] focus:outline-hidden focus:ring-2 focus:ring-[#2D92CE] text-sm font-medium"
-                    >
-                        @foreach ($years as $y)
-                            <option value="{{ $y }}">{{ $y }}</option>
-                        @endforeach
-                    </select>
+                    <div class="calendar-icon">
+                        <x-custom-select 
+                            name="season_year"
+                            :options="$years" 
+                            value="2026"
+                            wire:model.live="year"
+                        />
+                    </div>
                     @endif
                 </div>
             </div>
