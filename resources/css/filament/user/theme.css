@@ -103,7 +103,6 @@
 }
 
 .fi-header {
-  padding-left: 24px;
   font-family: 'Bank Gothic';
   @apply text-3xl;
 }
@@ -114,6 +113,7 @@
   border-radius: 0px;
 
   background-color: #F8F8F8;
+  @apply px-8;
 }
 
 .fi-fo-field {
@@ -149,7 +149,6 @@
 }
 .fi-ac {
   background-color: #F8F8F8;
-  padding-left: 24px;
 }
 .photo_wrapper {
   display: flex;

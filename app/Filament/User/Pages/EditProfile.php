@@ -30,8 +30,7 @@ class EditProfile extends BaseEditProfile
     {
         return $schema
             ->components([
-                Section::make('Профиль')
-                    ->schema([
+
 
                         FileUpload::make('photo_url')
                             ->label('Изменить фотографию')
@@ -43,10 +42,6 @@ class EditProfile extends BaseEditProfile
                             ->visibility('public')
                             ->extraFieldWrapperAttributes(['class' => 'photo_wrapper']),
 
-                        TextInput::make('name')
-                            ->label('Отображаемое имя')
-                            ->required()
-                            ->maxLength(255),
                         TextInput::make('first_name')
                             ->label('Имя')
                             ->maxLength(255),
@@ -71,9 +66,9 @@ class EditProfile extends BaseEditProfile
                             ->options([
                                 'mc' => 'МС',
                             ]),
-                    ])->columns(2),
 
 
-            ]);
+
+            ])->columns(2);
     }
 }
