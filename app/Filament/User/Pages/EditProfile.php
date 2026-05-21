@@ -34,13 +34,14 @@ class EditProfile extends BaseEditProfile
                     ->schema([
 
                         FileUpload::make('photo_url')
-                            ->label('Фото профиля')
+                            ->label('Изменить фотографию')
                             ->avatar()
                             ->image()
                             ->imageEditor()
                             ->directory('avatars')
                             ->columnSpanFull()
-                            ->visibility('public'),
+                            ->visibility('public')
+                            ->extraFieldWrapperAttributes(['class' => 'photo_wrapper']),
 
                         TextInput::make('name')
                             ->label('Отображаемое имя')
