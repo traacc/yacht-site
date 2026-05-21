@@ -138,83 +138,7 @@
             </div>
         </section>
 
-    <div x-show="team_modal_open"
-        x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 team-modal">
-        <!-- Модальное окно для подробной информации о команде -->
-    <div @click.away="team_modal_open = false"  class="relative p-6 max-w-[1000px] max-h-[80vh] overflow-y-auto bg-white gap-6"
 
-        x-transition:enter="transition ease-out duration-300"
-        x-transition:enter-start="opacity-0 scale-95"
-        x-transition:enter-end="opacity-100 scale-100"
-    >
-        <div class="info flex flex-col md:flex-row gap-6 mb-8">
-            <div class="photo max-w-1/2 shrink-0">
-                <img class="max-w-full" :src="activeTeam?.photo" alt="">
-            </div>
-            <div class="content">
-                <div class="flex mb-6">
-                    <h4 class="a-font text-3xl text-[#2E325C]" x-text="activeTeam?.name"></h4>
-                    <button @click="team_modal_open = false" class="ml-auto text-2xl font-bold">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
-                </div>
-                <p class="mb-6" x-text="activeTeam?.description"></p>
-                <table>
-                    <tr>
-                        <td class="pr-4">Статус</td>
-                        <td x-text="activeTeam?.status"></td>
-                    </tr>
-                    <tr>
-                        <td class="pr-4">Капитан</td>
-                        <td x-text="activeTeam?.captain"></td>
-                    </tr>
-                    <tr>
-                        <td class="pr-4">Рейтинг</td>
-                        <td x-text="activeTeam?.rating"></td>
-                    </tr>
-                    <tr>
-                        <td class="pr-4">Участие в регатах</td>
-                        <td x-text="activeTeam?.participation_count + ' регат' + (activeTeam?.participation_count === 1 ? 'а' : (activeTeam?.participation_count >= 2 && activeTeam?.participation_count <= 4 ? 'ы' : ''))"></td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-        <div class="about text-[#2E325C] p-4 bg-[#F8F8F8] mb-8">
-            <h5 class=" a-font text-3xl mb-6">О команде</h5>
-            <p class="mb-6" x-text="activeTeam?.description"></p>
-        </div>
-        <div class="members">
-            <div class="members-header flex flex-col md:flex-row items-center justify-between mb-6">
-                <h5 class=" a-font text-3xl">Состав команды</h5>
-                <div class="download flex gap-2 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> Скачать историю команды</div>
-            </div>
-            <div class="overflow-y-auto max-h-[180px] relative custom-scroll mb-8">
-            <table class="w-full border-collapse bg-[#F8F8F8] responsive-table">
-                <thead>
-                    <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
-                        <th class="pt-2 pb-2 text-center font-medium a-font">Участник</th>
-                        <th class="pt-2 pb-2 text-center font-medium a-font">Дата рождения</th>
-                        <th class="pt-2 pb-2 text-center font-medium a-font">Разряд</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y text-center font-medium">
-                    <template x-if="activeTeam?.members?.length">
-                        <template x-for="(member, i) in activeTeam.members" :key="i">
-                            <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
-                                <td data-label="Участник" class="py-3" x-text="member.name"></td>
-                                <td data-label="Дата рождения" class="py-3" x-text="member.birthday"></td>
-                                <td data-label="Разряд" class="py-3" x-text="member.category"></td>
-                            </tr>
-                        </template>
-                    </template>
-                    <template x-if="!activeTeam?.members?.length">
-                        <tr>
-                            <td class="py-3 text-center" colspan="3">Нет данных</td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
-            </div>
-        </div>
 
         {{-- Топ-3 рейтинги --}}
         
@@ -224,17 +148,17 @@
 
             <div class="bg-brand-light rounded-xl md:p-4 md:pr-0">
                 <h3 class="font-display  text-[#2E325C] text-3xl mb-4 a-font">ТОП-3 команд сезона</h3>
-                <div class="overflow-x-auto md:p-6 bg-white">
-                    <table class="w-full text-sm responsive-table md:max-h-[220px]">
-                        <thead>
-                            <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0">
+                <div class="overflow-auto md:p-6 bg-white md:max-h-[220px]">
+                    <table class="w-full text-sm md:text-base responsive-table">
+                        <thead class="sticky bg-white top-0 pt-6">
+                            <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] ">
                                 <th class="pb-2 text-center font-medium a-font w-16">Место</th>
                                 <th class="pb-2 text-center font-medium a-font">Команда</th>
                                 <th class="pb-2 text-center font-medium a-font">Очки</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y text-center font-medium">
-                            <template x-data="{ teams: [['Барс', 7.0], ['Барс', 7.0], ['Барс', 7.0]] }" x-for="(team, i) in teams" :key="i">
+                            <template x-data="{ teams: [['Барс', 7.0], ['Барс', 7.0], ['Барс', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0]] }" x-for="(team, i) in teams" :key="i">
                                 <tr>
                                     <td class="py-2" data-label="Место">
                                         <div class="flex items-center md:justify-center gap-3">
@@ -253,8 +177,8 @@
             </div>
             <div class="bg-brand-light rounded-xl md:p-4">
                 <h3 class="font-display  text-[#2E325C]  text-3xl mb-4 a-font">ТОП-3 участников</h3>
-                <div class="overflow-x-auto md:p-6 bg-white">
-                    <table class="w-full text-sm responsive-table md:max-h-[220px]">
+                <div class="overflow-x-auto md:p-6 bg-white md:max-h-[220px]">
+                    <table class="w-full text-sm md:text-base responsive-table">
                         <thead>
                             <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0">
                                 <th class="pb-2 text-center font-medium a-font w-16">Место</th>
@@ -263,7 +187,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y text-center font-medium">
-                            <template x-data="{ participants: [['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0]] }" x-for="(p, i) in participants" :key="i">
+                            <template x-data="{ participants: [['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0]] }" x-for="(p, i) in participants" :key="i">
                                 <tr>
                                     <td class="py-2" data-label="Место">
                                         <div class="flex items-center md:justify-center gap-3">
@@ -301,7 +225,7 @@
                          alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                 </div>
                 <div class="p-4 bg-[#F8F8F8]">
-                    <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2">
+                    <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2 md:h-14">
                         Открыта регистрация на Кубок Carter 30 Pro
                     </h3>
                     <p class="font-medium text-brand-gray mb-3 text-xs md:text-base">Организаторы напоминают, что экипажи могут подать заявку с...</p>
@@ -318,7 +242,7 @@
                          alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                 </div>
                 <div class="p-4 bg-[#F8F8F8]">
-                    <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2">
+                    <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2 md:h-14">
                         Опубликован календарь майских регат
                     </h3>
                     <p class="font-medium text-brand-gray mb-3 text-xs md:text-base">В расписание сезона добавлены даты старта, те самые, м...</p>
@@ -335,7 +259,7 @@
                          alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                 </div>
                 <div class="p-4 bg-[#F8F8F8]">
-                    <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2">
+                    <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2 md:h-14">
                         Обновлены правила подачи заявок
                     </h3>
                     <p class="font-medium text-brand-gray mb-3 text-xs md:text-base">На сайте опубликованы обновлённые условия регистрации на...</p>
