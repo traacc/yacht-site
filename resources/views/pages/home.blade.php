@@ -117,7 +117,7 @@
                                     <td data-label="Яхта" class="py-3">{{ $result->yacht?->name ?? '—' }}</td>
                                     <td data-label="Парус №" class="py-3">{{ $result->yacht?->vfps_number ?? '—' }}</td>
                                     <td data-label="Участники" class="py-3">
-                                        <a @click.prevent="team_modal_open = true; activeTeam = {{ Js::from($result->team) }} " href="#" class="text-[#2D92CE] font-medium underline hover:no-underline">
+                                        <a @click.prevent="team_modal_open = true; activeTeam = {{ $result->team }} " href="#" class="text-[#2D92CE] font-medium underline hover:no-underline">
                                             {{ $result->team?->activeMembers?->count() ?? 0 }} участников
                                         </a>
                                     </td>

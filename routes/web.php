@@ -12,6 +12,10 @@ Route::get('/', function() {
         'results' => fn ($q) => $q->orderBy('final_position'),
         'results.team.organizer',
         'results.team.activeMembers',
+        'results.team.ratings.season',
+        'results.team.regattaEntries.regatta',
+        'results.team.regattaEntries.yacht',
+        'results.team.regattaResults',
         'results.yacht',
         'season',
     ])
@@ -25,7 +29,49 @@ Route::get('/', function() {
         ->orderBy('date_end', 'desc')
         ->first();
 
-    return view('pages.home', compact('regatta'));
+    $teamsJson = $regatta?->results
+        ?->map(fn ($result) => [
+            'id'                   => $result->team?->id,
+            'name'                 => $result->team?->name ?? '—',
+            'description'          => $result->team?->description ?? '',
+            'photo'                => asset('images/news/news_1.png'),
+            'status'               => $result->team?->is_archived ? 'Неактивная' : 'Активная',
+            'status_class'         => $result->team?->is_archived ? 'inactive' : 'active',
+            'captain'              => $result->team?->organizer?->full_name ?? '—',
+            'rating'               => $result->team?->ratings
+                ?->where('rating_type', 'team')
+                ->sortByDesc(fn ($r) => $r->season?->year ?? 0)
+                ->first()?->rank_position ?? '—',
+            'participation_count'  => $result->team?->regattaEntries?->count() ?? 0,
+            'members'              => $result->team?->activeMembers
+                ?->map(fn ($m) => [
+                    'name'     => $m->full_name,
+                    'birthday' => $m->birth_date?->format('Y-m-d') ?? '',
+                    'category' => $m->sport_category ?? '',
+                ])->values()->toArray() ?? [],
+            'years'                => $result->team?->regattaEntries
+                ?->pluck('regatta.date_start')
+                ->filter()
+                ->map->year
+                ->unique()
+                ->sortDesc()
+                ->values()
+                ->toArray() ?? [],
+            'participation'        => $result->team?->regattaEntries
+                ?->map(fn ($entry) => [
+                    'regatta'           => $entry->regatta?->name ?? '—',
+                    'yacht'             => $entry->yacht?->name ?? '—',
+                    'date_event'        => $entry->regatta?->dateRange() ?? '—',
+                    'date_registration' => $entry->submitted_at?->format('d.m.Y') ?? '—',
+                    'year'              => $entry->regatta?->date_start?->year,
+                    'status'            => $entry->status,
+                    'place'             => $result->team?->regattaResults
+                        ?->firstWhere('regatta_id', $entry->regatta_id)?->final_position ?? null,
+                ])->values()->toArray() ?? [],
+            'gallery'              => [],
+        ])->values() ?? collect();
+
+    return view('pages.home', compact('regatta', 'teamsJson'));
 })->name('home');
 Route::view('/association/charter', 'pages/association-info/charter')->name('charter');
 Route::view('/association/management', 'pages/association-info/management')->name('management');
