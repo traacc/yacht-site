@@ -43,7 +43,7 @@ class YachtResource extends Resource
 
     protected static ?string $model = Yacht::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = 'yacht';
 
     public static function form(Schema $schema): Schema
     {

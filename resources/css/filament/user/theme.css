@@ -170,3 +170,7 @@
 .fi-section-not-contained {
   @apply pl-0 pr-0;
 }
+
+.fi-wi-stats-overview-stat {
+  padding: 1em;
+}

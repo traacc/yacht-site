@@ -21,7 +21,7 @@ class RegattaEntryResource extends Resource
 {
     protected static ?string $model = RegattaEntry::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = 'results';
 
 
     public static function getModelLabel(): string

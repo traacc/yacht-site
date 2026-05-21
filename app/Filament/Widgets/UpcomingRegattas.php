@@ -16,6 +16,8 @@ use Filament\Actions\Action;
 
 class UpcomingRegattas extends TableWidget
 {
+    protected static ?string $heading = 'Ближайшие регаты';
+    protected int | string | array $columnSpan = 'full';
     public function table(Table $table): Table
     {
         return $table

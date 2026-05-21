@@ -23,7 +23,7 @@ class RegattaResultResource extends Resource
 {
     protected static ?string $model = RegattaResult::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = 'cup';
 
 
     public static function getModelLabel(): string
