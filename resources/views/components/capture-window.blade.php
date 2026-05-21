@@ -1,5 +1,5 @@
 <div x-data="{
-        isOpen: false,
+        isOpen: true,
         intervalId: null,
         init() {
             const checkAndShow = () => {
@@ -66,7 +66,7 @@
             <!-- Контент формы захвата -->
             <img class="absolute right-0 top-0 z-0 h-full md:h-auto " src="{!! asset('images/bg/capture-form.png') !!}" alt="">
             <button @click="isOpen = false" class="text-2xl md:text-white text-[#2E325C] absolute right-0 top-0 font-bold z-30">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
-            <div class="absolute hidden md:block inset-0 left-[40%] w-[60%] bg-linear-to-r from-[#FFFFFF] to-[#FFFFFF]/75 z-2"></div>
+            <div class="absolute hidden md:block inset-0 left-[478px] w-[560px] bg-linear-to-r from-[#FFFFFF] to-[#FFFFFF]/0 z-2"></div>
             <div class="absolute block md:hidden inset-0 left-[0%] w-full bg-linear-to-r from-[#FFFFFF] to-[#FFFFFF]/80 z-2"></div>
             <div class="max-w-[562px] relative z-10">
                 <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
@@ -83,10 +83,10 @@
                         }
                     </style>
                     <div class="social mt-2 flex gap-2 justify-center md:justify-start">
-                        <a href="#" class="text-[#2D92CE] hover:text-white">
+                        <a href="#" class="text-[#2D92CE]">
                             {!! file_get_contents(public_path('images/social_icons/tl.svg')) !!}
                         </a>
-                        <a href="#" class="text-[#2D92CE] hover:text-white">
+                        <a href="#" class="text-[#2D92CE]">
                             {!! file_get_contents(public_path('images/social_icons/vk.svg')) !!}
                         </a>
                     </div>
