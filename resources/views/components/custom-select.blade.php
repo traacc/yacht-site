@@ -27,16 +27,16 @@
         @click="open = !open"
         aria-haspopup="listbox"
         :aria-expanded="open"
-        class="relative w-full cursor-pointer bg-white py-2 pl-3 pr-10 text-left font-semibold text-[#2E325C] border border-[#2D92CE] text-sm md:text-base transition duration-150 ease-in-out"
+        {{ $attributes->merge(['class' => 'relative w-full cursor-pointer bg-white py-2 pl-3 pr-8 text-left font-semibold text-[#2E325C] border border-[#2D92CE] text-sm md:text-base transition duration-150 ease-in-out']) }}
     >
         <span 
             class="block truncate text-gray-900" 
-            :class="{ 'text-gray-400': !value }"
+            :class="{ 'text-[#2D92CE]': !value }"
             x-text="selectedLabel"
         ></span>
         <span class="pointer-events-none absolute inset-y-0 pr-2 right-0 flex items-center">
-            <svg class="h-5 w-5 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': open }" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                
+            <svg class="h-3 w-3 text-transparent transition-transform duration-200 rotate-180" :class="{ 'rotate-360': open }" viewBox="0 0 14 8" fill="currentColor" aria-hidden="true">
+                <path d="M13 7L7 0.999999L1 7" stroke="#2D92CE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
         </span>
     </button>

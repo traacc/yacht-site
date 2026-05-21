@@ -12,19 +12,11 @@
                 {{-- Выбор года (сезона) --}}
                 <div class="calendar-icon">
                     <x-custom-select 
-                        name="delivery"
+                        name="season_year"
                         :options="$years" 
-                        placeholder="Способ доставки"
+                        placeholder="Все годы"
+                        wire:model.live="year"
                     />
-                <select
-                    wire:model.live="year"
-                    class="border border-[#C6C6C6] bg-white text-[#2E325C] px-4 py-2 min-w-[160px] rounded-sm focus:outline-hidden focus:ring-2 focus:ring-[#2D92CE] text-sm font-medium"
-                >
-                    <option value="">Все годы</option>
-                    @foreach ($years as $y)
-                        <option value="{{ $y }}">{{ $y }}</option>
-                    @endforeach
-                </select>
                 </div>
                 <div class="reggata-list__view">
                     <button class="p-2" wire:click="setView('grid')" :class="view === 'grid' ? 'text-[#2D92CE]' : 'text-[#2E325C]'">

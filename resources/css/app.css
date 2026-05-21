@@ -162,7 +162,7 @@
     transform: translateY(-50%);
     z-index: 20;
   }
-  .calendar-icon select {
+  .calendar-icon select, .calendar-icon button {
     padding-left: 3rem;
   }
   .l-arrow-right::after {
