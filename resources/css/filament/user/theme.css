@@ -90,10 +90,27 @@
 .fi-ta-selection-cell {
   display: none;
 }
-.fi-pagination {
+.fi-pagination .fi-pagination-overview, .fi-pagination .fi-input-wrp {
   display: none;
 }
-
+.fi-pagination {
+  display: flex;
+  justify-content: center;
+}
+.fi-pagination .fi-pagination-items {
+  border: none;
+  box-shadow: none;
+}
+.fi-pagination-item {
+  border: none;
+}
+.fi-pagination-item.fi-active {
+  color:#2D92CE;
+  border-bottom: 1px solid #2D92CE;
+}
+.fi-pagination-item .fi-icon{
+  color:#2D92CE;
+}
 .fi-ta-table thead .fi-ta-header-cell, .fi-ta-table thead .fi-ta-actions-header-cell{
   @apply bg-white text-2xl font-medium;
   font-family: 'Bank Gothic', sans-serif;
