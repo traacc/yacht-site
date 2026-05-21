@@ -9,7 +9,7 @@ bgImage="{{ asset('images/bg/rules.png') }}"
 </x-hero-section>
 <main class="main" x-data>
   <section class="md:py-10 py-6 bg-white">
-    <div class="max-w-(--breakpoint-2xl) mx-auto bg-[#F8F8F8] flex flex-col md:flex-row gap-10 items-center px-4 md:px-2">
+    <div class="container mx-auto bg-[#F8F8F8] flex flex-col md:flex-row gap-10 items-center">
         <div class="info px-4 sm:px-6 lg:px-8">
             <h2 class="section-title a-font text-[#2E325C] text-5xl mb-4 md:mb-8">Кто может стать членом Ассоциации</h2>
             <p class="text-brand-gray font-medium text-lg mb-2 md:mb-4">Членами Ассоциации могут быть:</p>
@@ -27,7 +27,7 @@ bgImage="{{ asset('images/bg/rules.png') }}"
         </div>
     </div>
   </section>
-  <section class="max-w-(--breakpoint-2xl) mx-auto md:mb-24 mb-8 px-4 md:px-2">
+  <section class="container mx-auto md:mb-24 mb-8">
     <h2 class="section-title a-font text-[#2E325C] text-5xl mb-8">Условия вступления</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="card bg-[#F8F8F8] md:p-6 p-3 text-center">
@@ -48,7 +48,7 @@ bgImage="{{ asset('images/bg/rules.png') }}"
         </div>
     </div>
   </section>
-  <section class="max-w-(--breakpoint-2xl) mx-auto md:mb-24 mb-8 px-4 md:px-2">
+  <section class="container mx-auto md:mb-24 mb-8">
   <h2 class="section-title a-font text-[#2E325C] text-5xl mb-8">Порядок вступления</h2>
  
     <!-- Steps row -->
@@ -111,7 +111,7 @@ bgImage="{{ asset('images/bg/rules.png') }}"
  
     </div>
   </section>
-  <section style="background-image: url('{{ asset('images/rules/rules_want.png') }}')" class="max-w-(--breakpoint-2xl) mx-auto bg-cover bg-center py-20 px-3 md:px-0 mt-10 flex flex-col items-center text-center mb-8">
+  <section style="background-image: url('{{ asset('images/rules/rules_want.png') }}')" class="container mx-auto bg-cover bg-center py-20 mt-10 flex flex-col items-center text-center mb-8">
     <h2 class="a-font text-white text-3xl md:text-5xl max-w-4xl">Хотите присоединиться к Ассоциации и принимать участие в её деятельности?</h2>
     <button @click="isRequestModalOpen=true" class="mt-6 bg-white cursor-pointer text-[#2E325C] py-2 px-9 hover:bg-[#E8E8E8] transition-colors text-lg font-semibold w-full md:w-auto ms flex items-center justify-center gap-2">
         Подать заявку  {!! file_get_contents(public_path('images/icons/l-arrow-right.svg')) !!}

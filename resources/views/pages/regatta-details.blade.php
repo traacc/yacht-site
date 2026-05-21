@@ -4,7 +4,7 @@
 {{-- ===== КАРТОЧКА РЕГАТЫ ===== --}}
 <main class="main" x-data="{ team_modal_open: false }">
     <section class="py-10 bg-white">
-    <div class="max-w-(--breakpoint-2xl) mx-auto bg-[#F8F8F8] flex flex-col md:flex-row gap-10 items-center">
+    <div class="container mx-auto bg-[#F8F8F8] flex flex-col md:flex-row gap-10 items-center">
         <div class="info px-4 sm:px-6 lg:px-8">
             <div class="bg-[#FDE4E3] px-4 py-2 max-w-56 text-center">
                 <span class=" text-[#F24842] font-bold uppercase">БЛИЖАЙШАЯ РЕГАТА</span>
@@ -36,7 +36,7 @@
     </div>
     </section>
     <section class="py-10">
-        <div class="max-w-(--breakpoint-2xl) mx-auto lg:p-6 bg-[#F8F8F8]">
+        <div class="container mx-auto lg:p-6 bg-[#F8F8F8]">
             <div class="flex items-center justify-between mb-6">
                 <h2 class="section-title a-font">Заявленные команды</h2>
                 <a href="#" class="text-[#2E325C] text-lg font-semibold hover:underline flex items-center gap-4"><img src="{{ asset('images/icons/download.svg') }}" alt=""> Скачать список команд</a>
@@ -77,7 +77,7 @@
     </section>
     
     <section class="py-10">
-        <div class="max-w-(--breakpoint-2xl) mx-auto bg-[#F8F8F8] flex flex-col md:flex-row gap-10 items-center">
+        <div class="container mx-auto bg-[#F8F8F8] flex flex-col md:flex-row gap-10 items-center">
             <div class="pic max-w-[720px] shrink-0">
                 <img class="w-full h-full" src="{{ asset('images/details/details_2.png') }}" alt="">
             </div>
@@ -103,7 +103,7 @@
         </div>
     </section>
     <section class="py-10">
-        <div class="max-w-(--breakpoint-2xl) mx-auto lg:p-6">
+        <div class="container mx-auto lg:p-6">
             <div class="flex items-center justify-between mb-6">
                 <h2 class="section-title a-font">Расписание</h2>
             </div>
@@ -248,7 +248,7 @@
         </div>
     </section>
     <section class="py-10">
-        <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8 pdf-list">
+        <div class="container mx-auto pdf-list">
             <h2 class="section-title a-font mb-8">Документы регаты</h2>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
                 <template x-data="
@@ -288,7 +288,7 @@
         </div>
     </section>
     <section class="py-10">
-        <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="container mx-auto">
             <h2 class="section-title a-font pb-8">Локация</h2>
             <div class="map">
                 <img src="{{ asset('images/map.png') }}" alt="Локация">
@@ -310,7 +310,7 @@
         .page-dot { transition: width 0.3s ease, background-color 0.3s ease; }
     </style>
     <section class="py-10">
-        <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8"  x-data="regattaCalendar()">
+        <div class="container mx-auto"  x-data="regattaCalendar()">
             <div class="flex justify-between">
                 <h2 class="section-title a-font pb-8">Другие регаты сезона</h2>
                 <div class="control-btns flex gap-4">

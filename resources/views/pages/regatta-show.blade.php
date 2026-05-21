@@ -4,7 +4,7 @@
     {{-- ===== КАРТОЧКА РЕГАТЫ ===== --}}
     <main class="main" x-data="{ team_modal_open: false, activeTeamIndex: null, entriesJson: @js($entriesJson) }">
         <section class="py-10 bg-white">
-            <div class="max-w-(--breakpoint-2xl) mx-auto bg-brand-light-bg flex flex-col md:flex-row gap-10 justify-between items-center">
+            <div class="container mx-auto bg-brand-light-bg flex flex-col md:flex-row gap-10 justify-between items-center">
                 <div class="info px-4 sm:px-6 lg:px-8">
                     @if($regatta->isUpcoming())
                         <div class="bg-brand-pink-bg px-4 py-2 max-w-56 text-center">
@@ -45,7 +45,7 @@
         {{-- ===== ЗАЯВЛЕННЫЕ КОМАНДЫ ===== --}}
         @if(!$regatta->isFinished())
         <section class="py-10 teams">
-            <div class="max-w-(--breakpoint-2xl) mx-auto lg:p-6 bg-brand-light-bg">
+            <div class="container mx-auto lg:p-6 bg-brand-light-bg">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="section-title a-font">Заявленные команды</h2>
                     <a href="#" class="text-brand-dark text-lg font-semibold hover:underline items-center gap-4 hidden md:flex">
@@ -96,7 +96,7 @@
         {{-- ===== РЕЗУЛЬТАТЫ ===== --}}
         @if($regatta->isFinished())
         <section class="results mb-12">
-            <div class="max-w-(--breakpoint-2xl) mx-auto bg-[#F8F8F8] p-6">
+            <div class="container mx-auto bg-[#F8F8F8] p-6">
                 <div class="flex justify-between mb-6">
                     <div class="flex gap-4"><h3 class="a-font text-3xl">Результаты</h3> <div class="bg-[#A88C5833] px-3 py-1 text-[#A88C58] inline-block font-semibold max-w-[290px] w-full">Предварительные результаты</div></div>
                     <a class="text-[#2E325C] text-lg font-semibold flex gap-2 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> <span>Скачать результаты PDF</span></a>
@@ -156,7 +156,7 @@
         @endif
         {{-- ===== О РЕГАТЕ ===== --}}
         <section class="py-10">
-            <div class="max-w-(--breakpoint-2xl) mx-auto bg-brand-light-bg flex flex-col md:flex-row gap-10 items-center">
+            <div class="container mx-auto bg-brand-light-bg flex flex-col md:flex-row gap-10 items-center">
                 <div class="pic max-w-[720px] shrink-0">
                     <img class="w-full h-full" src="{{ asset('images/details/details_2.png') }}" alt="{{ $regatta->name }}" />
                 </div>
@@ -194,7 +194,7 @@
         {{-- ===== РАСПИСАНИЕ ===== --}}
         @if($scheduleDays->isNotEmpty())
             <section class="py-10">
-                <div class="max-w-(--breakpoint-2xl) mx-auto lg:p-6">
+                <div class="container mx-auto lg:p-6">
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="section-title a-font">Расписание</h2>
                     </div>
@@ -229,7 +229,7 @@
         {{-- ===== ДОКУМЕНТЫ РЕГАТЫ ===== --}}
         @if($documents->isNotEmpty())
             <section class="py-10">
-                <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8 pdf-list">
+                <div class="container mx-auto pdf-list">
                     <h2 class="section-title a-font mb-8">Документы регаты</h2>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
                         @foreach($documents as $doc)
@@ -254,7 +254,7 @@
 
         {{-- ===== ЛОКАЦИЯ ===== --}}
         <section class="py-10">
-            <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="container mx-auto">
                 <h2 class="section-title a-font pb-8">Локация</h2>
                 <div class="map">
                     <img src="{{ asset('images/map.png') }}" alt="Локация" />
@@ -265,7 +265,7 @@
         {{-- ===== ДРУГИЕ РЕГАТЫ СЕЗОНА ===== --}}
         @if($otherRegattas->isNotEmpty())
             <section class="py-10">
-                <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8" x-data="regattaCalendar(@js($otherRegattasData))">
+                <div class="container mx-auto" x-data="regattaCalendar(@js($otherRegattasData))">
                     <div class="flex justify-between">
                         <h2 class="section-title a-font pb-8">Другие регаты сезона</h2>
                         <div class="control-btns md:flex gap-4 hidden">

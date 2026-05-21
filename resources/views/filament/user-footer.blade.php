@@ -1,6 +1,6 @@
 {{-- ===== ФУТЕР ===== --}}
 <footer class="bg-[#2E325C] text-white">
-    <div class="max-w-(--breakpoint-2xl) mx-auto py-12">
+    <div class="container mx-auto py-12">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
             {{-- Лого и описание --}}
             <div class="col-span-2 md:col-span-1">

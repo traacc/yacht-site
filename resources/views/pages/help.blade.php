@@ -33,11 +33,11 @@
     }
 }" class="main">
     <section class="py-12 reggata-list">
-        <div class="max-w-(--breakpoint-2xl) mx-auto">
+        <div class="container mx-auto">
             <h2 class="section-title a-font text-5xl">Помощь</h2>
         </div>
     </section>
-    <section class="flex md:flex-row flex-col gap-8 max-w-(--breakpoint-2xl) mx-auto">
+    <section class="flex md:flex-row flex-col gap-8 container mx-auto">
         <div class="p-4 bg-[#F8F8F8] max-w-[340px] w-full">
             <template x-for="(cat, key) in categories" :key="key">
                 <div @click="activeCategory = key"

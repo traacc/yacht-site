@@ -9,7 +9,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
 
 <main x-data="teamsApp()" class="main">
     <section class="py-12 reggata-list">
-        <div class="max-w-(--breakpoint-2xl) mx-auto sm:px-6 lg:px-8">
+        <div class="container mx-auto">
             <div class="flex flex-col md:flex-row items-center justify-between mb-6">
                 <h2 class="section-title a-font">Зарегистрированные команды</h2>
                 <div class="flex gap-2">

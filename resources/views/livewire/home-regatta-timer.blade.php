@@ -22,7 +22,7 @@
 </script>
 {{-- ===== БЛОК БЛИЖАЙШЕЙ РЕГАТЫ С ТАЙМЕРОМ ===== --}}
 <div class="bg-white border-b border-gray-100 py-10">
-    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="container mx-auto">
         @if($regatta)
         <div class="flex flex-col md:flex-row gap-8 items-center bg-[#F8F8F8] pb-6 md:pb-0">
             <div class="shrink-0">

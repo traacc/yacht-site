@@ -1,6 +1,6 @@
 {{-- ===== НАВИГАЦИЯ ===== --}}
-<nav x-data="{ mobileOpen: false }" class="sticky top-0 z-50 bg-white py-4 px-2 2xl:px-0">
-    <div class="max-w-(--breakpoint-2xl) mx-auto">
+<nav x-data="{ mobileOpen: false }" class="sticky top-0 z-50 bg-white px-2">
+    <div class="container mx-auto">
         <div class="flex items-center justify-between h-14">
             {{-- Логотип --}}
             <a href="/" wire:navigate class="shrink-0">

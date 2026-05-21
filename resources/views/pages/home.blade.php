@@ -4,7 +4,7 @@
 
 {{-- ===== ШАПКА С ПОДЗАГОЛОВКОМ ===== --}}
 <div class="">
-    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row items-start md:items-center gap-4 justify-center text-[#2E325C] ">
+    <div class="container mx-auto py-3 flex flex-col md:flex-row items-start md:items-center gap-4 justify-center text-[#2E325C] ">
 
         <h3 class="w-full md:w-auto text-xl block lg:text-4xl uppercase tracking-widest font-medium a-font text-center md:text-left">Ассоциация класса</h3>
 
@@ -15,7 +15,7 @@
             </p>
         </div>
     </div>
-    <div class="max-w-(--breakpoint-2xl) mx-auto">
+    <div class="container mx-auto">
         <h1 class="md:text-9xl text-5xl text-center tracking-tighter uppercase mt-0.5 mb-4 md:mb-0 a-font">
             Регаты CarterPro
         </h1>
@@ -44,7 +44,7 @@
     .page-dot { transition: width 0.3s ease, background-color 0.3s ease; }
   </style>
 
-<div class="mx-auto max-w-(--breakpoint-2xl)">
+<div class="mx-auto container">
 <livewire:regattas-calendar :show-selector="false" />
 
 </div>
@@ -53,7 +53,7 @@
 {{-- ===== РЕЗУЛЬТАТЫ РЕГАТ ===== --}}
 {{-- @livewire('regatta.results') --}}
 <section class="py-12" x-data="{team_modal_open: false, activeTeam: null}">
-    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8 py-4 bg-[#F8F8F8]">
+    <div class="container mx-auto sm:px-6 py-4 bg-[#F8F8F8]">
         <div class="flex items-center justify-between mb-6">
             <h2 class="section-title a-font">Результаты регат</h2>
             <a href="{{ route('ratings') }}" class="text-[#2E325C] text-lg font-semibold hover:underline hidden md:block">Все результаты →</a>
@@ -62,7 +62,7 @@
         {{-- Таблица этапа --}}
 
         <section class="rating_1 mb-12">
-            <div class="max-w-(--breakpoint-2xl) mx-auto bg-[#F8F8F8] p-6">
+            <div class="container mx-auto bg-[#F8F8F8] p-6">
                 <div class="flex justify-between mb-6 flex-col md:flex-row">
                     <h3 class="a-font text-3xl">{{ $regatta->name }}</h3>
                 </div>
@@ -212,7 +212,7 @@
 {{-- ===== НОВОСТИ ===== --}}
 {{-- @livewire('news.list') --}}
 <section class="py-12 bg-brand-light">
-    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="container mx-auto">
         <div class="flex items-center justify-between mb-6">
             <h2 class="section-title a-font">Новости ассоциации</h2>
             <a href="{{ route('news') }}" wire:navigate class="text-[#2E325C] text-lg font-semibold hover:underline hidden md:block">Все новости →</a>
@@ -276,7 +276,7 @@
 
 {{-- ===== ПРОМО-БЛОКИ: КОМАНДЫ И ЯХТЫ ===== --}}
 <section class="py-8">
-    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="container mx-auto">
         <div class="grid md:grid-cols-2 gap-5">
             {{-- Команды --}}
             <div class="relative overflow-hidden min-h-[220px] group cursor-pointer">
@@ -334,7 +334,7 @@
     .page-dot { transition: width 0.3s ease, background-color 0.3s ease; }
 </style>
 
-    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8" x-data="regattaCalendar()" data-current-month="{{ now()->format('n') - 1 }}">
+    <div class="container mx-auto" x-data="regattaCalendar()" data-current-month="{{ now()->format('n') - 1 }}">
         <div class="flex items-center justify-between mb-6">
             <h2 class="section-title a-font">Галерея</h2>
             <div class="flex items-center gap-3">
@@ -406,7 +406,7 @@ function regattaCalendar() {
 
 {{-- ===== СПОНСОРЫ ===== --}}
 <section class="py-10 bg-white">
-    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="container mx-auto">
         <div class="flex items-center justify-between mb-6">
             <h2 class="section-title a-font">Наши спонсоры</h2>
             <div class="flex gap-2">

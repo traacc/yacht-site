@@ -25,7 +25,7 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
     }
 }" class="main">
     <section class="py-12 reggata-list">
-        <div class="max-w-(--breakpoint-2xl) mx-auto sm:px-6 lg:px-8">
+        <div class="container mx-auto">
             <div class="flex items-center flex-col md:flex-row justify-between mb-6">
                 <h2 class="section-title a-font">Список яхт</h2>
                 @guest

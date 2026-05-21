@@ -1,7 +1,7 @@
 {{-- ===== ФУТЕР ===== --}}
 
 <footer class="bg-[#2E325C] text-white" x-data="">
-    <div class="max-w-(--breakpoint-2xl) mx-auto py-12 px-4 sm:px-6 lg:px-8">
+    <div class="container mx-auto py-12">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 text-sm md:text-base">
             {{-- Лого и описание --}}
             <div class="col-span-2 md:col-span-1 font-light">

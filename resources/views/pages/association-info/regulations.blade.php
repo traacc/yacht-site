@@ -9,7 +9,7 @@ bgImage="{{ asset('images/bg/regulations.png') }}"
 </x-hero-section>
 {{-- ===== Документы регламента ===== --}}
 <section class="py-10 px-4 md:px-2">
-    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8 pdf-list">
+    <div class="container mx-auto pdf-list">
         <h2 class="section-title a-font mb-8">Документы регламента</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <template x-data="
@@ -57,7 +57,7 @@ bgImage="{{ asset('images/bg/regulations.png') }}"
     </div>
 </section>
 <section class="py-10 bg-white px-4 sm:px-6 lg:px-8 text-sm md:text-base">
-    <div class="max-w-(--breakpoint-2xl) mx-auto">
+    <div class="container mx-auto">
         <h2 class="section-title a-font text-[#2E325C] mb-8">Основные положения регламента</h2>
 
         <div class="text-brand-gray font-medium">
@@ -88,8 +88,8 @@ bgImage="{{ asset('images/bg/regulations.png') }}"
         </div>
     </div>
 </section>
-<section class="py-10 bg-white px-4 sm:px-6 lg:px-8">
-<div class="max-w-(--breakpoint-2xl) mx-auto bg-[#F8F8F8] flex flex-col md:flex-row gap-10 items-center">
+<section class="py-10 bg-white">
+<div class="container mx-auto bg-[#F8F8F8] flex flex-col md:flex-row gap-10 items-center">
     <div class="info px-4 sm:px-6 lg:px-8">
         <h2 class="section-title a-font text-[#2E325C] md:text-5xl text-3xl mb-8">Допуск яхты к соревнованиям</h2>
         <p class="text-brand-gray font-medium md:text-lg text-sm mb-8">Для участия в регате яхта должна быть зарегистрирована в базе Ассоциации и соответствовать техническому регламенту.</p>

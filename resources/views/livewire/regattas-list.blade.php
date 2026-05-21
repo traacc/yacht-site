@@ -1,6 +1,6 @@
 {{-- resources/views/livewire/regattas-list.blade.php --}}
-<section x-data="{view: @entangle('view')}" class="py-12 reggata-list px-4 sm:px-6 lg:px-8">
-    <div class="max-w-(--breakpoint-2xl) mx-auto sm:px-6 lg:px-8">
+<section x-data="{view: @entangle('view')}" class="py-12 reggata-list">
+    <div class="container mx-auto">
         <div class="reggata-list__header flex flex-col-reverse md:flex-row md:items-center justify-between mb-6">
             <div class="reggata-list__filter md:flex gap-4 flex-col md:flex-row font-medium hidden">
                 <button wire:click="setFilter('all')" class="reggata-list__filter-btn p-4 cursor-pointer text-center {{ $filter === 'all' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Все</button>

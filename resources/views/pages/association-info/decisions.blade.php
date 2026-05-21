@@ -13,7 +13,7 @@ bgImage="{{ asset('images/bg/decisions.png') }}"
     x-data="pagination()"
     x-init="init()"
 >
-    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8 pdf-list">
+    <div class="container mx-auto pdf-list">
         <div class="flex justify-between mb-8">
             <h2 class="section-title a-font">Документы</h2>
             <div class="calendar-icon">
@@ -180,7 +180,7 @@ bgImage="{{ asset('images/bg/decisions.png') }}"
 </script>
 
 <section class="py-10 bg-white px-4 sm:px-6 lg:px-8">
-<div class="max-w-(--breakpoint-2xl) mx-auto bg-[#F8F8F8] flex flex-col md:flex-row gap-10 items-center">
+<div class="container mx-auto bg-[#F8F8F8] flex flex-col md:flex-row gap-10 items-center">
     <div class="info px-4 sm:px-6 lg:px-8">
         <h2 class="section-title a-font text-[#2E325C] text-2xl md:text-5xl mb-8">О решениях общего собрания</h2>
         <p class="text-brand-gray font-medium text-sm md:text-lg mb-4">Решения общего собрания принимаются участниками Ассоциации и регулируют ключевые вопросы её деятельности, включая проведение соревнований, изменения в регламенте и развитие класса Carter 30.</p>

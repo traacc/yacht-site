@@ -8,7 +8,7 @@ bgImage="{{ asset('images/bg/results.png') }}"
 </x-hero-section>
 
 <main class="main">
-    <section class="max-w-(--breakpoint-2xl) mx-auto mb-3 md:mb-8 mt-4 flex justify-between flex-col md:flex-row gap-y-2 px-4 md:px-2">
+    <section class="container mx-auto mb-3 md:mb-8 mt-4 flex justify-between flex-col md:flex-row gap-y-2">
         <h2 class="a-font md:text-5xl text-2xl">Результаты регат</h2>
         <div class="controls flex gap-3">
             <div class="calendar-icon">
@@ -26,7 +26,7 @@ bgImage="{{ asset('images/bg/results.png') }}"
     </section>
     @forelse($regattas as $regatta)
         <section class="rating_1 mb-12">
-            <div class="max-w-(--breakpoint-2xl) mx-auto bg-[#F8F8F8] p-6">
+            <div class="container mx-auto bg-[#F8F8F8] p-6">
                 <div class="flex justify-between mb-6 flex-col md:flex-row">
                     <h3 class="a-font text-3xl">{{ $regatta->name }}</h3>
                     <a class="text-[#2E325C] text-lg font-semibold gap-2 items-center hidden md:flex">
@@ -107,7 +107,7 @@ bgImage="{{ asset('images/bg/results.png') }}"
         </section>
     @empty
         <section class="py-12">
-            <div class="max-w-(--breakpoint-2xl) mx-auto text-center">
+            <div class="container mx-auto text-center">
                 <p class="text-brand-gray text-xl">Нет регат с опубликованными результатами.</p>
             </div>
         </section>

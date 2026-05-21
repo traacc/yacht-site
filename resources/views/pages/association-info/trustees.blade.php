@@ -94,7 +94,7 @@ bgImage="{{ asset('images/bg/trustees.png') }}"
     ]
 }">
     <section class="py-10">
-        <div class="max-w-(--breakpoint-2xl) mx-auto">
+        <div class="container mx-auto">
             <h2 class="section-title a-font mb-8">Попечительский совет</h2>
             <div class="list grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 

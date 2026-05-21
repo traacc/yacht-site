@@ -12,7 +12,7 @@
 <section class="feedback-form bg-[#2E325C] bg-top-right
     bg-no-repeat md:pt-24 relative">
 
-    <div class="max-w-(--breakpoint-2xl) m-auto pt-5">
+    <div class="container m-auto pt-5">
         <div class="form-wrapper bg-white max-w-lg p-3.5 md:p-6 mx-3 z-20 relative"
              x-data="{
                 submitted: false,

@@ -9,7 +9,7 @@
 </style>
 
 <div x-data="regattaCalendar()" data-current-month="{{ now()->format('n') - 1 }}" class="py-12 bg-brand-light">
-    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="">
         <div class="flex md:items-center justify-between mb-6 flex-col md:flex-row">
             <h2 class="section-title a-font mb-4 md:mb-0">Календарь регат сезона</h2>
             <div class="flex items-center gap-4 flex-col md:flex-row">
@@ -37,7 +37,7 @@
         </div>
 
         {{-- Слайдер месяцев --}}
-        <div class="relative px-4 sm:px-6 lg:px-8">
+        <div class="relative">
             <button @click="prev()" :disabled="offset === 0"
                 class="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-[#2D92CE] hover:bg-[#0074CC] cursor-pointer rounded-full w-9 h-9 flex items-center justify-center text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>

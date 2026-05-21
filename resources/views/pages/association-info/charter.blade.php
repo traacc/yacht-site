@@ -10,7 +10,7 @@ bgImage="{{ asset('images/bg/charter.png') }}"
 </x-hero-section>
 {{-- ===== Документы ассоциации ===== --}}
 <section class="py-10">
-    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8 pdf-list">
+    <div class="container mx-auto pdf-list">
         <h2 class="section-title a-font mb-8">Документы Ассоциации</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <template x-data="
@@ -58,7 +58,7 @@ bgImage="{{ asset('images/bg/charter.png') }}"
     </div>
 </section>
 <section class="py-10 bg-white">
-    <div class="max-w-(--breakpoint-2xl) mx-auto px-5 md:py-0">
+    <div class="container mx-auto md:py-0">
         <h2 class="section-title a-font text-[#2E325C] mb-8">Основные положения устава</h2>
 
         <div class="text-brand-gray font-medium text-sm md:text-base">

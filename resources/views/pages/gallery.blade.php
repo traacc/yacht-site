@@ -8,7 +8,7 @@
     lbImages: []
 }" class="main">
     <section class="py-12 reggata-list px-2 2xl:px-0">
-        <div class="max-w-(--breakpoint-2xl) mx-auto">
+        <div class="container mx-auto">
             <div class="flex justify-between mb-6 flex-col md:flex-row">
                 <h2 class="section-title a-font text-3xl md:text-5xl mb-4 md:mb-0">Галерея</h2>
                 <div class="controls flex gap-4">
@@ -26,7 +26,7 @@
         </div>
     </section>
     <section>
-        <div class="max-w-(--breakpoint-2xl) mx-auto pb-12 px-2 2xl:px-0">
+        <div class="container mx-auto pb-12">
             <h2 class="section-title a-font text-5xl">2026</h2>
             <div class=" grid md:grid-cols-3 gap-6 mt-6"
              x-data="{
@@ -57,7 +57,7 @@
         </div>
     </section>
     <section>
-        <div class="max-w-(--breakpoint-2xl) mx-auto pb-12">
+        <div class="container mx-auto pb-12">
             <h2 class="section-title a-font text-5xl">2025</h2>
             <div class=" grid md:grid-cols-3 gap-6 mt-6"
              x-data="{
@@ -88,7 +88,7 @@
         </div>
     </section>
     <section>
-        <div class="max-w-(--breakpoint-2xl) mx-auto pb-12">
+        <div class="container mx-auto pb-12">
             <h2 class="section-title a-font text-5xl">2024</h2>
             <div 
             x-data="{

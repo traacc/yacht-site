@@ -9,7 +9,7 @@ bgImage="{{ asset('images/bg/policy.png') }}"
 </x-hero-section>
 
 <section class="md:py-10 py-6 bg-white">
-    <div class="max-w-(--breakpoint-2xl) mx-auto px-4 md:px-2">
+    <div class="container mx-auto">
         <h2 class="section-title a-font text-[#2E325C] mb-4 md:mb-8">Политика Ассоциации</h2>
 
         <div class="text-brand-gray font-medium">

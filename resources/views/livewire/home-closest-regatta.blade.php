@@ -4,7 +4,7 @@
     <div class="hero-overlay absolute inset-0"></div>
 
     @if($regatta)
-    <div class="max-w-(--breakpoint-2xl) mx-auto relative mt-4">
+    <div class="container mx-auto relative mt-4">
         {{-- Карточка ближайшей регаты --}}
         <div class="md:absolute md:top-8 md:left-8 mx-4 md:mx-0 mt-6 bg-[#00000080] backdrop-blur-xs p-3 md:p-4  md:w-auto md:max-w-2xl shadow-2xl">
             <div class="flex items-center gap-2 mb-1 md:mb-3">
