@@ -218,7 +218,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                 }
                 else {
                     return `
-                    <div class="flex items-center justify-center gap-3 text">
+                    <div class="flex items-center justify-center gap-3 text-transparent">
                     {!! file_get_contents(public_path('images/icons/cup.svg')) !!}
                     <span class="text-brand-gray">${place ?? '—'}</span>
                     </div>
