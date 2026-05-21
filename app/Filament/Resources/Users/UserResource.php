@@ -49,10 +49,6 @@ class UserResource extends Resource
     {
         return $schema
             ->components([
-                TextInput::make('name')
-                    ->label('Имя пользователя')
-                    ->placeholder('Имя пользователя')
-                    ->required(),
                 TextInput::make('first_name')
                     ->label('Имя')
                     ->placeholder('Имя')

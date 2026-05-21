@@ -17,6 +17,9 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Placeholder;
+
 class RegattaEntryResource extends Resource
 {
     protected static ?string $model = RegattaEntry::class;
@@ -41,14 +44,16 @@ class RegattaEntryResource extends Resource
                 Select::make('regatta_id')
                     ->label('Регата')
                     ->relationship('regatta', 'name')
-                    ->required(),
+                    ->required()->columnSpanFull(),
                 Select::make('team_id')
                     ->label('Команда')
                     ->relationship('team', 'name')
-                    ->required(),
+                    ->required()->columnSpanFull(),
                 Select::make('yacht_id')
                     ->label('Яхта')
-                    ->relationship('yacht', 'name'),
+                    ->relationship('yacht', 'name')->columnSpanFull(),
+                Placeholder::make('team.organizer.name')
+                    ->label('Капитан')->columnSpanFull(),
                 Select::make('status')
                     ->label('Статус')
                     ->options([
@@ -58,9 +63,7 @@ class RegattaEntryResource extends Resource
             'withdrawn' => 'Отозвана',
         ])
                     ->default('pending')
-                    ->required(),
-                DateTimePicker::make('submitted_at')
-                    ->label('Дата подачи')->maxDate(now()->addMonths(3)),
+                    ->required()->columnSpanFull(),
             ]);
     }
 
@@ -68,18 +71,20 @@ class RegattaEntryResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID')
+                TextColumn::make('team.name')
+                    ->label('Команда')
                     ->searchable(),
                 TextColumn::make('regatta.name')
                     ->label('Регата')
                     ->searchable(),
-                TextColumn::make('team.name')
-                    ->label('Команда')
+
+                TextColumn::make('team.organizer.name')
+                    ->label('Капитан')
                     ->searchable(),
-                TextColumn::make('yacht.name')
-                    ->label('Яхта')
-                    ->searchable(),
+                TextColumn::make('submitted_at')
+                    ->label('Дата')
+                    ->dateTime()
+                    ->sortable(),
                 TextColumn::make('status')
                     ->label('Статус')
                     ->badge()->formatStateUsing(fn (string $state): string => match ($state) {
@@ -96,10 +101,7 @@ class RegattaEntryResource extends Resource
                     'withdrawn' => 'gray',
                     default => 'gray',
                 }),
-                TextColumn::make('submitted_at')
-                    ->label('Подана')
-                    ->dateTime()
-                    ->sortable(),
+
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
