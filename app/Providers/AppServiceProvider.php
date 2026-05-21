@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Filament\Notifications\Notification;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Notification::configureUsing(function (Notification $notification): void {
+            $notification->duration(2000); // 2000 мс = 2 секунды
+        });
     }
 }
