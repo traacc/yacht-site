@@ -71,8 +71,8 @@ class LoginModal extends Component
             'last_name'             => $this->last_name,
             'email' => $this->email,
             'phone' => $this->phone,
-            'birthday' => $this->birthday,
-            'sports_category' => $this->sports_category,
+            'birth_date' => $this->birthday,
+            'sport_category' => $this->sports_category,
 
             'password' => Hash::make($this->password),
         ]);
