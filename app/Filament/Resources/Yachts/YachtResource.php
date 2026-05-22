@@ -29,6 +29,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
+use Filament\Schemas\Components\Utilities\Get;
+
 class YachtResource extends Resource
 {
     public static function getModelLabel(): string
@@ -51,25 +53,20 @@ class YachtResource extends Resource
             ->components([
                 TextInput::make('name')
                     ->label('Название')
-                    ->placeholder('Название яхты')
+                    ->placeholder('Введите название яхты')
                     ->required(),
-                TextInput::make('vfps_number')
-                    ->label('Номер ВФПС')
-                    ->placeholder('Номер ВФПС')
-                    ->required(),
-                TextInput::make('user_id')
-                    ->label('Пользователь (ID)')
-                    ->placeholder('ID пользователя'),
                 TextInput::make('gims_number')
                     ->label('Номер ГИМС')
-                    ->placeholder('Номер ГИМС'),
-                TextInput::make('orc_cert_url')
-                    ->label('ORC-сертификат (URL)')
-                    ->placeholder('https://example.com/cert.pdf')
-                    ->url(),
-                TextInput::make('class')
-                    ->label('Класс')
-                    ->placeholder('Класс яхты'),
+                    ->placeholder('Введите номер ГИМС'),
+                TextInput::make('vfps_number')
+                    ->label('Номер на парусе')
+                    ->placeholder('Введите номер на парусе')
+                    ->required(),
+                Select::make('user_id')
+                    ->label('Пользователь')
+                    ->relationship('user', 'name')
+                    ->placeholder('Пользователь зарегистрировавший яхту'),
+
                 TextInput::make('project')
                     ->label('Проект')
                     ->placeholder('Проект яхты'),
@@ -77,30 +74,28 @@ class YachtResource extends Resource
                     ->label('Год выпуска')
                     ->placeholder('Год выпуска')
                     ->numeric(),
-                TextInput::make('reg_place')
-                    ->label('Место регистрации')
-                    ->placeholder('Место регистрации'),
                 TextInput::make('current_mass_kg')
                     ->label('Масса (кг)')
                     ->placeholder('Масса в кг')
                     ->numeric(),
+                TextInput::make('class')
+                    ->label('Класс')
+                    ->placeholder('Класс яхты'),
+
+
+                TextInput::make('reg_place')
+                    ->label('Место регистрации')
+                    ->placeholder('Место регистрации'),
+
                 Select::make('approval_status')
                     ->label('Статус одобрения')
                     ->placeholder('Выберите статус')
                     ->options(['pending' => 'На рассмотрении', 'approved' => 'Одобрена', 'rejected' => 'Отклонена'])
                     ->default('pending')
                     ->required(),
-                TextInput::make('rejection_reason')
-                    ->label('Причина отклонения')
-                    ->placeholder('Причина отклонения'),
-                TextInput::make('rejection_comment')
-                    ->label('Комментарий к отклонению')
-                    ->placeholder('Комментарий к отклонению'),
-                Toggle::make('is_archived')
-                    ->label('Архивная'),
                 TextInput::make('owner_name')
                     ->label('Имя владельца')
-                    ->placeholder('Имя владельца'),
+                    ->placeholder('Имя владельца')->columnSpanFull(),
                 TextInput::make('owner_email')
                     ->label('Email владельца')
                     ->placeholder('email@example.com')
@@ -114,7 +109,7 @@ class YachtResource extends Resource
                     ->image()
                     ->avatar()
                     ->directory('owners')
-                    ->disk('public'),
+                    ->disk('public')->columnSpanFull(),
                 Repeater::make('documents')
                     ->relationship()
                     ->label('Документы')
