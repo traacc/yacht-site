@@ -11,16 +11,9 @@ return new class extends Migration
         Schema::create('regatta_results', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('regatta_id')->constrained('regattas')->cascadeOnDelete();
-            $table->foreignUuid('team_id')->constrained('teams')->restrictOnDelete();
-            
-            // Итоговые очки с учётом level_coefficient регаты
-            $table->decimal('total_points', 10, 3)->default(0);
-            $table->unsignedSmallInteger('final_position')->nullable();
+            $table->enum('result_type', ['preliminary', 'final'])->default('preliminary');
+            $table->enum('source', ['manual', 'imported'])->default('manual');
             $table->timestamps();
-
-            // Один итог на команду в рамках регаты
-            $table->unique(['regatta_id', 'team_id']);
-            $table->index('team_id');
         });
     }
 
