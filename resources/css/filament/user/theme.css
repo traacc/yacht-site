@@ -78,9 +78,9 @@
 .fi-ta-ctn {
   --tw-shadow:none;
 }
-.fi-ta-header-toolbar {
+/*.fi-ta-header-toolbar {
   display: none;
-}
+}*/
 .fi-sidebar-nav {
   @apply p-0;
 }

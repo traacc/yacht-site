@@ -31,6 +31,10 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Enums\FiltersLayout;
+
 use Filament\Forms\Components\Repeater;
 
 class RegattaResource extends Resource
@@ -146,8 +150,7 @@ class RegattaResource extends Resource
                     ->label('Регата')
                     ->searchable(),
                 TextColumn::make('season.year')
-                    ->label('Сезон')
-                    ->searchable(),
+                    ->label('Сезон'),
                 TextColumn::make('date')
                     ->label('Дата')
                     ->getStateUsing(function (Regatta $regatta): string {
@@ -155,8 +158,7 @@ class RegattaResource extends Resource
                         return $regatta->dateRange();
                     }),
                 TextColumn::make('water_area')
-                    ->label('Акватория')
-                    ->searchable(),
+                    ->label('Акватория'),
                 TextColumn::make('status')
                     ->label('Статус')->badge()
                 ->getStateUsing(function (Regatta $regatta): string {
@@ -181,8 +183,41 @@ class RegattaResource extends Resource
                 }),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
-                TrashedFilter::make(),
-            ])
+                Filter::make('created_at_day')
+                    ->label('Дата')
+                    ->schema([
+                        DatePicker::make('date')
+                            ->label('Выберите дату')
+                            ->native(false),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['date'],
+                            fn (Builder $query, $date) => $query->whereDate('date_start', '<=', $date)
+                                     ->whereDate('date_end', '>=', $date),
+                        );
+                    }),
+            SelectFilter::make('status')
+                ->label('Статус') // Красивое название для пользователя
+                ->options([
+                    'closest' => 'Ближайшая',
+                    'planned' => 'Планируемая',
+                    'completed' => 'Завершена',
+                        ])->query(function (Builder $query, array $data): Builder {
+                    return $query->when(
+                        $data['value'],
+                        function (Builder $query, $value) {
+                            // Здесь вы переносите логику ваших методов из модели Regatta в SQL-запросы
+                            match ($value) {
+                                'closest' => $query->where('date_start', '<=', now()->addMonth())->where('date_start', '>', now()),
+                                'planned' => $query->where('date_start', '>', now()->addMonth()),
+                                'completed' => $query->where('date_end', '<', now()),
+                                default => $query,
+                            };
+                        }
+                    );
+                }),
+            ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),
