@@ -35,7 +35,7 @@ bgImage="{{ asset('images/bg/results.png') }}"
                     </a>
                 </div>
                 <div class="flex gap-6 items-center mb-6">
-                    <div class="date flex gap-2 text-lg font-medium">
+                    <div class="date flex gap-2 md:text-lg font-medium">
                         {!! file_get_contents(public_path('images/icons/calendar.svg')) !!}
                         {{ $regatta->dateRange() }}
                     </div>

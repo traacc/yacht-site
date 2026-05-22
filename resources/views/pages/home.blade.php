@@ -67,16 +67,16 @@
                     <h3 class="a-font text-3xl">{{ $regatta->name }}</h3>
                 </div>
                 <div class="flex gap-6 items-center mb-6">
-                    <div class="date flex gap-2 text-lg font-medium">
+                    <div class="date flex gap-2 text-sm md:text-lg font-medium">
                         {!! file_get_contents(public_path('images/icons/calendar.svg')) !!}
                         {{ $regatta->dateRange() }}
                     </div>
                     @if($regatta->isFinished())
-                        <div class="bg-[#15794933] px-3 py-1 text-[#157949] inline-block font-semibold max-w-[140px] w-full uppercase">
+                        <div class="bg-[#15794933] px-3 py-1 text-[#157949] inline-block font-semibold max-w-[140px] w-full uppercase md:text-base text-sm">
                             Завершено
                         </div>
                     @else
-                        <div class="bg-[#C2A36B26] px-3 py-1 text-[#C2A36B] inline-block font-semibold max-w-[350px] w-full uppercase">
+                        <div class="bg-[#C2A36B26] px-3 py-1 text-[#C2A36B] inline-block font-semibold max-w-[350px] w-full uppercase md:text-base text-sm">
                             Предварительные результаты
                         </div>
                     @endif
