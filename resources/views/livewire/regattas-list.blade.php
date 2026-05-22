@@ -1,5 +1,5 @@
 {{-- resources/views/livewire/regattas-list.blade.php --}}
-<section x-data="{view: @entangle('view')}" class="py-12 reggata-list">
+<section x-data="{view: @entangle('view')}" class="md:py-12 py-4 reggata-list">
     <div class="container mx-auto">
         <div class="reggata-list__header flex flex-col-reverse md:flex-row md:items-center justify-between mb-6">
             <div class="reggata-list__filter md:flex gap-4 flex-col md:flex-row font-medium hidden">

@@ -2,7 +2,7 @@
 <x-breadcrumbs_page title="Новости ассоциации">
 </x-breadcrumbs_page>
 <main class="main">
-    <section class="py-12 reggata-list">
+    <section class="md:py-12 py-4 reggata-list">
         <div class="container mx-auto">
             <div class="flex justify-between mb-6 flex-col md:flex-row">
                 <h2 class="section-title a-font text-5xl">Новости ассоциации</h2>
@@ -16,7 +16,7 @@
             </div>
         </div>
     </section>
-    <section class="py-12">
+    <section class="md:py-12 py-4">
         <div class="flex container mx-auto mb-6">
             <div class="row flex flex-col md:flex-row gap-6">
                 <div class="col">

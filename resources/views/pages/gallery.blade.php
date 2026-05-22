@@ -7,7 +7,7 @@
     activeImage: '',
     lbImages: []
 }" class="main">
-    <section class="py-12 reggata-list px-2 2xl:px-0">
+    <section class="md:py-12 py-4 reggata-list px-2 2xl:px-0">
         <div class="container mx-auto">
             <div class="flex justify-between mb-6 flex-col md:flex-row">
                 <h2 class="section-title a-font text-3xl md:text-5xl mb-4 md:mb-0">Галерея</h2>

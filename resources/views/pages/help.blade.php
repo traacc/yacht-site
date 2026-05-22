@@ -32,7 +32,7 @@
         }
     }
 }" class="main">
-    <section class="py-12 reggata-list">
+    <section class="md:py-12 py-4 reggata-list">
         <div class="container mx-auto">
             <h2 class="section-title a-font text-5xl">Помощь</h2>
         </div>

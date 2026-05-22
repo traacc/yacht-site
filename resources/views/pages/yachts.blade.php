@@ -24,7 +24,7 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
         this.yacht_modal_open = true;
     }
 }" class="main">
-    <section class="py-12 reggata-list">
+    <section class="md:py-12 py-4 reggata-list">
         <div class="container mx-auto">
             <div class="flex items-center flex-col md:flex-row justify-between mb-6">
                 <h2 class="section-title a-font">Список яхт</h2>

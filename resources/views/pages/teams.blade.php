@@ -8,7 +8,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
 </x-hero-section>
 
 <main x-data="teamsApp()" class="main">
-    <section class="py-12 reggata-list">
+    <section class="md:py-12 py-4 reggata-list">
         <div class="container mx-auto">
             <div class="flex flex-col md:flex-row items-center justify-between mb-6">
                 <h2 class="section-title a-font">Зарегистрированные команды</h2>
