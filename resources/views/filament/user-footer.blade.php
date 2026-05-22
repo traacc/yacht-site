@@ -59,10 +59,10 @@
                         Москва
                     </li>
                     <li class="flex gap-4 pt-4">
-                        <a href="#" class="text-white hover:text-white">
+                        <a href="https://t.me/a_carterpro" class="text-white hover:text-white">
                             {!! file_get_contents(public_path('images/social_icons/tl.svg')) !!}
                         </a>
-                        <a href="#" class="text-white hover:text-white">
+                        <a href="https://vk.com/carter_pro" class="text-white hover:text-white">
                             {!! file_get_contents(public_path('images/social_icons/vk.svg')) !!}
                         </a>
                     </li>
