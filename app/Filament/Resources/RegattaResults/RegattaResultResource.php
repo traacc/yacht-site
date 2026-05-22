@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\RegattaResults;
 
+use App\Actions\RegattaResult\ImportRegattaResultItemsAction;
 use App\Filament\Resources\RegattaResults\Pages\ManageRegattaResults;
 use App\Models\RegattaResult;
 use BackedEnum;
@@ -10,16 +11,21 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Storage;
 
 class RegattaResultResource extends Resource
 {
@@ -195,6 +201,51 @@ class RegattaResultResource extends Resource
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+                Action::make('import_csv')
+                    ->label('Импорт CSV')
+                    ->icon(Heroicon::ArrowUpTray)
+                    ->color('success')
+                    ->form([
+                        FileUpload::make('csv_file')
+                            ->label('CSV-файл')
+                            ->acceptedFileTypes(['text/csv', 'text/plain', 'application/csv', 'application/vnd.ms-excel'])
+                            ->disk('local')
+                            ->directory('csv-imports')
+                            ->required(),
+                        Checkbox::make('replace')
+                            ->label('Заменить существующие записи')
+                            ->default(false)
+                            ->helperText('Если включено — все текущие items будут удалены перед импортом'),
+                    ])
+                    ->action(function (RegattaResult $record, array $data): void {
+                        $path    = Storage::disk('local')->path($data['csv_file']);
+                        $content = file_get_contents($path);
+                        Storage::disk('local')->delete($data['csv_file']);
+
+                        try {
+                            $result = app(ImportRegattaResultItemsAction::class)
+                                ->execute($record, $content, (bool) ($data['replace'] ?? false));
+                        } catch (\RuntimeException $e) {
+                            Notification::make()
+                                ->title('Ошибка импорта')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        $body = "Импортировано: {$result['imported']}, пропущено: {$result['skipped']}";
+                        if (! empty($result['errors'])) {
+                            $body .= "\n\nОшибки:\n" . implode("\n", $result['errors']);
+                        }
+
+                        Notification::make()
+                            ->title('Импорт завершён')
+                            ->body($body)
+                            ->when(empty($result['errors']), fn($n) => $n->success())
+                            ->when(! empty($result['errors']), fn($n) => $n->warning())
+                            ->send();
+                    }),
                 DeleteAction::make(),
             ])
             ->toolbarActions([
