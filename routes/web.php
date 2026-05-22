@@ -198,7 +198,7 @@ Route::get('/yachts', function () {
             'desc' => $doc->updated_at
                                 ? 'Актуальная редакция от '.$doc->updated_at->format('d F Y')
                                 : '',
-            'url' => $doc->url ?? '#',
+            'url' => $doc->url ? \Illuminate\Support\Facades\Storage::disk('public')->url($doc->url) : '#',
         ])->values()->toArray(),
         'participation' => $yacht->regattaEntries->map(fn ($entry) => [
             'regatta' => $entry->regatta?->name ?? '—',

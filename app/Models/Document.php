@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Facades\Storage;
 
 class Document extends Model
 {
@@ -61,6 +62,11 @@ class Document extends Model
     // ──────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────
+
+    public function getFileUrlAttribute(): string
+    {
+        return $this->url ? Storage::disk('public')->url($this->url) : '#';
+    }
 
     public function getFileSizeForHumansAttribute(): string
     {
