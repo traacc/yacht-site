@@ -35,7 +35,7 @@
                 <div class="col flex flex-col gap-4">
                     <div class="item flex">
                         <div class="img max-w-[300px]">
-                            <img class="w-full h-full" src="{{ asset('images/news/news_3.png') }}" alt="">
+                            <img class="w-full max-w-[300px] md:max-w-full h-full object-cover" src="{{ asset('images/news/news_3.png') }}" alt="">
                         </div>
                         <div class="info p-4 bg-[#F8F8F8] h-full">
                             <h4 class="text-xl font-semibold mb-3">Открыта регистрация на Кубок Carter Pro</h4>
@@ -46,7 +46,7 @@
                     </div>
                     <div class="item flex">
                         <div class="img max-w-[300px]">
-                            <img class="w-full h-full" src="{{ asset('images/news/news_3.png') }}" alt="">
+                            <img class="w-full max-w-[300px] md:max-w-full h-full object-cover" src="{{ asset('images/news/news_3.png') }}" alt="">
                         </div>
                         <div class="info p-4 bg-[#F8F8F8]">
                             <h4 class="text-xl font-semibold mb-3">Открыта регистрация на Кубок Carter Pro</h4>
@@ -57,7 +57,7 @@
                     </div>
                     <div class="item flex">
                         <div class="img max-w-[300px]">
-                            <img class="w-full h-full" src="{{ asset('images/news/news_3.png') }}" alt="">
+                            <img class="w-full max-w-[300px] md:max-w-full h-full object-cover" src="{{ asset('images/news/news_3.png') }}" alt="">
                         </div>
                         <div class="info p-4 bg-[#F8F8F8]">
                             <h4 class="text-xl font-semibold mb-3">Открыта регистрация на Кубок Carter Pro</h4>
@@ -75,7 +75,7 @@
             @foreach(range(1, 8) as $item)
             <div class="item flex md:flex-col">
                 <div class="img max-w-[300px] md:max-w-full">
-                    <img class="w-full" src="{{ asset('images/gallery.png') }}" alt="">
+                    <img class="w-full max-w-[300px] md:max-w-full h-full object-cover" src="{{ asset('images/gallery.png') }}" alt="">
                 </div>
                 <div class="info p-4 bg-[#F8F8F8]">
                     <h4 class="text-xl font-semibold mb-4">Открыта регистрация на Кубок Carter Pro</h4>
