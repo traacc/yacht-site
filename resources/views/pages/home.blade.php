@@ -215,7 +215,7 @@
     <div class="container mx-auto">
         <div class="flex items-center justify-between mb-6">
             <h2 class="section-title a-font">Новости ассоциации</h2>
-            <a href="{{ route('news') }}" wire:navigate class="text-[#2E325C] text-lg font-semibold hover:underline hidden md:block">Все новости →</a>
+            <a href="{{ route('news') }}"  class="text-[#2E325C] text-lg font-semibold hover:underline hidden md:block">Все новости →</a>
         </div>
 
         <div class="grid md:grid-cols-3 gap-6">
@@ -270,7 +270,7 @@
                 </div>
             </article>
         </div>
-        <a href="{{ route('news') }}" wire:navigate class="text-[#2E325C] text-center block mt-8 text-sm font-semibold hover:underline md:hidden">Все новости →</a>
+        <a href="{{ route('news') }}"  class="text-[#2E325C] text-center block mt-8 text-sm font-semibold hover:underline md:hidden">Все новости →</a>
     </div>
 </section>
 
@@ -288,7 +288,7 @@
                     <p class="md:text-lg text-sm max-w-xs leading-[1.3] mb-5">
                         Зарегистрированные экипажи Carter 30, состав команд и участие в регатах сезона.
                     </p>
-                    <a href="{{ route('teams') }}" wire:navigate class="md:text-lg text-sm font-semibold justify-start text-white">
+                    <a href="{{ route('teams') }}"  class="md:text-lg text-sm font-semibold justify-start text-white">
                         Смотреть команды  →
                     </a>
                 </div>
@@ -304,7 +304,7 @@
                     <p class="md:text-lg text-sm leading-[1.3] mb-5">
                         Список яхт ассоциации, технические параметры, владельцы и история участия в регатах.
                     </p>
-                    <a href="{{ route('yachts') }}" wire:navigate class="md:text-lg text-sm  font-semibold justify-start text-[#2E325C]">
+                    <a href="{{ route('yachts') }}"  class="md:text-lg text-sm  font-semibold justify-start text-[#2E325C]">
                         Смотреть яхты  →
                     </a>
                 </div>
@@ -338,7 +338,7 @@
         <div class="flex items-center justify-between mb-6">
             <h2 class="section-title a-font">Галерея</h2>
             <div class="flex items-center gap-3">
-                <a href="{{ route('gallery') }}" wire:navigate class="text-lg font-semibold hover:underline">Все галерея →</a>
+                <a href="{{ route('gallery') }}"  class="text-lg font-semibold hover:underline">Все галерея →</a>
                 <div class="hidden md:flex items-center gap-2">
                     <button @click="prev()" :disabled="offset === 0"
                         class="bg-[#2D92CE] rounded-full w-8 h-8 flex items-center justify-center shadow-sm hover:shadow-md text-white hover:bg-[#0074CC] transition-all cursor-pointer">

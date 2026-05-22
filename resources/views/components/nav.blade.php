@@ -3,7 +3,7 @@
     <div class="container mx-auto">
         <div class="flex items-center justify-between h-14">
             {{-- Логотип --}}
-            <a href="/" wire:navigate class="shrink-0">
+            <a href="/"  class="shrink-0">
                 {!! file_get_contents(public_path('images/logo.svg')) !!}
             </a>
 
@@ -17,21 +17,21 @@
                     </button>
                     <div x-show="open" x-cloak x-transition
                         class="absolute top-full right-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
-                        <a href="{{ route('charter') }}" wire:navigate class="block px-4 py-2 text-gray-700">Устав Ассоциации</a>
-                        <a href="{{ route('management') }}" wire:navigate class="block px-4 py-2 text-gray-700">Руководство</a>
-                        <a href="{{ route('trustees') }}" wire:navigate class="block px-4 py-2 text-gray-700">Попечительский совет</a>
-                        <a href="{{ route('policy') }}" wire:navigate class="block px-4 py-2 text-gray-700">Политика Ассоциации</a>
-                        <a href="{{ route('rules') }}" wire:navigate class="block px-4 py-2 text-gray-700">Правила вступления</a>
-                        <a href="{{ route('regulations') }}" wire:navigate class="block px-4 py-2 text-gray-700">Технический регламент яхт</a>
-                        <a href="{{ route('decisions') }}" wire:navigate class="block px-4 py-2 text-gray-700">Решения общего собрания</a></li>
+                        <a href="{{ route('charter') }}"  class="block px-4 py-2 text-gray-700">Устав Ассоциации</a>
+                        <a href="{{ route('management') }}"  class="block px-4 py-2 text-gray-700">Руководство</a>
+                        <a href="{{ route('trustees') }}"  class="block px-4 py-2 text-gray-700">Попечительский совет</a>
+                        <a href="{{ route('policy') }}"  class="block px-4 py-2 text-gray-700">Политика Ассоциации</a>
+                        <a href="{{ route('rules') }}"  class="block px-4 py-2 text-gray-700">Правила вступления</a>
+                        <a href="{{ route('regulations') }}"  class="block px-4 py-2 text-gray-700">Технический регламент яхт</a>
+                        <a href="{{ route('decisions') }}"  class="block px-4 py-2 text-gray-700">Решения общего собрания</a></li>
                     </div>
                 </div>
-                <a href="{{ route('competitions') }}" wire:navigate class="px-3 py-2 text-[#2E325C] transition-colors">Соревнования</a>
-                <a href="{{ route('teams') }}" wire:navigate class="px-3 py-2 text-[#2E325C] transition-colors">Команды</a>
-                <a href="{{ route('yachts') }}" wire:navigate class="px-3 py-2 text-[#2E325C] transition-colors">Яхты</a>
-                <a href="{{ route('ratings') }}" wire:navigate class="px-3 py-2 text-[#2E325C] transition-colors">Рейтинги</a>
-                <a href="{{ route('gallery') }}" wire:navigate class="px-3 py-2 text-[#2E325C] transition-colors">Галерея</a>
-                <a href="{{ route('help') }}" wire:navigate class="px-3 py-2 text-[#2E325C] transition-colors">Помощь</a>
+                <a href="{{ route('competitions') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Соревнования</a>
+                <a href="{{ route('teams') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Команды</a>
+                <a href="{{ route('yachts') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Яхты</a>
+                <a href="{{ route('ratings') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Рейтинги</a>
+                <a href="{{ route('gallery') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Галерея</a>
+                <a href="{{ route('help') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Помощь</a>
             </div>
 
             {{-- Действия --}}
@@ -130,20 +130,20 @@
                     </button>
                     <div x-show="open" x-cloak x-transition
                         class="">
-                        <a href="{{ route('charter') }}" wire:navigate class="block px-4 py-2 text-sm">Устав Ассоциации</a>
-                        <a href="{{ route('management') }}" wire:navigate class="block px-4 py-2 text-sm">Руководство</a>
-                        <a href="{{ route('trustees') }}" wire:navigate class="block px-4 py-2 text-sm">Попечительский совет</a>
-                        <a href="{{ route('policy') }}" wire:navigate class="block px-4 py-2 text-sm">Политика Ассоциации</a>
-                        <a href="{{ route('rules') }}" wire:navigate class="block px-4 py-2 text-sm">Правила вступления</a>
-                        <a href="{{ route('regulations') }}" wire:navigate class="block px-4 py-2 text-sm">Технический регламент яхт</a>
-                        <a href="{{ route('decisions') }}" wire:navigate class="block px-4 py-2 text-sm">Решения общего собрания</a></li>
+                        <a href="{{ route('charter') }}"  class="block px-4 py-2 text-sm">Устав Ассоциации</a>
+                        <a href="{{ route('management') }}"  class="block px-4 py-2 text-sm">Руководство</a>
+                        <a href="{{ route('trustees') }}"  class="block px-4 py-2 text-sm">Попечительский совет</a>
+                        <a href="{{ route('policy') }}"  class="block px-4 py-2 text-sm">Политика Ассоциации</a>
+                        <a href="{{ route('rules') }}"  class="block px-4 py-2 text-sm">Правила вступления</a>
+                        <a href="{{ route('regulations') }}"  class="block px-4 py-2 text-sm">Технический регламент яхт</a>
+                        <a href="{{ route('decisions') }}"  class="block px-4 py-2 text-sm">Решения общего собрания</a></li>
                     </div>
                 </div>
-                <a href="{{ route('competitions') }}" wire:navigate class="block py-2 text-sm">Соревнования</a>
-                <a href="{{ route('teams') }}" wire:navigate class="block py-2 text-sm">Команды</a>
-                <a href="{{ route('yachts') }}" wire:navigate class="block py-2 text-sm">Яхты</a>
-                <a href="{{ route('news') }}" wire:navigate class="block py-2 text-sm">Галерея</a>
-                <a href="{{ route('help') }}" wire:navigate class="block py-2 text-sm">Помощь</a>
+                <a href="{{ route('competitions') }}"  class="block py-2 text-sm">Соревнования</a>
+                <a href="{{ route('teams') }}"  class="block py-2 text-sm">Команды</a>
+                <a href="{{ route('yachts') }}"  class="block py-2 text-sm">Яхты</a>
+                <a href="{{ route('news') }}"  class="block py-2 text-sm">Галерея</a>
+                <a href="{{ route('help') }}"  class="block py-2 text-sm">Помощь</a>
             </div>
             
             @auth
