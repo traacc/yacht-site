@@ -44,42 +44,35 @@ class TeamResource extends Resource
         return 'Команды'; // Название во множественном числе
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            RelationManagers\AlbumsRelationManager::class,
-        ];
-    }
-
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
+                FileUpload::make('picture')
+                    ->label('Добавить фотографию')
+                    ->image()
+                    ->avatar()
+                    ->directory('owners')
+                    ->disk('public')->columnSpanFull(),
                 TextInput::make('name')
                     ->label('Название')
-                    ->placeholder('Название команды')
-                    ->required(),
+                    ->placeholder('Введите названия команды')
+                    ->required()->columnSpanFull(),
+                Select::make('organizer_id')
+                    ->label('Капитан')
+                    ->relationship('organizer', 'name')
+                    ->placeholder('Выберите капитана')
+                    ->columnSpanFull(),
                 Textarea::make('description')
                     ->label('Описание')
                     ->placeholder('Описание команды')
-                    ->columnSpanFull(),
-                Select::make('organizer_id')
-                    ->label('Организатор')
-                    ->relationship('organizer', 'name'),
-                Toggle::make('is_archived')
-                    ->label('Архивная'),
+                    ->columnSpanFull()->columnSpanFull(),
                 Select::make('approval_status')
                     ->label('Статус одобрения')
                     ->placeholder('Выберите статус')
                     ->options(['pending' => 'На рассмотрении', 'approved' => 'Одобрена', 'rejected' => 'Отклонена'])
                     ->default('pending')
                     ->required(),
-                TextInput::make('rejection_reason')
-                    ->label('Причина отклонения')
-                    ->placeholder('Причина отклонения'),
-                TextInput::make('rejection_comment')
-                    ->label('Комментарий к отклонению')
-                    ->placeholder('Комментарий к отклонению'),
             ]);
     }
 
@@ -88,15 +81,9 @@ class TeamResource extends Resource
         return $table
             ->modifyQueryUsing(fn (Builder $query) => $query->withCount('activeMembers'))
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID')
-                    ->searchable(),
                 TextColumn::make('name')
                     ->label('Название')
                     ->searchable(),
-                TextColumn::make('active_members_count')
-                    ->label('Участники')
-                    ->sortable(),
                 TextColumn::make('organizer.name')
                     ->label('Организатор')
                     ->searchable(),
@@ -116,27 +103,6 @@ class TeamResource extends Resource
                     'withdrawn' => 'gray',
                     default => 'gray',
                 }),
-                TextColumn::make('rejection_reason')
-                    ->label('Причина отклонения')
-                    ->searchable(),
-                TextColumn::make('rejection_comment')
-                    ->label('Комментарий')
-                    ->searchable(),
-                TextColumn::make('created_at')
-                    ->label('Создано')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->label('Обновлено')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('deleted_at')
-                    ->label('Удалено')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
                 TrashedFilter::make(),
@@ -160,7 +126,6 @@ class TeamResource extends Resource
     {
         return [
             'index' => ManageTeams::route('/'),
-            'edit' => EditTeam::route('/{record}/edit'),
         ];
     }
 
