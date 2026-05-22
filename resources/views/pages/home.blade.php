@@ -275,7 +275,7 @@
 </section>
 
 {{-- ===== ПРОМО-БЛОКИ: КОМАНДЫ И ЯХТЫ ===== --}}
-<section class="py-8">
+<section class="md:py-8 py-4">
     <div class="container mx-auto">
         <div class="grid md:grid-cols-2 gap-5">
             {{-- Команды --}}
