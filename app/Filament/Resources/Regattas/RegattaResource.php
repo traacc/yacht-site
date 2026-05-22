@@ -150,7 +150,7 @@ class RegattaResource extends Resource
                     ->label('Регата')
                     ->searchable(),
                 TextColumn::make('season.year')
-                    ->label('Сезон'),
+                    ->label('Сезон')->searchable(),
                 TextColumn::make('date')
                     ->label('Дата')
                     ->getStateUsing(function (Regatta $regatta): string {
