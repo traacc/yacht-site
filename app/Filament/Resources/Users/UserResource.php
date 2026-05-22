@@ -78,7 +78,7 @@ class UserResource extends Resource
                     ->label('Телефон')
                     ->placeholder('+7 (999) 123-45-67')
                     ->tel(),
-                TextInput::make('sport_rank')
+                TextInput::make('sport_category')
                     ->label('Спортивный разряд')
                     ->placeholder('Спортивный разряд'),
 
