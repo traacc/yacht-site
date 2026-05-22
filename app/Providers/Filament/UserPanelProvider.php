@@ -36,6 +36,7 @@ class UserPanelProvider extends PanelProvider
             ->path('user')
             ->login()
             ->profile(\App\Filament\User\Pages\EditProfile::class, isSimple: false) 
+            ->darkMode(false)
             ->colors([
                 'primary' => Color::Blue,
             ])
