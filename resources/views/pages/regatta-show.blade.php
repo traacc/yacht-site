@@ -101,7 +101,7 @@
                     <div class="flex gap-4"><h3 class="a-font text-3xl">Результаты</h3> <div class="bg-[#A88C5833] px-3 py-1 text-[#A88C58] inline-block font-semibold max-w-[290px] w-full">Предварительные результаты</div></div>
                     <a class="text-[#2E325C] text-lg font-semibold flex gap-2 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> <span>Скачать результаты PDF</span></a>
                 </div>
-                <div class="overflow-x-auto relative p-6 bg-white">
+                <div class="overflow-x-auto relative p-2 md:p-6 bg-white">
                     <table class="w-full responsive-table">
                         <thead>
                             <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] ">
