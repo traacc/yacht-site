@@ -49,6 +49,15 @@ class UserResource extends Resource
     {
         return $schema
             ->components([
+                FileUpload::make('photo_url')
+                    ->label('Изменить фотографию')
+                    ->avatar()
+                    ->image()
+                    ->imageEditor()
+                    ->directory('avatars')
+                    ->columnSpanFull()
+                    ->visibility('public')
+                    ->extraFieldWrapperAttributes(['class' => 'photo_wrapper']),
                 TextInput::make('first_name')
                     ->label('Имя')
                     ->placeholder('Имя')
@@ -59,40 +68,29 @@ class UserResource extends Resource
                     ->required(),
                 DatePicker::make('birth_date')
                     ->label('Дата рождения'),
-                TextInput::make('sport_rank')
-                    ->label('Спортивный разряд')
-                    ->placeholder('Спортивный разряд'),
                 TextInput::make('email')
                     ->label('Email')
                     ->placeholder('email@example.com')
                     ->email()
                     ->required(),
-                DateTimePicker::make('email_verified_at')
-                    ->label('Email подтверждён')->maxDate(now()->addMonths(3)),
+                
                 TextInput::make('phone')
                     ->label('Телефон')
                     ->placeholder('+7 (999) 123-45-67')
                     ->tel(),
-                DateTimePicker::make('phone_verified_at')
-                    ->label('Телефон подтверждён')->maxDate(now()->addMonths(3)),
-                TextInput::make('password')
-                    ->label('Пароль')
-                    ->placeholder('Пароль')
-                    ->password()
-                    ->required(),
-                TextInput::make('photo_url')
-                    ->label('URL фото')
-                    ->placeholder('https://example.com/photo.jpg')
-                    ->url(),
+                TextInput::make('sport_rank')
+                    ->label('Спортивный разряд')
+                    ->placeholder('Спортивный разряд'),
+
+
+
+
                 Select::make('system_role')
                     ->label('Системная роль')
                     ->placeholder('Выберите роль')
                     ->options([
                         'user' => 'Пользователь',
                         'admin' => 'Администратор',
-                        'judge' => 'Судья',
-                        'secretary' => 'Секретарь',
-                        'accountant' => 'Бухгалтер',
                     ])
                     ->default('user')
                     ->required(),
@@ -113,63 +111,17 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID')
-                    ->searchable(),
                 TextColumn::make('name')
                     ->label('Имя пользователя')
-                    ->searchable(),
-                TextColumn::make('first_name')
-                    ->label('Имя')
-                    ->searchable(),
-                TextColumn::make('last_name')
-                    ->label('Фамилия')
                     ->searchable(),
                 TextColumn::make('birth_date')
                     ->label('Дата рождения')
                     ->date()
                     ->sortable(),
-                TextColumn::make('sport_rank')
-                    ->label('Спортивный разряд')
-                    ->searchable(),
-                TextColumn::make('email')
-                    ->label('Email')
-                    ->searchable(),
-                TextColumn::make('email_verified_at')
-                    ->label('Email подтверждён')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('phone')
-                    ->label('Телефон')
-                    ->searchable(),
-                TextColumn::make('phone_verified_at')
-                    ->label('Телефон подтверждён')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('photo_url')
-                    ->label('Фото (URL)')
-                    ->searchable(),
                 TextColumn::make('system_role')
                     ->label('Роль')
                     ->badge(),
-                IconColumn::make('is_banned')
-                    ->label('Забанен')
-                    ->boolean(),
-                TextColumn::make('created_at')
-                    ->label('Создано')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->label('Обновлено')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('deleted_at')
-                    ->label('Удалено')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
                 TrashedFilter::make(),
