@@ -30,6 +30,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Hidden;
+
 class NewsResource extends Resource
 {
     protected static ?string $model = News::class;
@@ -51,14 +54,6 @@ class NewsResource extends Resource
     {
         return $schema
             ->components([
-                Select::make('author_id')
-                    ->label('Автор')
-                    ->relationship('author', 'name'),
-                Select::make('type')
-                    ->label('Тип')
-                    ->options(['manual' => 'Ручная', 'external' => 'Внешняя'])
-                    ->default('manual')
-                    ->required(),
                 TextInput::make('title')
                     ->label('Заголовок')
                     ->placeholder('Введите заголовок новости')
@@ -68,17 +63,49 @@ class NewsResource extends Resource
                     ->placeholder('Введите текст новости')
                     ->required()
                     ->columnSpanFull(),
-                TextInput::make('external_url')
-                    ->label('Внешняя ссылка')
-                    ->placeholder('https://example.com')
-                    ->url(),
                 FileUpload::make('cover_image_url')
                     ->label('Обложка')
                     ->image(),
-                Toggle::make('published_to_tg')
-                    ->label('Опубликовано в Telegram'),
-                DateTimePicker::make('published_at')
-                    ->label('Дата публикации')->maxDate(now()->addMonths(3)),
+
+                Repeater::make('albums')
+                    ->label('Галерея (альбомы)')
+                    ->relationship('albums')
+                    ->addActionLabel('Добавить альбом')
+                    ->columnSpanFull()
+                    ->defaultItems(0)
+                    ->collapsible()
+                    ->schema([
+                        TextInput::make('title')
+                            ->label('Название альбома')
+                            ->required()
+                            ->columnSpanFull(),
+                        Textarea::make('description')
+                            ->label('Описание')
+                            ->rows(2)
+                            ->columnSpanFull(),
+                        FileUpload::make('cover_url')
+                            ->label('Обложка')
+                            ->image()
+                            ->directory('albums/covers')
+                            ->disk('public')
+                            ->columnSpanFull(),
+                        Repeater::make('media')
+                            ->label('Фотографии')
+                            ->relationship('media')
+                            ->addActionLabel('Добавить фото')
+                            ->defaultItems(0)
+                            ->columnSpanFull()
+                            ->schema([
+                                Hidden::make('type')->default('photo'),
+                                FileUpload::make('url')
+                                    ->label('Фото')
+                                    ->image()
+                                    ->directory('albums/photos')
+                                    ->disk('public')
+                                    ->required(),
+                                Hidden::make('sort_order')->default(0),
+                            ]),
+                    ]),
             ]);
     }
 
@@ -86,42 +113,14 @@ class NewsResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID')
-                    ->searchable(),
-                TextColumn::make('author.name')
-                    ->label('Автор')
-                    ->searchable(),
-                TextColumn::make('type')
-                    ->label('Тип')
-                    ->badge(),
+
                 TextColumn::make('title')
                     ->label('Заголовок')
                     ->searchable(),
-                TextColumn::make('external_url')
-                    ->label('Внешняя ссылка')
-                    ->searchable(),
-                ImageColumn::make('cover_image_url')
-                    ->label('Обложка'),
-                IconColumn::make('published_to_tg')
-                    ->label('Telegram')
-                    ->boolean(),
-                TextColumn::make('published_at')
-                    ->label('Опубликовано')
+                TextColumn::make('created_at')
+                ->label('Дата')
                     ->dateTime()
                     ->sortable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('deleted_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
                 TrashedFilter::make(),

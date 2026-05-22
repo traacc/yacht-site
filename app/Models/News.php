@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class News extends Model
@@ -59,6 +60,12 @@ class News extends Model
     public function scopeExternal(Builder $query): Builder
     {
         return $query->where('type', 'external');
+    }
+
+    /** Альбомы Новости */
+    public function albums(): MorphMany
+    {
+        return $this->morphMany(Album::class, 'albumable');
     }
 
     // ──────────────────────────────────────────────
