@@ -21,6 +21,8 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 use Filament\View\PanelsRenderHook;
 
+use App\Filament\Widgets\UpcomingBirthdaysWidget;
+
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -54,6 +56,7 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 //AccountWidget::class,
                 //FilamentInfoWidget::class,
+                UpcomingBirthdaysWidget::class,
                 \App\Filament\Widgets\StatsOverview::class,
                 \App\Filament\Widgets\UpcomingRegattas::class,
             ])

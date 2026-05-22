@@ -15,6 +15,12 @@ use Illuminate\Notifications\Notifiable;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Carbon\Carbon;
+
+
+
 class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
     use HasFactory, HasUuids, Notifiable, SoftDeletes;
@@ -64,6 +70,63 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function isJudge(): bool      { return $this->system_role === 'judge'; }
     public function isSecretary(): bool  { return $this->system_role === 'secretary'; }
     public function isAccountant(): bool { return $this->system_role === 'accountant'; }
+
+
+    // Дней до следующего дня рождения
+    protected function daysUntilBirthday(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (!$this->birth_date) return null;
+
+                $today = Carbon::today();
+                $next = $this->birth_date->copy()->setYear($today->year);
+
+                if ($next->isPast() && !$next->isToday()) {
+                    $next->addYear();
+                }
+
+                return $today->diffInDays($next);
+            }
+        );
+    }
+
+    // Следующий день рождения (дата)
+    protected function nextBirthday(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (!$this->birth_date) return null;
+
+                $today = Carbon::today();
+                $next = $this->birth_date->copy()->setYear($today->year);
+
+                if ($next->isPast() && !$next->isToday()) {
+                    $next->addYear();
+                }
+
+                return $next;
+            }
+        );
+    }
+
+    public function scopeOrderByUpcomingBirthday(Builder $query): Builder
+    {
+        return $query->orderByRaw("
+            CASE WHEN birth_date IS NULL THEN 99999 ELSE
+                MOD(
+                    DAYOFYEAR(
+                        IF(
+                            DATE_FORMAT(birth_date, '%m-%d') >= DATE_FORMAT(NOW(), '%m-%d'),
+                            CONCAT(YEAR(NOW()), DATE_FORMAT(birth_date, '-%m-%d')),
+                            CONCAT(YEAR(NOW()) + 1, DATE_FORMAT(birth_date, '-%m-%d'))
+                        )
+                    ) - DAYOFYEAR(NOW()) + 365,
+                    365
+                )
+            END ASC
+        ");
+    }
 
     // ──────────────────────────────────────────────
     // Relationships
