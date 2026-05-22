@@ -96,9 +96,9 @@
         {{-- ===== РЕЗУЛЬТАТЫ ===== --}}
         @if($regatta->isFinished())
         <section class="results mb-12">
-            <div class="container mx-auto bg-[#F8F8F8] p-6">
+            <div class="container mx-auto bg-[#F8F8F8]">
                 <div class="flex justify-between mb-6">
-                    <div class="flex gap-4"><h3 class="a-font text-3xl">Результаты</h3> <div class="bg-[#A88C5833] px-3 py-1 text-[#A88C58] inline-block font-semibold max-w-[290px] w-full">Предварительные результаты</div></div>
+                    <div class="flex gap-4"><h3 class="a-font text-lg md:text-3xl">Результаты</h3> <div class="bg-[#A88C5833] px-3 py-1 text-[#A88C58] inline-block font-semibold max-w-[290px] w-full">Предварительные результаты</div></div>
                     <a class="text-[#2E325C] text-lg font-semibold flex gap-2 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> <span>Скачать результаты PDF</span></a>
                 </div>
                 <div class="overflow-x-auto relative p-2 md:p-6 bg-white">
@@ -347,7 +347,7 @@
                  x-transition:enter-start="opacity-0 scale-95"
                  x-transition:enter-end="opacity-100 scale-100">
                 <div class="info__header flex justify-between items-start mb-4">
-                    <h4 class="a-font text-3xl text-brand-dark">
+                    <h4 class="a-font text-lg md:text-3xl text-brand-dark">
                         Состав команды
                         <span x-text="activeTeamIndex !== null ? entriesJson[activeTeamIndex]?.team_name : ''"></span>
                     </h4>

@@ -106,7 +106,7 @@
                 <li>Поиск неисправностей</li>
             </ul>
             <div class="gallery mb-6">
-                <h5 class=" a-font text-3xl mb-6">Примеры работ</h5>
+                <h5 class=" a-font text-lg md:text-3xl mb-6">Примеры работ</h5>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     @foreach(range(1, 4) as $item)
                     <div class="card bg-[#F8F8F8]">

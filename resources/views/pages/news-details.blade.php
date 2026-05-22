@@ -19,7 +19,7 @@
                 </div>
             </div>
             <div class="aside">
-                <h3 class="section-title a-font text-3xl mb-4 text-center">Другие новости</h2>
+                <h3 class="section-title a-font text-lg md:text-3xl mb-4 text-center">Другие новости</h2>
                 <div class="col flex flex-col gap-8">
                     @foreach(range(1, 3) as $item)
                     <div class="item flex gap-2">

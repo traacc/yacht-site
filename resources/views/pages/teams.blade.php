@@ -125,7 +125,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
             </div>
             <div class="content">
                 <div class="flex mb-6">
-                    <h4 class="a-font text-3xl text-[#2E325C]" x-text="activeTeam?.name"></h4>
+                    <h4 class="a-font text-lg md:text-3xl text-[#2E325C]" x-text="activeTeam?.name"></h4>
                     <button @click="team_modal_open = false" class="ml-auto text-2xl font-bold">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
                 </div>
                 <p class="mb-6" x-text="activeTeam?.description"></p>
@@ -150,12 +150,12 @@ bgImage="{{ asset('images/bg/teams.png') }}"
             </div>
         </div>
         <div class="about text-[#2E325C] p-4 bg-[#F8F8F8] mb-8">
-            <h5 class=" a-font text-3xl mb-6">О команде</h5>
+            <h5 class=" a-font text-lg md:text-3xl mb-6">О команде</h5>
             <p class="mb-6" x-text="activeTeam?.description"></p>
         </div>
         <div class="members">
             <div class="members-header flex flex-col md:flex-row items-center justify-between mb-6">
-                <h5 class=" a-font text-3xl">Состав команды</h5>
+                <h5 class=" a-font text-lg md:text-3xl">Состав команды</h5>
                 <div class="download flex gap-2 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> Скачать историю команды</div>
             </div>
             <div class="overflow-y-auto max-h-[180px] relative custom-scroll mb-8">
@@ -229,7 +229,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
         <div class="participation mb-8">
 
             <div class="participation-header flex items-center justify-between mb-6">
-                <h5 class=" a-font text-3xl">Участие в регатах</h5>
+                <h5 class=" a-font text-lg md:text-3xl">Участие в регатах</h5>
                 <div class="calendar-icon">
                     <select x-model="selectedYear" class="border-[#C6C6C6] focus:outline-hidden focus:ring-2 text-[#2E325C] pl-5 w-[100px]" name="year" id="">
                         <template x-for="year in activeTeam?.years || []" :key="year">
@@ -272,7 +272,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                 </div>
             </div>
             <div class="gallery">
-                <h5 class=" a-font text-3xl mb-6">Галерея</h5>
+                <h5 class=" a-font text-lg md:text-3xl mb-6">Галерея</h5>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     <template x-if="activeTeam?.gallery?.length">
                         <template x-for="(img, i) in activeTeam.gallery" :key="i">

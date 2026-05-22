@@ -278,7 +278,7 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
 
                 <div class="participation mb-8" x-show="selectedYacht.participation.length > 0">
                     <div class="participation-header flex items-center justify-between mb-6">
-                        <h5 class="a-font text-3xl">Участие в регатах</h5>
+                        <h5 class="a-font text-lg md:text-3xl">Участие в регатах</h5>
                         <a href="#" class="text-[#2E325C] text-lg font-semibold gap-2 items-center hidden md:flex">
                             <img src="{{ asset('images/icons/download.svg') }}" alt="">
                             <span>Скачать историю участия</span>

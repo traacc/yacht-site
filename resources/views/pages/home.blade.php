@@ -62,7 +62,7 @@
         {{-- Таблица этапа --}}
 
         <section class="rating_1 mb-12">
-            <div class="container mx-auto bg-[#F8F8F8] p-6">
+            <div class=" bg-[#F8F8F8]">
                 <div class="flex justify-between mb-6 flex-col md:flex-row">
                     <h3 class="a-font text-3xl">{{ $regatta->name }}</h3>
                 </div>

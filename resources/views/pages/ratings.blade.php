@@ -26,9 +26,9 @@ bgImage="{{ asset('images/bg/results.png') }}"
     </section>
     @forelse($regattas as $regatta)
         <section class="rating_1 mb-12">
-            <div class="container mx-auto bg-[#F8F8F8] p-6">
+            <div class="container mx-auto bg-[#F8F8F8]">
                 <div class="flex justify-between mb-6 flex-col md:flex-row">
-                    <h3 class="a-font text-3xl">{{ $regatta->name }}</h3>
+                    <h3 class="a-font text-lg md:text-3xl">{{ $regatta->name }}</h3>
                     <a class="text-[#2E325C] text-lg font-semibold gap-2 items-center hidden md:flex">
                         <img src="{{ asset('images/icons/download.svg') }}" alt="">
                         <span>Скачать результаты PDF</span>
