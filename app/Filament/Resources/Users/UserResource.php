@@ -29,6 +29,10 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Enums\FiltersLayout;
+
 class UserResource extends Resource
 {
     public static function getModelLabel(): string
@@ -120,12 +124,20 @@ class UserResource extends Resource
                     ->sortable(),
                 TextColumn::make('system_role')
                     ->label('Роль')
-                    ->badge(),
+                    ->badge()->formatStateUsing(fn (string $state): string => match ($state) {
+                        'user' => 'Пользователь',
+                        'admin' => 'Администратор',
+                    }),
 
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
-                TrashedFilter::make(),
-            ])
+                SelectFilter::make('system_role')
+                ->label('Роль') // Красивое название для пользователя
+                ->options([
+                    'user' => 'Пользователь',
+                    'admin' => 'Администратор',
+                ])
+            ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),
