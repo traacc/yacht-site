@@ -26,7 +26,7 @@
         </div>
     </section>
     <section>
-        <div class="container mx-auto pb-12">
+        <div class="container mx-auto pb-12 mb-4 border-b border-b-[#EAEAEA]">
             <h2 class="section-title a-font text-5xl">2026</h2>
             <div class=" grid md:grid-cols-3 gap-6 mt-6"
              x-data="{
@@ -48,8 +48,8 @@
                         <div class="bg-[#2E325C] opacity-30 absolute z-40 w-full h-full transition-transform duration-500 group-hover:scale-105"></div>
                         <div class="info relative z-50 p-6 pt-56 text-white">
                             <h4 class="title a-font text-2xl mb-3">Кубок залива 2026</h4>
-                            <p class="mb-3">29–30 сентября · Москва</p>
-                            <p>Пироговское водохранилище</p>
+                            <p class="mb-3 flex gap-3">{!! file_get_contents(public_path('images/icons/calendar.svg')) !!} 29–30 сентября · Москва</p>
+                            <p class="flex gap-3">{!! file_get_contents(public_path('images/icons/waves.svg')) !!} Пироговское водохранилище</p>
                         </div>
                     </div>
                 </template>
@@ -57,7 +57,7 @@
         </div>
     </section>
     <section>
-        <div class="container mx-auto pb-12">
+        <div class="container mx-auto pb-12 mb-4 border-b">
             <h2 class="section-title a-font text-5xl">2025</h2>
             <div class=" grid md:grid-cols-3 gap-6 mt-6"
              x-data="{
@@ -79,8 +79,8 @@
                         <div class="bg-[#2E325C] opacity-30 absolute z-40 w-full h-full transition-transform duration-500 group-hover:scale-105"></div>
                         <div class="info relative z-50 p-6 pt-56 text-white">
                             <h4 class="title a-font text-2xl mb-3">Кубок залива 2026</h4>
-                            <p class="mb-3">29–30 сентября · Москва</p>
-                            <p>Пироговское водохранилище</p>
+                            <p class="mb-3 flex gap-3">{!! file_get_contents(public_path('images/icons/calendar.svg')) !!} 29–30 сентября · Москва</p>
+                            <p class="flex gap-3">{!! file_get_contents(public_path('images/icons/waves.svg')) !!} Пироговское водохранилище</p>
                         </div>
                     </div>
                 </template>
@@ -88,7 +88,7 @@
         </div>
     </section>
     <section>
-        <div class="container mx-auto pb-12">
+        <div class="container mx-auto mb-16">
             <h2 class="section-title a-font text-5xl">2024</h2>
             <div 
             x-data="{
@@ -110,8 +110,8 @@
                         <div class="bg-[#2E325C] opacity-30 absolute z-40 w-full h-full transition-transform duration-500 group-hover:scale-105"></div>
                         <div class="info relative z-50 p-6 pt-56 text-white">
                             <h4 class="title a-font text-2xl mb-3">Кубок залива 2026</h4>
-                            <p class="mb-3">29–30 сентября · Москва</p>
-                            <p>Пироговское водохранилище</p>
+                            <p class="mb-3 flex gap-3">{!! file_get_contents(public_path('images/icons/calendar.svg')) !!} 29–30 сентября · Москва</p>
+                            <p class="flex gap-3">{!! file_get_contents(public_path('images/icons/waves.svg')) !!} Пироговское водохранилище</p>
                         </div>
                     </div>
                 </template>
@@ -163,7 +163,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     <template x-for="item in video">
                         <div class="card bg-[#F8F8F8]"  @click="lightbox_open = true; gallery_modal_open = false; activeImage = item; lbImages = video">
-                            <img :src="item" alt="">
+                            <img class="h-full object-cover" :src="item" alt="">
                         </div>
                     </template>
                 </div>
@@ -172,7 +172,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     <template x-for="item in images">
                         <div class="card bg-[#F8F8F8]"  @click="lightbox_open = true; gallery_modal_open = false; activeImage = item; lbImages = images">
-                            <img :src="item" alt="">
+                            <img class="h-full object-cover" :src="item" alt="">
                         </div>
                     </template>
                 </div>
@@ -206,7 +206,7 @@
             x-transition:enter-end="opacity-100 scale-100"
         >
             <!-- Кнопка закрытия -->
-            <button @click="lightbox_open = false" class="md:absolute fixed md:-top-10 md:right-0 top-5 right-5 text-white text-3xl z-50 hover:opacity-70">&times;</button>
+            <button @click="lightbox_open = false" class="md:absolute fixed md:top-5 md:right-5 top-5 right-5 text-white text-3xl z-50 hover:opacity-70">&times;</button>
 
             <!-- Контейнер с изображением и стрелками -->
             <div class="relative flex items-center justify-center">
@@ -221,7 +221,7 @@
                     x-transition:enter="transition ease-out duration-300"
                     x-transition:enter-start="scale-90 opacity-0"
                     x-transition:enter-end="scale-100 opacity-100"
-                    class="w-full rounded-sm shadow-2xl"
+                    class="w-[75vw] h-[60vh] object-cover rounded-sm shadow-2xl"
                     alt="Full size">
 
                 <!-- Стрелка вперёд -->
