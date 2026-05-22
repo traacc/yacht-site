@@ -29,6 +29,10 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Enums\FiltersLayout;
+
 use Filament\Schemas\Components\Utilities\Get;
 
 class YachtResource extends Resource
@@ -199,8 +203,16 @@ class YachtResource extends Resource
                 }),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
-                TrashedFilter::make(),
-            ])
+                SelectFilter::make('approval_status')
+                ->label('Статус') // Красивое название для пользователя
+                ->options([
+                    'pending' => 'На рассмотрении',
+                    'approved' => 'Одобрена',
+                    'rejected' => 'Отклонена',
+                    'withdrawn' => 'Отозвана',
+                ])
+
+            ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),
