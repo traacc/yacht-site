@@ -115,7 +115,7 @@
                     @endforeach
                 </div>
             </div>
-            <div class="">
+            <div class="bg-[#F8F8F8] p-3 md:p-4">
                 <h4 class="font-semibold text-lg mb-4">Информация о специалисте</h4>
                 <p class="font-semibold text-lg mb-4">Игорь Скалин</p>
                 <p class="font-medium mb-4">Электрик / механик яхт</p>

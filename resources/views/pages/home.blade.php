@@ -324,7 +324,7 @@
         '{{ asset('images/news/news_1.png') }}',
         '{{ asset('images/news/news_2.png') }}',
     ]
-}" class="py-12 bg-brand-light">
+}" class="py-12 bg-brand-light hidden md:block">
 <style>
     .month-card { flex: 0 0 calc((100% - 4 * 1rem) / 5); }
     @media (max-width: 1023px) { .month-card { flex: 0 0 calc((100% - 2 * 1rem) / 3); } }
