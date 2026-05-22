@@ -101,7 +101,7 @@ bgImage="{{ asset('images/bg/rules.png') }}"
         <div class="md:size-24 size-16 rounded-full border border-[#F24842] flex items-center justify-center">
           <span class="text-[#F24842] font-medium text-5xl leading-none a-font">4</span>
         </div>
-        <p class="md:mt-4 md:text-center md:text-lg text-[#1e2a47] leading-snug">
+        <p class="md:mt-4 md:text-center md:text-lg text-[#1e2a47] leading-snug whitespace-nowrap">
           Включение<br/>в состав Ассоциации
         </p>
       </div>
