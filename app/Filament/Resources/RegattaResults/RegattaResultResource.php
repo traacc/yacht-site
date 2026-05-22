@@ -3,15 +3,17 @@
 namespace App\Filament\Resources\RegattaResults;
 
 use App\Filament\Resources\RegattaResults\Pages\ManageRegattaResults;
-use App\Models\RegattaResultItem;
+use App\Models\RegattaResult;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -21,47 +23,79 @@ use Filament\Tables\Table;
 
 class RegattaResultResource extends Resource
 {
-    protected static ?string $model = RegattaResultItem::class;
+    protected static ?string $model = RegattaResult::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'cup';
 
 
     public static function getModelLabel(): string
     {
-        return 'Результат'; // Название в единственном числе
+        return 'Результат регаты';
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'Результаты'; // Название во множественном числе
+        return 'Результаты регат';
     }
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                Select::make('regatta_result_id')
-                    ->label('Результат регаты')
-                    ->relationship('regattaResult', 'id')
-                    ->required(),
-                Select::make('team_id')
-                    ->label('Команда')
-                    ->relationship('team', 'name')
-                    ->required(),
-                Select::make('yacht_id')
-                    ->label('Яхта')
-                    ->relationship('yacht', 'name')
-                    ->nullable(),
-                TextInput::make('total_points')
-                    ->label('Общее количество очков')
-                    ->placeholder('Сумма очков за все гонки')
+                Select::make('regatta_id')
+                    ->label('Регата')
+                    ->relationship('regatta', 'name')
                     ->required()
-                    ->numeric()
-                    ->default(0.0),
-                TextInput::make('final_position')
-                    ->label('Итоговое место')
-                    ->placeholder('Занятое место в регате')
-                    ->numeric(),
+                    ->columnSpanFull(),
+
+                Select::make('result_type')
+                    ->label('Тип результата')
+                    ->options([
+                        'preliminary' => 'Предварительный',
+                        'final'       => 'Финальный',
+                    ])
+                    ->required()
+                    ->default('preliminary'),
+
+                Select::make('source')
+                    ->label('Источник')
+                    ->options([
+                        'manual'   => 'Вручную',
+                        'imported' => 'Импортирован',
+                    ])
+                    ->required()
+                    ->default('manual'),
+
+                Repeater::make('items')
+                    ->label('Результаты участников')
+                    ->relationship('items')
+                    ->schema([
+                        Select::make('team_id')
+                            ->label('Команда')
+                            ->relationship('team', 'name')
+                            ->required()
+                            ->columnSpan(2),
+
+                        Select::make('yacht_id')
+                            ->label('Яхта')
+                            ->relationship('yacht', 'name')
+                            ->nullable()
+                            ->columnSpan(2),
+
+                        TextInput::make('total_points')
+                            ->label('Очки')
+                            ->numeric()
+                            ->required()
+                            ->default(0.0),
+
+                        TextInput::make('final_position')
+                            ->label('Место')
+                            ->numeric()
+                            ->nullable(),
+                    ])
+                    ->columns(6)
+                    ->addActionLabel('Добавить участника')
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -69,23 +103,48 @@ class RegattaResultResource extends Resource
     {
         return $schema
             ->components([
-                TextEntry::make('regattaResult.regatta.name')
+                TextEntry::make('regatta.name')
                     ->label('Регата'),
-                TextEntry::make('team.name')
-                    ->label('Команда'),
-                TextEntry::make('yacht.name')
-                    ->label('Яхта'),
-                TextEntry::make('total_points')
-                    ->numeric(),
-                TextEntry::make('final_position')
-                    ->numeric()
-                    ->placeholder('-'),
+                TextEntry::make('result_type')
+                    ->label('Тип')
+                    ->formatStateUsing(fn(string $state) => match ($state) {
+                        'preliminary' => 'Предварительный',
+                        'final'       => 'Финальный',
+                        default       => $state,
+                    }),
+                TextEntry::make('source')
+                    ->label('Источник')
+                    ->formatStateUsing(fn(string $state) => match ($state) {
+                        'manual'   => 'Вручную',
+                        'imported' => 'Импортирован',
+                        default    => $state,
+                    }),
                 TextEntry::make('created_at')
+                    ->label('Создан')
                     ->dateTime()
                     ->placeholder('-'),
                 TextEntry::make('updated_at')
+                    ->label('Обновлён')
                     ->dateTime()
                     ->placeholder('-'),
+
+                RepeatableEntry::make('items')
+                    ->label('Результаты участников')
+                    ->schema([
+                        TextEntry::make('final_position')
+                            ->label('Место')
+                            ->placeholder('-'),
+                        TextEntry::make('team.name')
+                            ->label('Команда'),
+                        TextEntry::make('yacht.name')
+                            ->label('Яхта')
+                            ->placeholder('-'),
+                        TextEntry::make('total_points')
+                            ->label('Очки')
+                            ->numeric(),
+                    ])
+                    ->columns(4)
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -95,29 +154,37 @@ class RegattaResultResource extends Resource
             ->columns([
                 TextColumn::make('id')
                     ->label('ID')
-                    ->searchable(),
-                TextColumn::make('regattaResult.regatta.name')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('regatta.name')
                     ->label('Регата')
-                    ->searchable(),
-                TextColumn::make('team.name')
-                    ->label('Команда')
-                    ->searchable(),
-                TextColumn::make('yacht.name')
-                    ->label('Яхта')
-                    ->searchable(),
-                TextColumn::make('total_points')
-                    ->label('Очки')
-                    ->numeric()
+                    ->searchable()
                     ->sortable(),
-                TextColumn::make('final_position')
-                    ->label('Место')
-                    ->numeric()
+                TextColumn::make('result_type')
+                    ->label('Тип')
+                    ->formatStateUsing(fn(string $state) => match ($state) {
+                        'preliminary' => 'Предварительный',
+                        'final'       => 'Финальный',
+                        default       => $state,
+                    }),
+                TextColumn::make('source')
+                    ->label('Источник')
+                    ->formatStateUsing(fn(string $state) => match ($state) {
+                        'manual'   => 'Вручную',
+                        'imported' => 'Импортирован',
+                        default    => $state,
+                    }),
+                TextColumn::make('items_count')
+                    ->label('Участников')
+                    ->counts('items')
                     ->sortable(),
                 TextColumn::make('created_at')
+                    ->label('Создан')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label('Обновлён')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
