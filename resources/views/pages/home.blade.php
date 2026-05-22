@@ -84,17 +84,17 @@
                 @if(!$regatta->isFinished())
                 <p class="mb-6">Таблица обновляется по мере обработки результатов. Финальные очки будут опубликованы после утверждения итогов соревнования.</p>
                 @endif
-                <div class="overflow-x-auto relative p-2 md:p-6 bg-white responsive-table md:max-h-[220px]">
+                <div class="overflow-x-auto relative p-2 md:p-6 md:pt-0 bg-white responsive-table md:max-h-[220px]">
                     <table class="w-full">
                         <thead class="sticky top-0 bg-white">
                             <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] ">
-                                <th class="pb-2 text-center font-medium w-16 a-font">Место</th>
-                                <th class="pb-2 text-center font-medium a-font">Команда</th>
-                                <th class="pb-2 text-center font-medium a-font">Капитан</th>
-                                <th class="pb-2 text-center font-medium a-font">Яхта</th>
-                                <th class="pb-2 text-center font-medium a-font">Парус №</th>
-                                <th class="pb-2 text-center font-medium a-font">Участники</th>
-                                <th class="pb-2 text-center font-medium a-font">Очки</th>
+                                <th class="pb-2 text-center font-medium pt-6 w-16 a-font">Место</th>
+                                <th class="pb-2 text-center font-medium pt-6 a-font">Команда</th>
+                                <th class="pb-2 text-center font-medium pt-6 a-font">Капитан</th>
+                                <th class="pb-2 text-center font-medium pt-6 a-font">Яхта</th>
+                                <th class="pb-2 text-center font-medium pt-6 a-font">Парус №</th>
+                                <th class="pb-2 text-center font-medium pt-6 a-font">Участники</th>
+                                <th class="pb-2 text-center font-medium pt-6 a-font">Очки</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y text-center font-medium">
@@ -148,13 +148,13 @@
 
             <div class="bg-brand-light rounded-xl md:p-4 md:pr-0">
                 <h3 class="font-display  text-[#2E325C] text-3xl mb-4 a-font">ТОП-3 команд сезона</h3>
-                <div class="overflow-auto md:p-6 bg-white md:max-h-[220px]">
+                <div class="overflow-auto md:p-6 md:pt-0 bg-white md:max-h-[220px]">
                     <table class="w-full text-sm md:text-base responsive-table">
                         <thead class="sticky bg-white top-0 pt-6">
                             <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] ">
-                                <th class="pb-2 text-center font-medium a-font w-16">Место</th>
-                                <th class="pb-2 text-center font-medium a-font">Команда</th>
-                                <th class="pb-2 text-center font-medium a-font">Очки</th>
+                                <th class="pb-2 text-center font-medium a-font pt-6 w-16">Место</th>
+                                <th class="pb-2 text-center font-medium a-font pt-6">Команда</th>
+                                <th class="pb-2 text-center font-medium a-font pt-6">Очки</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y text-center font-medium">
@@ -177,13 +177,13 @@
             </div>
             <div class="bg-brand-light rounded-xl md:p-4">
                 <h3 class="font-display  text-[#2E325C]  text-3xl mb-4 a-font">ТОП-3 участников</h3>
-                <div class="overflow-x-auto md:p-6 bg-white md:max-h-[220px]">
+                <div class="overflow-x-auto md:p-6 md:pt-0 bg-white md:max-h-[220px]">
                     <table class="w-full text-sm md:text-base responsive-table">
                         <thead>
-                            <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0">
-                                <th class="pb-2 text-center font-medium a-font w-16">Место</th>
-                                <th class="pb-2 text-center font-medium a-font">Участник</th>
-                                <th class="pb-2 text-center font-medium a-font">Очки</th>
+                            <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] bg-white sticky top-0">
+                                <th class="pb-2 text-center font-medium a-font pt-6 w-16">Место</th>
+                                <th class="pb-2 text-center font-medium a-font pt-6">Участник</th>
+                                <th class="pb-2 text-center font-medium a-font pt-6">Очки</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y text-center font-medium">
