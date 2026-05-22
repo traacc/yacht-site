@@ -34,7 +34,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                     <option value="">Рейтинг: по убыванию</option>
                 </select>
             </div>
-            <div class="reggata-list__items grid grid-cols-2 lg:grid-cols-3 gap-6" x-show="view === 'grid'">
+            <div class="reggata-list__items grid grid-cols-1 lg:grid-cols-3 gap-6" x-show="view === 'grid'">
                 @foreach($teams as $team)
 
                 <div class="bg-[#F8F8F8] overflow-hidden w-full font-sans">
@@ -46,7 +46,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                         />
                     </div>
 
-                    <div class="px-4 pt-4 pb-7 space-y-4">
+                    <div class="md:px-4 px-2 pt-4 pb-7 space-y-4">
                         <div class="text-brand-navy font-semibold leading-tight flex flex-col justify-between md:items-start md:h-[58px]">
                             <div class="font-semibold text-lg">{{ $team->name }}</div>
                             <div class="text-base">
@@ -71,7 +71,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                 @endforeach
             </div>
             <div class="reggata-list__items" x-show="view === 'list'">
-                <table class="w-full text-left border-collapse bg-[#F8F8F8]">
+                <table class="w-full text-left border-collapse bg-[#F8F8F8] responsive-table">
                     <thead>
                         <tr>
                             <th class="py-2 a-font text-center text-2xl">Команда</th>
@@ -85,18 +85,18 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                     <tbody>
                         @foreach($teams as $team)
                         <tr class="border-t">
-                            <td class="py-2 text-center">{{ $team->name }}</td>
-                            <td class="py-2 text-center">{{ $team->organizer?->full_name ?? '—' }}</td>
-                            <td class="py-2 text-center">
+                            <td data-label="Команда" class="py-2 text-center">{{ $team->name }}</td>
+                            <td data-label="Капитан" class="py-2 text-center">{{ $team->organizer?->full_name ?? '—' }}</td>
+                            <td data-label="Статус" class="py-2 text-center">
                                 @if($team->is_archived)
                                 <div class="bg-[#F2484233] px-3 py-1 text-[#F24842] inline-block font-semibold max-w-[150px] w-full">Неактивная</div>
                                 @else
                                 <div class="bg-[#15794926] px-3 py-1 text-[#157949] inline-block font-semibold max-w-[150px] w-full">Активная</div>
                                 @endif
                             </td>
-                            <td class="py-2 text-center">{{ $team->regattaEntries->count() }} регат{{ $team->regattaEntries->count() === 1 ? 'а' : ($team->regattaEntries->count() >= 2 && $team->regattaEntries->count() <= 4 ? 'ы' : '') }}</td>
-                            <td class="py-2 text-center">{{ $team->ratings->where('rating_type', 'team')->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first()?->rank_position ?? '—' }}</td>
-                            <td class="py-2 text-center">
+                            <td data-label="Участие в регатах" class="py-2 text-center">{{ $team->regattaEntries->count() }} регат{{ $team->regattaEntries->count() === 1 ? 'а' : ($team->regattaEntries->count() >= 2 && $team->regattaEntries->count() <= 4 ? 'ы' : '') }}</td>
+                            <td data-label="Рейтинг" class="py-2 text-center">{{ $team->ratings->where('rating_type', 'team')->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first()?->rank_position ?? '—' }}</td>
+                            <td data-label="" class="py-2 text-center">
                                 <a href="#" @click.prevent="setTeam({{ $loop->index }})" class="text-[#2D92CE] font-semibold hover:underline">Подробнее  →</a>
                             </td>
                         </tr>
@@ -123,7 +123,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
             <div class="photo max-w-1/2 shrink-0">
                 <img class="max-w-full" :src="activeTeam?.photo" alt="">
             </div>
-            <div class="content">
+            <div class="content text-sm md:text-base">
                 <div class="flex mb-6">
                     <h4 class="a-font text-lg md:text-3xl text-[#2E325C]" x-text="activeTeam?.name"></h4>
                     <button @click="team_modal_open = false" class="ml-auto text-2xl font-bold">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
@@ -149,7 +149,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                 </table>
             </div>
         </div>
-        <div class="about text-[#2E325C] p-4 bg-[#F8F8F8] mb-8">
+        <div class="about text-[#2E325C] p-4 bg-[#F8F8F8] mb-8 text-sm md:text-base">
             <h5 class=" a-font text-lg md:text-3xl mb-6">О команде</h5>
             <p class="mb-6" x-text="activeTeam?.description"></p>
         </div>

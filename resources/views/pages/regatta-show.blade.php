@@ -5,7 +5,7 @@
     <main class="main" x-data="{ team_modal_open: false, activeTeamIndex: null, entriesJson: @js($entriesJson) }">
         <section class="py-10 bg-white">
             <div class="container mx-auto bg-brand-light-bg flex flex-col md:flex-row gap-10 justify-between items-center">
-                <div class="info px-4 sm:px-6 lg:px-8">
+                <div class="info">
                     @if($regatta->isUpcoming())
                         <div class="bg-brand-pink-bg px-4 py-2 max-w-56 text-center">
                             <span class="text-brand-red font-bold uppercase">БЛИЖАЙШАЯ РЕГАТА</span>
@@ -65,7 +65,7 @@
                         </thead>
                         <tbody class="divide-y text-center font-medium">
                             @forelse($entries as $index => $entry)
-                                <tr class="hover:bg-white transition-colors border-b border-brand-border">
+                                <tr class="hover:bg-white transition-colors border-b border-brand-border pb-8! md:pb-0!">
                                     <td data-label="№" class="py-3">{{ $index + 1 }}</td>
                                     <td data-label="Яхта" class="py-3">{{ $entry->yacht?->name ?? '—' }}</td>
                                     <td data-label="Команда" class="py-3">{{ $entry->team?->name ?? '—' }}</td>
@@ -120,7 +120,7 @@
                                 $entry = $entries->firstWhere('team_id', $result->team_id);
                                 $yacht = $entry?->yacht;
                             @endphp
-                            <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
+                            <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA] pb-8! md:pb-0!">
                                 <td class="py-3">
                                     <div "@class([
                                         'flex items-center justify-center gap-3 text-transparent',
@@ -160,7 +160,7 @@
                 <div class="pic max-w-[720px] shrink-0">
                     <img class="w-full h-full" src="{{ asset('images/details/details_2.png') }}" alt="{{ $regatta->name }}" />
                 </div>
-                <div class="info py-4 px-4 sm:px-6 lg:px-8">
+                <div class="info py-4">
                     <h2 class="section-title a-font text-brand-dark text-5xl mb-8">О регате</h2>
                     <p class="text-brand-gray font-medium text-lg mb-4">{{ $regatta->description }}</p>
                     <div class="bg-white p-4 text-brand-gray">
@@ -365,7 +365,7 @@
                     </thead>
                     <tbody class="divide-y text-center font-medium">
                         <template x-for="(member, i) in (activeTeamIndex !== null ? (entriesJson[activeTeamIndex]?.crew || []) : [])" :key="i">
-                            <tr class="hover:bg-white transition-colors border-b border-brand-border">
+                            <tr class="hover:bg-white transition-colors border-b border-brand-border pb-8! md:pb-0!">
                                 <td data-label="Участник" class="py-3" x-text="member.name"></td>
                                 <td data-label="Дата рождения" class="py-3" x-text="member.birthday"></td>
                                 <td data-label="Разряд" class="py-3" x-text="member.rank"></td>
