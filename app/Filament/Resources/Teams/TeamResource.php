@@ -14,6 +14,9 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -66,13 +69,86 @@ class TeamResource extends Resource
                 Textarea::make('description')
                     ->label('Описание')
                     ->placeholder('Описание команды')
-                    ->columnSpanFull()->columnSpanFull(),
+                    ->columnSpanFull(),
                 Select::make('approval_status')
                     ->label('Статус одобрения')
                     ->placeholder('Выберите статус')
                     ->options(['pending' => 'На рассмотрении', 'approved' => 'Одобрена', 'rejected' => 'Отклонена'])
                     ->default('pending')
                     ->required(),
+
+                Repeater::make('teamMembers')
+                    ->label('Участники')
+                    ->relationship('teamMembers')
+                    ->addActionLabel('Добавить участника')
+                    ->columns(3)
+                    ->columnSpanFull()
+                    ->defaultItems(0)
+                    ->schema([
+                        Select::make('user_id')
+                            ->label('Пользователь')
+                            ->relationship('user', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                        Select::make('role')
+                            ->label('Роль')
+                            ->options([
+                                'organizer' => 'Капитан',
+                                'member'    => 'Участник',
+                            ])
+                            ->default('member')
+                            ->required(),
+                        Select::make('status')
+                            ->label('Статус')
+                            ->options([
+                                'invited'  => 'Приглашён',
+                                'active'   => 'Активен',
+                                'declined' => 'Отказался',
+                            ])
+                            ->default('active')
+                            ->required(),
+                    ]),
+
+                Repeater::make('albums')
+                    ->label('Галерея (альбомы)')
+                    ->relationship('albums')
+                    ->addActionLabel('Добавить альбом')
+                    ->columnSpanFull()
+                    ->defaultItems(0)
+                    ->collapsible()
+                    ->schema([
+                        TextInput::make('title')
+                            ->label('Название альбома')
+                            ->required()
+                            ->columnSpanFull(),
+                        Textarea::make('description')
+                            ->label('Описание')
+                            ->rows(2)
+                            ->columnSpanFull(),
+                        FileUpload::make('cover_url')
+                            ->label('Обложка')
+                            ->image()
+                            ->directory('albums/covers')
+                            ->disk('public')
+                            ->columnSpanFull(),
+                        Repeater::make('media')
+                            ->label('Фотографии')
+                            ->relationship('media')
+                            ->addActionLabel('Добавить фото')
+                            ->defaultItems(0)
+                            ->columnSpanFull()
+                            ->schema([
+                                Hidden::make('type')->default('photo'),
+                                FileUpload::make('url')
+                                    ->label('Фото')
+                                    ->image()
+                                    ->directory('albums/photos')
+                                    ->disk('public')
+                                    ->required(),
+                                Hidden::make('sort_order')->default(0),
+                            ]),
+                    ]),
             ]);
     }
 

@@ -21,6 +21,7 @@ class Team extends Model
         'description',
         'organizer_id',
         'is_archived',
+        'picture',
         'approval_status',
         'rejection_reason',
     ];
