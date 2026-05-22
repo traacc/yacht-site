@@ -159,37 +159,28 @@ class YachtResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->label('Название')
-                    ->searchable(),
-                TextColumn::make('vfps_number')
-                    ->label('Номер ВФПС')
-                    ->searchable(),
-                TextColumn::make('user.name')
-                    ->label('Пользователь')
+                    ->label('Яхта')
                     ->searchable(),
                 TextColumn::make('gims_number')
                     ->label('Номер ГИМС')
                     ->searchable(),
-                TextColumn::make('orc_cert_url')
+                TextColumn::make('vfps_number')
+                    ->label('Парус №')
+                    ->searchable(),
+                TextColumn::make('owner_name')
+                    ->label('Владелец')
+                    ->searchable(),
+                TextColumn::make('orc_cert')
                     ->label('ORC-сертификат')
-                    ->searchable(),
-                TextColumn::make('class')
-                    ->label('Класс')
-                    ->searchable(),
-                TextColumn::make('project')
-                    ->label('Проект')
-                    ->searchable(),
-                TextColumn::make('year')
-                    ->label('Год выпуска')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('reg_place')
-                    ->label('Место регистрации')
-                    ->searchable(),
-                TextColumn::make('current_mass_kg')
-                    ->label('Масса (кг)')
-                    ->numeric()
-                    ->sortable(),
+                    ->state(function ($record) {
+                    // Проверяем, существует ли связанный документ с нужным doc_type
+                    return $record->documents() // Название вашей связи в модели
+                        ->where('doc_type', 'orc_cert_type') // Ваше условие для doc_type
+                        ->exists();
+                })
+                ->formatStateUsing(fn ($state) => $state ? 'Есть' : 'Нет')
+                ->color(fn ($state) => $state ? 'success' : 'danger'),
+
                 TextColumn::make('approval_status')
                     ->label('Статус')
                     ->badge()->formatStateUsing(fn (string $state): string => match ($state) {
@@ -206,42 +197,6 @@ class YachtResource extends Resource
                     'withdrawn' => 'gray',
                     default => 'gray',
                 }),
-                TextColumn::make('rejection_reason')
-                    ->label('Причина отклонения')
-                    ->searchable(),
-                TextColumn::make('rejection_comment')
-                    ->label('Комментарий')
-                    ->searchable(),
-                IconColumn::make('is_archived')
-                    ->label('Архивная')
-                    ->boolean(),
-                TextColumn::make('owner_name')
-                    ->label('Владелец')
-                    ->searchable(),
-                TextColumn::make('owner_email')
-                    ->label('Email владельца')
-                    ->searchable(),
-                TextColumn::make('owner_phone')
-                    ->label('Телефон владельца')
-                    ->searchable(),
-                ImageColumn::make('owner_photo')
-                    ->label('Фото')
-                    ->circular(),
-                TextColumn::make('created_at')
-                    ->label('Создано')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->label('Обновлено')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('deleted_at')
-                    ->label('Удалено')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
                 TrashedFilter::make(),
