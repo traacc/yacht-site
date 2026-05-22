@@ -66,7 +66,7 @@ bgImage="{{ asset('images/bg/results.png') }}"
                             </tr>
                         </thead>
                         <tbody class="divide-y text-center font-medium">
-                            @forelse($regatta->results as $result)
+                            @forelse($regatta->resultItems as $result)
                                 <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
                                     <td data-label="Место" class="py-3">
                                         <div @class([

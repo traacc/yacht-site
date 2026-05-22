@@ -76,10 +76,10 @@ class Team extends Model
         return $this->morphMany(Album::class, 'albumable');
     }
 
-    /** Итоговые результаты по регатам */
-    public function regattaResults(): HasMany
+    /** Итоговые результаты по регатам (через RegattaResultItem) */
+    public function regattaResultItems(): HasMany
     {
-        return $this->hasMany(RegattaResult::class);
+        return $this->hasMany(RegattaResultItem::class);
     }
 
     /** Рейтинги по сезонам */

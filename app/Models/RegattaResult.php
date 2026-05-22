@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RegattaResult extends Model
 {
@@ -13,17 +14,15 @@ class RegattaResult extends Model
 
     protected $fillable = [
         'regatta_id',
-        'team_id',
-        'yacht_id',
-        'total_points',
-        'final_position',
+        'result_type',
+        'source',
     ];
 
     protected function casts(): array
     {
         return [
-            'total_points'   => 'decimal:3',
-            'final_position' => 'integer',
+            'result_type' => 'string',
+            'source'      => 'string',
         ];
     }
 
@@ -36,27 +35,22 @@ class RegattaResult extends Model
         return $this->belongsTo(Regatta::class);
     }
 
-    public function team(): BelongsTo
+    public function items(): HasMany
     {
-        return $this->belongsTo(Team::class);
-    }
-
-    public function yacht(): BelongsTo
-    {
-        return $this->belongsTo(Yacht::class);
+        return $this->hasMany(RegattaResultItem::class)->orderBy('final_position');
     }
 
     // ──────────────────────────────────────────────
-    // Scopes
+    // Helpers
     // ──────────────────────────────────────────────
 
-    public function scopeRanked($query)
+    public function isPreliminary(): bool
     {
-        return $query->orderBy('final_position');
+        return $this->result_type === 'preliminary';
     }
 
-    public function scopeTopN($query, int $n)
+    public function isFinal(): bool
     {
-        return $query->ranked()->limit($n);
+        return $this->result_type === 'final';
     }
 }

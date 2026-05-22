@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\Regatta;
 use App\Models\RegattaResult;
-use App\Models\Team;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,9 +18,8 @@ class RegattaResultFactory extends Factory
         return [
             'id' => fake()->uuid(),
             'regatta_id' => Regatta::query()->inRandomOrder()->first()?->id ?? Regatta::factory(),
-            'team_id' => Team::query()->inRandomOrder()->first()?->id ?? Team::factory(),
-            'total_points' => fake()->randomFloat(3, 0, 100),
-            'final_position' => fake()->numberBetween(1, 50),
+            'result_type' => fake()->randomElement(['preliminary', 'final']),
+            'source'      => 'manual',
         ];
     }
 }

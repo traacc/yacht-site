@@ -3,7 +3,7 @@
 namespace App\Filament\User\Resources\RegattaResults;
 
 use App\Filament\User\Resources\RegattaResults\Pages\ManageRegattaResults;
-use App\Models\RegattaResult;
+use App\Models\RegattaResultItem;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -21,7 +21,7 @@ use Filament\Tables\Table;
 
 class RegattaResultResource extends Resource
 {
-    protected static ?string $model = RegattaResult::class;
+    protected static ?string $model = RegattaResultItem::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'results';
 
@@ -39,15 +39,15 @@ class RegattaResultResource extends Resource
     {
         return $schema
             ->components([
-                Select::make('regatta_id')
-                    ->relationship('regatta', 'name')
+                Select::make('regatta_result_id')
+                    ->relationship('regattaResult', 'id')
                     ->required(),
                 Select::make('team_id')
                     ->relationship('team', 'name')
                     ->required(),
                 Select::make('yacht_id')
                     ->relationship('yacht', 'name')
-                    ->required(),
+                    ->nullable(),
                 TextInput::make('total_points')
                     ->required()
                     ->numeric()
@@ -61,7 +61,7 @@ class RegattaResultResource extends Resource
     {
         return $schema
             ->components([
-                TextEntry::make('regatta.name')
+                TextEntry::make('regattaResult.regatta.name')
                     ->label('Регата'),
                 TextEntry::make('team.name')
                     ->label('Команда'),
@@ -82,7 +82,7 @@ class RegattaResultResource extends Resource
                 TextColumn::make('id')
                     ->label('ID')
                     ->searchable(),
-                TextColumn::make('regatta.name')
+                TextColumn::make('regattaResult.regatta.name')
                     ->searchable()->label('Регата'),
                 TextColumn::make('team.name')
                     ->searchable()->label('Команда'),

@@ -9,10 +9,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function() {
     $regatta = Regatta::with([
-        'results' => fn ($q) => $q->orderBy('final_position'),
-        'results.team.organizer',
-        'results.team.activeMembers',
-        'results.yacht',
+        'results.items' => fn ($q) => $q->orderBy('final_position'),
+        'results.items.team.organizer',
+        'results.items.team.activeMembers',
+        'results.items.yacht',
         'season',
     ])
         ->where(function ($query) {
@@ -25,7 +25,9 @@ Route::get('/', function() {
         ->orderBy('date_end', 'desc')
         ->first();
 
-    return view('pages.home', compact('regatta'));
+    $resultItems = $regatta?->results?->flatMap->items ?? collect();
+
+    return view('pages.home', compact('regatta', 'resultItems'));
 })->name('home');
 Route::view('/association/charter', 'pages/association-info/charter')->name('charter');
 Route::view('/association/management', 'pages/association-info/management')->name('management');
@@ -40,12 +42,14 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'approvedEntries.team.organizer',
         'approvedEntries.team.activeMembers',
         'approvedEntries.yacht',
-        'results.team.organizer',
-        'results.team.activeMembers',
+        'results.items.team.organizer',
+        'results.items.team.activeMembers',
         'races',
         'documents',
         'season',
     ]);
+
+    $regatta->setRelation('resultItems', $regatta->results->flatMap->items);
 
     $entries = $regatta->approvedEntries;
 
@@ -115,7 +119,7 @@ Route::get('/teams', function () {
         'activeMembers',
         'regattaEntries.regatta',
         'regattaEntries.yacht',
-        'regattaResults',
+        'regattaResultItems.regattaResult',
         'ratings.season',
     ])
         ->orderBy('name')
@@ -151,7 +155,9 @@ Route::get('/teams', function () {
             'date_registration' => $entry->submitted_at?->format('d.m.Y') ?? '—',
             'year' => $entry->regatta?->date_start?->year,
             'status' => $entry->status,
-            'place' => $team->regattaResults->firstWhere('regatta_id', $entry->regatta_id)?->final_position ?? null,
+            'place' => $team->regattaResultItems
+                ->firstWhere('regattaResult.regatta_id', $entry->regatta_id)
+                ?->final_position ?? null,
         ])->values()->toArray(),
         'gallery' => [],
     ])->values();
@@ -215,10 +221,10 @@ Route::get('/yachts', function () {
 })->name('yachts');
 Route::get('/ratings', function () {
     $regattas = Regatta::with([
-        'results' => fn ($q) => $q->orderBy('final_position'),
-        'results.team.organizer',
-        'results.team.activeMembers',
-        'results.yacht',
+        'results.items' => fn ($q) => $q->orderBy('final_position'),
+        'results.items.team.organizer',
+        'results.items.team.activeMembers',
+        'results.items.yacht',
         'season',
     ])
         ->where(function ($query) {
@@ -229,7 +235,8 @@ Route::get('/ratings', function () {
                   });
         })
         ->orderBy('date_end', 'desc')
-        ->get();
+        ->get()
+        ->each(fn ($r) => $r->setRelation('resultItems', $r->results->flatMap->items));
 
     return view('pages.ratings', compact('regattas'));
 })->name('ratings');

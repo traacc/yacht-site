@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Enums\PenaltyCode;
-use App\Models\Race;
 use App\Models\RaceResult;
 use App\Models\RegattaEntry;
+use App\Models\RegattaEvents;
+use App\Models\RegattaResult;
+use App\Models\RegattaResultItem;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -17,17 +19,17 @@ use Illuminate\Support\Facades\DB;
  *   ...
  *   Штрафные коды (DNF, DNS, DSQ …) = число участников + 1
  *
- * Очки в RegattaResult обновляются автоматически после каждого сохранения.
+ * Очки в RegattaResult/RegattaResultItem обновляются автоматически после каждого сохранения.
  */
 class RaceScorer
 {
     /**
      * Сохранить финиш гонки.
      *
-     * @param Race $race
+     * @param RegattaEvents $race
      * @param array $finishes  [['entry_id' => uuid, 'position' => int, 'penalty_code' => string|null], ...]
      */
-    public function recordFinishes(Race $race, array $finishes): void
+    public function recordFinishes(RegattaEvents $race, array $finishes): void
     {
         DB::transaction(function () use ($race, $finishes) {
             $totalEntrants = count($finishes);
@@ -40,7 +42,7 @@ class RaceScorer
 
                 RaceResult::updateOrCreate(
                     [
-                        'race_id'          => $race->id,
+                        'event_id'         => $race->id,
                         'regatta_entry_id' => $finish['entry_id'],
                     ],
                     [
@@ -57,29 +59,43 @@ class RaceScorer
     }
 
     /**
-     * Пересчитать RegattaResult для всех команд регаты (суммируем по гонкам).
+     * Пересчитать RegattaResult + RegattaResultItem для всех команд регаты.
      */
-    public function updateRegattaResults(Race $race): void
+    public function updateRegattaResults(RegattaEvents $race): void
     {
         $regatta = $race->regatta;
 
         $sums = RaceResult::query()
-            ->join('races', 'races.id', '=', 'race_results.race_id')
+            ->join('regatta_events', 'regatta_events.id', '=', 'race_results.event_id')
             ->join('regatta_entries', 'regatta_entries.id', '=', 'race_results.regatta_entry_id')
-            ->where('races.regatta_id', $regatta->id)
+            ->where('regatta_events.regatta_id', $regatta->id)
             ->selectRaw('
                 regatta_entries.team_id,
+                regatta_entries.yacht_id,
                 SUM(race_results.points) AS total_points
             ')
-            ->groupBy('regatta_entries.team_id')
+            ->groupBy('regatta_entries.team_id', 'regatta_entries.yacht_id')
             ->orderBy('total_points')
             ->get();
 
+        // Создаём/обновляем заголовок результата (один на регату, manual source)
+        $result = RegattaResult::updateOrCreate(
+            ['regatta_id' => $regatta->id],
+            ['result_type' => 'preliminary', 'source' => 'manual']
+        );
+
         $position = 1;
         foreach ($sums as $row) {
-            \App\Models\RegattaResult::updateOrCreate(
-                ['regatta_id' => $regatta->id, 'team_id' => $row->team_id],
-                ['total_points' => $row->total_points, 'final_position' => $position++]
+            RegattaResultItem::updateOrCreate(
+                [
+                    'regatta_result_id' => $result->id,
+                    'team_id'           => $row->team_id,
+                ],
+                [
+                    'yacht_id'       => $row->yacht_id,
+                    'total_points'   => $row->total_points,
+                    'final_position' => $position++,
+                ]
             );
         }
     }

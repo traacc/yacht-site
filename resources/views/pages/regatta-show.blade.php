@@ -115,7 +115,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y text-center font-medium">
-                        @forelse($regatta->results as $result)
+                        @forelse($regatta->resultItems as $result)
                             @php
                                 $entry = $entries->firstWhere('team_id', $result->team_id);
                                 $yacht = $entry?->yacht;

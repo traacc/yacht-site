@@ -75,7 +75,13 @@ class Regatta extends Model
 
     public function results(): HasMany
     {
-        return $this->hasMany(RegattaResult::class)->orderBy('final_position');
+        return $this->hasMany(RegattaResult::class);
+    }
+
+    /** Все позиции (items) регаты через результат */
+    public function resultItems(): HasManyThrough
+    {
+        return $this->hasManyThrough(RegattaResultItem::class, RegattaResult::class);
     }
 
     /** Все результаты отдельных гонок регаты */

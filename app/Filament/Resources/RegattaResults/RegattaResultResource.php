@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\RegattaResults;
 
 use App\Filament\Resources\RegattaResults\Pages\ManageRegattaResults;
-use App\Models\RegattaResult;
+use App\Models\RegattaResultItem;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -21,7 +21,7 @@ use Filament\Tables\Table;
 
 class RegattaResultResource extends Resource
 {
-    protected static ?string $model = RegattaResult::class;
+    protected static ?string $model = RegattaResultItem::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'cup';
 
@@ -40,9 +40,9 @@ class RegattaResultResource extends Resource
     {
         return $schema
             ->components([
-                Select::make('regatta_id')
-                    ->label('Регата')
-                    ->relationship('regatta', 'name')
+                Select::make('regatta_result_id')
+                    ->label('Результат регаты')
+                    ->relationship('regattaResult', 'id')
                     ->required(),
                 Select::make('team_id')
                     ->label('Команда')
@@ -51,7 +51,7 @@ class RegattaResultResource extends Resource
                 Select::make('yacht_id')
                     ->label('Яхта')
                     ->relationship('yacht', 'name')
-                    ->required(),
+                    ->nullable(),
                 TextInput::make('total_points')
                     ->label('Общее количество очков')
                     ->placeholder('Сумма очков за все гонки')
@@ -69,7 +69,7 @@ class RegattaResultResource extends Resource
     {
         return $schema
             ->components([
-                TextEntry::make('regatta.name')
+                TextEntry::make('regattaResult.regatta.name')
                     ->label('Регата'),
                 TextEntry::make('team.name')
                     ->label('Команда'),
@@ -96,7 +96,7 @@ class RegattaResultResource extends Resource
                 TextColumn::make('id')
                     ->label('ID')
                     ->searchable(),
-                TextColumn::make('regatta.name')
+                TextColumn::make('regattaResult.regatta.name')
                     ->label('Регата')
                     ->searchable(),
                 TextColumn::make('team.name')
