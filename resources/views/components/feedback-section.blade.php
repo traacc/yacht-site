@@ -81,7 +81,8 @@
                        type="text" name="name" placeholder="Ваше имя" required maxlength="255"
                        x-ref="name">
                 <input class="block appearance-none border-0 border-b border-b-[#C6C6C6] w-full mb-4 text-sm md:text-base"
-                       type="tel" name="phone" placeholder="Ваш номер телефона" required maxlength="20"
+                       type="tel" name="phone" placeholder="+7 (___) ___-__-__" required maxlength="20"
+                       x-mask="+7 (999) 999-99-99"
                        x-ref="phone">
                 <button class="bg-[#2D92CE] text-white text-center w-full py-4 font-semibold mt-4"
                         :disabled="loading"

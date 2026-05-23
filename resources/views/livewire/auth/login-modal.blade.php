@@ -112,7 +112,8 @@
                 </div>
 
                 <div>
-                    <input type="tel" id="phone" wire:model="phone" placeholder="Номер телефона"
+                    <input type="tel" id="phone" wire:model="phone" placeholder="+7 (___) ___-__-__"
+                           x-mask="+7 (999) 999-99-99"
                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('phone') border-red-300 @enderror">
                     @error('phone') <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> @enderror
                 </div>
