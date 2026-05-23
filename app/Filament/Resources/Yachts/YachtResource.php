@@ -107,7 +107,8 @@ class YachtResource extends Resource
                 TextInput::make('owner_phone')
                     ->label('Телефон владельца')
                     ->placeholder('+7 (999) 123-45-67')
-                    ->tel(),
+                    ->mask('+7 (999) 999-99-99')
+                    ->telRegex('/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/'),
                 FileUpload::make('owner_photo')
                     ->label('Фото владельца')
                     ->image()

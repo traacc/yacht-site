@@ -61,7 +61,7 @@ class EditProfile extends BaseEditProfile
                             ->unique(ignoreRecord: true),
                         TextInput::make('phone')
                             ->label('Телефон')
-                            ->tel()
+                            ->telRegex('/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/')
                             ->mask('+7 (999) 999-99-99')
                             ->placeholder('+7 (___) ___-__-__')
                             ->maxLength(255),

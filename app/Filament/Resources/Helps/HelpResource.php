@@ -115,7 +115,8 @@ class HelpResource extends Resource
 
                 TextInput::make('specialist_phone')
                     ->label('Телефон специалиста')
-                    ->tel()
+                    ->telRegex('/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/')
+                    ->mask('+7 (999) 999-99-99')
                     ->placeholder('+7 (999) 000-00-00'),
 
                 TextInput::make('specialist_sphere')

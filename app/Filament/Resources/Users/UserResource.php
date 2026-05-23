@@ -85,7 +85,8 @@ class UserResource extends Resource
                     ->label('Телефон')
                     ->mask('+7 (999) 999-99-99')
                     ->placeholder('+7 (___) ___-__-__')
-                    ->tel(),
+                    ->mask('+7 (999) 999-99-99')
+                    ->telRegex('/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/'),
                 Select::make('sport_category')
                     ->label('Спортивный разряд')
                     ->placeholder('Спортивный разряд')
