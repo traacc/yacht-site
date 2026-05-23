@@ -26,6 +26,8 @@ use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Collection;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RegattaResultResource extends Resource
 {
@@ -245,10 +247,72 @@ class RegattaResultResource extends Resource
                             ->send();
                     }),
                 DeleteAction::make(),
+                Action::make('export_csv')
+                    ->label('Экспорт CSV')
+                    ->icon(Heroicon::ArrowDownTray)
+                    ->color('gray')
+                    ->action(function (RegattaResult $record): StreamedResponse {
+                        $filename = sprintf(
+                            'result_%s_%s.csv',
+                            str($record->regatta?->name ?? $record->id)->slug(),
+                            now()->format('Y-m-d'),
+                        );
+
+                        return response()->streamDownload(function () use ($record): void {
+                            $handle = fopen('php://output', 'w');
+                            fputs($handle, "\xEF\xBB\xBF"); // BOM для Excel
+                            fputcsv($handle, ['Место', 'Команда', 'Яхта', 'Очки'], ';');
+
+                            foreach ($record->items as $item) {
+                                fputcsv($handle, [
+                                    $item->final_position ?? '',
+                                    $item->team?->name ?? '',
+                                    $item->yacht?->name ?? '',
+                                    $item->total_points,
+                                ], ';');
+                            }
+
+                            fclose($handle);
+                        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    \Filament\Actions\BulkAction::make('export_csv_bulk')
+                        ->label('Экспорт CSV')
+                        ->icon(Heroicon::ArrowDownTray)
+                        ->action(function (Collection $records): StreamedResponse {
+                            $filename = sprintf('results_export_%s.csv', now()->format('Y-m-d'));
+
+                            return response()->streamDownload(function () use ($records): void {
+                                $handle = fopen('php://output', 'w');
+                                fputs($handle, "\xEF\xBB\xBF"); // BOM для Excel
+                                fputcsv($handle, ['Регата', 'Тип', 'Место', 'Команда', 'Яхта', 'Очки'], ';');
+
+                                foreach ($records as $result) {
+                                    $result->load('items.team', 'items.yacht', 'regatta');
+                                    $typeName = match ($result->result_type) {
+                                        'preliminary' => 'Предварительный',
+                                        'final'       => 'Финальный',
+                                        default       => $result->result_type,
+                                    };
+
+                                    foreach ($result->items as $item) {
+                                        fputcsv($handle, [
+                                            $result->regatta?->name ?? '',
+                                            $typeName,
+                                            $item->final_position ?? '',
+                                            $item->team?->name ?? '',
+                                            $item->yacht?->name ?? '',
+                                            $item->total_points,
+                                        ], ';');
+                                    }
+                                }
+
+                                fclose($handle);
+                            }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+                        }),
                 ]),
             ]);
     }
