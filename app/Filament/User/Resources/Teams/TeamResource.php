@@ -182,7 +182,8 @@ class TeamResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->visibleForUser(auth()->user());
+        return parent::getEloquentQuery()
+            ->where('organizer_id', auth()->id());
     }
 
     public static function mutateFormDataBeforeCreate(array $data): array
