@@ -61,6 +61,8 @@ class EditProfile extends BaseEditProfile
                         TextInput::make('phone')
                             ->label('Телефон')
                             ->tel()
+                            ->mask('+7 (999) 999-99-99')
+                            ->placeholder('+7 (___) ___-__-__')
                             ->maxLength(255),
                         Select::make('sport_category')
                             ->label('Спортивный разряд')
