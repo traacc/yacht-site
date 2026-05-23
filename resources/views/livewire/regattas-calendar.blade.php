@@ -1,9 +1,5 @@
 {{-- resources/views/livewire/regattas-calendar.blade.php --}}
 <style>
-    .month-card { flex: 0 0 calc((100% - 4 * 1rem) / 5); }
-    @media (max-width: 1023px) { .month-card { flex: 0 0 calc((100% - 2 * 1rem) / 3); } }
-    @media (max-width: 639px)  { .month-card { flex: 0 0 85%; } }
-
     .slides   { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
     .page-dot { transition: width 0.3s ease, background-color 0.3s ease; }
 </style>
@@ -37,7 +33,7 @@
         </div>
 
         {{-- Слайдер месяцев --}}
-        <div class="relative">
+        <div class="relative" x-ref="wrapper">
             <button @click="prev()" :disabled="offset === 0"
                 class="absolute hidden md:flex -left-5 top-1/2 -translate-y-1/2 z-10 bg-[#2D92CE] hover:bg-[#0074CC] cursor-pointer rounded-full w-9 h-9 items-center justify-center text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -45,11 +41,12 @@
 
             <div class="overflow-hidden">
                 <div
-                    class="slides flex gap-4 will-change-transform"
-                    :style="`transform: translateX(calc(-${offset} * (100% + ${gap}px) / ${visible}))`">
+                    class="slides flex will-change-transform"
+                    :style="`gap: ${gap}px; transform: translateX(${-offset * (cardWidth + gap)}px)`">
                     @foreach ($months as $month)
-                        <div class="p-4 shadow-xs transition-all duration-200 month-card hover:bg-[#2D92CE26]
-                            {{ $month['is_current'] ? 'bg-[#2D92CE26]' : 'bg-[#F8F8F8]' }}">
+                        <div class="p-4 shadow-xs transition-all duration-200 shrink-0 hover:bg-[#2D92CE26]
+                            {{ $month['is_current'] ? 'bg-[#2D92CE26]' : 'bg-[#F8F8F8]' }}"
+                            :style="`width: ${cardWidth}px`">
                             <h3 class="text-[#2E325C] font-medium text-2xl pb-4 mb-3 a-font border-b
                                 {{ $month['is_current'] ? 'text-[#2D92CE] border-b-[#2D92CE]/30' : 'border-b-[#EAEAEA]' }}">
                                 {{ $month['name'] }}
@@ -113,6 +110,7 @@ function regattaCalendar() {
         visible: 5,
         gap: 16,
         offset: 0,
+        cardWidth: 0,
 
         get maxOffset() {
             return Math.max(0, 12 - this.visible);
@@ -124,15 +122,31 @@ function regattaCalendar() {
             this.offset = Math.min(Math.max(idx, 0), this.maxOffset);
         },
 
+        calcCardWidth() {
+            const wrapperWidth = this.$refs.wrapper.clientWidth;
+            this.cardWidth = Math.floor((wrapperWidth - (this.visible - 1) * this.gap) / this.visible);
+        },
+
         init() {
             this.updateVisible();
+            this.calcCardWidth();
             const currentMonthIdx = parseInt(this.$el.dataset.currentMonth) || 0;
             this.offset = Math.min(currentMonthIdx, this.maxOffset);
-            window.addEventListener('resize', () => this.updateVisible());
+            window.addEventListener('resize', () => {
+                this.updateVisible();
+                this.calcCardWidth();
+            });
         },
+
         updateVisible() {
             const w = window.innerWidth;
-            this.visible = w < 640 ? 1.25 : w < 1024 ? 3 : 5;
+            if (w < 640) {
+                this.visible = 1;
+            } else if (w < 1024) {
+                this.visible = 3;
+            } else {
+                this.visible = 5;
+            }
             if (this.offset > this.maxOffset) this.offset = Math.max(0, this.maxOffset);
         },
     }
