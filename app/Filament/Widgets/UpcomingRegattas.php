@@ -25,7 +25,8 @@ class UpcomingRegattas extends TableWidget
 
             ->columns([
                 TextColumn::make('name')
-                    ->searchable()->label('Название'),
+                    ->searchable()->label('Название')
+                    ->url(fn (Regatta $record): string => \App\Filament\Resources\Regattas\RegattaResource::getUrl('index')),
                 TextColumn::make('season.year')
                     ->searchable()->label('Сезон'),
                 TextColumn::make('dateRange')
