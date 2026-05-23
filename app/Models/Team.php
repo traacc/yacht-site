@@ -16,6 +16,9 @@ class Team extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
+    /** Максимальное количество активных участников в команде */
+    public const int MAX_MEMBERS = 10;
+
     protected $fillable = [
         'name',
         'description',

@@ -99,6 +99,24 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function isSecretary(): bool  { return $this->system_role === 'secretary'; }
     public function isAccountant(): bool { return $this->system_role === 'accountant'; }
 
+    /**
+     * Является ли пользователь капитаном (организатором) хотя бы одной команды.
+     */
+    public function isCaptain(): bool
+    {
+        return $this->organisedTeams()->exists();
+    }
+
+    /**
+     * Scope: пользователи, не состоящие ни в одной активной команде.
+     */
+    public function scopeFreeUsers(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('teamMemberships', fn (Builder $q) =>
+            $q->where('status', 'active')
+        );
+    }
+
 
     // Дней до следующего дня рождения
     protected function daysUntilBirthday(): Attribute

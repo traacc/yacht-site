@@ -5,6 +5,7 @@ namespace App\Filament\User\Resources\Teams;
 use App\Filament\User\Resources\Teams\Pages\EditTeam;
 use App\Filament\User\Resources\Teams\Pages\ManageTeams;
 use App\Models\Team;
+use App\Models\User;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -112,6 +113,22 @@ class TeamResource extends Resource
                                 Hidden::make('sort_order')->default(0),
                             ]),
                     ]),
+
+                Select::make('initial_member_ids')
+                    ->label('Добавить участников')
+                    ->placeholder('Выберите участников (необязательно)')
+                    ->helperText('Свободные участники, которые будут добавлены в команду сразу при создании. Максимум ' . (Team::MAX_MEMBERS - 1) . ' чел. (одно место занимает капитан).')
+                    ->options(fn () => User::freeUsers()
+                        ->where('id', '!=', auth()->id())
+                        ->orderBy('last_name')
+                        ->orderBy('first_name')
+                        ->get()
+                        ->mapWithKeys(fn (User $u) => [$u->id => $u->full_name])
+                    )
+                    ->multiple()
+                    ->searchable()
+                    ->maxItems(Team::MAX_MEMBERS - 1)
+                    ->columnSpanFull(),
 
                 Hidden::make('organizer_id')
                     ->default(fn () => auth()->id()),

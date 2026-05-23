@@ -2,8 +2,11 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use App\Models\Team;
+use App\Policies\TeamPolicy;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(Team::class, TeamPolicy::class);
+
         Notification::configureUsing(function (Notification $notification): void {
             $notification->duration(2000); // 2000 мс = 2 секунды
         });
