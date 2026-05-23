@@ -25,7 +25,7 @@ class ManageTeams extends ManageRecords
             Action::make('addMembers')
                 ->label('Добавить участников')
                 ->icon('heroicon-o-user-plus')
-                ->color('success')
+                ->color('white')
                 ->visible(fn (): bool => auth()->user()->isCaptain())
                 ->form(function (): array {
                     /** @var User $captain */
