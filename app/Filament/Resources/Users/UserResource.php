@@ -126,6 +126,10 @@ class UserResource extends Resource
                     ->label('Дата рождения')
                     ->date()
                     ->sortable(),
+                TextColumn::make('sport_category')
+                    ->label('Разряд')
+                    ->formatStateUsing(fn ($state) => $state instanceof \App\Enums\SportCategory ? $state->getLabel() : '—')
+                    ->badge(),
                 TextColumn::make('system_role')
                     ->label('Роль')
                     ->badge()->formatStateUsing(fn (string $state): string => match ($state) {

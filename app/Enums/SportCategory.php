@@ -2,7 +2,9 @@
 
 namespace App\Enums;
 
-enum SportCategory: string
+use Filament\Support\Contracts\HasLabel;
+
+enum SportCategory: string implements HasLabel
 {
     case Third  = '3';
     case Second = '2';
