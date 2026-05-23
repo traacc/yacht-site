@@ -17,6 +17,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
+
 class RatingResource extends Resource
 {
     protected static ?string $model = Rating::class;
@@ -41,16 +42,35 @@ class RatingResource extends Resource
                     ->relationship('season', 'year')
                     ->label('Сезон')
                     ->required(),
-                Select::make('team_id')
-                    ->label('Команда')
-                    ->relationship('team', 'name'),
-                Select::make('user_id')
-                    ->label('Участник')
-                    ->relationship('user', 'name'),
                 Select::make('rating_type')
                     ->label('Тип рейтинга')
                     ->options(['team' => 'Командный', 'personal' => 'Личный'])
-                    ->required(),
+                    ->required()
+                    ->live(),
+                Select::make('team_id')
+                    ->label('Команда')
+                    ->relationship('team', 'name')
+                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => $get('rating_type') === 'team')
+                    ->required(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => $get('rating_type') === 'team')
+                    ->unique(
+                        table: 'ratings',
+                        column: 'team_id',
+                        ignoreRecord: true,
+                        modifyRuleUsing: fn (\Illuminate\Validation\Rules\Unique $rule, \Filament\Schemas\Components\Utilities\Get $get) =>
+                            $rule->where('season_id', $get('season_id')),
+                    ),
+                Select::make('user_id')
+                    ->label('Участник')
+                    ->relationship('user', 'name')
+                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => $get('rating_type') === 'personal')
+                    ->required(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => $get('rating_type') === 'personal')
+                    ->unique(
+                        table: 'ratings',
+                        column: 'user_id',
+                        ignoreRecord: true,
+                        modifyRuleUsing: fn (\Illuminate\Validation\Rules\Unique $rule, \Filament\Schemas\Components\Utilities\Get $get) =>
+                            $rule->where('season_id', $get('season_id')),
+                    ),
                 TextInput::make('total_points')
                     ->label('Всего очков')
                     ->required()
