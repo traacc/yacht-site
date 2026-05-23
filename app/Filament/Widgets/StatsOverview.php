@@ -25,12 +25,11 @@ class StatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        // Считаем "Новые заявки" за последние 3 дня (как пример)
-        $newApplicationsCount = RegattaEntry::where('created_at', '>=', now()->subDays(3))->count();
+        $newEntriesCount = RegattaEntry::where('status', 'pending')->count();
 
         return [
             $this->createCustomStat('Регаты', Regatta::count(), 'dashboard_regatta_count', 'text-blue-500/10'),
-            $this->createCustomStat('Новые заявки', RegattaEntry::where('status', 'new')->count(), 'dashboard_entry', 'text-amber-500/10'),
+            $this->createCustomStat('Новые заявки', $newEntriesCount, 'dashboard_entry', $newEntriesCount > 0 ? 'text-amber-500' : 'text-amber-500/10'),
             $this->createCustomStat('Пользователи', User::count(), 'dashboard_users', 'text-emerald-500/10'),
             $this->createCustomStat('Яхты', Yacht::count(), 'dashboard_yachts', 'text-cyan-500/10'),
             $this->createCustomStat('Команды', Team::count(), 'dashboard_teams', 'text-rose-500/10'),

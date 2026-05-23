@@ -9,6 +9,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
@@ -54,6 +55,10 @@ class RegattaEntryResource extends Resource
                     ->relationship('yacht', 'name')->columnSpanFull(),
                 Placeholder::make('team.organizer.name')
                     ->label('Капитан')->columnSpanFull(),
+                DatePicker::make('submitted_at')
+                    ->label('Дата')
+                    ->displayFormat('d.m.Y')
+                    ->required(),
                 Select::make('status')
                     ->label('Статус')
                     ->options([
