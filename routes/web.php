@@ -254,7 +254,7 @@ Route::get('/yachts', function () {
 Route::get('/ratings', function () {
 
 
-    
+    return view('pages.ratings');
 })->name('ratings');
 Route::view('/gallery', 'pages/gallery')->name('gallery');
 Route::view('/help', 'pages/help')->name('help');
