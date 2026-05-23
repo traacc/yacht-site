@@ -34,6 +34,6 @@ class UpcomingBirthdaysWidget extends BaseWidget
                         ? 'Сегодня!'
                         : $r->daysUntilBirthday . ' дн.'
                     ),
-            ])->emptyStateHeading('В ближайшие время нет ни у кого дней рождения');
+            ])->stackedOnMobile()->emptyStateHeading('В ближайшие время нет ни у кого дней рождения');
     }
 }

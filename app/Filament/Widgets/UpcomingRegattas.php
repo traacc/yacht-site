@@ -34,7 +34,7 @@ class UpcomingRegattas extends TableWidget
                     ->sortable(query: fn (Builder $q, string $dir) => $q->orderBy('date_start', $dir)),
                 TextColumn::make('water_area')
                     ->searchable()->label('Акватория')->columnSpanFull(),
-            ])
+            ])->emptyStateHeading('Пока нет ближайших регат')->stackedOnMobile()
             ->filters([
                 //
             ])
