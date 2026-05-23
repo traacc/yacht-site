@@ -315,94 +315,168 @@
 
 {{-- ===== ГАЛЕРЕЯ ===== --}}
 {{-- @livewire('gallery.preview') --}}
-<section x-data="{
-    current: 0,
-    images: [
-        '{{ asset('images/news/news_1.png') }}',
-        '{{ asset('images/news/news_2.png') }}',
-        '{{ asset('images/news/news_3.png') }}',
-        '{{ asset('images/news/news_1.png') }}',
-        '{{ asset('images/news/news_2.png') }}',
-    ]
-}" class="py-12 bg-brand-light hidden md:block">
-<style>
-    .month-card { flex: 0 0 calc((100% - 4 * 1rem) / 5); }
-    @media (max-width: 1023px) { .month-card { flex: 0 0 calc((100% - 2 * 1rem) / 3); } }
-    @media (max-width: 639px)  { .month-card { flex: 0 0 85%; } }
+<section class="py-12 bg-brand-light"
+    x-data="gallerySlider()"
+    x-init="init()"
+    @resize.window.debounce.100ms="calcDimensions()">
 
-    .slides   { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-    .page-dot { transition: width 0.3s ease, background-color 0.3s ease; }
-</style>
-
-    <div class="container mx-auto" x-data="regattaCalendar()" data-current-month="{{ now()->format('n') - 1 }}">
+    <div class="container mx-auto">
         <div class="flex items-center justify-between mb-6">
             <h2 class="section-title a-font">Галерея</h2>
             <div class="flex items-center gap-3">
-                <a href="{{ route('gallery') }}"  class="text-lg font-semibold hover:underline">Все галерея →</a>
+                <a href="{{ route('gallery') }}" class="text-lg font-semibold hover:underline hidden md:block">Все галерея →</a>
                 <div class="hidden md:flex items-center gap-2">
-                    <button @click="prev()" :disabled="offset === 0"
-                        class="bg-[#2D92CE] rounded-full w-8 h-8 flex items-center justify-center shadow-sm hover:shadow-md text-white hover:bg-[#0074CC] transition-all cursor-pointer">
+                    <button @click="prev()"
+                        :disabled="current === 0"
+                        :class="current === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#0074CC] cursor-pointer'"
+                        class="bg-[#2D92CE] rounded-full w-8 h-8 flex items-center justify-center shadow-sm text-white transition-all">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                     </button>
-                    <button @click="next()" :disabled="offset >= maxOffset"
-                        class="bg-[#2D92CE] rounded-full w-8 h-8 flex items-center justify-center shadow-sm hover:shadow-md text-white hover:bg-[#0074CC] transition-all cursor-pointer">
+                    <button @click="next()"
+                        :disabled="current >= maxIndex"
+                        :class="current >= maxIndex ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#0074CC] cursor-pointer'"
+                        class="bg-[#2D92CE] rounded-full w-8 h-8 flex items-center justify-center shadow-sm text-white transition-all">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                     </button>
                 </div>
-
             </div>
         </div>
-        <div class="grid grid-cols-3 gap-4 overflow-hidden">
-            <template x-for="(img, idx) in images.slice(current, current + 3)" :key="idx">
-                <div class="overflow-hidden h-52 cursor-pointer group">
-                    <img :src="img" alt="" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
-                </div>
-            </template>
+
+        {{-- Трек слайдера --}}
+        <div class="overflow-hidden"
+            x-ref="track"
+            @touchstart.passive="touchStart($event)"
+            @touchmove.passive="touchMove($event)"
+            @touchend="touchEnd($event)"
+        >
+            <div
+                class="flex"
+                :style="`gap: ${gap}px; transform: translateX(-${offset}px); transition: ${dragging ? 'none' : 'transform 0.4s cubic-bezier(0.4,0,0.2,1)'}; will-change: transform;`"
+            >
+                <template x-for="(img, idx) in images" :key="idx">
+                    <div
+                        class="shrink-0 overflow-hidden cursor-pointer group"
+                        :style="`width: ${cardWidth}px; height: ${cardHeight}px`"
+                    >
+                        <img :src="img" alt="" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                    </div>
+                </template>
+            </div>
         </div>
+
+        {{-- Точки пагинации --}}
         <div class="flex justify-center gap-1.5 mt-5">
-            <template x-for="(_, idx) in Array.from({ length: maxOffset + 1 })" :key="idx">
+            <template x-for="(_, idx) in Array.from({ length: maxIndex + 1 })" :key="idx">
                 <button
-                    class="page-dot h-1.5 rounded-full border-0 cursor-pointer"
-                    :class="idx === offset ? 'w-5 bg-[#2D92CE]' : 'w-1.5 bg-slate-300'"
+                    class="page-dot h-1.5 rounded-full border-0 cursor-pointer transition-all duration-300"
+                    :class="idx === current ? 'w-5 bg-[#2D92CE]' : 'w-1.5 bg-slate-300'"
                     @click="goTo(idx)"
-                    :aria-label="`Месяц ${idx + 1}`">
+                    :aria-label="`Слайд ${idx + 1}`">
                 </button>
             </template>
         </div>
+
+        <a href="{{ route('gallery') }}" class="text-[#2E325C] text-center block mt-6 text-sm font-semibold hover:underline md:hidden">Все галерея →</a>
     </div>
 </section>
-{{-- Alpine-логика слайдера --}}
+
 <script>
-function regattaCalendar() {
+function gallerySlider() {
     return {
+        images: [
+            '{{ asset('images/news/news_1.png') }}',
+            '{{ asset('images/news/news_2.png') }}',
+            '{{ asset('images/news/news_3.png') }}',
+            '{{ asset('images/news/news_1.png') }}',
+            '{{ asset('images/news/news_2.png') }}',
+            '{{ asset('images/news/news_1.png') }}',
+            '{{ asset('images/news/news_2.png') }}',
+            '{{ asset('images/news/news_3.png') }}',
+            '{{ asset('images/news/news_1.png') }}',
+            '{{ asset('images/news/news_2.png') }}',
+            '{{ asset('images/news/news_2.png') }}',
+            '{{ asset('images/news/news_3.png') }}',
+            '{{ asset('images/news/news_1.png') }}',
+            '{{ asset('images/news/news_2.png') }}',
+        ],
+
+        // Брейкпоинты: сколько карточек видно
+        breakpoints: [
+            { maxWidth: 639,  visible: 1.2 },
+            { maxWidth: 1023, visible: 2.3 },
+            { maxWidth: Infinity, visible: 5 },
+        ],
+
         visible: 5,
         gap: 16,
-        offset: 0,
+        cardWidth: 0,
+        cardHeight: 208, // h-52 = 208px
+        trackWidth: 0,
+        current: 0,
 
-        get maxOffset() {
-            return Math.max(0, 12 - this.visible);
+        // Touch
+        touchStartX: 0,
+        touchDeltaX: 0,
+        dragging: false,
+
+        get maxIndex() {
+            return Math.max(0, this.images.length - Math.floor(this.visible));
         },
-
-        prev() { if (this.offset > 0) this.offset--; },
-        next() { if (this.offset < this.maxOffset) this.offset++; },
-        goTo(idx) {
-            this.offset = Math.min(Math.max(idx, 0), this.maxOffset);
+        get offset() {
+            return this.current * (this.cardWidth + this.gap);
         },
 
         init() {
-            this.updateVisible();
-            const currentMonthIdx = parseInt(this.$el.dataset.currentMonth) || 0;
-            this.offset = Math.min(currentMonthIdx, this.maxOffset);
-            window.addEventListener('resize', () => this.updateVisible());
+            this.$nextTick(() => this.calcDimensions());
         },
-        updateVisible() {
+
+        calcDimensions() {
+            const track = this.$refs.track;
+            if (!track) return;
+
             const w = window.innerWidth;
-            this.visible = w < 640 ? 1.25 : w < 1024 ? 3 : 5;
-            if (this.offset > this.maxOffset) this.offset = Math.max(0, this.maxOffset);
+            const bp = this.breakpoints.find(b => w <= b.maxWidth);
+            this.visible = bp ? bp.visible : 5;
+
+            // На мобильных уменьшаем высоту карточки
+            this.cardHeight = w < 640 ? 160 : 208;
+
+            this.trackWidth = track.clientWidth;
+            this.cardWidth = (this.trackWidth - this.gap * (this.visible - 1)) / this.visible;
+
+            if (this.current > this.maxIndex) this.current = this.maxIndex;
         },
-    }
+
+        prev() {
+            if (this.current > 0) this.current--;
+        },
+        next() {
+            if (this.current < this.maxIndex) this.current++;
+        },
+        goTo(idx) {
+            this.current = Math.min(Math.max(0, idx), this.maxIndex);
+        },
+
+        // Touch-свайп
+        touchStart(e) {
+            this.touchStartX = e.touches[0].clientX;
+            this.touchDeltaX = 0;
+            this.dragging = true;
+        },
+        touchMove(e) {
+            this.touchDeltaX = e.touches[0].clientX - this.touchStartX;
+        },
+        touchEnd() {
+            this.dragging = false;
+            const threshold = this.cardWidth * 0.25;
+            if (this.touchDeltaX < -threshold) this.next();
+            else if (this.touchDeltaX > threshold) this.prev();
+            this.touchDeltaX = 0;
+        },
+    };
 }
 </script>
+
 
 {{-- ===== СПОНСОРЫ ===== --}}
 <section class="py-10 bg-white">
