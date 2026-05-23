@@ -24,10 +24,13 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $first_name = fake()->firstName();
+        $last_name = fake()->lastName();
+        $full_name = $first_name . ' ' . $last_name;
         return [
-            'name'                => fake()->firstName(),
-            'first_name'          => fake()->firstName(),
-            'last_name'           => fake()->lastName(),
+            'name'                => $full_name,
+            'first_name'          => $first_name,
+            'last_name'           => $last_name,
             'birth_date'          => fake()->optional()->dateTimeBetween('-60 years', '-16 years')?->format('Y-m-d'),
             'email'               => fake()->unique()->safeEmail(),
             'phone'               => fake()->unique()->optional()->e164PhoneNumber(),
