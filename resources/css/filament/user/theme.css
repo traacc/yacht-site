@@ -195,7 +195,10 @@
   font-weight: 600;
   color: #2E325C;
 }
-
+.fi-wi-stats-overview-stat {
+  border-radius: 0px;
+  box-shadow: none;
+}
 .fi-section-not-contained {
   @apply pl-0 pr-0;
 }
