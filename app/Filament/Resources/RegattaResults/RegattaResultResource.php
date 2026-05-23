@@ -186,10 +186,6 @@ class RegattaResultResource extends Resource
                         'imported' => 'Импортирован',
                         default    => $state,
                     }),
-                TextColumn::make('items_count')
-                    ->label('Участников')
-                    ->counts('items')
-                    ->sortable(),
                 TextColumn::make('created_at')
                     ->label('Создан')
                     ->dateTime()
