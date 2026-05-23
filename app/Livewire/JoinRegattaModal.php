@@ -59,7 +59,13 @@ class JoinRegattaModal extends Component
         try {
             $entry = $action->handle($regatta, $team, $yacht, $user);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            throw $e; // Livewire перехватит автоматически и покажет ошибки у полей
+            foreach ($e->errors() as $field => $messages) {
+                foreach ($messages as $message) {
+                    $this->addError($field, $message);
+                }
+            }
+
+            return;
         } catch (\DomainException $e) {
             $this->addError('yachtId', $e->getMessage());
 

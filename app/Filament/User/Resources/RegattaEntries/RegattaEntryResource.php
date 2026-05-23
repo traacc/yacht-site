@@ -99,7 +99,7 @@ class RegattaEntryResource extends Resource
                 //
             ])->emptyStateHeading('Записей пока нет')
             ->recordActions([
-                EditAction::make(),
+                //EditAction::make(),
                 //DeleteAction::make(),
             ])
             ->toolbarActions([
