@@ -79,16 +79,6 @@ class NewsResource extends Resource
                             ->label('Название альбома')
                             ->required()
                             ->columnSpanFull(),
-                        Textarea::make('description')
-                            ->label('Описание')
-                            ->rows(2)
-                            ->columnSpanFull(),
-                        FileUpload::make('cover_url')
-                            ->label('Обложка')
-                            ->image()
-                            ->directory('albums/covers')
-                            ->disk('public')
-                            ->columnSpanFull(),
                         Repeater::make('media')
                             ->label('Фотографии')
                             ->relationship('media')
