@@ -29,10 +29,16 @@
                         @endif
                     </div>
                     <p class="text-brand-gray text-lg">{{ $regatta->description }}</p>
-                    <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"
-                            class="mt-6 bg-brand-blue text-white py-2 px-6 hover:bg-brand-blue transition-colors text-lg font-semibold cursor-pointer">
-                        Подать заявку 
-                    </button>
+                    @if($userIsEntered)
+                        <div class="mt-6 bg-brand-light-bg border border-brand-blue text-brand-blue py-2 px-6 text-lg font-semibold inline-block">
+                            Вы уже заявлены
+                        </div>
+                    @else
+                        <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"
+                                class="mt-6 bg-brand-blue text-white py-2 px-6 hover:bg-brand-blue transition-colors text-lg font-semibold cursor-pointer">
+                            Подать заявку →
+                        </button>
+                    @endif
                 </div>
                 <div class="pic max-w-[720px]">
                     <img class="w-full"

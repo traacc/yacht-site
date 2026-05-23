@@ -53,6 +53,17 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
 
     $entries = $regatta->approvedEntries;
 
+    // Проверяем, является ли текущий юзер участником уже заявленной команды
+    $userIsEntered = false;
+    if (auth()->check()) {
+        $enteredTeamIds = $entries->pluck('team_id');
+        $userIsEntered = \App\Models\TeamMember::query()
+            ->where('user_id', auth()->id())
+            ->where('status', 'active')
+            ->whereIn('team_id', $enteredTeamIds)
+            ->exists();
+    }
+
     // Данные для Alpine.js модального окна состава команд
     $entriesJson = $entries->map(fn ($entry) => [
         'team_name' => $entry->team?->name ?? '',
@@ -110,7 +121,8 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'scheduleDays',
         'documents',
         'otherRegattas',
-        'otherRegattasData'
+        'otherRegattasData',
+        'userIsEntered'
     ));
 })->name('competition-details');
 Route::get('/teams', function () {
