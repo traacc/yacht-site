@@ -14,9 +14,11 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
+use App\Models\Yacht;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -68,6 +70,17 @@ class TeamResource extends Resource
                 Textarea::make('description')
                     ->label('Описание')
                     ->placeholder('Описание команды')
+                    ->columnSpanFull(),
+
+                Select::make('default_yacht_id')
+                    ->label('Яхта по умолчанию')
+                    ->placeholder('Выберите яхту')
+                    ->options(fn () => Yacht::where('approval_status', 'approved')
+                        ->where('user_id', auth()->id())
+                        ->orderBy('name')
+                        ->pluck('name', 'id'))
+                    ->searchable()
+                    ->nullable()
                     ->columnSpanFull(),
 
                 Repeater::make('albums')

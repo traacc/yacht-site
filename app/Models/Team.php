@@ -20,6 +20,7 @@ class Team extends Model
         'name',
         'description',
         'organizer_id',
+        'default_yacht_id',
         'is_archived',
         'picture',
         'approval_status',
@@ -41,6 +42,12 @@ class Team extends Model
     public function organizer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'organizer_id');
+    }
+
+    /** Яхта по умолчанию для команды */
+    public function defaultYacht(): BelongsTo
+    {
+        return $this->belongsTo(Yacht::class, 'default_yacht_id');
     }
 
     /** Все участники через pivot */
