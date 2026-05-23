@@ -72,6 +72,7 @@ class UserResource extends Resource
                     ->placeholder('Фамилия')
                     ->required(),
                 DatePicker::make('birth_date')
+                    ->displayFormat('d.m.Y')
                     ->label('Дата рождения'),
                 TextInput::make('email')
                     ->label('Email')

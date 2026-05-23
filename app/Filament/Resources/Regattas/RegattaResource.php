@@ -73,9 +73,11 @@ class RegattaResource extends Resource
                     ->default(1.0)->columnSpanFull(),
                 DatePicker::make('date_start')
                     ->label('Дата начала')
+                    ->displayFormat('d.m.Y')
                     ->required(),
                 DatePicker::make('date_end')
                     ->label('Дата окончания')
+                    ->displayFormat('d.m.Y')
                     ->required(),
 
                 TextInput::make('race_days_count')
@@ -188,6 +190,7 @@ class RegattaResource extends Resource
                     ->schema([
                         DatePicker::make('date')
                             ->label('Выберите дату')
+                            ->displayFormat('d.m.Y')
                             ->native(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {

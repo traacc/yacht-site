@@ -50,6 +50,7 @@ class EditProfile extends BaseEditProfile
                             ->maxLength(255),
                         DatePicker::make('birth_date')
                             ->label('Дата рождения')
+                            ->displayFormat('d.m.Y')
                             ->native(false),
                         TextInput::make('email')
                             ->label('Email')
