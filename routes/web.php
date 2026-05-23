@@ -80,7 +80,6 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         $enteredTeamIds = $entries->pluck('team_id');
         $userIsEntered = \App\Models\TeamMember::query()
             ->where('user_id', auth()->id())
-            ->where('status', 'active')
             ->whereIn('team_id', $enteredTeamIds)
             ->exists();
     }
