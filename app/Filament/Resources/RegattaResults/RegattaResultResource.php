@@ -158,6 +158,10 @@ class RegattaResultResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('regatta.season.year')
+                    ->label('Сезон')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('id')
                     ->label('ID')
                     ->searchable()
@@ -166,15 +170,17 @@ class RegattaResultResource extends Resource
                     ->label('Регата')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('regatta.dateRange')
+                    ->label('Дата регаты')->getStateUsing(fn ($record) => $record->regatta?->dateRange()),
                 TextColumn::make('result_type')
-                    ->label('Тип')
+                    ->label('Тип результатов')
                     ->formatStateUsing(fn(string $state) => match ($state) {
                         'preliminary' => 'Предварительный',
                         'final'       => 'Финальный',
                         default       => $state,
                     }),
                 TextColumn::make('source')
-                    ->label('Источник')
+                    ->label('Формат')
                     ->formatStateUsing(fn(string $state) => match ($state) {
                         'manual'   => 'Вручную',
                         'imported' => 'Импортирован',
