@@ -252,9 +252,35 @@ Route::get('/yachts', function () {
     return view('pages.yachts', compact('yachts', 'yachtsJson'));
 })->name('yachts');
 Route::get('/ratings', function () {
+    $teamRatings = \App\Models\Rating::with(['team.activeMembers', 'season'])
+        ->team()
+        ->ranked()
+        ->get()
+        ->map(fn ($r) => [
+            'name'         => $r->team?->name ?? '—',
+            'total_points' => (float) $r->total_points,
+            'rank'         => $r->rank_position,
+            'members'      => $r->team?->activeMembers?->map(fn ($m) => [
+                'name'     => $m->full_name,
+                'birthday' => $m->birth_date?->format('d.m.Y') ?? '—',
+                'category' => $m->sport_category ?? '—',
+            ])->values()->toArray() ?? [],
+        ])->values()->toArray();
 
+    $personalRatings = \App\Models\Rating::with(['user', 'season'])
+        ->personal()
+        ->ranked()
+        ->get()
+        ->map(fn ($r) => [
+            'name'         => $r->user?->full_name ?? '—',
+            'total_points' => (float) $r->total_points,
+            'rank'         => $r->rank_position,
+            'birthday'     => $r->user?->birth_date?->format('d.m.Y') ?? '—',
+            'category'     => $r->user?->sport_category ?? '—',
+            'email'        => $r->user?->email ?? '—',
+        ])->values()->toArray();
 
-    return view('pages.ratings');
+    return view('pages.ratings', compact('teamRatings', 'personalRatings'));
 })->name('ratings');
 Route::view('/gallery', 'pages/gallery')->name('gallery');
 Route::view('/help', 'pages/help')->name('help');
