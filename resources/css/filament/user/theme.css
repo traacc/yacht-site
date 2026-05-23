@@ -159,6 +159,8 @@
   border: 0px;
   box-shadow: none;
   padding: 6px;
+
+  background-color: #F8F8F8;
 }
 .fi-input-wrp-content-ctn {
   border-radius: 0px;
@@ -174,6 +176,13 @@
 }
 .fi-ac {
   background-color: #F8F8F8;
+}
+
+.profile_user_block .fi-input-wrp {
+  background-color: #FFFFFF;
+}
+.profile_user_block input, .profile_user_block .fi-fo-select, .profile_user_block .fi-input-wrp-content-ctn {
+  background-color: #FFFFFF;
 }
 .photo_wrapper {
   display: flex;

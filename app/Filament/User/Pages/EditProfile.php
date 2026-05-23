@@ -69,6 +69,6 @@ class EditProfile extends BaseEditProfile
 
 
 
-            ])->columns(2);
+            ])->columns(2)->extraAttributes(['class' => 'profile_user_block']);
     }
 }
