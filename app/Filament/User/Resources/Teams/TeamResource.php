@@ -41,12 +41,12 @@ class TeamResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return 'Команды'; // Название в единственном числе
+        return 'Моя команда'; // Название в единственном числе
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'Команда'; // Название во множественном числе
+        return 'Мои команды'; // Название во множественном числе
     }
 
     public static function form(Schema $schema): Schema
@@ -75,6 +75,22 @@ class TeamResource extends Resource
                 TextColumn::make('active_members_count')
                     ->label('Участники')
                     ->sortable(),
+                TextColumn::make('approval_status')
+                    ->label('Статус')
+                    ->badge()->formatStateUsing(fn (string $state): string => match ($state) {
+                    'pending' => 'На рассмотрении',
+                    'approved' => 'Одобрена',
+                    'rejected' => 'Отклонена',
+                    'withdrawn' => 'Отозвана',
+                    default => $state,
+                })
+                ->color(fn (string $state): string => match ($state) {
+                    'pending' => 'warning',
+                    'approved' => 'success',
+                    'rejected' => 'danger',
+                    'withdrawn' => 'gray',
+                    default => 'gray',
+                }),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -92,16 +108,16 @@ class TeamResource extends Resource
                 TrashedFilter::make(),
             ])->emptyStateHeading('Записей пока нет')
             ->recordActions([
-                EditAction::make()->hiddenLabel(),
-                DeleteAction::make()->hiddenLabel(),
-                ForceDeleteAction::make(),
+                //EditAction::make()->hiddenLabel(),
+                //DeleteAction::make()->hiddenLabel(),
+                //ForceDeleteAction::make(),
                 RestoreAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
-                    RestoreBulkAction::make(),
+                    //DeleteBulkAction::make(),
+                    //ForceDeleteBulkAction::make(),
+                    //RestoreBulkAction::make(),
                 ]),
             ])->stackedOnMobile();
     }

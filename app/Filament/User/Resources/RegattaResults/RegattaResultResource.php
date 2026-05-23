@@ -79,9 +79,6 @@ class RegattaResultResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID')
-                    ->searchable(),
                 TextColumn::make('regattaResult.regatta.name')
                     ->searchable()->label('Регата'),
                 TextColumn::make('team.name')

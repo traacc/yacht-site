@@ -162,10 +162,6 @@ class RegattaResultResource extends Resource
                     ->label('Сезон')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('id')
-                    ->label('ID')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('regatta.name')
                     ->label('Регата')
                     ->searchable()
