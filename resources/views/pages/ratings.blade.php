@@ -13,7 +13,7 @@ bgImage="{{ asset('images/bg/results.png') }}"
 
                 <div class="bg-brand-light rounded-xl md:p-4 md:pr-0">
                     <h3 class="font-display  text-[#2E325C] text-3xl mb-4 a-font">Командный рейтинг</h3>
-                    <div class="overflow-auto md:p-6 md:pt-0 bg-white">
+                    <div class="overflow-auto md:pb-6 md:pt-0 bg-white">
                         <table class="w-full text-sm md:text-base responsive-table">
                             <thead class="sticky bg-white top-0 pt-6">
                                 <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] ">
@@ -27,7 +27,7 @@ bgImage="{{ asset('images/bg/results.png') }}"
                                     <tr>
                                         <td class="py-2" data-label="Место">
                                             <div class="flex items-center md:justify-center gap-3">
-                                                <span :class="i===0?'text-[#C2A36B]':i===1?'text-[#9FA6AD]':'text-[#B56A3A]'" class="font-bold text-sm">{!! file_get_contents(public_path('images/icons/cup.svg')) !!}</span><span x-text="i+1"></span>
+                                                <span :class="i===0?'text-[#C2A36B]':i===1?'text-[#9FA6AD]':i===2?'text-[#B56A3A]':'opacity-0'" class="font-bold text-sm">{!! file_get_contents(public_path('images/icons/cup.svg')) !!}</span><span x-text="i+1"></span>
                                             </div>
                                             
                                         </td>
@@ -42,7 +42,7 @@ bgImage="{{ asset('images/bg/results.png') }}"
                 </div>
                 <div class="bg-brand-light rounded-xl md:p-4">
                     <h3 class="font-display  text-[#2E325C]  text-3xl mb-4 a-font">Личный рейтинг</h3>
-                    <div class="overflow-x-auto md:p-6 md:pt-0 bg-white">
+                    <div class="overflow-x-auto md:pb-6 md:pt-0 bg-white">
                         <table class="w-full text-sm md:text-base responsive-table">
                             <thead>
                                 <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] bg-white sticky top-0">
@@ -56,7 +56,7 @@ bgImage="{{ asset('images/bg/results.png') }}"
                                     <tr>
                                         <td class="py-2" data-label="Место">
                                             <div class="flex items-center md:justify-center gap-3">
-                                                <span :class="i===0?'text-[#C2A36B]':i===1?'text-[#9FA6AD]':'text-[#B56A3A]'" class="font-bold text-sm">{!! file_get_contents(public_path('images/icons/cup.svg')) !!}</span><span x-text="i+1"></span>
+                                                <span :class="i===0?'text-[#C2A36B]':i===1?'text-[#9FA6AD]':i===2?'text-[#B56A3A]':'opacity-0'" class="font-bold text-sm">{!! file_get_contents(public_path('images/icons/cup.svg')) !!}</span><span x-text="i+1"></span>
                                             </div>
                                             
                                         </td>
