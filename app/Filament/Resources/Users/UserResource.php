@@ -60,6 +60,7 @@ class UserResource extends Resource
                     ->avatar()
                     ->image()
                     ->imageEditor()
+                    ->disk('public')
                     ->directory('avatars')
                     ->columnSpanFull()
                     ->visibility('public')

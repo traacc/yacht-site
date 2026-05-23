@@ -38,6 +38,7 @@ class EditProfile extends BaseEditProfile
                             ->avatar()
                             ->image()
                             ->imageEditor()
+                            ->disk('public')
                             ->directory('avatars')
                             ->columnSpanFull()
                             ->visibility('public')

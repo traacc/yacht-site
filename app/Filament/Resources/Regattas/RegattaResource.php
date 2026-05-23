@@ -104,7 +104,10 @@ class RegattaResource extends Resource
                     ->placeholder('Описание о регате')
                     ->columnSpanFull(),
                 FileUpload::make('background_image')
-                    ->label('Загрузить обложку'),
+                    ->label('Загрузить обложку')
+                    ->disk('public')
+                    ->directory('regattas/covers')
+                    ->visibility('public'),
 
                 Textarea::make('map_html')
                     ->label('Карта (HTML)')

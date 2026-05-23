@@ -78,6 +78,7 @@ class GalleryResource extends Resource
                     ->label('Обложка')
                     ->image()
                     ->imageEditor()
+                    ->disk('public')
                     ->directory('gallery/covers')
                     ->visibility('public')
                     ->columnSpanFull(),
@@ -87,6 +88,7 @@ class GalleryResource extends Resource
                     ->image()
                     ->multiple()
                     ->reorderable()
+                    ->disk('public')
                     ->directory('gallery/photos')
                     ->visibility('public')
                     ->maxFiles(200)

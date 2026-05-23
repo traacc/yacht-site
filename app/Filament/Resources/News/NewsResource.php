@@ -65,7 +65,10 @@ class NewsResource extends Resource
                     ->columnSpanFull(),
                 FileUpload::make('cover_image_url')
                     ->label('Обложка')
-                    ->image(),
+                    ->image()
+                    ->disk('public')
+                    ->directory('news/covers')
+                    ->visibility('public'),
 
                 Repeater::make('albums')
                     ->label('Галерея (альбомы)')
