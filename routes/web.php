@@ -6,6 +6,7 @@ use App\Models\Team;
 use App\Models\Yacht;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 Route::get('/', function() {
     $regatta = Regatta::with([
@@ -161,7 +162,7 @@ Route::get('/teams', function () {
         'id' => $team->id,
         'name' => $team->name,
         'description' => $team->description ?? '',
-        'photo' => asset('images/news/news_1.png'),
+        'photo' => $team->picture ? Storage::url($team->picture) : asset('images/news/news_1.png'),
         'status' => $team->is_archived ? 'Неактивная' : 'Активная',
         'status_class' => $team->is_archived ? 'inactive' : 'active',
         'captain' => $team->organizer?->full_name ?? '—',
