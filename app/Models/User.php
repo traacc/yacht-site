@@ -64,6 +64,32 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return "{$this->first_name} {$this->last_name}";
     }
 
+    protected function firstName(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => $value,
+            set: function (?string $value) {
+                return [
+                    'first_name' => $value,
+                    'name'       => trim(($value ?? '') . ' ' . ($this->last_name ?? '')),
+                ];
+            }
+        );
+    }
+
+    protected function lastName(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => $value,
+            set: function (?string $value) {
+                return [
+                    'last_name' => $value,
+                    'name'      => trim(($this->first_name ?? '') . ' ' . ($value ?? '')),
+                ];
+            }
+        );
+    }
+
     // ──────────────────────────────────────────────
     // Role helpers
     // ──────────────────────────────────────────────

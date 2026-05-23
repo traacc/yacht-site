@@ -80,7 +80,15 @@ class UserResource extends Resource
                     ->placeholder('email@example.com')
                     ->email()
                     ->required(),
-                
+                TextInput::make('password')
+                    ->label('Пароль')
+                    ->placeholder('Новый пароль')
+                    ->password()
+                    ->revealable()
+                    ->minLength(8)
+                    ->dehydrated(fn (?string $state): bool => filled($state))
+                    ->dehydrateStateUsing(fn (string $state): string => bcrypt($state))
+                    ->required(fn (string $operation): bool => $operation === 'create'),
                 TextInput::make('phone')
                     ->label('Телефон')
                     ->mask('+7 (999) 999-99-99')
