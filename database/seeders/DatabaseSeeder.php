@@ -33,6 +33,13 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password123'),
             'system_role' => SystemRole::Admin,
         ]);
+        User::factory()->create([
+            'id' => (string) Str::uuid(),
+            'name' => 'user',
+            'email' => 'a@example.com',
+            'password' => Hash::make('password'),
+            'system_role' => SystemRole::Admin,
+        ]);
 
         foreach (range(1, 2) as $i) {
             User::factory(5)->create();
