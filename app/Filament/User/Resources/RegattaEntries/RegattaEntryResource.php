@@ -52,11 +52,10 @@ class RegattaEntryResource extends Resource
                     ->relationship('regatta', 'name')->label('Регата')
                     ->required(),
                 Select::make('team_id')
-                    ->relationship('team', 'name', modifyQueryUsing: fn (Builder $query) => $query->visibleForUser(auth()->user()))->label('Команда')
+                    ->relationship('team', 'name', modifyQueryUsing: fn (Builder $query) => $query->where('organizer_id', auth()->id()))->label('Команда')
                     ->required(),
                 Select::make('yacht_id')
-                    ->relationship('yacht', 'name')->label('Яхта'),
-                DateTimePicker::make('submitted_at')->maxDate(now()->addMonths(3)),
+                    ->relationship('yacht', 'name', modifyQueryUsing: fn (Builder $query) => $query->where('user_id', auth()->id()))->label('Яхта'),
             ]);
     }
 
@@ -95,7 +94,7 @@ class RegattaEntryResource extends Resource
                 //
             ])->emptyStateHeading('Записей пока нет')
             ->recordActions([
-                //EditAction::make(),
+                EditAction::make(),
                 //DeleteAction::make(),
             ])
             ->toolbarActions([
