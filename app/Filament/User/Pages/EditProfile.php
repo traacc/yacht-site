@@ -3,6 +3,7 @@
 namespace App\Filament\User\Pages;
 
 use Filament\Auth\Pages\EditProfile as BaseEditProfile;
+use App\Enums\SportCategory;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
@@ -66,15 +67,7 @@ class EditProfile extends BaseEditProfile
                             ->maxLength(255),
                         Select::make('sport_category')
                             ->label('Спортивный разряд')
-                            ->options([
-                                "3"=>'Третий',
-                                "2"=>'Второй',
-                                "1"=>'Первый',
-                                "kms"=>'КМС',
-                                "ms"=>'МС',
-                                "msmk"=>'МСМК',
-                                "zms"=>'ЗМС',
-                            ]),
+                            ->options(SportCategory::class),
 
 
 

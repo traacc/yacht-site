@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Enums\SportCategory;
 use Illuminate\Notifications\Notifiable;
 
 use Filament\Models\Contracts\FilamentUser;
@@ -50,6 +51,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             'email_verified_at' => 'datetime',
             'phone_verified_at' => 'datetime',
             'password'          => 'hashed',
+            'sport_category'    => SportCategory::class,
         ];
     }
 

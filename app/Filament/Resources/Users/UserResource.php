@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users;
 
+use App\Enums\SportCategory;
 use App\Filament\Resources\Users\Pages\ManageUsers;
 use App\Models\User;
 use BackedEnum;
@@ -88,15 +89,7 @@ class UserResource extends Resource
                 Select::make('sport_category')
                     ->label('Спортивный разряд')
                     ->placeholder('Спортивный разряд')
-                    ->options([
-                        "3"=>'Третий',
-                        "2"=>'Второй',
-                        "1"=>'Первый',
-                        "kms"=>'КМС',
-                        "ms"=>'МС',
-                        "msmk"=>'МСМК',
-                        "zms"=>'ЗМС',
-                    ]),
+                    ->options(SportCategory::class),
 
 
 
