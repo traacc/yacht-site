@@ -54,13 +54,14 @@
 {{-- @livewire('regatta.results') --}}
 <section class="py-12" x-data="{team_modal_open: false, activeTeam: null}">
     <div class="container mx-auto sm:px-6 py-4 bg-[#F8F8F8]">
+        @if($regatta)
         <div class="flex items-center justify-between mb-6">
             <h2 class="section-title a-font">Результаты регат</h2>
             <a href="{{ route('ratings') }}" class="text-[#2E325C] text-lg font-semibold hover:underline hidden md:block">Все результаты →</a>
         </div>
 
         {{-- Таблица этапа --}}
-
+        
         <section class="rating_1 mb-12">
             <div class=" bg-[#F8F8F8]">
                 <div class="flex justify-between mb-6 flex-col md:flex-row">
@@ -137,7 +138,7 @@
                 </a>
             </div>
         </section>
-
+        @endif
 
 
         {{-- Топ-3 рейтинги --}}
