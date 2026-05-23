@@ -39,12 +39,12 @@ class YachtResource extends Resource
 {
     public static function getModelLabel(): string
     {
-        return 'Яхта'; // Название в единственном числе
+        return 'Моя Яхта'; // Название в единственном числе
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'Яхты'; // Название во множественном числе
+        return 'Мои Яхты'; // Название во множественном числе
     }
 
     protected static ?string $model = Yacht::class;
