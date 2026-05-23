@@ -1,35 +1,13 @@
 <div x-data="{
         isOpen: false,
-        intervalId: null,
         init() {
-            const checkAndShow = () => {
-                let nextShowTime = localStorage.getItem('capture_window_next_show');
-                let now = Date.now();
-                
-                if (!nextShowTime || now >= parseInt(nextShowTime)) {
-                    if (!this.isOpen) {
-                        this.isOpen = true;
-                        // Устанавливаем время следующего показа через 10 минут
-                        //localStorage.setItem('capture_window_next_show', now + 10 * 60 * 1000);
-                    }
-                }
-            };
-            
-            // Проверяем сразу с задержкой для UX
-            setTimeout(() => checkAndShow(), 2000);
-            
-            // Проверяем каждую минуту, не пора ли показать окно
-            this.intervalId = setInterval(() => checkAndShow(), 60000);
-            
-            // Очистка интервала при уничтожении компонента
-            this.$cleanup = () => {
-                if (this.intervalId) {
-                    clearInterval(this.intervalId);
-                }
-            };
+            if (!localStorage.getItem('capture_window_shown')) {
+                setTimeout(() => { this.isOpen = true; }, 2000);
+            }
         },
         closeModal() {
             this.isOpen = false;
+            localStorage.setItem('capture_window_shown', '1');
         }
      }"
      x-show="isOpen"
@@ -53,7 +31,7 @@
 
         <!-- Само модальное окно -->
         <div x-show="isOpen"
-            @click.outside="isOpen = false"
+            @click.outside="closeModal()"
              x-transition:enter="ease-out duration-300"
              x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
              x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
@@ -65,7 +43,7 @@
 
             <!-- Контент формы захвата -->
             <img class="absolute right-0 top-0 z-0 h-full md:h-auto " src="{!! asset('images/bg/capture-form.png') !!}" alt="">
-            <button @click="isOpen = false" class="text-2xl md:text-white text-[#2E325C] absolute right-5 top-5 font-bold z-30">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
+            <button @click="closeModal()" class="text-2xl md:text-white text-[#2E325C] absolute right-5 top-5 font-bold z-30">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
             <div class="absolute hidden md:block inset-0 left-[489px] w-[560px] bg-linear-to-r from-[#FFFFFF] to-[#FFFFFF]/0 z-2"></div>
             <div class="absolute block md:hidden inset-0 left-[0%] w-full bg-linear-to-r from-[#FFFFFF] to-[#FFFFFF]/80 z-2"></div>
             <div class="max-w-[562px] relative z-10">
