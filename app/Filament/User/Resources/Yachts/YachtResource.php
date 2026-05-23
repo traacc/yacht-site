@@ -4,6 +4,7 @@ namespace App\Filament\User\Resources\Yachts;
 
 use App\Filament\User\Resources\Yachts\Pages\ManageYachts;
 use App\Models\Yacht;
+use App\Models\Document;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -14,6 +15,7 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -105,24 +107,25 @@ class YachtResource extends Resource
                 Repeater::make('documents')
                     ->relationship()
                     ->label('Документы')
-                    ->addActionLabel('Добавить документ')
-                    ->columns(3)
                     ->columnSpanFull()
+                    ->addable(false)
+                    ->deletable(false)
+                    ->reorderable(false)
+                    ->default([
+                        ['doc_type' => 'orc_certificate', 'title' => 'ORC-сертификат', 'url' => null],
+                        ['doc_type' => 'ship_ticket',     'title' => 'Судовой билет',  'url' => null],
+                        ['doc_type' => 'insurance',       'title' => 'Страховка',      'url' => null],
+                    ])
+                    ->columns(1)
+                    ->itemLabel(fn (array $state): ?string => match ($state['doc_type'] ?? null) {
+                        'orc_certificate' => 'ORC-сертификат',
+                        'ship_ticket'     => 'Судовой билет',
+                        'insurance'       => 'Страховка',
+                        default           => $state['title'] ?? null,
+                    })
                     ->schema([
-                        Select::make('doc_type')
-                            ->label('Тип')
-                            ->options([
-                                'orc_certificate' => 'ORC-сертификат',
-                                'ship_ticket' => 'Судовой билет',
-                                'insurance' => 'Страховка',
-                                'other' => 'Прочее',
-                            ])
-                            ->default('other')
-                            ->required(),
-                        TextInput::make('title')
-                            ->label('Название')
-                            ->placeholder('Название документа')
-                            ->required(),
+                        Hidden::make('doc_type'),
+                        Hidden::make('title'),
                         FileUpload::make('url')
                             ->label('Файл')
                             ->directory('documents')
@@ -131,15 +134,12 @@ class YachtResource extends Resource
                                 'application/pdf',
                                 'application/msword',
                                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                                'application/vnd.ms-excel',
-                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                                 'image/jpeg',
                                 'image/png',
                                 'image/webp',
                             ])
                             ->maxSize(20480)
-                            ->downloadable()
-                            ->required(),
+                            ->downloadable(),
                     ]),
                 
             ]);
@@ -195,7 +195,11 @@ class YachtResource extends Resource
                 TrashedFilter::make(),
             ])->emptyStateHeading('Записей пока нет')
             ->recordActions([
-                EditAction::make()->hiddenLabel(),
+                EditAction::make()->hiddenLabel()
+                    ->mountUsing(function (\Filament\Schemas\Schema $form, Yacht $record) {
+                        ManageYachts::ensureRequiredDocuments($record);
+                        $form->fill($record->toArray());
+                    }),
                 DeleteAction::make()->hiddenLabel(),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
