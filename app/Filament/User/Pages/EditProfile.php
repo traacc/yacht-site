@@ -64,7 +64,13 @@ class EditProfile extends BaseEditProfile
                         Select::make('sport_category')
                             ->label('Спортивный разряд')
                             ->options([
-                                'mc' => 'МС',
+                                "3"=>'Третий',
+                                "2"=>'Второй',
+                                "1"=>'Первый',
+                                "kms"=>'КМС',
+                                "ms"=>'МС',
+                                "msmk"=>'МСМК',
+                                "zms"=>'ЗМС',
                             ]),
 
 
