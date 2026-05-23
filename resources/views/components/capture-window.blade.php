@@ -2,7 +2,7 @@
         isOpen: false,
         init() {
             if (!localStorage.getItem('capture_window_shown')) {
-                setTimeout(() => { this.isOpen = true; }, 2000);
+                setTimeout(() => { this.isOpen = true; }, 600000);
             }
         },
         closeModal() {
