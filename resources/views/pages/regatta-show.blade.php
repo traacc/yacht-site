@@ -33,6 +33,11 @@
                         <div class="mt-6 bg-brand-light-bg border border-brand-blue text-brand-blue py-2 px-6 text-lg font-semibold inline-block">
                             Вы уже заявлены
                         </div>
+                    @elseif($regatta->isFinished())
+                        <button disabled
+                                class="mt-6 bg-gray-300 text-gray-500 py-2 px-6 text-lg font-semibold cursor-not-allowed opacity-60">
+                            Регата завершена
+                        </button>
                     @else
                         <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"
                                 class="mt-6 bg-brand-blue text-white py-2 px-6 hover:bg-brand-blue transition-colors text-lg font-semibold cursor-pointer">
