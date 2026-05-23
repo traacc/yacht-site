@@ -49,17 +49,17 @@
                         class="flex items-center gap-2 px-2 py-1 rounded-lg transition-colors">
                         <img src="{{ auth()->user()->photo_url ? asset('storage/' . auth()->user()->photo_url) : asset('images/icons/avatar-default.svg') }}"
                             alt="" class="w-8 h-8 rounded-full object-cover border-2 border-gray-200">
-                        <!--<span class="text-sm font-medium text-[#2E325C] hidden md:inline">{{ auth()->user()->first_name }}</span>
+                        <span class="text-sm font-medium text-[#2E325C] hidden md:inline">{{ auth()->user()->first_name }}</span>
                         <svg class="w-4 h-4 text-gray-400 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                        </svg>-->
+                        </svg>
                     </button>
                     <div x-show="open" x-cloak x-transition
                         class="absolute top-full right-0 mt-2 w-52 bg-white  shadow-xl border border-gray-100 py-1 z-50">
-                        <!--<div class="px-4 py-2 border-b border-gray-100">
-                            <p class="text-sm font-medium text-[#2E325C]">{{ auth()->user()->full_name }}</p>
+                        <div class="px-4 py-2 border-b border-gray-100">
+                            <p class="text-sm font-medium text-[#2E325C]">{{ auth()->user()->name }}</p>
                             <p class="text-xs text-gray-500">{{ auth()->user()->email }}</p>
-                        </div>-->
+                        </div>
                         @if(auth()->user()->isAdmin() || auth()->user()->isJudge() || auth()->user()->isSecretary() || auth()->user()->isAccountant())
                             <a href="{{ url('/admin') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Панель управления</a>
                         @else
