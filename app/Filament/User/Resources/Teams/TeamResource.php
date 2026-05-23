@@ -14,7 +14,9 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -35,7 +37,7 @@ class TeamResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\AlbumsRelationManager::class,
+            
         ];
     }
 
@@ -53,10 +55,60 @@ class TeamResource extends Resource
     {
         return $schema
             ->components([
-                TextInput::make('name')->label('Название команды')->placeholder('Введите название команды')
-                    ->required(),
-                Textarea::make('description')->label('О команде')->placeholder('Описание команды')->rows(3)
+                FileUpload::make('picture')
+                    ->label('Добавить фотографию')
+                    ->image()
+                    ->avatar()
+                    ->directory('owners')
+                    ->disk('public')->columnSpanFull(),
+                TextInput::make('name')
+                    ->label('Название')
+                    ->placeholder('Введите названия команды')
+                    ->required()->columnSpanFull(),
+                Textarea::make('description')
+                    ->label('Описание')
+                    ->placeholder('Описание команды')
                     ->columnSpanFull(),
+
+                Repeater::make('albums')
+                    ->label('Галерея (альбомы)')
+                    ->relationship('albums')
+                    ->addActionLabel('Добавить альбом')
+                    ->columnSpanFull()
+                    ->defaultItems(0)
+                    ->collapsible()
+                    ->schema([
+                        TextInput::make('title')
+                            ->label('Название альбома')
+                            ->required()
+                            ->columnSpanFull(),
+                        Textarea::make('description')
+                            ->label('Описание')
+                            ->rows(2)
+                            ->columnSpanFull(),
+                        FileUpload::make('cover_url')
+                            ->label('Обложка')
+                            ->image()
+                            ->directory('albums/covers')
+                            ->disk('public')
+                            ->columnSpanFull(),
+                        Repeater::make('media')
+                            ->label('Фотографии')
+                            ->relationship('media')
+                            ->addActionLabel('Добавить фото')
+                            ->defaultItems(0)
+                            ->columnSpanFull()
+                            ->schema([
+                                Hidden::make('type')->default('photo'),
+                                FileUpload::make('url')
+                                    ->label('Фото')
+                                    ->image()
+                                    ->directory('albums/photos')
+                                    ->disk('public')
+                                    ->required(),
+                                Hidden::make('sort_order')->default(0),
+                            ]),
+                    ]),
 
                 Hidden::make('organizer_id')
                     ->default(fn () => auth()->id()),
