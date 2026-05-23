@@ -10,7 +10,7 @@
                     if (!this.isOpen) {
                         this.isOpen = true;
                         // Устанавливаем время следующего показа через 10 минут
-                        localStorage.setItem('capture_window_next_show', now + 10 * 60 * 1000);
+                        //localStorage.setItem('capture_window_next_show', now + 10 * 60 * 1000);
                     }
                 }
             };
