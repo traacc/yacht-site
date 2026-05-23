@@ -29,7 +29,7 @@ class StatsOverview extends BaseWidget
 
         return [
             $this->createCustomStat('Регаты', Regatta::count(), 'dashboard_regatta_count', 'text-blue-500/10'),
-            $this->createCustomStat('Новые заявки', $newEntriesCount, 'dashboard_entry', $newEntriesCount > 0 ? 'text-amber-500' : 'text-amber-500/10'),
+            $this->createCustomStat('Новые заявки', $newEntriesCount, 'dashboard_entry', $newEntriesCount > 0 ? 'text-amber-500' : 'text-[#2D92CE]'),
             $this->createCustomStat('Пользователи', User::count(), 'dashboard_users', 'text-emerald-500/10'),
             $this->createCustomStat('Яхты', Yacht::count(), 'dashboard_yachts', 'text-cyan-500/10'),
             $this->createCustomStat('Команды', Team::count(), 'dashboard_teams', 'text-rose-500/10'),
