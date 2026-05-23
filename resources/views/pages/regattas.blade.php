@@ -8,6 +8,7 @@ bgImage="{{ asset('images/bg/competitions.png') }}"
 </x-hero-section>
 
 {{-- ===== КАЛЕНДАРЬ РЕГАТ (Livewire) ===== --}}
+<x-regatta-results :regattas="$regattas"></x-regatta-results>
 <div class="container">
 @livewire('regattas-calendar')
 </div>

@@ -36,7 +36,27 @@ Route::view('/association/policy', 'pages/association-info/policy')->name('polic
 Route::view('/association/rules', 'pages/association-info/rules')->name('rules');
 Route::view('/association/regulations', 'pages/association-info/regulations')->name('regulations');
 Route::view('/association/decisions', 'pages/association-info/decisions')->name('decisions');
-Route::view('/competitions', 'pages/regattas')->name('competitions');
+Route::get('/competitions', function () {
+    $regattas = Regatta::with([
+        'results.items' => fn ($q) => $q->orderBy('final_position'),
+        'results.items.team.organizer',
+        'results.items.team.activeMembers',
+        'results.items.yacht',
+        'season',
+    ])
+        ->where(function ($query) {
+            $query->where('date_end', '<', now())
+                  ->orWhere(function ($q) {
+                      $q->where('date_start', '<=', now())
+                        ->where('date_end', '>=', now());
+                  });
+        })
+        ->orderBy('date_end', 'desc')
+        ->get()
+        ->each(fn ($r) => $r->setRelation('resultItems', $r->results->flatMap->items));
+
+        return view('pages.regattas', compact('regattas'));
+})->name('competitions');
 Route::get('/regattas/{regatta}', function (Regatta $regatta) {
     $regatta->loadMissing([
         'approvedEntries.team.organizer',
@@ -232,25 +252,9 @@ Route::get('/yachts', function () {
     return view('pages.yachts', compact('yachts', 'yachtsJson'));
 })->name('yachts');
 Route::get('/ratings', function () {
-    $regattas = Regatta::with([
-        'results.items' => fn ($q) => $q->orderBy('final_position'),
-        'results.items.team.organizer',
-        'results.items.team.activeMembers',
-        'results.items.yacht',
-        'season',
-    ])
-        ->where(function ($query) {
-            $query->where('date_end', '<', now())
-                  ->orWhere(function ($q) {
-                      $q->where('date_start', '<=', now())
-                        ->where('date_end', '>=', now());
-                  });
-        })
-        ->orderBy('date_end', 'desc')
-        ->get()
-        ->each(fn ($r) => $r->setRelation('resultItems', $r->results->flatMap->items));
 
-    return view('pages.ratings', compact('regattas'));
+
+    
 })->name('ratings');
 Route::view('/gallery', 'pages/gallery')->name('gallery');
 Route::view('/help', 'pages/help')->name('help');
