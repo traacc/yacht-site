@@ -122,12 +122,13 @@
                             @endphp
                             <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA] pb-8! md:pb-0!">
                                 <td class="py-3">
-                                    <div "@class([
-                                        'flex items-center justify-center gap-3 text-transparent',
+                                    <div @class([
+                                        'flex items-center justify-center gap-3',
                                         'text-[#C2A36B]' => $result->final_position == 1,
                                         'text-[#9FA6AD]' => $result->final_position == 2,
                                         'text-[#B56A3A]' => $result->final_position == 3,
-                                    ])">
+                                        'text-transparent' => !in_array($result->final_position, [1, 2, 3])
+                                    ])>
                                         {!! file_get_contents(public_path('images/icons/cup.svg')) !!}
                                         <span class="text-brand-gray">{{ $result->final_position }}</span>
                                     </div>
