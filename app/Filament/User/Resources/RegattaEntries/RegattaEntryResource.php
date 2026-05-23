@@ -49,7 +49,12 @@ class RegattaEntryResource extends Resource
         return $schema
             ->components([
                 Select::make('regatta_id')
-                    ->relationship('regatta', 'name')->label('Регата')
+                    ->relationship(
+                        'regatta',
+                        'name',
+                        modifyQueryUsing: fn (Builder $query) => $query->where('date_end', '>=', now()->toDateString()),
+                    )
+                    ->label('Регата')
                     ->required(),
                 Select::make('team_id')
                     ->relationship('team', 'name', modifyQueryUsing: fn (Builder $query) => $query->where('organizer_id', auth()->id()))->label('Команда')
