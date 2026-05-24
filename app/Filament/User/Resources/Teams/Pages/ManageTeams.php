@@ -1,12 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\User\Resources\Teams\Pages;
 
 use App\Actions\Team\AddMembersToTeamAction;
 use App\Actions\Team\CreateTeamAction;
+use App\Enums\TeamMemberRole;
+use App\Exceptions\InsufficientTeamRoleException;
 use App\Filament\User\Resources\Teams\TeamResource;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\TeamRoleGuard;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
@@ -21,35 +26,44 @@ class ManageTeams extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
-            // Кнопка «Добавить участников» — только для капитана (организатора команды)
+            // Кнопка «Добавить участников» — для Organizer и TeamAdmin
             Action::make('addMembers')
                 ->label('Добавить участников')
                 ->icon('heroicon-o-user-plus')
                 ->color('white')
-                ->visible(fn (): bool => auth()->user()->isCaptain())
+                ->visible(fn (): bool => $this->userCanManageMembers())
                 ->form(function (): array {
-                    /** @var User $captain */
-                    $captain = auth()->user();
+                    /** @var User $actor */
+                    $actor = auth()->user();
 
-                    // Команда капитана (первая активная)
-                    $team = Team::where('organizer_id', $captain->id)->first();
+                    // Команды, в которых пользователь имеет право управлять участниками
+                    $manageableTeams = Team::query()
+                        ->whereHas('teamMembers', fn ($q) => $q
+                            ->where('user_id', $actor->id)
+                            ->where('status', 'active')
+                            ->whereIn('role', [
+                                TeamMemberRole::Organizer->value,
+                                TeamMemberRole::TeamAdmin->value,
+                            ])
+                        )
+                        ->pluck('name', 'id');
 
-                    if (!$team) {
+                    if ($manageableTeams->isEmpty()) {
                         return [
                             Select::make('user_ids')
                                 ->label('Свободные участники')
                                 ->disabled()
-                                ->helperText('У вас нет зарегистрированной команды.'),
+                                ->helperText('У вас нет команды с правами управления участниками.'),
                         ];
                     }
 
-                    $currentCount = $team->activeMembers()->count();
+                    $firstTeamId  = $manageableTeams->keys()->first();
+                    $firstTeam    = Team::find($firstTeamId);
+                    $currentCount = $firstTeam?->activeMembers()->count() ?? 0;
                     $available    = Team::MAX_MEMBERS - $currentCount;
 
-                    // Свободные пользователи (не состоящие ни в одной активной команде),
-                    // исключая самого капитана
                     $freeUsers = User::freeUsers()
-                        ->where('id', '!=', $captain->id)
+                        ->where('id', '!=', $actor->id)
                         ->orderBy('last_name')
                         ->orderBy('first_name')
                         ->get()
@@ -58,17 +72,11 @@ class ManageTeams extends ManageRecords
                     return [
                         Select::make('team_id')
                             ->label('Команда')
-                            ->options(
-                                Team::where('organizer_id', $captain->id)
-                                    ->pluck('name', 'id')
-                            )
-                            ->default($team->id)
+                            ->options($manageableTeams)
+                            ->default($firstTeamId)
                             ->required()
                             ->live()
-                            ->afterStateUpdated(function ($state, $set) use ($captain) {
-                                // При смене команды сбрасываем выбор участников
-                                $set('user_ids', []);
-                            }),
+                            ->afterStateUpdated(fn ($set) => $set('user_ids', [])),
 
                         Select::make('user_ids')
                             ->label('Свободные участники')
@@ -86,15 +94,14 @@ class ManageTeams extends ManageRecords
                     ];
                 })
                 ->action(function (array $data): void {
-                    /** @var User $captain */
-                    $captain = auth()->user();
+                    /** @var User $actor */
+                    $actor = auth()->user();
+                    $team  = Team::find($data['team_id']);
 
-                    $team = Team::find($data['team_id']);
-
-                    if (!$team || $team->organizer_id !== $captain->id) {
+                    if (! $team) {
                         Notification::make()
                             ->title('Ошибка')
-                            ->body('Вы не являетесь капитаном выбранной команды.')
+                            ->body('Команда не найдена.')
                             ->danger()
                             ->send();
                         return;
@@ -104,13 +111,19 @@ class ManageTeams extends ManageRecords
                         $added = app(AddMembersToTeamAction::class)->handle(
                             $team,
                             $data['user_ids'],
-                            $captain,
+                            $actor,
                         );
 
                         Notification::make()
                             ->title('Участники добавлены')
                             ->body("Добавлено участников: {$added->count()}.")
                             ->success()
+                            ->send();
+                    } catch (InsufficientTeamRoleException $e) {
+                        Notification::make()
+                            ->title('Недостаточно прав')
+                            ->body($e->getMessage())
+                            ->danger()
                             ->send();
                     } catch (ValidationException $e) {
                         $message = collect($e->errors())->flatten()->first();
@@ -135,5 +148,25 @@ class ManageTeams extends ManageRecords
                     );
                 }),
         ];
+    }
+
+    /**
+     * Проверяет, есть ли у текущего пользователя хотя бы одна команда,
+     * в которой он имеет право управлять участниками.
+     */
+    private function userCanManageMembers(): bool
+    {
+        $userId = auth()->id();
+
+        return Team::query()
+            ->whereHas('teamMembers', fn ($q) => $q
+                ->where('user_id', $userId)
+                ->where('status', 'active')
+                ->whereIn('role', [
+                    TeamMemberRole::Organizer->value,
+                    TeamMemberRole::TeamAdmin->value,
+                ])
+            )
+            ->exists();
     }
 }

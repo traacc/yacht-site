@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\User\Resources\Teams;
 
-use App\Filament\User\Resources\Teams\Pages\EditTeam;
+use App\Enums\TeamMemberRole;
 use App\Filament\User\Resources\Teams\Pages\ManageTeams;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\TeamRoleGuard;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -29,6 +32,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TeamResource extends Resource
@@ -39,20 +43,61 @@ class TeamResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            
-        ];
+        return [];
     }
 
     public static function getModelLabel(): string
     {
-        return 'Моя команда'; // Название в единственном числе
+        return 'Моя команда';
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'Мои команды'; // Название во множественном числе
+        return 'Мои команды';
     }
+
+    // ──────────────────────────────────────────────
+    // Авторизация через TeamPolicy
+    // ──────────────────────────────────────────────
+
+    /**
+     * Создать команду может любой авторизованный пользователь.
+     */
+    public static function canCreate(): bool
+    {
+        return auth()->check();
+    }
+
+    /**
+     * Редактировать команду могут только Organizer и TeamAdmin.
+     */
+    public static function canEdit(Model $record): bool
+    {
+        /** @var Team $record */
+        return auth()->user()?->can('editTeam', $record) ?? false;
+    }
+
+    /**
+     * Удалять (soft-delete) команду может только Organizer.
+     */
+    public static function canDelete(Model $record): bool
+    {
+        /** @var Team $record */
+        return auth()->user()?->can('archiveTeam', $record) ?? false;
+    }
+
+    /**
+     * Восстанавливать команду может только Organizer.
+     */
+    public static function canRestore(Model $record): bool
+    {
+        /** @var Team $record */
+        return auth()->user()?->can('archiveTeam', $record) ?? false;
+    }
+
+    // ──────────────────────────────────────────────
+    // Form
+    // ──────────────────────────────────────────────
 
     public static function form(Schema $schema): Schema
     {
@@ -135,6 +180,10 @@ class TeamResource extends Resource
             ]);
     }
 
+    // ──────────────────────────────────────────────
+    // Table
+    // ──────────────────────────────────────────────
+
     public static function table(Table $table): Table
     {
         return $table
@@ -147,22 +196,36 @@ class TeamResource extends Resource
                 TextColumn::make('active_members_count')
                     ->label('Участники')
                     ->sortable(),
+                // Роль текущего пользователя в команде
+                TextColumn::make('current_user_role')
+                    ->label('Ваша роль')
+                    ->state(function (Team $record): string {
+                        $role = TeamRoleGuard::roleOf($record, auth()->user());
+                        return $role?->label() ?? '—';
+                    })
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Организатор' => 'success',
+                        'Администратор' => 'info',
+                        'Участник' => 'gray',
+                        default => 'gray',
+                    }),
                 TextColumn::make('approval_status')
                     ->label('Статус')
                     ->badge()->formatStateUsing(fn (string $state): string => match ($state) {
-                    'pending' => 'На рассмотрении',
-                    'approved' => 'Одобрена',
-                    'rejected' => 'Отклонена',
-                    'withdrawn' => 'Отозвана',
-                    default => $state,
-                })
-                ->color(fn (string $state): string => match ($state) {
-                    'pending' => 'warning',
-                    'approved' => 'success',
-                    'rejected' => 'danger',
-                    'withdrawn' => 'gray',
-                    default => 'gray',
-                }),
+                        'pending'   => 'На рассмотрении',
+                        'approved'  => 'Одобрена',
+                        'rejected'  => 'Отклонена',
+                        'withdrawn' => 'Отозвана',
+                        default     => $state,
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending'   => 'warning',
+                        'approved'  => 'success',
+                        'rejected'  => 'danger',
+                        'withdrawn' => 'gray',
+                        default     => 'gray',
+                    }),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -180,17 +243,17 @@ class TeamResource extends Resource
                 TrashedFilter::make(),
             ])->emptyStateHeading('Записей пока нет')
             ->recordActions([
-                //EditAction::make()->hiddenLabel(),
-                //DeleteAction::make()->hiddenLabel(),
-                //ForceDeleteAction::make(),
-                RestoreAction::make(),
+                EditAction::make()
+                    ->hiddenLabel()
+                    ->visible(fn (Team $record): bool => auth()->user()?->can('editTeam', $record) ?? false),
+                RestoreAction::make()
+                    ->visible(fn (Team $record): bool => auth()->user()?->can('archiveTeam', $record) ?? false),
+                DeleteAction::make()
+                    ->hiddenLabel()
+                    ->visible(fn (Team $record): bool => auth()->user()?->can('archiveTeam', $record) ?? false),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([
-                    //DeleteBulkAction::make(),
-                    //ForceDeleteBulkAction::make(),
-                    //RestoreBulkAction::make(),
-                ]),
+                BulkActionGroup::make([]),
             ])->stackedOnMobile();
     }
 
@@ -198,7 +261,6 @@ class TeamResource extends Resource
     {
         return [
             'index' => ManageTeams::route('/'),
-            //'edit' => EditTeam::route('/{record}/edit'),
         ];
     }
 
@@ -210,10 +272,24 @@ class TeamResource extends Resource
             ]);
     }
 
+    /**
+     * Показываем команды, в которых текущий пользователь:
+     *   — является организатором (organizer_id), ИЛИ
+     *   — является активным участником (через team_members).
+     */
     public static function getEloquentQuery(): Builder
     {
+        $userId = auth()->id();
+
         return parent::getEloquentQuery()
-            ->where('organizer_id', auth()->id());
+            ->where(function (Builder $query) use ($userId): void {
+                $query
+                    ->where('organizer_id', $userId)
+                    ->orWhereHas('teamMembers', fn (Builder $q) => $q
+                        ->where('user_id', $userId)
+                        ->where('status', 'active')
+                    );
+            });
     }
 
     public static function mutateFormDataBeforeCreate(array $data): array
@@ -225,8 +301,8 @@ class TeamResource extends Resource
 
     public static function mutateFormDataBeforeSave(array $data): array
     {
-        // Запрещаем изменение organizer_id — всегда остаётся текущий пользователь
-        $data['organizer_id'] = auth()->id();
+        // organizer_id не меняется при редактировании
+        unset($data['organizer_id']);
 
         return $data;
     }
