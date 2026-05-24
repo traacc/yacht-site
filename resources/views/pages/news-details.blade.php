@@ -25,21 +25,22 @@
                 @if($otherNews->isNotEmpty())
                     <div class="col flex flex-col gap-8">
                         @foreach($otherNews as $other)
-                            <div class="item flex gap-2">
-                                <div class="img max-w-[200px]">
-                                    <img
-                                        class="w-full"
-                                        src="{{ $other->cover_image_url ? asset('storage/' . $other->cover_image_url) : asset('images/gallery.png') }}"
-                                        alt="{{ $other->title }}"
-                                    >
+                            <article class="overflow-hidden shadow-xs hover:shadow-md transition-shadow group flex md:flex-col">
+                                <div class="overflow-hidden md:h-52 shrink-0">
+                                    <img src="{{ $other->cover_image_url ? Storage::url($other->cover_image_url) : asset('images/news/news_1.png') }}"
+                                        alt="{{ $other->title }}" class="w-full max-w-[150px] md:max-w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                                 </div>
-                                <div class="info py-2 bg-[#F8F8F8]">
-                                    <h4 class="text-lg font-semibold mb-3">{{ $other->title }}</h4>
-                                    <p class="mb-3 font-medium">{{ Str::limit(strip_tags($other->content), 30) }}</p>
-                                    <div class="date mb-3 text-brand-gray-light">{{ $other->published_at->isoFormat('D MMMM Y') }}</div>
-                                    <a href="{{ route('news-details', $other) }}" class="text-lg font-semibold hover:underline">Читать далее →</a>
+                                <div class="md:p-4 p-2 bg-[#F8F8F8]">
+                                    <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2 md:h-14">
+                                        {{ $other->title }}
+                                    </h3>
+                                    <p class="font-medium text-brand-gray mb-3 text-xs md:text-base">{{ Str::limit(strip_tags($other->content), 60) }}</p>
+                                    <div class="mb-2 text-brand-gray-light text-xs md:text-base">{{ $other->published_at->translatedFormat('j F Y') }}</div>
+                                    <div class="">
+                                        <a href="{{ route('news-details', $other) }}" class="text-[#2E325C] font-semibold hover:underline text-xs md:text-lg">Читать далее →</a>
+                                    </div>
                                 </div>
-                            </div>
+                            </article>
                         @endforeach
                     </div>
                     <a href="{{ route('news') }}" class="mx-auto mt-6 block text-lg font-semibold hover:underline text-center">Показать все →</a>
