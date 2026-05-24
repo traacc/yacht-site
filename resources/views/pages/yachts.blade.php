@@ -128,7 +128,7 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
     <div x-show="yacht_modal_open"
         x-cloak
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 team-modal">
-        <div @click.away="yacht_modal_open = false" class="relative p-6 max-w-[1000px] max-h-[80vh] overflow-y-auto bg-white gap-6"
+        <div @click.away="yacht_modal_open = false" class="relative p-3 md:p-6 max-w-[1000px] max-h-[80vh] overflow-y-auto bg-white gap-6"
             x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95"
             x-transition:enter-end="opacity-100 scale-100"
