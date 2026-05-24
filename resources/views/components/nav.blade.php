@@ -1,5 +1,5 @@
 {{-- ===== НАВИГАЦИЯ ===== --}}
-<nav x-data="{ mobileOpen: false }" class="sticky top-0 z-50 bg-white px-2">
+<nav x-data="{ mobileOpen: false }" class="sticky top-0 z-25 bg-white px-2">
     <div class="container mx-auto">
         <div class="flex items-center justify-between h-14">
             {{-- Логотип --}}
