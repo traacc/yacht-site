@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Feedback\SubmitFeedbackAction;
+use App\Models\News;
 use App\Models\Regatta;
 use App\Models\Team;
 use App\Models\Yacht;
@@ -284,8 +285,28 @@ Route::get('/ratings', function () {
 })->name('ratings');
 Route::view('/gallery', 'pages/gallery')->name('gallery');
 Route::view('/help', 'pages/help')->name('help');
-Route::view('/news', 'pages/news')->name('news');
-Route::view('/news-details', 'pages/news-details')->name('news-details');
+Route::get('/news', function () {
+    $news = News::published()
+        ->with('author')
+        ->latest('published_at')
+        ->paginate(12);
+
+    return view('pages.news', compact('news'));
+})->name('news');
+
+Route::get('/news/{news}', function (News $news) {
+    abort_unless($news->isPublished(), 404);
+
+    $news->load('author');
+
+    $otherNews = News::published()
+        ->where('id', '!=', $news->id)
+        ->latest('published_at')
+        ->limit(3)
+        ->get();
+
+    return view('pages.news-details', compact('news', 'otherNews'));
+})->name('news-details');
 
 Route::post('/feedback', function (Request $request) {
     $validated = $request->validate([
