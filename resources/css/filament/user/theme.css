@@ -194,6 +194,7 @@
   column-gap: 2em;
   flex-direction: row-reverse;
   max-width: 320px;
+  justify-content: start;
 }
 .photo_wrapper .fi-fo-field-label-col .fi-fo-field-label-ctn .fi-fo-field-label-content{
   font-weight: 600;
@@ -201,7 +202,7 @@
 }
 .photo_wrapper .fi-fo-field-label-col{
   flex-shrink: 0;
-  max-width: 140px;
+  max-width: 110px;
 }
 .fi-wi-stats-overview-stat {
   border-radius: 0px;
