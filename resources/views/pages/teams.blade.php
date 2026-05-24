@@ -12,7 +12,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
         <div class="container mx-auto">
             <div class="flex flex-col md:flex-row items-center justify-between mb-6">
                 <h2 class="section-title a-font mb-4">Зарегистрированные команды</h2>
-                <div class="flex gap-2 justify-between w-full md:w-auto">
+                <div class="flex gap-1 md:gap-2 justify-between w-full md:w-auto">
                     @guest
                     <button @click="$dispatch('open-login-modal')" class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-4 transition-colors cursor-pointer">Зарегистрировать команду  →</button>
                     @else
