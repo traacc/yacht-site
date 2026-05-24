@@ -120,7 +120,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
         x-transition:enter-end="opacity-100 scale-100"
     >
         <div class="info flex flex-col md:flex-row gap-6 mb-8">
-            <div class="photo max-w-1/2 shrink-0">
+            <div class="photo max-w-1/2 shrink-0 hidden md:block">
                 <img class="max-w-full" :src="activeTeam?.photo" alt="">
             </div>
             <div class="content text-sm md:text-base">
@@ -148,6 +148,9 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                     </tr>
                 </table>
             </div>
+        </div>
+        <div class="photo max-w-1/2 shrink-0 md:hidden">
+            <img class="max-w-full" :src="activeTeam?.photo" alt="">
         </div>
         <div class="about text-[#2E325C] p-4 bg-[#F8F8F8] mb-8 text-sm md:text-base">
             <h5 class=" a-font text-lg md:text-3xl mb-6">О команде</h5>
