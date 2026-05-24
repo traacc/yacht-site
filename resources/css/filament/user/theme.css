@@ -195,6 +195,10 @@
   font-weight: 600;
   color: #2E325C;
 }
+.photo_wrapper {
+  flex-shrink: 0;
+  max-width: 140px;
+}
 .fi-wi-stats-overview-stat {
   border-radius: 0px;
   box-shadow: none;
