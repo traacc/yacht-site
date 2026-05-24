@@ -28,7 +28,7 @@
                 <div class="grid md:grid-cols-3 gap-6 container mx-auto">
                     @foreach($items as $item)
                         <div class="item flex md:flex-col">
-                            <div class="img max-w-[140px] md:max-w-full shrink-0">
+                            <div class="img max-w-[140px] md:max-w-full md:h-52 shrink-0">
                                 <img
                                     class="md:w-full w-[140px] md:max-w-full h-full object-cover"
                                     src="{{ $item->cover_image_url ? asset('storage/' . $item->cover_image_url) : asset('images/gallery.png') }}"
