@@ -11,12 +11,12 @@ bgImage="{{ asset('images/bg/teams.png') }}"
     <section class="md:py-12 py-4 reggata-list">
         <div class="container mx-auto">
             <div class="flex flex-col md:flex-row items-center justify-between mb-6">
-                <h2 class="section-title a-font mb-4">Зарегистрированные команды</h2>
+                <h2 class="section-title a-font mb-4 tracking-tighter md:tracking-normal">Зарегистрированные команды</h2>
                 <div class="flex gap-1 md:gap-2 justify-between w-full md:w-auto">
                     @guest
                     <button @click="$dispatch('open-login-modal')" class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-4 transition-colors cursor-pointer">Зарегистрировать команду  →</button>
                     @else
-                    <a href="/user/team" class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-1.5 sm:px-2 md:px-4 transition-colors">Зарегистрировать команду  →</a>
+                    <a href="/user/team" class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-1.5 sm:px-2 md:px-4 transition-colors tracking-tighter md:tracking-normal">Зарегистрировать команду  →</a>
                     @endguest
                     <div class="flex gap-1 md:gap-2">
                         <button @click="view = 'grid'" :class="view === 'grid' ? 'text-[#2D92CE]' : 'text-[#2E325C]'" class="p-2">
