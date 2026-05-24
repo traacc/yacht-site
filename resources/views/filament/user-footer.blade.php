@@ -52,7 +52,7 @@
                     </li>
                     <li class="flex items-center gap-2">
                         {!! file_get_contents(public_path('images/icons/mail.svg')) !!}
-                        contact@mail.ru
+                        <a href="mailto:info@carter-pro.ru">info@carter-pro.ru</a>
                     </li>
                     <li class="flex items-center gap-2">
                         {!! file_get_contents(public_path('images/icons/marker.svg')) !!}
