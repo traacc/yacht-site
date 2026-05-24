@@ -37,6 +37,8 @@ use Filament\Tables\Enums\FiltersLayout;
 
 use Kpebedko22\FilamentYandexMap\Forms\Components\YandexMap;
 use Kpebedko22\FilamentYandexMap\Enums\YandexMapMode;
+use Kpebedko22\FilamentYandexMap\DTOs\Buttons\{ButtonData, ButtonOptions};
+use Kpebedko22\FilamentYandexMap\Enums\Buttons\{ButtonFloat, ButtonSize};
 
 use Filament\Forms\Components\Repeater;
 
@@ -118,6 +120,10 @@ class RegattaResource extends Resource
                         }
                         return $state;
                     })
+                    ->drawBtnParameters(
+                        new ButtonData('Поставить'),
+                        new ButtonOptions(float: ButtonFloat::Right),
+                    )
                     // Перед сохранением: ['lat' => ..., 'lng' => ...] → "55.75,37.61"
                     ->dehydrateStateUsing(function ($state) {
                         if (is_array($state) && isset($state['lat'], $state['lng'])) {
