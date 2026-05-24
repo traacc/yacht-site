@@ -35,8 +35,8 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Enums\FiltersLayout;
 
-use Kpebedko22\FilamentYandexMap\Fields\YandexMap;
-use Kpebedko22\FilamentYandexMap\Enum\YandexMapMode;
+use Kpebedko22\FilamentYandexMap\Forms\Components\YandexMap;
+use Kpebedko22\FilamentYandexMap\Enums\YandexMapMode;
 
 use Filament\Forms\Components\Repeater;
 
@@ -95,41 +95,33 @@ class RegattaResource extends Resource
                     ->required()
                     ->numeric()
                     ->default(1),
-                YandexMap::make('location') // Имя вашего текстового поля в БД
-                    ->label('Местоположение на Яндекс.Картах')
-                    ->columnSpanFull()
-                    
-                    // Обязательный режим для установки одиночного маркера (точки)
-                    ->mode(YandexMapMode::Placemark) 
-                    
-                    // Вставьте ваш API-ключ Яндекса (лучше вынести в config/services.php)
-                    ->apiKey('ffd9d711-109d-415d-bf73-e1a935512160') 
-                    
-                    ->lang('ru_RU') // Язык карты и интерфейса
-                    ->center([55.7558, 37.6173]) // Центр карты по умолчанию (Москва)
-                    ->zoom(10)
-                    ->height('450px') // Высота контейнера с картой
-
-                    // 1. ПРИ ЗАГРУЗКЕ ФОРМЫ: преобразуем строку "lat,lng" в массив [lat, lng]
-                    ->afterStateHydrated(function ($state, $set): void {
-                        if (is_string($state) && str_contains($state, ',')) {
-                            [$lat, $lng] = explode(',', $state);
-                            
-                            $set('location', [
-                                (float) trim($lat),
-                                (float) trim($lng),
-                            ]);
-                        }
-                    })
-
-                    // 2. ПЕРЕД СОХРАНЕНИЕМ В БД: собираем массив обратно в строку "lat,lng"
-                    ->dehydrateStateUsing(function ($state) {
-                        if (is_array($state) && count($state) === 2) {
-                            return "{$state[0]},{$state[1]}";
-                        }
-                        
-                        return $state;
-                    }),
+                    YandexMap::make('location')
+                        ->label('Местоположение на Яндекс.Картах')
+                        ->columnSpanFull()
+                        ->mode(YandexMapMode::Placemark)
+                        ->apiKey('ffd9d711-109d-415d-bf73-e1a935512160')
+                        ->lang('ru_RU')
+                        ->center([55.7558, 37.6173])
+                        ->zoom(10)
+                        ->height('450px')
+                        // При загрузке: "55.75,37.61" → ['lat' => 55.75, 'lng' => 37.61]
+                        ->formatStateUsing(function ($state) {
+                            if (is_string($state) && str_contains($state, ',')) {
+                                [$lat, $lng] = explode(',', $state, 2);
+                                return [
+                                    'lat' => (float) trim($lat),
+                                    'lng' => (float) trim($lng),
+                                ];
+                            }
+                            return $state;
+                        })
+                        // Перед сохранением: ['lat' => ..., 'lng' => ...] → "55.75,37.61"
+                        ->dehydrateStateUsing(function ($state) {
+                            if (is_array($state) && isset($state['lat'], $state['lng'])) {
+                                return "{$state['lat']},{$state['lng']}";
+                            }
+                            return $state;
+                        }),
                 TextInput::make('water_area')
                     ->label('Акватория')
                     ->placeholder('Введите акваторию'),

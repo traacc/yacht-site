@@ -34,5 +34,12 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'yandex_map' => [
+        'api_key'         => env('YANDEX_MAP_API_KEY', ''),
+        'suggest_api_key' => env('YANDEX_MAP_SUGGEST_API_KEY', ''),
+        'lang'            => 'ru_RU',
+        'center'          => [55.7558, 37.6173],
+        'zoom'            => 10,
+    ],
 
 ];
