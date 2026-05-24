@@ -11,7 +11,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
     <section class="md:py-12 py-4 reggata-list">
         <div class="container mx-auto">
             <div class="flex flex-col md:flex-row items-center justify-between mb-6">
-                <h2 class="section-title a-font">Зарегистрированные команды</h2>
+                <h2 class="section-title a-font mb-4">Зарегистрированные команды</h2>
                 <div class="flex gap-2">
                     @guest
                     <button @click="$dispatch('open-login-modal')" class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-4 transition-colors cursor-pointer">Зарегистрировать команду  →</button>
@@ -29,7 +29,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                 </div>
             </div>
             <div class="searchbar flex flex-col md:flex-row gap-4 mb-6">
-                <input class="w-full border-0 bg-[#F8F8F8] focus:outline-hidden py-2 px-4" type="text" placeholder="Поиск участника">
+                <input class="w-full border-0 bg-[#F8F8F8] focus:outline-hidden py-2 px-4" type="text" placeholder="Поиск команды">
                 <select name="team_filter" id="team_filter" class="team_filter">
                     <option value="">Рейтинг: по убыванию</option>
                 </select>
