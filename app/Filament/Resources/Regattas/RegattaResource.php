@@ -35,6 +35,8 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Enums\FiltersLayout;
 
+use Dotswan\MapPicker\Fields\Map;
+
 use Filament\Forms\Components\Repeater;
 
 class RegattaResource extends Resource
@@ -92,10 +94,33 @@ class RegattaResource extends Resource
                     ->required()
                     ->numeric()
                     ->default(1),
-
-                TextInput::make('location')
-                    ->label('Локацию')
-                    ->placeholder('Выберите локацию'),
+            Map::make('location') // Название вашего текстового поля в БД
+                ->label('Выберите местоположение')
+                ->columnSpanFull()
+                ->defaultLocation(latitude: 55.7558, longitude: 37.6173) // Координаты по умолчанию (например, Москва)
+                ->zoom(10)
+                ->clickable(true)
+                
+                // 1. ПРИ ЗАГРУЗКЕ: Превращаем строку "широта,долгота" из БД в массив для карты
+                ->afterStateHydrated(function ($state, $set): void {
+                    if (is_string($state) && str_contains($state, ',')) {
+                        [$lat, $lng] = explode(',', $state);
+                        
+                        $set('location', [
+                            'lat' => (float) trim($lat),
+                            'lng' => (float) trim($lng),
+                        ]);
+                    }
+                })
+                
+                // 2. ПРИ СОХРАНЕНИИ: Собираем массив ['lat' => ..., 'lng' => ...] обратно в строку "широта,долгота"
+                ->dehydrateStateUsing(function ($state) {
+                    if (is_array($state) && isset($state['lat'], $state['lng'])) {
+                        return "{$state['lat']},{$state['lng']}";
+                    }
+                    
+                    return $state;
+                }),
                 TextInput::make('water_area')
                     ->label('Акватория')
                     ->placeholder('Введите акваторию'),
