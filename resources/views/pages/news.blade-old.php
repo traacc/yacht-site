@@ -53,7 +53,7 @@
                                 <div class="item flex">
                                     <div class="img max-w-[300px]">
                                         <img
-                                            class="w-full md:w-[300px] md:max-w-full h-full object-cover"
+                                            class="w-full max-w-[300px] md:max-w-full h-full object-cover"
                                             src="{{ $item->cover_image_url ? asset('storage/' . $item->cover_image_url) : asset('images/gallery.png') }}"
                                             alt="{{ $item->title }}"
                                         >
