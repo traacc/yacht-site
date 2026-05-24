@@ -24,7 +24,7 @@ class TeamMemberFactory extends Factory
             'id'         => (string) Str::uuid(),
             'team_id'    => Team::factory(),
             'user_id'    => User::factory(),
-            'role'       => $this->faker->randomElement(['organizer', 'admin', 'member']),
+            'role'       => $this->faker->randomElement(['organizer', 'team_admin', 'member']),
             'status'     => $status,
             'joined_at'  => $status === 'active' ? $this->faker->dateTimeBetween('-1 year', 'now') : null,
             'created_at' => now(),

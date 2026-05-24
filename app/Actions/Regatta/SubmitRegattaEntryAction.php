@@ -4,37 +4,31 @@ declare(strict_types=1);
 
 namespace App\Actions\Regatta;
 
+use App\Enums\TeamMemberRole;
+use App\Exceptions\InsufficientTeamRoleException;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use App\Models\Team;
 use App\Models\User;
 use App\Models\Yacht;
+use App\Services\TeamRoleGuard;
 use Illuminate\Validation\ValidationException;
 
-class SubmitRegattaEntryAction
+final class SubmitRegattaEntryAction
 {
     /**
      * Подать заявку команды на участие в регате.
+     * Требует роль Organizer или TeamAdmin у вызывающего пользователя.
      *
+     * @throws InsufficientTeamRoleException
      * @throws ValidationException
      */
-    public function handle(Regatta $regatta, Team $team, Yacht $yacht, User $user): RegattaEntry
+    public function handle(Regatta $regatta, Team $team, Yacht $yacht, User $actor): RegattaEntry
     {
-        // Проверяем, что пользователь является организатором команды
-        $isOrganizer = $team->teamMembers()
-            ->where('user_id', $user->id)
-            ->where('role', 'organizer')
-            ->where('status', 'active')
-            ->exists();
-
-        if (! $isOrganizer) {
-            throw ValidationException::withMessages([
-                'teamId' => 'Вы не являетесь организатором этой команды.',
-            ]);
-        }
+        TeamRoleGuard::authorize($team, $actor, TeamMemberRole::ACTION_SUBMIT_ENTRY);
 
         // Проверяем, что яхта принадлежит пользователю
-        if ($yacht->user_id !== $user->id) {
+        if ($yacht->user_id !== $actor->id) {
             throw ValidationException::withMessages([
                 'yachtId' => 'Выбранная яхта не принадлежит вам.',
             ]);
@@ -58,10 +52,10 @@ class SubmitRegattaEntryAction
         }
 
         return RegattaEntry::create([
-            'regatta_id' => $regatta->id,
-            'team_id'    => $team->id,
-            'yacht_id'   => $yacht->id,
-            'status'     => 'pending',
+            'regatta_id'   => $regatta->id,
+            'team_id'      => $team->id,
+            'yacht_id'     => $yacht->id,
+            'status'       => 'pending',
             'submitted_at' => now(),
         ]);
     }

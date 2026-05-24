@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use App\Enums\TeamMemberRole;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -112,6 +115,20 @@ class Team extends Model
         return $this->teamMembers()
             ->where('user_id', $user->id)
             ->value('role');
+    }
+
+    /**
+     * Возвращает роль пользователя в команде как enum-значение.
+     * Учитывает только активных участников.
+     */
+    public function getMemberRoleEnum(User $user): ?TeamMemberRole
+    {
+        $roleValue = $this->teamMembers()
+            ->where('user_id', $user->id)
+            ->where('status', 'active')
+            ->value('role');
+
+        return $roleValue !== null ? TeamMemberRole::tryFrom($roleValue) : null;
     }
 
     public function scopeVisibleForUser(Builder $query, User $user): Builder

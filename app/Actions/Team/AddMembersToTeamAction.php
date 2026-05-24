@@ -4,31 +4,31 @@ declare(strict_types=1);
 
 namespace App\Actions\Team;
 
+use App\Enums\TeamMemberRole;
+use App\Exceptions\InsufficientTeamRoleException;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
+use App\Services\TeamRoleGuard;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 final class AddMembersToTeamAction
 {
     /**
-     * Добавляет свободных участников в команду капитана.
+     * Добавляет свободных участников в команду.
+     * Требует роль Organizer или TeamAdmin у вызывающего пользователя.
      *
-     * @param  Team  $team       Команда капитана
-     * @param  array<string>  $userIds  UUID пользователей для добавления
-     * @param  User  $captain    Пользователь-капитан (организатор команды)
+     * @param  Team             $team     Команда
+     * @param  array<string>    $userIds  UUID пользователей для добавления
+     * @param  User             $actor    Пользователь, выполняющий действие
      *
+     * @throws InsufficientTeamRoleException
      * @throws ValidationException
      */
-    public function handle(Team $team, array $userIds, User $captain): Collection
+    public function handle(Team $team, array $userIds, User $actor): Collection
     {
-        // Только организатор команды может добавлять участников
-        if ($team->organizer_id !== $captain->id) {
-            throw ValidationException::withMessages([
-                'team' => 'Вы не являетесь капитаном этой команды.',
-            ]);
-        }
+        TeamRoleGuard::authorize($team, $actor, TeamMemberRole::ACTION_MANAGE_MEMBERS);
 
         $currentCount = $team->activeMembers()->count();
         $toAdd        = count($userIds);
@@ -45,7 +45,7 @@ final class AddMembersToTeamAction
         foreach ($userIds as $userId) {
             $user = User::find($userId);
 
-            if (!$user) {
+            if (! $user) {
                 continue;
             }
 
@@ -74,7 +74,7 @@ final class AddMembersToTeamAction
             $member = TeamMember::create([
                 'team_id'   => $team->id,
                 'user_id'   => $userId,
-                'role'      => 'member',
+                'role'      => TeamMemberRole::Member->value,
                 'status'    => 'active',
                 'joined_at' => now(),
             ]);
