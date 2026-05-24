@@ -16,9 +16,9 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                     @guest
                     <button @click="$dispatch('open-login-modal')" class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-4 transition-colors cursor-pointer">Зарегистрировать команду  →</button>
                     @else
-                    <a href="/user/team" class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать команду  →</a>
+                    <a href="/user/team" class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-1.5 sm:px-2 md:px-4 transition-colors">Зарегистрировать команду  →</a>
                     @endguest
-                    <div class="flex gap-2">
+                    <div class="flex gap-1 md:gap-2">
                         <button @click="view = 'grid'" :class="view === 'grid' ? 'text-[#2D92CE]' : 'text-[#2E325C]'" class="p-2">
                             {!! file_get_contents(public_path('images/icons/grid-view.svg')) !!}
                         </button>
