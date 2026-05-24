@@ -159,6 +159,7 @@
                 <a href="{{ route('competitions') }}"  class="block py-2 text-sm">Соревнования</a>
                 <a href="{{ route('teams') }}"  class="block py-2 text-sm">Команды</a>
                 <a href="{{ route('yachts') }}"  class="block py-2 text-sm">Яхты</a>
+                <a href="{{ route('ratings') }}"  class="block py-2 text-sm">Рейтинги</a>
                 <a href="{{ route('gallery') }}"  class="block py-2 text-sm">Галерея</a>
                 <a href="{{ route('news') }}"  class="block py-2 text-sm">Новости</a>
                 <a href="{{ route('help') }}"  class="block py-2 text-sm">Помощь</a>
