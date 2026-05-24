@@ -215,3 +215,9 @@
 .fi-wi-stats-overview-stat {
   padding: 1em;
 }
+
+.ymaps-2-1-79-searchbox,
+.ymaps-2-1-79-searchbox-button,
+[class*="ymaps"][class*="searchbox"] {
+    display: none !important;
+}
