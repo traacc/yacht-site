@@ -25,15 +25,15 @@
                 @if($otherNews->isNotEmpty())
                     <div class="col flex flex-col gap-8">
                         @foreach($otherNews as $other)
-                            <div class="item flex gap-2">
-                                <div class="img max-w-[200px]">
+                            <div class="item flex">
+                                <div class="overflow-hidden md:h-52 shrink-0 max-w-[200px]">
                                     <img
-                                        class="w-full"
+                                        class="w-full max-w-[150px] md:max-w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                         src="{{ $other->cover_image_url ? asset('storage/' . $other->cover_image_url) : asset('images/gallery.png') }}"
                                         alt="{{ $other->title }}"
                                     >
                                 </div>
-                                <div class="info py-2 bg-[#F8F8F8]">
+                                <div class="info p-2 bg-[#F8F8F8]">
                                     <h4 class="text-lg font-semibold mb-3">{{ $other->title }}</h4>
                                     <p class="mb-3 font-medium">{{ Str::limit(strip_tags($other->content), 30) }}</p>
                                     <div class="date mb-3 text-brand-gray-light">{{ $other->published_at->isoFormat('D MMMM Y') }}</div>
