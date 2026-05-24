@@ -33,6 +33,7 @@
                 <a href="{{ route('yachts') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Яхты</a>
                 <a href="{{ route('ratings') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Рейтинги</a>
                 <a href="{{ route('gallery') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Галерея</a>
+                <a href="{{ route('news') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Новости</a>
                 <a href="{{ route('help') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Помощь</a>
             </div>
 
@@ -159,6 +160,7 @@
                 <a href="{{ route('teams') }}"  class="block py-2 text-sm">Команды</a>
                 <a href="{{ route('yachts') }}"  class="block py-2 text-sm">Яхты</a>
                 <a href="{{ route('gallery') }}"  class="block py-2 text-sm">Галерея</a>
+                <a href="{{ route('news') }}"  class="block py-2 text-sm">Новости</a>
                 <a href="{{ route('help') }}"  class="block py-2 text-sm">Помощь</a>
             </div>
             

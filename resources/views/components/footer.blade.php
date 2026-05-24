@@ -25,6 +25,7 @@
                     <li><a href="{{ route('teams') }}"  class="hover:text-white transition-colors">Команды</a></li>
                     <li><a href="{{ route('yachts') }}"  class="hover:text-white transition-colors">Яхты</a></li>
                     <li><a href="{{ route('ratings') }}"  class="hover:text-white transition-colors">Рейтинги</a></li>
+                    <li><a href="{{ route('news') }}"  class="hover:text-white transition-colors">Новости</a></li>
                     <li><a href="{{ route('help') }}"  class="hover:text-white transition-colors">Помощь</a></li>
                 </ul>
             </div>
