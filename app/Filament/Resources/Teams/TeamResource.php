@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Teams;
 
+use App\Enums\TeamMemberRole;
 use App\Filament\Resources\Teams\Pages\EditTeam;
 use App\Filament\Resources\Teams\Pages\ManageTeams;
 use App\Models\Team;
@@ -97,11 +98,10 @@ class TeamResource extends Resource
                             ->required(),
                         Select::make('role')
                             ->label('Роль')
-                            ->options([
-                                'organizer' => 'Капитан',
-                                'member'    => 'Участник',
-                            ])
-                            ->default('member')
+                            ->options(collect(TeamMemberRole::cases())->mapWithKeys(
+                                fn (TeamMemberRole $role) => [$role->value => $role->label()],
+                            ))
+                            ->default(TeamMemberRole::Member->value)
                             ->required(),
                         Select::make('status')
                             ->label('Статус')

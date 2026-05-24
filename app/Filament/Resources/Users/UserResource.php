@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users;
 
 use App\Enums\SportCategory;
+use App\Enums\TeamMemberRole;
 use App\Filament\Resources\Users\Pages\ManageUsers;
 use App\Models\User;
 use BackedEnum;
@@ -17,6 +18,7 @@ use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -122,6 +124,38 @@ class UserResource extends Resource
                     ->label('Комментарий к бану')
                     ->placeholder('Комментарий к бану')
                     ->columnSpanFull(),
+
+                Repeater::make('teamMemberships')
+                    ->label('Команды')
+                    ->relationship('teamMemberships')
+                    ->addActionLabel('Добавить в команду')
+                    ->columns(3)
+                    ->columnSpanFull()
+                    ->defaultItems(0)
+                    ->schema([
+                        Select::make('team_id')
+                            ->label('Команда')
+                            ->relationship('team', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                        Select::make('role')
+                            ->label('Роль')
+                            ->options(collect(TeamMemberRole::cases())->mapWithKeys(
+                                fn (TeamMemberRole $role) => [$role->value => $role->label()],
+                            ))
+                            ->default(TeamMemberRole::Member->value)
+                            ->required(),
+                        Select::make('status')
+                            ->label('Статус')
+                            ->options([
+                                'invited'  => 'Приглашён',
+                                'active'   => 'Активен',
+                                'declined' => 'Отказался',
+                            ])
+                            ->default('active')
+                            ->required(),
+                    ]),
             ]);
     }
 
