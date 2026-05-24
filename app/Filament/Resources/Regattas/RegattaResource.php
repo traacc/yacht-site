@@ -95,33 +95,36 @@ class RegattaResource extends Resource
                     ->required()
                     ->numeric()
                     ->default(1),
-                    YandexMap::make('location')
-                        ->label('Местоположение на Яндекс.Картах')
-                        ->columnSpanFull()
-                        ->mode(YandexMapMode::Placemark)
-                        ->apiKey('ffd9d711-109d-415d-bf73-e1a935512160')
-                        ->lang('ru_RU')
-                        ->center([55.7558, 37.6173])
-                        ->zoom(10)
-                        ->height('450px')
-                        // При загрузке: "55.75,37.61" → ['lat' => 55.75, 'lng' => 37.61]
-                        ->formatStateUsing(function ($state) {
-                            if (is_string($state) && str_contains($state, ',')) {
-                                [$lat, $lng] = explode(',', $state, 2);
-                                return [
-                                    'lat' => (float) trim($lat),
-                                    'lng' => (float) trim($lng),
-                                ];
-                            }
-                            return $state;
-                        })
-                        // Перед сохранением: ['lat' => ..., 'lng' => ...] → "55.75,37.61"
-                        ->dehydrateStateUsing(function ($state) {
-                            if (is_array($state) && isset($state['lat'], $state['lng'])) {
-                                return "{$state['lat']},{$state['lng']}";
-                            }
-                            return $state;
-                        }),
+                TextInput::make('location')
+                    ->label('Локацию')
+                    ->placeholder('Выберите локацию'),
+                YandexMap::make('coordinates')
+                    ->label('Местоположение на Яндекс.Картах')
+                    ->columnSpanFull()
+                    ->mode(YandexMapMode::Placemark)
+                    ->apiKey('ffd9d711-109d-415d-bf73-e1a935512160')
+                    ->lang('ru_RU')
+                    ->center([55.7558, 37.6173])
+                    ->zoom(10)
+                    ->height('450px')
+                    // При загрузке: "55.75,37.61" → ['lat' => 55.75, 'lng' => 37.61]
+                    ->formatStateUsing(function ($state) {
+                        if (is_string($state) && str_contains($state, ',')) {
+                            [$lat, $lng] = explode(',', $state, 2);
+                            return [
+                                'lat' => (float) trim($lat),
+                                'lng' => (float) trim($lng),
+                            ];
+                        }
+                        return $state;
+                    })
+                    // Перед сохранением: ['lat' => ..., 'lng' => ...] → "55.75,37.61"
+                    ->dehydrateStateUsing(function ($state) {
+                        if (is_array($state) && isset($state['lat'], $state['lng'])) {
+                            return "{$state['lat']},{$state['lng']}";
+                        }
+                        return $state;
+                    }),
                 TextInput::make('water_area')
                     ->label('Акватория')
                     ->placeholder('Введите акваторию'),

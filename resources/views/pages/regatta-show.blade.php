@@ -267,11 +267,51 @@
         {{-- ===== ЛОКАЦИЯ ===== --}}
         <section class="py-10">
             <div class="container mx-auto">
-                <h2 class="section-title a-font pb-8">Локация</h2>
-                <div class="map">
-                    <img src="{{ asset('images/map.png') }}" alt="Локация" />
+                    <h2 class="section-title a-font pb-8">Локация</h2>
+                    
+                    {{-- Проверяем, заполнено ли поле в базе данных --}}
+                    @if(!empty($item->location))
+                        <div class="map" style="position: relative; overflow: hidden; border-radius: 8px;">
+                            {{-- Контейнер, куда Яндекс.Карты встроят интерактивную карту --}}
+                            <div id="public-yandex-map" style="width: 100%; height: 450px; background-color: #f3f4f6;"></div>
+                        </div>
+
+                        {{-- Подключаем API Яндекса и инициализируем карту --}}
+                        <script src="https://api-maps.yandex.ru/2.1/?apikey=ffd9d711-109d-415d-bf73-e1a935512160&lang=ru_RU" type="text/javascript"></script>
+                        <script type="text/javascript">
+                            ymaps.ready(function () {
+                                // Берём строковое значение из Laravel коллекции/модели и превращаем в массив чисел
+                                var coordinates = [{{ $item->location }}];
+
+                                // Создаем карту, отцентрированную по сохраненной точке
+                                var myMap = new ymaps.Map('public-yandex-map', {
+                                    center: coordinates,
+                                    zoom: 15, {{-- Хороший масштаб для детального просмотра улицы/дома --}}
+                                    controls: ['zoomControl', 'fullscreenControl'] {{-- Оставляем только нужные элементы --}}
+                                });
+
+                                // Создаем метку (маркер)
+                                var myPlacemark = new ymaps.Placemark(coordinates, {
+                                    hintContent: 'Мы находимся здесь!',
+                                    balloonContent: 'Точный адрес указан на карте'
+                                }, {
+                                    preset: 'islands#redDotIcon' {{-- Красивый стандартный красный маркер Яндекса --}}
+                                });
+
+                                // Добавляем метку на карту
+                                myMap.geoObjects.add(myPlacemark);
+                                
+                                // Отключаем зум скроллом мыши, чтобы страница не «залипала» при прокрутке пользователем
+                                myMap.behaviors.disable('scrollZoom');
+                            });
+                        </script>
+                    @else
+                        {{-- Резервный вариант, если в БД нет локации --}}
+                        <div class="map">
+                            <img src="{{ asset('images/map.png') }}" alt="Локация не указана" />
+                        </div>
+                    @endif
                 </div>
-            </div>
         </section>
 
         {{-- ===== ДРУГИЕ РЕГАТЫ СЕЗОНА ===== --}}

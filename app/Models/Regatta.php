@@ -26,6 +26,7 @@ class Regatta extends Model
         'location',
         'water_area',
         'description',
+        'coordinates',
         'schedule',
         'race_days_count',
         'races_count',
@@ -35,6 +36,7 @@ class Regatta extends Model
     protected function casts(): array
     {
         return [
+            'coordinates'       => 'array',
             'level_coefficient' => 'decimal:2',
             'date_start'        => 'date',
             'date_end'          => 'date',
