@@ -100,6 +100,7 @@ class RegattaResource extends Resource
                 ->defaultLocation(latitude: 55.7558, longitude: 37.6173) // Координаты по умолчанию (например, Москва)
                 ->zoom(10)
                 ->clickable(true)
+                ->tilesUrl('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png')
                 
                 // 1. ПРИ ЗАГРУЗКЕ: Превращаем строку "широта,долгота" из БД в массив для карты
                 ->afterStateHydrated(function ($state, $set): void {
