@@ -35,7 +35,8 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Enums\FiltersLayout;
 
-use Dotswan\MapPicker\Fields\Map;
+use Kpebedko22\FilamentYandexMap\Fields\YandexMap;
+use Kpebedko22\FilamentYandexMap\Enum\YandexMapMode;
 
 use Filament\Forms\Components\Repeater;
 
