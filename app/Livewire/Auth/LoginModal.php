@@ -2,9 +2,11 @@
 
 namespace App\Livewire\Auth;
 
+use App\Enums\SportCategory;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
 
@@ -50,17 +52,19 @@ class LoginModal extends Component
     public function register()
     {
         $this->validate([
-            'first_name'             => ['required', 'string', 'max:255'],
+            'first_name'            => ['required', 'string', 'max:255'],
             'last_name'             => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', Password::defaults(), 'same:password_confirmation'],
-            'password_confirmation'  => ['required'],
+            'email'                 => ['required', 'email', 'unique:users,email'],
+            'password'              => ['required', Password::defaults(), 'same:password_confirmation'],
+            'password_confirmation' => ['required'],
+            'sports_category'       => ['nullable', Rule::enum(SportCategory::class)],
         ], attributes: [
-            'first_name'             => 'имя',
+            'first_name'            => 'имя',
             'last_name'             => 'фамилия',
-            'email'    => 'email',
-            'password' => 'пароль',
-            'password_confirmation' => 'потверждения пароля',
+            'email'                 => 'email',
+            'password'              => 'пароль',
+            'password_confirmation' => 'подтверждение пароля',
+            'sports_category'       => 'спортивный разряд',
         ]);
 
 
