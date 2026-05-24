@@ -122,7 +122,7 @@
                 <ul class="space-y-5">
                     <li class="flex items-center gap-2">
                         {!! file_get_contents(public_path('images/icons/phone.svg')) !!}
-                        +7 (000) 000-60-00
+                        <a href="tel:+79636101113">+7 (963) 610-11-13</a>
                     </li>
                     <li class="flex items-center gap-2">
                         {!! file_get_contents(public_path('images/icons/mail.svg')) !!}
