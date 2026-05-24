@@ -73,7 +73,7 @@
                     </button>
                 </div>
                 
-                <p class="text-center">Нет аккаунта? <a class="text-[#2D92CE]" @click="tab = 'register'" href="#">Зарегистрироватся</a></p>
+                <p class="text-center">Нет аккаунта? <a class="text-[#2D92CE]" @click="tab = 'register'" href="#">Зарегистрироваться</a></p>
                 
             </form>
             
@@ -163,7 +163,7 @@
                     <button type="submit" 
                             wire:loading.attr="disabled"
                             class="inline-flex w-full justify-center rounded-md bg-[#2D92CE] px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50">
-                        <span wire:loading.remove>Зарегистрироватся</span>
+                        <span wire:loading.remove>Зарегистрироваться</span>
                         <span wire:loading>Регестрируемся...</span>
                     </button>
                 </div>
