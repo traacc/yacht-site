@@ -159,7 +159,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y text-center font-medium">
-                            <template x-data="{ teams: [['Барс', 7.0], ['Барс', 7.0], ['Барс', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0]] }" x-for="(team, i) in teams" :key="i">
+                            <template x-data="{ teams: [['Барс', 7.0], ['Барс', 7.0], ['Барс', 7.0]] }" x-for="(team, i) in teams" :key="i">
                                 <tr>
                                     <td class="py-2" data-label="Место">
                                         <div class="flex items-center md:justify-center gap-3">
@@ -188,7 +188,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y text-center font-medium">
-                            <template x-data="{ participants: [['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0]] }" x-for="(p, i) in participants" :key="i">
+                            <template x-data="{ participants: [['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0]] }" x-for="(p, i) in participants" :key="i">
                                 <tr>
                                     <td class="py-2" data-label="Место">
                                         <div class="flex items-center md:justify-center gap-3">
