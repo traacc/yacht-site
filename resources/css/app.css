@@ -189,9 +189,7 @@
   .login-btn svg{
     margin-top: -1px;
   }
-  .leaflet-control-attribution svg {
-    display: none !important;
-  }
+
   @media screen and (max-width: 768px) {
     .responsive-table thead {
       display: none;
