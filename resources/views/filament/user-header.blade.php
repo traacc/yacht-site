@@ -149,8 +149,18 @@
             </div>-->
             @if(auth()->user()->isAdmin() || auth()->user()->isJudge() || auth()->user()->isSecretary() || auth()->user()->isAccountant())
                 <a href="{{ url('/admin') }}" class="block py-2 text-sm">Панель управления</a>
+                <a href="{{ url('/admin/regattas') }}" class="block py-2 text-sm pl-3 text-white/80">— Регаты</a>
+                <a href="{{ url('/admin/teams') }}" class="block py-2 text-sm pl-3 text-white/80">— Команды</a>
+                <a href="{{ url('/admin/yachts') }}" class="block py-2 text-sm pl-3 text-white/80">— Яхты</a>
+                <a href="{{ url('/admin/users') }}" class="block py-2 text-sm pl-3 text-white/80">— Пользователи</a>
+                <a href="{{ url('/admin/ratings') }}" class="block py-2 text-sm pl-3 text-white/80">— Рейтинги</a>
+                <a href="{{ url('/admin/news') }}" class="block py-2 text-sm pl-3 text-white/80">— Новости</a>
             @else
                 <a href="{{ url('/user') }}" class="block py-2 text-sm">Личный кабинет</a>
+                <a href="{{ url('/user/yachts') }}" class="block py-2 text-sm pl-3 text-white/80">— Мои яхты</a>
+                <a href="{{ url('/user/teams') }}" class="block py-2 text-sm pl-3 text-white/80">— Мои команды</a>
+                <a href="{{ url('/user/regatta-entries') }}" class="block py-2 text-sm pl-3 text-white/80">— Заявки на регаты</a>
+                <a href="{{ url('/user/regatta-result-items') }}" class="block py-2 text-sm pl-3 text-white/80">— Результаты</a>
             @endif
             <form method="POST" action="{{ route('logout') }}" class="mt-2">
                 @csrf
