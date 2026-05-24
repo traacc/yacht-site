@@ -20,6 +20,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -196,9 +197,23 @@ class YachtResource extends Resource
             ])->emptyStateHeading('Записей пока нет')
             ->recordActions([
                 EditAction::make()->hiddenLabel()
-                    ->mountUsing(function (\Filament\Schemas\Schema $form, Yacht $record) {
+                    ->mountUsing(function (\Filament\Schemas\Schema $form, Yacht $record): void {
                         ManageYachts::ensureRequiredDocuments($record);
                         $form->fill($record->toArray());
+                    })
+                    ->before(function (array $data, EditAction $action): void {
+                        $missing = self::getMissingDocumentsFromFormData($data['documents'] ?? []);
+
+                        if ($missing !== []) {
+                            Notification::make()
+                                ->title('Не загружены обязательные документы')
+                                ->body('Загрузите следующие документы: ' . implode(', ', $missing) . '.')
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            $action->halt();
+                        }
                     }),
                 DeleteAction::make()->hiddenLabel(),
                 ForceDeleteAction::make(),
@@ -233,6 +248,37 @@ class YachtResource extends Resource
         $data['user_id'] = auth()->id();
 
         return $data;
+    }
+
+    /**
+     * Возвращает метки документов без загруженного файла.
+     *
+     * @param  array<int, array<string, mixed>>  $documents
+     * @return list<string>
+     */
+    private static function getMissingDocumentsFromFormData(array $documents): array
+    {
+        $labels = [
+            'orc_certificate' => 'ORC-сертификат',
+            'ship_ticket'     => 'Судовой билет',
+            'insurance'       => 'Страховка',
+        ];
+
+        $missing = [];
+
+        foreach (ManageYachts::REQUIRED_DOCUMENTS as $required) {
+            $docType = $required['doc_type'];
+
+            $uploaded = collect($documents)->first(
+                fn (array $doc): bool => ($doc['doc_type'] ?? '') === $docType
+            );
+
+            if ($uploaded === null || empty($uploaded['url'])) {
+                $missing[] = $labels[$docType];
+            }
+        }
+
+        return $missing;
     }
 
 }
