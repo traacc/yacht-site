@@ -199,7 +199,7 @@
   font-weight: 600;
   color: #2E325C;
 }
-.photo_wrapper {
+.photo_wrapper .fi-fo-field-label-col{
   flex-shrink: 0;
   max-width: 140px;
 }
