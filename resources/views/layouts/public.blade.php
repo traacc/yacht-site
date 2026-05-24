@@ -12,7 +12,7 @@
         [x-cloak] { display: none !important; }
         .nav-link { @apply text-sm font-medium text-gray-700 hover:text-brand-red transition-colors; }
     </style>
-    <link rel="shortcut icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="shortcut icon" href="{{ asset('favicon.svg') }}?v=2" type="image/svg+xml">
 </head>
 <body class="font-sans bg-white text-[#2E325C] antialiased" x-data="{isRequestModalOpen: false }">
 
