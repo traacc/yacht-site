@@ -70,9 +70,11 @@
                         </a>
                     </li>
                 </ul>
+                @guest
                 <a href="#" @click.prevent="$dispatch('open-login-modal')" class="font-semibold color-white px-4 py-2 mt-6 transition-colors justify-center border-white border flex gap-2 md:hidden">
                     {!! file_get_contents(public_path('images/icons/login.svg')) !!} Войти
                 </a>
+                @endguest
             </div>
         </div>
     </div>
