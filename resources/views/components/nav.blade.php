@@ -8,7 +8,7 @@
             </a>
 
             {{-- Десктоп-меню --}}
-            <div class="hidden md:flex items-center gap-1">
+            <div class="hidden lg:flex items-center gap-1">
                 <div x-data="{ open: false }" class="relative">
                     <button @click="open = !open" @click.outside="open = false"
                         class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
@@ -102,7 +102,7 @@
             </div>
 
             {{-- Мобильное меню --}}
-            <button @click="mobileOpen = !mobileOpen" class="md:hidden p-2 text-gray-300">
+            <button @click="mobileOpen = !mobileOpen" class="lg:hidden p-2 text-gray-300">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path x-show="!mobileOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                     <path x-show="mobileOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -120,7 +120,7 @@
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
         
-        class="md:hidden fixed inset-0 bg-black/50 z-40 w-screen"
+        class="lg:hidden fixed inset-0 bg-black/50 z-40 w-screen"
     >
         <div
         x-transition:enter="transition transform ease-out duration-300"
@@ -129,7 +129,7 @@
         x-transition:leave="transition transform ease-in duration-200"
         x-transition:leave-start="translate-y-80 opacity-100"
         x-transition:leave-end="translate-y-120 opacity-0"
-        x-transition class="md:hidden bg-[#2E325C] py-2 px-4 space-y-1  min-w-[220px] h-full text-white fixed right-0"
+        x-transition class="lg:hidden bg-[#2E325C] py-2 px-4 space-y-1  min-w-[220px] h-full text-white fixed right-0"
         @click.outside="mobileOpen=false"
         >
             <div class="flex justify-between items-center mt-4 mb-4">
