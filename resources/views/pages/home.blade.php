@@ -220,56 +220,26 @@
         </div>
 
         <div class="grid md:grid-cols-3 gap-6">
+            @forelse($latestNews as $newsItem)
             <article class="overflow-hidden shadow-xs hover:shadow-md transition-shadow group flex md:flex-col">
                 <div class="overflow-hidden md:h-52 shrink-0">
-                    <img src="{{ asset('images/news/news_1.png') }}"
-                         alt="" class="w-full max-w-[150px] md:max-w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                    <img src="{{ $newsItem->cover_image_url ? Storage::url($newsItem->cover_image_url) : asset('images/news/news_1.png') }}"
+                         alt="{{ $newsItem->title }}" class="w-full max-w-[150px] md:max-w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                 </div>
                 <div class="md:p-4 p-2 bg-[#F8F8F8]">
                     <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2 md:h-14">
-                        Открыта регистрация на Кубок Carter 30 Pro
+                        {{ $newsItem->title }}
                     </h3>
-                    <p class="font-medium text-brand-gray mb-3 text-xs md:text-base">Организаторы напоминают, что экипажи могут подать заявку с...</p>
-                    <div class="mb-2 text-brand-gray-light text-xs md:text-base">16 апреля 2026</div>
+                    <p class="font-medium text-brand-gray mb-3 text-xs md:text-base">{{ Str::limit(strip_tags($newsItem->content), 60) }}</p>
+                    <div class="mb-2 text-brand-gray-light text-xs md:text-base">{{ $newsItem->published_at->translatedFormat('j F Y') }}</div>
                     <div class="">
-                        <a href="#" class="text-[#2E325C] font-semibold hover:underline text-xs md:text-lg">Читать далее →</a>
+                        <a href="{{ route('news-details', $newsItem) }}" class="text-[#2E325C] font-semibold hover:underline text-xs md:text-lg">Читать далее →</a>
                     </div>
                 </div>
             </article>
-
-            <article class="overflow-hidden shadow-xs hover:shadow-md transition-shadow group flex md:flex-col">
-                <div class="overflow-hidden md:h-52 shrink-0">
-                    <img src="{{ asset('images/news/news_2.png') }}"
-                         alt="" class="w-full max-w-[150px] md:max-w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                </div>
-                <div class="md:p-4 p-2 bg-[#F8F8F8]">
-                    <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2 md:h-14">
-                        Опубликован календарь майских регат
-                    </h3>
-                    <p class="font-medium text-brand-gray mb-3 text-xs md:text-base">В расписание сезона добавлены даты старта, те самые, м...</p>
-                    <div class="mb-2 text-brand-gray-light text-xs md:text-base">9 апреля 2026</div>
-                    <div class="">
-                        <a href="#" class="text-[#2E325C] font-semibold hover:underline text-xs md:text-lg">Читать далее →</a>
-                    </div>
-                </div>
-            </article>
-
-            <article class="overflow-hidden shadow-xs hover:shadow-md transition-shadow group flex md:flex-col">
-                <div class="overflow-hidden md:h-52 shrink-0">
-                    <img src="{{ asset('images/news/news_3.png') }}"
-                         alt="" class="w-full max-w-[150px] md:max-w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                </div>
-                <div class="md:p-4 p-2 bg-[#F8F8F8]">
-                    <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2 md:h-14">
-                        Обновлены правила подачи заявок
-                    </h3>
-                    <p class="font-medium text-brand-gray mb-3 text-xs md:text-base">На сайте опубликованы обновлённые условия регистрации на...</p>
-                    <div class="mb-2 text-brand-gray-light text-xs md:text-base">2 апреля 2026</div>
-                    <div class="">
-                        <a href="#" class="text-[#2E325C] font-semibold hover:underline text-xs md:text-lg">Читать далее →</a>
-                    </div>
-                </div>
-            </article>
+            @empty
+            <p class="col-span-3 text-center text-brand-gray py-6">Новостей пока нет</p>
+            @endforelse
         </div>
         <a href="{{ route('news') }}"  class="text-[#2E325C] text-center block mt-8 text-sm font-semibold hover:underline md:hidden">Все новости →</a>
     </div>

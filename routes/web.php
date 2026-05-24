@@ -29,7 +29,12 @@ Route::get('/', function() {
 
     $resultItems = $regatta?->results?->flatMap->items ?? collect();
 
-    return view('pages.home', compact('regatta', 'resultItems'));
+    $latestNews = News::published()
+        ->orderBy('published_at', 'desc')
+        ->limit(3)
+        ->get();
+
+    return view('pages.home', compact('regatta', 'resultItems', 'latestNews'));
 })->name('home');
 Route::view('/association/charter', 'pages/association-info/charter')->name('charter');
 Route::view('/association/management', 'pages/association-info/management')->name('management');
