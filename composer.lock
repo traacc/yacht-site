@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bd50392fa924080ad060f73284063652",
+    "content-hash": "8fb7c9b92149d05e26158c4558b94198",
     "packages": [
         {
             "name": "blade-ui-kit/blade-heroicons",
@@ -2094,6 +2094,75 @@
                 "source": "https://github.com/kirschbaum-development/eloquent-power-joins/tree/4.3.1"
             },
             "time": "2026-03-29T12:05:03+00:00"
+        },
+        {
+            "name": "kpebedko22/filament-yandex-map",
+            "version": "v4.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/kpebedko22/filament-yandex-map.git",
+                "reference": "374c4fadf1e92aac512566ce607033077aa99adf"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/kpebedko22/filament-yandex-map/zipball/374c4fadf1e92aac512566ce607033077aa99adf",
+                "reference": "374c4fadf1e92aac512566ce607033077aa99adf",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.3",
+                "spatie/laravel-package-tools": "^1.16"
+            },
+            "require-dev": {
+                "filament/filament": "^4.0",
+                "larastan/larastan": "^2.9",
+                "laravel/pint": "^1.14",
+                "nunomaduro/collision": "^8.1.1||^7.10.0",
+                "orchestra/testbench": "^9.0.0||^8.22.0",
+                "pestphp/pest": "^3.0",
+                "pestphp/pest-plugin-arch": "^3.0",
+                "pestphp/pest-plugin-laravel": "^3.0",
+                "phpstan/extension-installer": "^1.3",
+                "phpstan/phpstan-deprecation-rules": "^1.1",
+                "phpstan/phpstan-phpunit": "^1.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Kpebedko22\\FilamentYandexMap\\FilamentYandexMapServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Kpebedko22\\FilamentYandexMap\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Alexander Voytsekhovsky",
+                    "role": "Developer"
+                }
+            ],
+            "description": "This is my package filament-yandex-map",
+            "homepage": "https://github.com/kpebedko22/filament-yandex-map",
+            "keywords": [
+                "filament",
+                "filament form component",
+                "filament-yandex-map",
+                "laravel",
+                "yandex-map"
+            ],
+            "support": {
+                "issues": "https://github.com/kpebedko22/filament-yandex-map/issues",
+                "source": "https://github.com/kpebedko22/filament-yandex-map/tree/v4.0.0"
+            },
+            "time": "2025-09-08T11:02:46+00:00"
         },
         {
             "name": "laravel/framework",

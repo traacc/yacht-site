@@ -215,7 +215,3 @@
 .fi-wi-stats-overview-stat {
   padding: 1em;
 }
-
-.leaflet-control-attribution svg {
-  opacity: 0.1 !important;
-}

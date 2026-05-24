@@ -94,34 +94,41 @@ class RegattaResource extends Resource
                     ->required()
                     ->numeric()
                     ->default(1),
-            Map::make('location') // Название вашего текстового поля в БД
-                ->label('Выберите местоположение')
-                ->columnSpanFull()
-                ->defaultLocation(latitude: 55.7558, longitude: 37.6173) // Координаты по умолчанию (например, Москва)
-                ->zoom(10)
-                ->clickable(true)
-                ->tilesUrl('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png')
-                
-                // 1. ПРИ ЗАГРУЗКЕ: Превращаем строку "широта,долгота" из БД в массив для карты
-                ->afterStateHydrated(function ($state, $set): void {
-                    if (is_string($state) && str_contains($state, ',')) {
-                        [$lat, $lng] = explode(',', $state);
-                        
-                        $set('location', [
-                            'lat' => (float) trim($lat),
-                            'lng' => (float) trim($lng),
-                        ]);
-                    }
-                })
-                
-                // 2. ПРИ СОХРАНЕНИИ: Собираем массив ['lat' => ..., 'lng' => ...] обратно в строку "широта,долгота"
-                ->dehydrateStateUsing(function ($state) {
-                    if (is_array($state) && isset($state['lat'], $state['lng'])) {
-                        return "{$state['lat']},{$state['lng']}";
-                    }
+                YandexMap::make('location') // Имя вашего текстового поля в БД
+                    ->label('Местоположение на Яндекс.Картах')
+                    ->columnSpanFull()
                     
-                    return $state;
-                }),
+                    // Обязательный режим для установки одиночного маркера (точки)
+                    ->mode(YandexMapMode::Placemark) 
+                    
+                    // Вставьте ваш API-ключ Яндекса (лучше вынести в config/services.php)
+                    ->apiKey('ffd9d711-109d-415d-bf73-e1a935512160') 
+                    
+                    ->lang('ru_RU') // Язык карты и интерфейса
+                    ->center([55.7558, 37.6173]) // Центр карты по умолчанию (Москва)
+                    ->zoom(10)
+                    ->height('450px') // Высота контейнера с картой
+
+                    // 1. ПРИ ЗАГРУЗКЕ ФОРМЫ: преобразуем строку "lat,lng" в массив [lat, lng]
+                    ->afterStateHydrated(function ($state, $set): void {
+                        if (is_string($state) && str_contains($state, ',')) {
+                            [$lat, $lng] = explode(',', $state);
+                            
+                            $set('location', [
+                                (float) trim($lat),
+                                (float) trim($lng),
+                            ]);
+                        }
+                    })
+
+                    // 2. ПЕРЕД СОХРАНЕНИЕМ В БД: собираем массив обратно в строку "lat,lng"
+                    ->dehydrateStateUsing(function ($state) {
+                        if (is_array($state) && count($state) === 2) {
+                            return "{$state[0]},{$state[1]}";
+                        }
+                        
+                        return $state;
+                    }),
                 TextInput::make('water_area')
                     ->label('Акватория')
                     ->placeholder('Введите акваторию'),
