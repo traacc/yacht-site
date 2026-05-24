@@ -149,7 +149,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                 </table>
             </div>
         </div>
-        <div class="photo max-w-1/2 shrink-0 md:hidden">
+        <div class="photo shrink-0 md:hidden">
             <img class="max-w-full" :src="activeTeam?.photo" alt="">
         </div>
         <div class="about text-[#2E325C] p-4 bg-[#F8F8F8] mb-8 text-sm md:text-base">

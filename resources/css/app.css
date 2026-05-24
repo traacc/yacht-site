@@ -204,7 +204,7 @@
     
     .responsive-table td {
       display: block;
-      text-align: left; /* Текст ячейки прижимаем к правому краю */
+      text-align: right; /* Текст ячейки прижимаем к правому краю */
       position: relative;
       padding-left: 50%; /* Освобождаем левую половину под заголовок */
       padding-top: 10px;
@@ -227,6 +227,8 @@
 
       font-family: 'Bank Gothic', sans;
       font-weight: 500;
+
+      white-space: nowrap;
     }
   }
 }
