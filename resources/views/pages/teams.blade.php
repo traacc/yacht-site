@@ -182,7 +182,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                     </template>
                     <template x-if="!activeTeam?.members?.length">
                         <tr>
-                            <td class="py-0! text-left!" colspan="3">Нет данных</td>
+                            <td class="pl-0! text-left!" colspan="3">Нет данных</td>
                         </tr>
                     </template>
                 </tbody>
@@ -267,7 +267,7 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                             </template>
                             <template x-if="!filteredParticipation.length">
                                 <tr>
-                                    <td class="py-0! text-left!" colspan="5">Нет данных</td>
+                                    <td class="pl-0! text-left!" colspan="5">Нет данных</td>
                                 </tr>
                             </template>
                         </tbody>
