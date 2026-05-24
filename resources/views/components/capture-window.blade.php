@@ -1,3 +1,4 @@
+@guest
 <div x-data="{
         isOpen: false,
         init() {
@@ -74,3 +75,4 @@
         </div>
     </div>
 </div>
+@endguest
