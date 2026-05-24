@@ -105,67 +105,7 @@
         @endif
 
         {{-- ===== РЕЗУЛЬТАТЫ ===== --}}
-        @if($regatta->isFinished())
-        <section class="results mb-12">
-            <div class="container mx-auto bg-[#F8F8F8]">
-                <div class="flex justify-between mb-6">
-                    <div class="flex gap-4"><h3 class="a-font text-lg md:text-3xl">Результаты</h3> <div class="bg-[#A88C5833] px-3 py-1 text-[#A88C58] inline-block font-semibold max-w-[290px] w-full">Предварительные результаты</div></div>
-                    <a class="text-[#2E325C] text-lg font-semibold flex gap-2 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> <span>Скачать результаты PDF</span></a>
-                </div>
-                <div class="overflow-x-auto relative p-2 md:p-6 bg-white">
-                    <table class="w-full responsive-table">
-                        <thead>
-                            <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] ">
-                                <th class="pb-2 text-center font-medium w-16 a-font">Место</th>
-                                <th class="pb-2 text-center font-medium a-font">Команда</th>
-                                <th class="pb-2 text-center font-medium a-font">Капитан</th>
-                                <th class="pb-2 text-center font-medium a-font">Яхта</th>
-                                <th class="pb-2 text-center font-medium a-font">Парус №</th>
-                                <th class="pb-2 text-center font-medium a-font">Участники</th>
-                                <th class="pb-2 text-center font-medium a-font">Очки</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y text-center font-medium">
-                        @forelse($regatta->resultItems as $result)
-                            @php
-                                $entry = $entries->firstWhere('team_id', $result->team_id);
-                                $yacht = $entry?->yacht;
-                            @endphp
-                            <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA] pb-8! md:pb-0!">
-                                <td class="py-3">
-                                    <div @class([
-                                        'flex items-center justify-center gap-3',
-                                        'text-[#C2A36B]' => $result->final_position == 1,
-                                        'text-[#9FA6AD]' => $result->final_position == 2,
-                                        'text-[#B56A3A]' => $result->final_position == 3,
-                                        'text-transparent' => !in_array($result->final_position, [1, 2, 3])
-                                    ])>
-                                        {!! file_get_contents(public_path('images/icons/cup.svg')) !!}
-                                        <span class="text-brand-gray">{{ $result->final_position }}</span>
-                                    </div>
-                                </td>
-                                <td class="py-3">{{ $result->team?->name ?? '—' }}</td>
-                                <td class="py-3">{{ $result->team?->organizer?->full_name ?? '—' }}</td>
-                                <td class="py-3">{{ $yacht?->name ?? '—' }}</td>
-                                <td class="py-3">{{ $yacht?->vfps_number ?? '—' }}</td>
-                                <td class="py-3">
-                                    <a href="#" class="text-[#2D92CE] font-medium underline hover:no-underline">
-                                        {{ $result->team?->activeMembers?->count() ?? 0 }} участников
-                                    </a>
-                                </td>
-                                <td class="py-3">{{ $result->total_points }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="py-6 text-brand-gray-light">Нет результатов</td>
-                            </tr>
-                        @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-        @endif
+        <livewire:regatta-results mode="show" :regatta-id="$regatta->id" />
         {{-- ===== О РЕГАТЕ ===== --}}
         <section class="py-10">
             <div class="container mx-auto bg-brand-light-bg flex flex-col md:flex-row gap-10 items-center">

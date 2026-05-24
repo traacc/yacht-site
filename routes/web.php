@@ -10,31 +10,12 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
 Route::get('/', function() {
-    $regatta = Regatta::with([
-        'results.items' => fn ($q) => $q->orderBy('final_position'),
-        'results.items.team.organizer',
-        'results.items.team.activeMembers',
-        'results.items.yacht',
-        'season',
-    ])
-        ->where(function ($query) {
-            $query->where('date_end', '<', now())
-                  ->orWhere(function ($q) {
-                      $q->where('date_start', '<=', now())
-                        ->where('date_end', '>=', now());
-                  });
-        })
-        ->orderBy('date_end', 'desc')
-        ->first();
-
-    $resultItems = $regatta?->results?->flatMap->items ?? collect();
-
     $latestNews = News::published()
         ->orderBy('published_at', 'desc')
         ->limit(3)
         ->get();
 
-    return view('pages.home', compact('regatta', 'resultItems', 'latestNews'));
+    return view('pages.home', compact('latestNews'));
 })->name('home');
 Route::view('/association/charter', 'pages/association-info/charter')->name('charter');
 Route::view('/association/management', 'pages/association-info/management')->name('management');
