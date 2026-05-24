@@ -10,6 +10,10 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 use BackedEnum;
 use Filament\Support\Icons\Heroicon;
@@ -25,6 +29,47 @@ class EditProfile extends BaseEditProfile
     public static function getNavigationGroup(): ?string
     {
         return 'Аккаунт'; // Or set a group name like 'Аккаунт'
+    }
+
+    protected function getFormActions(): array
+    {
+        return [
+            Action::make('changePassword')
+                ->label('Сменить пароль')
+                ->icon('heroicon-o-lock-closed')
+                ->color('white')
+                ->form([
+                    TextInput::make('current_password')
+                        ->label('Текущий пароль')
+                        ->password()
+                        ->revealable()
+                        ->required()
+                        ->currentPassword(),
+                    TextInput::make('password')
+                        ->label('Новый пароль')
+                        ->password()
+                        ->revealable()
+                        ->required()
+                        ->rule(Password::default())
+                        ->same('password_confirmation'),
+                    TextInput::make('password_confirmation')
+                        ->label('Подтверждение пароля')
+                        ->password()
+                        ->revealable()
+                        ->required(),
+                ])
+                ->action(function (array $data): void {
+                    auth()->user()->update([
+                        'password' => Hash::make($data['password']),
+                    ]);
+
+                    Notification::make()
+                        ->title('Пароль успешно изменён')
+                        ->success()
+                        ->send();
+                }),
+            $this->getSaveFormAction(),
+        ];
     }
 
     public function form(Schema $schema): Schema
