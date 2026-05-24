@@ -48,7 +48,8 @@ bgImage="{{ asset('images/bg/rules.png') }}"
         </div>
     </div>
   </section>
-  <section class="container mx-auto md:mb-24 mb-8">
+  <section class="hidden container mx-auto md:mb-24 mb-8">
+  
   <h2 class="section-title a-font text-[#2E325C] text-5xl mb-8">Порядок вступления</h2>
  
     <!-- Steps row -->
@@ -111,6 +112,21 @@ bgImage="{{ asset('images/bg/rules.png') }}"
  
     </div>
   </section>
+
+  <section class="container mx-auto md:mb-24 mb-8">
+  
+    <h2 class="section-title a-font text-[#2E325C] text-5xl mb-8">Порядок вступления</h2>
+    <div class="order text-base md:text-lg">
+      <ol class="list-decimal [&_a]:text-[#2D92CE] [&_a]:underline pl-6 space-y-5">
+        <li>Для участия в соревнованиях Carter Pro необходимо зарегистрироваться <a href="#">тут</a> в качестве члена Ассоциации</li>
+        <li>Членом Ассоциации может стать любой человек, желающий войти в сообщество яхтсменов</li>
+        <li>Все члены Ассоциации имеют право принимать участие в обсуждениях любых вопросов на <a href="#">официальных ресурсах</a> Ассоциации</li>
+        <li>Правом голоса на общем собрании членов Ассоциации обладают только владельцы <a href="#">зарегистрированных</a> в Ассоциации яхт проекта Carter 30 (одна яхта – один голос)</li>
+      </ol>
+    </div>
+
+  </section>
+  
   <section style="background-image: url('{{ asset('images/rules/rules_want.png') }}')" class="container mx-auto bg-cover bg-center py-20 mt-10 flex flex-col items-center text-center mb-8">
     <h2 class="a-font text-white text-3xl md:text-5xl max-w-4xl">Хотите присоединиться к Ассоциации и принимать участие в её деятельности?</h2>
     <button @click="isRequestModalOpen=true" class="mt-6 bg-white cursor-pointer text-[#2E325C] py-2 px-9 hover:bg-[#E8E8E8] transition-colors text-lg font-semibold w-full md:w-auto ms flex items-center justify-center gap-2">
