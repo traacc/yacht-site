@@ -70,15 +70,14 @@ class LoginModal extends Component
 
         // 1. Создаем пользователя
         $user = User::create([
-            'name' => $this->first_name . ' ' . $this->last_name,
-            'first_name'             => $this->first_name,
-            'last_name'             => $this->last_name,
-            'email' => $this->email,
-            'phone' => $this->phone,
-            'birth_date' => $this->birthday,
-            'sport_category' => $this->sports_category,
-
-            'password' => Hash::make($this->password),
+            'name'           => $this->first_name . ' ' . $this->last_name,
+            'first_name'     => $this->first_name,
+            'last_name'      => $this->last_name,
+            'email'          => $this->email,
+            'phone'          => $this->phone ?: null,
+            'birth_date'     => $this->birthday ?: null,
+            'sport_category' => $this->sports_category ?: null,
+            'password'       => Hash::make($this->password),
         ]);
 
         // 2. Автоматически входим в систему
