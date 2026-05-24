@@ -154,7 +154,7 @@
                 <a href="{{ route('competitions') }}"  class="block py-2 text-sm">Соревнования</a>
                 <a href="{{ route('teams') }}"  class="block py-2 text-sm">Команды</a>
                 <a href="{{ route('yachts') }}"  class="block py-2 text-sm">Яхты</a>
-                <a href="{{ route('news') }}"  class="block py-2 text-sm">Галерея</a>
+                <a href="{{ route('gallery') }}"  class="block py-2 text-sm">Галерея</a>
                 <a href="{{ route('help') }}"  class="block py-2 text-sm">Помощь</a>
             </div>
             
