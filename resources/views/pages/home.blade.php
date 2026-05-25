@@ -197,22 +197,17 @@
 <script>
 function gallerySlider() {
     return {
-        images: [
-            '{{ asset('images/news/news_1.png') }}',
-            '{{ asset('images/news/news_2.png') }}',
-            '{{ asset('images/news/news_3.png') }}',
-            '{{ asset('images/news/news_1.png') }}',
-            '{{ asset('images/news/news_2.png') }}',
-            '{{ asset('images/news/news_1.png') }}',
-            '{{ asset('images/news/news_2.png') }}',
-            '{{ asset('images/news/news_3.png') }}',
-            '{{ asset('images/news/news_1.png') }}',
-            '{{ asset('images/news/news_2.png') }}',
-            '{{ asset('images/news/news_2.png') }}',
-            '{{ asset('images/news/news_3.png') }}',
-            '{{ asset('images/news/news_1.png') }}',
-            '{{ asset('images/news/news_2.png') }}',
-        ],
+        {{-- Динамический список фото из настроек галереи.
+             Если настройки пусты — показываем заглушки. --}}
+        images: @if($galleryPhotos->isNotEmpty())
+            {!! json_encode($galleryPhotos->values()->all()) !!}
+        @else
+            [
+                '{{ asset('images/news/news_1.png') }}',
+                '{{ asset('images/news/news_2.png') }}',
+                '{{ asset('images/news/news_3.png') }}',
+            ]
+        @endif,
 
         // Брейкпоинты: сколько карточек видно
         breakpoints: [

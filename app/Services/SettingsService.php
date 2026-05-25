@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Setting;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class SettingsService
 {
@@ -54,5 +56,62 @@ class SettingsService
             Cache::forget("setting:{$key}");
         }
         Cache::forget("settings_group:{$group}");
+    }
+
+    // ──────────────────────────────────────────────
+    // Галерея главной страницы
+    // ──────────────────────────────────────────────
+
+    /**
+     * Возвращает список публичных URL фотографий для галереи главной страницы.
+     *
+     * Логика:
+     *  - Читает пул фото, количество, флаг рандома и порядок сортировки из settings.
+     *  - Если random_gallery = true  → перемешивает пул и берёт первые N.
+     *  - Если random_gallery = false → сортирует по выбранному правилу и берёт первые N.
+     *
+     * @return Collection<int, string>  Коллекция публичных URL изображений.
+     */
+    public function getGalleryPhotos(): Collection
+    {
+        $raw    = $this->get('home.gallery_photos', []);
+        $count  = (int) $this->get('home.gallery_count', 10);
+        $random = (bool) $this->get('home.gallery_random', false);
+        $sort   = $this->get('home.gallery_sort', 'manual') ?? 'manual';
+
+        // Нормализуем: значение может быть массивом строк, ассоциативным массивом
+        // или вложенным массивом — приводим к плоскому списку строк.
+        $paths = collect((array) $raw)
+            ->flatten()
+            ->filter(fn ($v) => is_string($v) && $v !== '')
+            ->values()
+            ->all();
+
+        if (empty($paths)) {
+            return collect();
+        }
+
+        $collection = collect($paths);
+
+        if ($random) {
+            // Случайный режим: перемешиваем весь пул, берём первые $count
+            $collection = $collection->shuffle();
+        } else {
+            // Фиксированный режим: применяем выбранную сортировку
+            $collection = match ($sort) {
+                // «Сначала новые» — разворачиваем массив (последние загруженные идут первыми)
+                'newest' => $collection->reverse()->values(),
+                // «Сначала старые» — оставляем исходный порядок
+                'oldest' => $collection->values(),
+                // «Ручной» — порядок как задан в настройках
+                default  => $collection->values(),
+            };
+        }
+
+        // Берём нужное количество и конвертируем пути в публичные URL
+        return $collection
+            ->take($count)
+            ->map(fn (string $path) => Storage::disk('public')->url($path))
+            ->values();
     }
 }

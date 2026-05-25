@@ -9,8 +9,10 @@ use App\Models\User;
 use App\Services\SettingsService;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
@@ -36,31 +38,14 @@ class HomePageSettings extends Page
 
     protected static string|UnitEnum|null $navigationGroup = 'Сайт';
 
-    // ──────────────────────────────────────────────
-    // Form state — TOP-3 команд
-    // ──────────────────────────────────────────────
-
-    public ?string $top_team_1        = null;
-    public ?string $top_team_1_points = null;
-
-    public ?string $top_team_2        = null;
-    public ?string $top_team_2_points = null;
-
-    public ?string $top_team_3        = null;
-    public ?string $top_team_3_points = null;
-
-    // ──────────────────────────────────────────────
-    // Form state — TOP-3 участников
-    // ──────────────────────────────────────────────
-
-    public ?string $top_participant_1        = null;
-    public ?string $top_participant_1_points = null;
-
-    public ?string $top_participant_2        = null;
-    public ?string $top_participant_2_points = null;
-
-    public ?string $top_participant_3        = null;
-    public ?string $top_participant_3_points = null;
+    /**
+     * Единый массив состояния формы — стандартный паттерн Filament для Page с FileUpload.
+     * Использование $this->form->fill() / $this->form->getState() гарантирует вызов
+     * saveUploadedFiles() через beforeStateDehydrated-хук FileUpload.
+     *
+     * @var array<string, mixed>
+     */
+    public array $data = [];
 
     // ──────────────────────────────────────────────
     // Lifecycle
@@ -74,24 +59,36 @@ class HomePageSettings extends Page
         $teams        = $settings->get('home.top_teams', []);
         $participants = $settings->get('home.top_participants', []);
 
-        // Структура: [['id' => ..., 'points' => ...], ...]
-        $this->top_team_1        = $teams[0]['id']     ?? null;
-        $this->top_team_1_points = $teams[0]['points'] ?? null;
+        // Нормализуем gallery_photos в индексированный массив строк
+        $rawPhotos = $settings->get('home.gallery_photos', []);
+        $galleryPhotos = collect((array) $rawPhotos)
+            ->flatten()
+            ->filter(fn ($v) => is_string($v) && $v !== '')
+            ->values()
+            ->all();
 
-        $this->top_team_2        = $teams[1]['id']     ?? null;
-        $this->top_team_2_points = $teams[1]['points'] ?? null;
-
-        $this->top_team_3        = $teams[2]['id']     ?? null;
-        $this->top_team_3_points = $teams[2]['points'] ?? null;
-
-        $this->top_participant_1        = $participants[0]['id']     ?? null;
-        $this->top_participant_1_points = $participants[0]['points'] ?? null;
-
-        $this->top_participant_2        = $participants[1]['id']     ?? null;
-        $this->top_participant_2_points = $participants[1]['points'] ?? null;
-
-        $this->top_participant_3        = $participants[2]['id']     ?? null;
-        $this->top_participant_3_points = $participants[2]['points'] ?? null;
+        // Заполняем форму через fill() — это запускает afterStateHydrated на FileUpload
+        $this->form->fill([
+            // TOP-3 команд
+            'top_team_1'               => $teams[0]['id']     ?? null,
+            'top_team_1_points'        => $teams[0]['points'] ?? null,
+            'top_team_2'               => $teams[1]['id']     ?? null,
+            'top_team_2_points'        => $teams[1]['points'] ?? null,
+            'top_team_3'               => $teams[2]['id']     ?? null,
+            'top_team_3_points'        => $teams[2]['points'] ?? null,
+            // TOP-3 участников
+            'top_participant_1'        => $participants[0]['id']     ?? null,
+            'top_participant_1_points' => $participants[0]['points'] ?? null,
+            'top_participant_2'        => $participants[1]['id']     ?? null,
+            'top_participant_2_points' => $participants[1]['points'] ?? null,
+            'top_participant_3'        => $participants[2]['id']     ?? null,
+            'top_participant_3_points' => $participants[2]['points'] ?? null,
+            // Галерея
+            'gallery_photos' => $galleryPhotos,
+            'gallery_count'  => (int) $settings->get('home.gallery_count', 10),
+            'gallery_random' => (bool) $settings->get('home.gallery_random', false),
+            'gallery_sort'   => $settings->get('home.gallery_sort', 'manual') ?? 'manual',
+        ]);
     }
 
     // ──────────────────────────────────────────────
@@ -114,13 +111,12 @@ class HomePageSettings extends Page
     public function form(Schema $schema): Schema
     {
         return $schema
-            ->statePath('')
+            ->statePath('data')
             ->components([
 
                 // ── TOP-3 команд ──────────────────────────────
                 Section::make('TOP-3 команд')
                     ->description('Выберите три команды и укажите количество очков для отображения в рейтинговом блоке на главной странице.')
-                    //->icon(Heroicon::OutlinedTrophy)
                     ->schema([
                         // 1-е место
                         Grid::make(2)->schema([
@@ -186,7 +182,6 @@ class HomePageSettings extends Page
                 // ── TOP-3 участников ──────────────────────────
                 Section::make('TOP-3 участников')
                     ->description('Выберите трёх участников и укажите количество очков для отображения в рейтинговом блоке на главной странице.')
-                    //->icon(Heroicon::OutlinedUsers)
                     ->schema([
                         // 1-е место
                         Grid::make(2)->schema([
@@ -257,6 +252,61 @@ class HomePageSettings extends Page
                                 ->rules(['nullable', 'numeric', 'min:0']),
                         ]),
                     ]),
+
+                // ── Галерея главной страницы ──────────────────
+                Section::make('Галерея главной страницы')
+                    ->description('Настройте фотографии, отображаемые в слайдере галереи на главной странице.')
+                    ->schema([
+
+                        // Загрузка / выбор фотографий для пула галереи.
+                        // reorderable() позволяет задать ручной порядок показа.
+                        FileUpload::make('gallery_photos')
+                            ->label('Фотографии галереи')
+                            ->helperText('Загрузите фотографии для галереи. Порядок файлов определяет порядок показа при ручной сортировке.')
+                            ->image()
+                            ->multiple()
+                            ->reorderable()
+                            ->disk('public')
+                            ->directory('home/gallery')
+                            ->visibility('public')
+                            ->maxFiles(100)
+                            ->columnSpanFull(),
+
+                        Grid::make(3)->schema([
+
+                            // Максимальное количество отображаемых фото
+                            TextInput::make('gallery_count')
+                                ->label('Количество фото')
+                                ->helperText('Сколько фото показывать в слайдере.')
+                                ->numeric()
+                                ->minValue(1)
+                                ->maxValue(50)
+                                ->default(10)
+                                ->required()
+                                ->rules(['required', 'integer', 'min:1', 'max:50']),
+
+                            // Режим случайного выбора
+                            Toggle::make('gallery_random')
+                                ->label('Случайный порядок')
+                                ->helperText('Если включено — фото выбираются случайно из пула при каждом открытии страницы.')
+                                ->default(false)
+                                ->live(),
+
+                            // Порядок сортировки (скрывается при включённом рандоме)
+                            Select::make('gallery_sort')
+                                ->label('Порядок сортировки')
+                                ->helperText('Применяется только при отключённом случайном порядке.')
+                                ->options([
+                                    'manual'  => 'Ручной (как загружено)',
+                                    'newest'  => 'Сначала новые',
+                                    'oldest'  => 'Сначала старые',
+                                ])
+                                ->default('manual')
+                                ->required()
+                                ->visible(fn ($get) => ! $get('gallery_random'))
+                                ->rules(['required', 'in:manual,newest,oldest']),
+                        ]),
+                    ]),
             ]);
     }
 
@@ -269,7 +319,6 @@ class HomePageSettings extends Page
         return [
             Action::make('save')
                 ->label('Сохранить настройки')
-                //->icon(Heroicon::OutlinedCheckCircle)
                 ->color('primary')
                 ->submit('save'),
         ];
@@ -277,35 +326,54 @@ class HomePageSettings extends Page
 
     public function save(): void
     {
+        // getState() вызывает callBeforeStateDehydrated → saveUploadedFiles()
+        // что перемещает файлы из temp-хранилища в постоянное и обновляет пути в $data
+        $data = $this->form->getState();
+
         $this->validate([
-            'top_team_1'               => ['nullable', 'exists:teams,id'],
-            'top_team_1_points'        => ['nullable', 'numeric', 'min:0'],
-            'top_team_2'               => ['nullable', 'exists:teams,id'],
-            'top_team_2_points'        => ['nullable', 'numeric', 'min:0'],
-            'top_team_3'               => ['nullable', 'exists:teams,id'],
-            'top_team_3_points'        => ['nullable', 'numeric', 'min:0'],
-            'top_participant_1'        => ['nullable', 'exists:users,id'],
-            'top_participant_1_points' => ['nullable', 'numeric', 'min:0'],
-            'top_participant_2'        => ['nullable', 'exists:users,id'],
-            'top_participant_2_points' => ['nullable', 'numeric', 'min:0'],
-            'top_participant_3'        => ['nullable', 'exists:users,id'],
-            'top_participant_3_points' => ['nullable', 'numeric', 'min:0'],
+            'data.top_team_1'               => ['nullable', 'exists:teams,id'],
+            'data.top_team_1_points'        => ['nullable', 'numeric', 'min:0'],
+            'data.top_team_2'               => ['nullable', 'exists:teams,id'],
+            'data.top_team_2_points'        => ['nullable', 'numeric', 'min:0'],
+            'data.top_team_3'               => ['nullable', 'exists:teams,id'],
+            'data.top_team_3_points'        => ['nullable', 'numeric', 'min:0'],
+            'data.top_participant_1'        => ['nullable', 'exists:users,id'],
+            'data.top_participant_1_points' => ['nullable', 'numeric', 'min:0'],
+            'data.top_participant_2'        => ['nullable', 'exists:users,id'],
+            'data.top_participant_2_points' => ['nullable', 'numeric', 'min:0'],
+            'data.top_participant_3'        => ['nullable', 'exists:users,id'],
+            'data.top_participant_3_points' => ['nullable', 'numeric', 'min:0'],
+            'data.gallery_count'            => ['required', 'integer', 'min:1', 'max:50'],
+            'data.gallery_random'           => ['boolean'],
+            'data.gallery_sort'             => ['required', 'in:manual,newest,oldest'],
         ]);
 
         /** @var SettingsService $settings */
         $settings = app(SettingsService::class);
 
         $settings->set('home.top_teams', [
-            ['id' => $this->top_team_1, 'points' => $this->top_team_1_points],
-            ['id' => $this->top_team_2, 'points' => $this->top_team_2_points],
-            ['id' => $this->top_team_3, 'points' => $this->top_team_3_points],
+            ['id' => $data['top_team_1'], 'points' => $data['top_team_1_points']],
+            ['id' => $data['top_team_2'], 'points' => $data['top_team_2_points']],
+            ['id' => $data['top_team_3'], 'points' => $data['top_team_3_points']],
         ], 'home');
 
         $settings->set('home.top_participants', [
-            ['id' => $this->top_participant_1, 'points' => $this->top_participant_1_points],
-            ['id' => $this->top_participant_2, 'points' => $this->top_participant_2_points],
-            ['id' => $this->top_participant_3, 'points' => $this->top_participant_3_points],
+            ['id' => $data['top_participant_1'], 'points' => $data['top_participant_1_points']],
+            ['id' => $data['top_participant_2'], 'points' => $data['top_participant_2_points']],
+            ['id' => $data['top_participant_3'], 'points' => $data['top_participant_3_points']],
         ], 'home');
+
+        // Нормализуем пути фото в индексированный массив строк перед сохранением
+        $photos = collect((array) ($data['gallery_photos'] ?? []))
+            ->flatten()
+            ->filter(fn ($v) => is_string($v) && $v !== '')
+            ->values()
+            ->all();
+
+        $settings->set('home.gallery_photos', $photos, 'home');
+        $settings->set('home.gallery_count',  (int) $data['gallery_count'], 'home');
+        $settings->set('home.gallery_random', (bool) $data['gallery_random'], 'home');
+        $settings->set('home.gallery_sort',   $data['gallery_sort'] ?? 'manual', 'home');
 
         $settings->forgetGroup('home');
 

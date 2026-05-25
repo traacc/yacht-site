@@ -6,6 +6,7 @@ use App\Models\News;
 use App\Models\Regatta;
 use App\Models\Team;
 use App\Models\Yacht;
+use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -16,7 +17,10 @@ Route::get('/', function () {
         ->limit(3)
         ->get();
 
-    return view('pages.home', compact('latestNews'));
+    // Получаем фото для галереи с учётом настроек (рандом / сортировка / количество)
+    $galleryPhotos = app(SettingsService::class)->getGalleryPhotos();
+
+    return view('pages.home', compact('latestNews', 'galleryPhotos'));
 })->name('home');
 Route::view('/association/charter', 'pages/association-info/charter')->name('charter');
 Route::view('/association/management', 'pages/association-info/management')->name('management');
