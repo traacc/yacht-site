@@ -1,10 +1,12 @@
-<section class="relative h-[480px] md:h-[688px] overflow-hidden">
-    <video autoplay muted playsinline loop src="{{ '/videos/hero_video_2.mp4' }}"  class="absolute inset-0 w-full h-full object-cover"></video>
+<section class="relative h-[480px] md:h-[788px]">
+    <!--<video autoplay muted playsinline loop src="{{ '/videos/hero_video_2.mp4' }}"  class="absolute inset-0 w-full h-full object-cover"></video>-->
+    <img class="absolute inset-0 -top-15 object-[29%_50%] lg:object-[50%_50%] lg:-top-30 w-full h-full object-cover" src="{{ asset('/images/bg/bg_hero.png') }}" alt="">
 
     <div class="hero-overlay absolute inset-0"></div>
 
     @if($regatta)
     <div class="container mx-auto relative mt-4">
+        <!--
         {{-- Карточка ближайшей регаты --}}
         <div class="md:absolute md:top-8 md:left-8 mx-4 md:mx-0 mt-6 bg-[#00000080] backdrop-blur-xs p-3 md:p-4  md:w-auto md:max-w-2xl shadow-2xl">
             <div class="flex items-center gap-2 mb-1 md:mb-3">
@@ -39,6 +41,7 @@
 
 
         </div>
+        -->
     </div>
     @endif
 </section>
