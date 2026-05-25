@@ -14,32 +14,25 @@ bgImage="{{ asset('images/bg/policy.png') }}"
 
         <div class="text-brand-gray font-medium">
             <div class="mb-4 md:mb-8">
-                <h4 class="a-font md:text-2xl text-lg text-[#2E325C] mb-3 md:mb-6">01. Общие принципы</h4>
-                <p class="md:text-base text-sm">Ассоциация CarterPro осуществляет свою деятельность на основе открытости, честности и соблюдения установленных правил.</p>
+                <p class="md:text-base text-sm">Ассоциация открыта для любых владельцев яхт проекта Carter 30</p>
             </div>
             <div class="mb-4 md:mb-8">
-                <h4 class="a-font md:text-2xl text-lg text-[#2E325C] mb-3 md:mb-6">02. Развитие класса</h4>
-                <p class="md:text-base text-sm">Ассоциация способствует развитию класса яхт Carter 30, поддерживает участие команд в соревнованиях и популяризацию парусного спорта.</p>
+                <p class="md:text-base text-sm">Ассоциация – не бизнес ни для кого. Все доходы Ассоциации идут только на её развитие и поддержку её членов</p>
             </div>
             <div class="mb-4 md:mb-8">
-                <h4 class="a-font md:text-2xl text-lg text-[#2E325C] mb-3 md:mb-6">03. Организация соревнований</h4>
-                <p class="md:text-base text-sm">Все регаты проводятся в соответствии с утверждёнными регламентами и международными стандартами парусного спорта.</p>
+                <p class="md:text-base text-sm">Правила класса – чётко описанные Box Rules. То, что явно не запрещено правилами класса – разрешено</p>
             </div>
             <div class="mb-4 md:mb-8">
-                <h4 class="a-font md:text-2xl text-lg text-[#2E325C] mb-3 md:mb-6">04. Взаимодействие участников</h4>
-                <p class="md:text-base text-sm">Ассоциация обеспечивает равные условия для всех участников и поддерживает конструктивное взаимодействие внутри сообщества.</p>
+                <p class="md:text-base text-sm">Любой член Ассоциации может вынести любой вопрос на общее обсуждение</p>
             </div>
             <div class="mb-4 md:mb-8">
-                <h4 class="a-font md:text-2xl text-lg text-[#2E325C] mb-3 md:mb-6">05. Партнёрство</h4>
-                <p class="md:text-base text-sm">Ассоциация развивает партнёрские отношения и сотрудничество с организациями, поддерживающими парусный спорт.</p>
+                <p class="md:text-base text-sm">Активное привлечение молодёжи</p>
             </div>
             <div class="mb-4 md:mb-8">
-                <h4 class="a-font md:text-2xl text-lg text-[#2E325C] mb-3 md:mb-6">06. Прозрачность деятельности</h4>
-                <p class="md:text-base text-sm">Решения Ассоциации принимаются открыто и доводятся до сведения участников в установленном порядке.</p>
+                <p class="md:text-base text-sm">Организация соревнований высокой конкуренции</p>
             </div>
             <div class="mb-4 md:mb-8">
-                <h4 class="a-font md:text-2xl text-lg text-[#2E325C] mb-3 md:mb-6">07. Ответственность</h4>
-                <p class="md:text-base text-sm">Ассоциация и её участники обязаны соблюдать принятые правила<br>и нести ответственность за свои действия в рамках деятельности сообщества.</p>
+                <p class="md:text-base text-sm">Материально-техническая и консультационная поддержка членов Ассоциации</p>
             </div>
         </div>
     </div>
