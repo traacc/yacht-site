@@ -10,6 +10,7 @@
         "barryvdh/laravel-dompdf": "^3.1",
         "dotswan/filament-map-picker": "^2.3",
         "filament/filament": "^4.11",
+        "filament/spatie-laravel-media-library-plugin": "^4.0",
         "kpebedko22/filament-yandex-map": "^4.0",
         "laravel/framework": "^13.7",
         "laravel/tinker": "^3.0",
