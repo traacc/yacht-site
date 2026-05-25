@@ -12,12 +12,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Team extends Model
+class Team extends Model implements HasMedia
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, HasUuids, SoftDeletes, InteractsWithMedia;
 
     /** Максимальное количество активных участников в команде */
     public const int MAX_MEMBERS = 10;
@@ -83,11 +84,19 @@ class Team extends Model
         return $this->hasMany(RegattaEntry::class);
     }
 
-    /** Альбомы (галерея) команды */
-    public function albums(): MorphMany
+    // ──────────────────────────────────────────────
+    // Media Library
+    // ──────────────────────────────────────────────
+
+    public function registerMediaCollections(): void
     {
-        return $this->morphMany(Album::class, 'albumable');
+        $this->addMediaCollection('gallery')
+             ->useDisk('public');
     }
+
+    // ──────────────────────────────────────────────
+    // Relationships (продолжение)
+    // ──────────────────────────────────────────────
 
     /** Итоговые результаты по регатам (через RegattaResultItem) */
     public function regattaResultItems(): HasMany

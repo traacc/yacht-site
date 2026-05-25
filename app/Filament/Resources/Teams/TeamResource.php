@@ -16,9 +16,9 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -114,35 +114,16 @@ class TeamResource extends Resource
                             ->required(),
                     ]),
 
-                Repeater::make('albums')
+                SpatieMediaLibraryFileUpload::make('gallery')
                     ->label('Галерея')
-                    ->relationship('albums')
-                    ->addActionLabel('Добавить галерею')
-                    ->columnSpanFull()
-                    ->defaultItems(0)
-                    ->collapsible()
-                    ->schema([
-                        TextInput::make('title')
-                            ->label('Название альбома')
-                            ->required()
-                            ->columnSpanFull(),
-                        Repeater::make('media')
-                            ->label('Фотографии')
-                            ->relationship('media')
-                            ->addActionLabel('Добавить фото')
-                            ->defaultItems(0)
-                            ->columnSpanFull()
-                            ->schema([
-                                Hidden::make('type')->default('photo'),
-                                FileUpload::make('url')
-                                    ->label('Фото')
-                                    ->image()
-                                    ->directory('albums/photos')
-                                    ->disk('public')
-                                    ->required(),
-                                Hidden::make('sort_order')->default(0),
-                            ]),
-                    ]),
+                    ->collection('gallery')
+                    ->multiple()
+                    ->reorderable()
+                    ->image()
+                    ->imageEditor()
+                    ->disk('public')
+                    ->visibility('public')
+                    ->columnSpanFull(),
             ]);
     }
 

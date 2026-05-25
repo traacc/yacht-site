@@ -20,9 +20,9 @@ use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use App\Models\Yacht;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -129,35 +129,16 @@ class TeamResource extends Resource
                     ->nullable()
                     ->columnSpanFull(),
 
-                Repeater::make('albums')
-                    ->label('Галерея (альбомы)')
-                    ->relationship('albums')
-                    ->addActionLabel('Добавить альбом')
-                    ->columnSpanFull()
-                    ->defaultItems(0)
-                    ->collapsible()
-                    ->schema([
-                        TextInput::make('title')
-                            ->label('Название альбома')
-                            ->required()
-                            ->columnSpanFull(),
-                        Repeater::make('media')
-                            ->label('Фотографии')
-                            ->relationship('media')
-                            ->addActionLabel('Добавить фото')
-                            ->defaultItems(0)
-                            ->columnSpanFull()
-                            ->schema([
-                                Hidden::make('type')->default('photo'),
-                                FileUpload::make('url')
-                                    ->label('Фото')
-                                    ->image()
-                                    ->directory('albums/photos')
-                                    ->disk('public')
-                                    ->required(),
-                                Hidden::make('sort_order')->default(0),
-                            ]),
-                    ]),
+                SpatieMediaLibraryFileUpload::make('gallery')
+                    ->label('Галерея')
+                    ->collection('gallery')
+                    ->multiple()
+                    ->reorderable()
+                    ->image()
+                    ->imageEditor()
+                    ->disk('public')
+                    ->visibility('public')
+                    ->columnSpanFull(),
 
                 Select::make('initial_member_ids')
                     ->label('Добавить участников')
