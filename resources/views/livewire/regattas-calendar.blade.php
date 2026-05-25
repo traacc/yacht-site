@@ -13,7 +13,7 @@
                 <a
                     href="{{ route('regattas.calendar.pdf', ['year' => $year]) }}"
                     target="_blank"
-                    class="inline-flex items-center gap-2 px-4 py-2 bg-[#2E325C] hover:bg-[#1e2240] text-white text-sm font-semibold transition-colors duration-200 shrink-0"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-[#2D92CE] text-white text-sm font-semibold transition-colors duration-200 shrink-0"
                     title="Скачать календарь регат в PDF"
                 >
                     <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
