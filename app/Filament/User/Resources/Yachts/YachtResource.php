@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\User\Resources\Yachts;
 
 use App\Filament\User\Resources\Yachts\Pages\ManageYachts;
@@ -111,36 +113,32 @@ class YachtResource extends Resource
                     ->addable(false)
                     ->deletable(false)
                     ->reorderable(false)
-                    ->default([
-                        ['doc_type' => 'orc_certificate', 'title' => 'ORC-сертификат', 'url' => null],
-                        ['doc_type' => 'ship_ticket',     'title' => 'Судовой билет',  'url' => null],
-                        ['doc_type' => 'insurance',       'title' => 'Страховка',      'url' => null],
-                    ])
+                    ->default(fn () => array_map(
+                        fn (array $doc) => [
+                            'doc_type' => $doc['doc_type'],
+                            'title'    => $doc['title'],
+                            'url'      => null,
+                        ],
+                        ManageYachts::getRequiredDocuments(),
+                    ))
                     ->columns(1)
-                    ->itemLabel(fn (array $state): ?string => match ($state['doc_type'] ?? null) {
-                        'orc_certificate' => 'ORC-сертификат',
-                        'ship_ticket'     => 'Судовой билет',
-                        'insurance'       => 'Страховка',
-                        default           => $state['title'] ?? null,
-                    })
+                    ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
                     ->rules([
                         function (): \Closure {
                             return function (string $attribute, mixed $value, \Closure $fail): void {
-                                $labels = [
-                                    'orc_certificate' => 'ORC-сертификат',
-                                    'ship_ticket'     => 'Судовой билет',
-                                    'insurance'       => 'Страховка',
-                                ];
+                                $requiredDocs = ManageYachts::getRequiredDocuments();
                                 $missing = [];
-                                foreach (ManageYachts::REQUIRED_DOCUMENTS as $required) {
+
+                                foreach ($requiredDocs as $required) {
                                     $docType = $required['doc_type'];
                                     $uploaded = collect((array) $value)->first(
                                         fn (array $doc): bool => ($doc['doc_type'] ?? '') === $docType
                                     );
                                     if ($uploaded === null || empty($uploaded['url'])) {
-                                        $missing[] = $labels[$docType];
+                                        $missing[] = $required['title'];
                                     }
                                 }
+
                                 if ($missing !== []) {
                                     $fail('Загрузите следующие обязательные документы: ' . implode(', ', $missing) . '.');
                                 }
@@ -257,6 +255,24 @@ class YachtResource extends Resource
         $data['user_id'] = auth()->id();
 
         return $data;
+    }
+
+    /**
+     * Определяет читаемую метку для документа в Repeater.
+     * Использует YachtDocumentType enum для всех известных типов,
+     * для неизвестных — возвращает title из состояния.
+     */
+    public static function resolveDocumentLabel(array $state): ?string
+    {
+        $docType = $state['doc_type'] ?? null;
+
+        if ($docType === null) {
+            return $state['title'] ?? null;
+        }
+
+        $enum = \App\Enums\YachtDocumentType::tryFrom($docType);
+
+        return $enum?->label() ?? ($state['title'] ?? null);
     }
 
 }

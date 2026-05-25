@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\User\Resources\Yachts\Pages;
 
+use App\Actions\Yacht\UpdateYachtRequiredDocumentsAction;
 use App\Filament\User\Resources\Yachts\YachtResource;
 use App\Models\Document;
 use Filament\Actions\Action;
@@ -14,12 +15,15 @@ class ManageYachts extends ManageRecords
 {
     protected static string $resource = YachtResource::class;
 
-    /** Фиксированный список обязательных документов яхты */
-    public const REQUIRED_DOCUMENTS = [
-        ['doc_type' => 'orc_certificate', 'title' => 'ORC-сертификат'],
-        ['doc_type' => 'ship_ticket',     'title' => 'Судовой билет'],
-        ['doc_type' => 'insurance',       'title' => 'Страховка'],
-    ];
+    /**
+     * Возвращает динамический список обязательных документов из настроек.
+     *
+     * @return array<int, array{doc_type: string, title: string}>
+     */
+    public static function getRequiredDocuments(): array
+    {
+        return app(UpdateYachtRequiredDocumentsAction::class)->getRequiredList();
+    }
 
     protected function getHeaderActions(): array
     {
@@ -42,7 +46,7 @@ class ManageYachts extends ManageRecords
     /** Создаёт недостающие обязательные документы для яхты */
     public static function ensureRequiredDocuments(\App\Models\Yacht $yacht): void
     {
-        foreach (self::REQUIRED_DOCUMENTS as $doc) {
+        foreach (static::getRequiredDocuments() as $doc) {
             $yacht->documents()->firstOrCreate(
                 ['doc_type' => $doc['doc_type']],
                 ['title'    => $doc['title']],
