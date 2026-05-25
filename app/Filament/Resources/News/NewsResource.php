@@ -69,6 +69,10 @@ class NewsResource extends Resource
                     ->disk('public')
                     ->directory('news/covers')
                     ->visibility('public'),
+                DateTimePicker::make('published_at')
+                    ->label('Дата публикации')
+                    ->default(now())
+                    ->required(),
 
                 Repeater::make('albums')
                     ->label('Галерея (альбомы)')
@@ -110,8 +114,8 @@ class NewsResource extends Resource
                 TextColumn::make('title')
                     ->label('Заголовок')
                     ->searchable(),
-                TextColumn::make('created_at')
-                ->label('Дата')
+                TextColumn::make('published_at')
+                    ->label('Дата публикации')
                     ->dateTime()
                     ->sortable(),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
