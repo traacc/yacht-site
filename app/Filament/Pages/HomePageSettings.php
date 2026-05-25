@@ -125,7 +125,7 @@ class HomePageSettings extends Page
                         // 1-е место
                         Grid::make(2)->schema([
                             Select::make('top_team_1')
-                                ->label('🥇 1-е место — команда')
+                                ->label('1-е место — команда')
                                 ->placeholder('Выберите команду')
                                 ->options(fn () => Team::orderBy('name')->pluck('name', 'id')->toArray())
                                 ->searchable()
@@ -145,7 +145,7 @@ class HomePageSettings extends Page
                         // 2-е место
                         Grid::make(2)->schema([
                             Select::make('top_team_2')
-                                ->label('🥈 2-е место — команда')
+                                ->label('2-е место — команда')
                                 ->placeholder('Выберите команду')
                                 ->options(fn () => Team::orderBy('name')->pluck('name', 'id')->toArray())
                                 ->searchable()
@@ -165,7 +165,7 @@ class HomePageSettings extends Page
                         // 3-е место
                         Grid::make(2)->schema([
                             Select::make('top_team_3')
-                                ->label('🥉 3-е место — команда')
+                                ->label('3-е место — команда')
                                 ->placeholder('Выберите команду')
                                 ->options(fn () => Team::orderBy('name')->pluck('name', 'id')->toArray())
                                 ->searchable()
@@ -191,7 +191,7 @@ class HomePageSettings extends Page
                         // 1-е место
                         Grid::make(2)->schema([
                             Select::make('top_participant_1')
-                                ->label('🥇 1-е место — участник')
+                                ->label('1-е место — участник')
                                 ->placeholder('Выберите участника')
                                 ->options(fn () => User::orderBy('name')
                                     ->get()
@@ -214,7 +214,7 @@ class HomePageSettings extends Page
                         // 2-е место
                         Grid::make(2)->schema([
                             Select::make('top_participant_2')
-                                ->label('🥈 2-е место — участник')
+                                ->label('2-е место — участник')
                                 ->placeholder('Выберите участника')
                                 ->options(fn () => User::orderBy('name')
                                     ->get()
@@ -237,7 +237,7 @@ class HomePageSettings extends Page
                         // 3-е место
                         Grid::make(2)->schema([
                             Select::make('top_participant_3')
-                                ->label('🥉 3-е место — участник')
+                                ->label('3-е место — участник')
                                 ->placeholder('Выберите участника')
                                 ->options(fn () => User::orderBy('name')
                                     ->get()
