@@ -94,7 +94,7 @@
         <div class="grid md:grid-cols-2 gap-5">
             {{-- Команды --}}
             <div class="relative overflow-hidden min-h-[220px] group cursor-pointer">
-                <img src="{{ asset('images/main/main-l.png') }}"
+                <img src="{{ asset('images/main/main-l.webp') }}"
                      alt="Команды" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                 <div class="absolute inset-0 bg-linear-to-r from-brand-navy/90 to-brand-navy/40"></div>
                 <div class="relative p-8 h-full flex flex-col justify-center text-white max-w-[500px]">
@@ -110,7 +110,7 @@
 
             {{-- Яхты --}}
             <div class="relative overflow-hidden md:min-h-[440px] group cursor-pointer">
-                <img src="{{ asset('images/main/main-r.png') }}"
+                <img src="{{ asset('images/main/main-r.webp') }}"
                      alt="Яхты Carter Pro" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                 <div class="absolute inset-0 bg-linear-to-r from-[#F8F8F8]/0 to-[#F8F8F8]/40"></div>
                 <div class="relative p-8 h-full flex flex-col justify-center text-[#2E325C] max-w-[500px]">
