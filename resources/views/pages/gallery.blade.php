@@ -107,7 +107,7 @@
                     <div class="cursor-pointer group relative" @click="gallery_modal_open = true">
                         
                         <img :src="img" alt="" class="absolute w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105">
-                        <div class="bg-[#2E325C] opacity-30 absolute z-40 w-full h-full transition-transform duration-500 group-hover:scale-105"></div>
+                        <div class="bg-[#2E325C] opacity-30 absolute z-5 w-full h-full transition-transform duration-500 group-hover:scale-105"></div>
                         <div class="info relative z-20 p-6 pt-56 text-white">
                             <h4 class="title a-font text-2xl mb-3">Кубок залива 2026</h4>
                             <p class="mb-3 flex gap-3">{!! file_get_contents(public_path('images/icons/calendar.svg')) !!} 29–30 сентября · Москва</p>
