@@ -196,7 +196,7 @@
                         <label class="custom-checkbox">
                             <input type="checkbox" name="privacy" required/>
                             <span class="checkbox-box shrink-0"></span>
-                            <div class="text-sm text-brand-gray-light">Отправляя данные через форму, вы соглашаетесь с <a class='underline' href="#">политикой обработки персональных данных</a></div>
+                            <div class="text-sm text-brand-gray-light">Отправляя данные через форму, вы соглашаетесь с <a class='underline' href="/files/Политика_обработки_персональных_данных_1.docx">политикой обработки персональных данных</a></div>
                         </label>
                         
                     </div>

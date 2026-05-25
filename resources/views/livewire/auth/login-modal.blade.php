@@ -158,7 +158,11 @@
                         </svg>
                     </button>
                 </div>
-
+                <label class="custom-checkbox">
+                    <input type="checkbox" name="privacy" required/>
+                    <span class="checkbox-box shrink-0"></span>
+                    <div class="text-sm text-brand-gray-light">Регистрируясь на этом сайте, вы соглашаетесь с <a class='underline' href="/files/Политика_обработки_персональных_данных_1.docx">политикой обработки персональных данных</a></div>
+                </label>
                 <div class="mt-5 sm:mt-6">
                     <button type="submit" 
                             wire:loading.attr="disabled"
