@@ -128,7 +128,7 @@
 </section>
 
 {{-- ===== ГАЛЕРЕЯ ===== --}}
-{{-- @livewire('gallery.preview') --}}
+@if($galleryPhotos->isNotEmpty())
 <section class="py-12 bg-brand-light"
     x-data="gallerySlider()"
     x-init="init()"
@@ -197,17 +197,7 @@
 <script>
 function gallerySlider() {
     return {
-        {{-- Динамический список фото из настроек галереи.
-             Если настройки пусты — показываем заглушки. --}}
-        images: @if($galleryPhotos->isNotEmpty())
-            {!! json_encode($galleryPhotos->values()->all()) !!}
-        @else
-            [
-                '{{ asset('images/news/news_1.png') }}',
-                '{{ asset('images/news/news_2.png') }}',
-                '{{ asset('images/news/news_3.png') }}',
-            ]
-        @endif,
+        images: {!! json_encode($galleryPhotos->values()->all()) !!},
 
         // Брейкпоинты: сколько карточек видно
         breakpoints: [
@@ -286,6 +276,7 @@ function gallerySlider() {
 }
 </script>
 
+@endif
 
 {{-- ===== СПОНСОРЫ ===== --}}
 <section class="py-10 bg-white">
