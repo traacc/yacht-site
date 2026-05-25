@@ -133,7 +133,34 @@ Route::get('/association/regulations', function () {
 
     return view('pages.association-info.regulations', compact('documents'));
 })->name('regulations');
-Route::view('/association/decisions', 'pages/association-info/decisions')->name('decisions');
+Route::get('/association/decisions', function () {
+    $documents = app(SettingsService::class)->get('decisions.documents', []);
+
+    // Нормализуем документы: генерируем публичные URL из путей storage
+    $documents = collect((array) $documents)
+        ->filter(fn (array $d) => ! empty($d['title']))
+        ->map(function (array $d): array {
+            $filePath = $d['file'] ?? null;
+            $fileUrl  = null;
+            $originalName = null;
+
+            if (is_string($filePath) && $filePath !== '') {
+                $fileUrl  = Storage::disk('public')->url($filePath);
+                $originalName = basename($filePath);
+            }
+
+            return [
+                'title'         => $d['title'] ?? '',
+                'desc'          => $d['desc'] ?? '',
+                'file_url'      => $fileUrl,
+                'original_name' => $originalName,
+            ];
+        })
+        ->values()
+        ->all();
+
+    return view('pages.association-info.decisions', compact('documents'));
+})->name('decisions');
 
 Route::get('/regattas/calendar/pdf', function (Request $request) {
     $year = $request->integer('year', (int) now()->format('Y'));
