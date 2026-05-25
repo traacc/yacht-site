@@ -144,10 +144,12 @@ class RegattaResource extends Resource
                     ->directory('regattas/covers')
                     ->visibility('public'),
 
+                /*
                 Textarea::make('map_html')
                     ->label('Карта (HTML)')
                     ->placeholder('HTML-код карты')
                     ->columnSpanFull(),
+                */
                 Textarea::make('prizes')
                     ->label('Призы')
                     ->placeholder('Описание призового фонда')
