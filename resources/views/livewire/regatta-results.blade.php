@@ -329,8 +329,8 @@
                                     <template x-data="{ teams: [['Барс', 7.0], ['Барс', 7.0], ['Барс', 7.0]] }" x-for="(team, i) in teams" :key="i">
                                         <tr>
                                             <td class="py-2" data-label="Место">
-                                                <div class="flex items-center md:justify-center gap-3">
-                                                    <span :class="i===0?'text-[#C2A36B]':i===1?'text-[#9FA6AD]':'text-[#B56A3A]'" class="font-bold text-sm">
+                                                <div class="flex items-center md:justify-center justify-end gap-3">
+                                                    <span :class="i===0?'text-[#C2A36B]':i===1?'text-[#9FA6AD]':'text-[#B56A3A]'" class="font-bold text-sm ">
                                                         {!! file_get_contents(public_path('images/icons/cup.svg')) !!}
                                                     </span>
                                                     <span x-text="i+1"></span>
@@ -360,7 +360,7 @@
                                     <template x-data="{ participants: [['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0]] }" x-for="(p, i) in participants" :key="i">
                                         <tr>
                                             <td class="py-2" data-label="Место">
-                                                <div class="flex items-center md:justify-center gap-3">
+                                                <div class="flex items-center md:justify-center justify-end gap-3">
                                                     <span :class="i===0?'text-[#C2A36B]':i===1?'text-[#9FA6AD]':'text-[#B56A3A]'" class="font-bold text-sm">
                                                         {!! file_get_contents(public_path('images/icons/cup.svg')) !!}
                                                     </span>
