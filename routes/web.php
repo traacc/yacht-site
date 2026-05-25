@@ -105,7 +105,34 @@ Route::get('/association/trustees', function () {
 })->name('trustees');
 Route::view('/association/policy', 'pages/association-info/policy')->name('policy');
 Route::view('/association/rules', 'pages/association-info/rules')->name('rules');
-Route::view('/association/regulations', 'pages/association-info/regulations')->name('regulations');
+Route::get('/association/regulations', function () {
+    $documents = app(SettingsService::class)->get('regulations.documents', []);
+
+    // Нормализуем документы: генерируем публичные URL из путей storage
+    $documents = collect((array) $documents)
+        ->filter(fn (array $d) => ! empty($d['title']))
+        ->map(function (array $d): array {
+            $filePath = $d['file'] ?? null;
+            $fileUrl  = null;
+            $originalName = null;
+
+            if (is_string($filePath) && $filePath !== '') {
+                $fileUrl  = Storage::disk('public')->url($filePath);
+                $originalName = basename($filePath);
+            }
+
+            return [
+                'title'         => $d['title'] ?? '',
+                'desc'          => $d['desc'] ?? '',
+                'file_url'      => $fileUrl,
+                'original_name' => $originalName,
+            ];
+        })
+        ->values()
+        ->all();
+
+    return view('pages.association-info.regulations', compact('documents'));
+})->name('regulations');
 Route::view('/association/decisions', 'pages/association-info/decisions')->name('decisions');
 
 Route::get('/regattas/calendar/pdf', function (Request $request) {
