@@ -3,6 +3,9 @@
 namespace App\Livewire;
 
 use App\Models\Regatta;
+use App\Models\Team;
+use App\Models\User;
+use App\Services\SettingsService;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
@@ -46,9 +49,9 @@ class RegattaResults extends Component
         string  $year      = '',
         string  $status    = '',
     ): void {
-        $this->mode       = $mode;
-        $this->regattaId  = $regattaId;
-        $this->yearFilter = $year;
+        $this->mode         = $mode;
+        $this->regattaId    = $regattaId;
+        $this->yearFilter   = $year;
         $this->statusFilter = $status;
     }
 
@@ -207,7 +210,34 @@ class RegattaResults extends Component
         $regatta     = $this->resolveRegatta();
         $resultItems = $regatta?->results?->flatMap->items ?? collect();
 
-        return compact('regatta', 'resultItems');
+        $topTeams        = collect();
+        $topParticipants = collect();
+
+        if ($this->mode === 'home') {
+            $settings = app(SettingsService::class);
+
+            $topTeamData = $settings->get('home.top_teams', []);
+            $topTeams = collect($topTeamData)
+                ->filter(fn ($item) => !empty($item['id']))
+                ->map(fn ($item) => [
+                    'model'  => \App\Models\Team::find($item['id']),
+                    'points' => $item['points'] ?? null,
+                ])
+                ->filter(fn ($item) => $item['model'] !== null)
+                ->values();
+
+            $topParticipantData = $settings->get('home.top_participants', []);
+            $topParticipants = collect($topParticipantData)
+                ->filter(fn ($item) => !empty($item['id']))
+                ->map(fn ($item) => [
+                    'model'  => \App\Models\User::find($item['id']),
+                    'points' => $item['points'] ?? null,
+                ])
+                ->filter(fn ($item) => $item['model'] !== null)
+                ->values();
+        }
+
+        return compact('regatta', 'resultItems', 'topTeams', 'topParticipants');
     }
 
     private function renderList(): array

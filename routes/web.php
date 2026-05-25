@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
-Route::get('/', function() {
+Route::get('/', function () {
     $latestNews = News::published()
         ->orderBy('published_at', 'desc')
         ->limit(3)

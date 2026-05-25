@@ -311,9 +311,11 @@
                         </div>
                     </section>
                 @endif
-
+                
+            {{-- ===== TOP-3 РЕЙТИНГИ ===== --}}
                 {{-- Топ-3 рейтинги --}}
                 <div class="grid md:grid-cols-2 gap-4">
+                    @if($topTeams->isNotEmpty())
                     <div class="bg-brand-light rounded-xl md:p-4 md:pr-0">
                         <h3 class="font-display text-[#2E325C] text-3xl mb-4 a-font">ТОП-3 команд сезона</h3>
                         <div class="overflow-auto md:p-6 md:pt-0 bg-white md:max-h-[220px]">
@@ -326,25 +328,37 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y text-center font-medium">
-                                    <template x-data="{ teams: [['Барс', 7.0], ['Барс', 7.0], ['Барс', 7.0]] }" x-for="(team, i) in teams" :key="i">
+                                        @foreach($topTeams as $position => $entry)
+                                        @php
+                                            $team   = $entry['model'];
+                                            $points = $entry['points'];
+                                        @endphp
                                         <tr>
                                             <td class="py-2" data-label="Место">
                                                 <div class="flex items-center md:justify-center justify-end gap-3">
-                                                    <span :class="i===0?'text-[#C2A36B]':i===1?'text-[#9FA6AD]':'text-[#B56A3A]'" class="font-bold text-sm ">
+                                                    <span @class([
+                                                        'font-bold text-sm',
+                                                        'text-[#C2A36B]' => $position === 0,
+                                                        'text-[#9FA6AD]' => $position === 1,
+                                                        'text-[#B56A3A]' => $position === 2,
+                                                        'text-transparent' => $position > 2,
+                                                    ])>
                                                         {!! file_get_contents(public_path('images/icons/cup.svg')) !!}
                                                     </span>
-                                                    <span x-text="i+1"></span>
+                                                    <span>{{ $position + 1 }}</span>
                                                 </div>
                                             </td>
-                                            <td class="py-2" data-label="Участник" x-text="team[0]"></td>
-                                            <td class="py-2" data-label="Очки" x-text="team[1]"></td>
+                                            <td class="py-2" data-label="Команда">{{ $team->name }}</td>
+                                            <td class="py-2" data-label="Очки">{{ $points }}</td>
                                         </tr>
-                                    </template>
+                                        @endforeach
                                 </tbody>
                             </table>
                         </div>
                     </div>
+                    @endif
 
+                    @if($topParticipants->isNotEmpty())
                     <div class="bg-brand-light rounded-xl md:p-4">
                         <h3 class="font-display text-[#2E325C] text-3xl mb-4 a-font">ТОП-3 участников</h3>
                         <div class="overflow-x-auto md:p-6 md:pt-0 bg-white md:max-h-[220px]">
@@ -357,24 +371,35 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y text-center font-medium">
-                                    <template x-data="{ participants: [['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0], ['Игорь Скалин', 7.0]] }" x-for="(p, i) in participants" :key="i">
+                                        @foreach($topParticipants as $position => $entry)
+                                        @php
+                                            $participant   = $entry['model'];
+                                            $points = $entry['points'];
+                                        @endphp
                                         <tr>
                                             <td class="py-2" data-label="Место">
                                                 <div class="flex items-center md:justify-center justify-end gap-3">
-                                                    <span :class="i===0?'text-[#C2A36B]':i===1?'text-[#9FA6AD]':'text-[#B56A3A]'" class="font-bold text-sm">
+                                                    <span @class([
+                                                        'font-bold text-sm',
+                                                        'text-[#C2A36B]' => $position === 0,
+                                                        'text-[#9FA6AD]' => $position === 1,
+                                                        'text-[#B56A3A]' => $position === 2,
+                                                        'text-transparent' => $position > 2,
+                                                    ])>
                                                         {!! file_get_contents(public_path('images/icons/cup.svg')) !!}
                                                     </span>
-                                                    <span x-text="i+1"></span>
+                                                    <span>{{ $position + 1 }}</span>
                                                 </div>
                                             </td>
-                                            <td class="py-2" data-label="Участник" x-text="p[0]"></td>
-                                            <td class="py-2" data-label="Очки" x-text="p[1]"></td>
+                                            <td class="py-2" data-label="Участник">{{ $participant->full_name ?: $participant->name }}</td>
+                                            <td class="py-2" data-label="Очки">{{ $points }}</td>
                                         </tr>
-                                    </template>
+                                        @endforeach
                                 </tbody>
                             </table>
                         </div>
                     </div>
+                    @endif
 
                     <a href="{{ route('ratings') }}" class="text-[#2E325C] text-sm text-center font-semibold hover:underline md:hidden">
                         Все результаты →
