@@ -170,10 +170,7 @@ class RegattaResource extends Resource
                 ->schema([
                     TextInput::make('event_number')
                         ->label('№')
-                        ->required()
-                        ->numeric()
-                        ->minValue(1)
-                        ->default(fn () => 1),
+                        ->hidden(),
                     TextInput::make('name')
                         ->label('Событие')
                         ->required(),
@@ -184,7 +181,7 @@ class RegattaResource extends Resource
                         ->label('Описание'),
 
                 ])->itemLabel(fn (array $state): ?string => (!empty($state['event_datetime']) && !empty($state['name']))
-            ? "#{$state['event_number']} {$state['event_datetime']} — {$state['name']}"
+            ? "{$state['event_datetime']} — {$state['name']}"
             : 'Новое событие')
                 ->orderColumn('event_number')
                 ->columns(4) // Разместим поля ввода внутри карточки в 4 колонки для компактности
