@@ -28,7 +28,7 @@
                             </div>
                         @endif
                     </div>
-                    <p class="text-brand-gray text-lg">{{ $regatta->description }}</p>
+                    <p class="text-brand-gray text-lg">{{ $regatta->short_description }}</p>
                     @if($userIsEntered)
                         <div class="mt-6 bg-brand-light-bg border border-brand-blue text-brand-blue py-2 px-6 text-lg font-semibold inline-block">
                             Вы уже заявлены
@@ -110,11 +110,11 @@
         <section class="py-10">
             <div class="container mx-auto bg-brand-light-bg flex flex-col md:flex-row gap-10 items-center">
                 <div class="pic max-w-[720px] shrink-0">
-                    <img class="w-full h-full" src="{{ asset('images/details/details_2.png') }}" alt="{{ $regatta->name }}" />
+                    <img class="w-full h-full" src="{{ $regatta->background_image ? asset($regatta->background_image) : asset('images/rules/rules_pic_1.png') }}" alt="{{ $regatta->name }}" />
                 </div>
                 <div class="info py-4">
                     <h2 class="section-title a-font text-brand-dark text-5xl mb-8">О регате</h2>
-                    <p class="text-brand-gray font-medium text-lg mb-4">{{ $regatta->description }}</p>
+                    <p class="text-brand-gray font-medium text-lg mb-4">{!! $regatta->description !!}</p>
                     <div class="bg-white p-4 text-brand-gray">
                         <div class="flex pb-6">
                             <div>
