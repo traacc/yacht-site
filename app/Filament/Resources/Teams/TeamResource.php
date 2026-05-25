@@ -115,9 +115,9 @@ class TeamResource extends Resource
                     ]),
 
                 Repeater::make('albums')
-                    ->label('Галерея (альбомы)')
+                    ->label('Галерея')
                     ->relationship('albums')
-                    ->addActionLabel('Добавить альбом')
+                    ->addActionLabel('Добавить галерею')
                     ->columnSpanFull()
                     ->defaultItems(0)
                     ->collapsible()
