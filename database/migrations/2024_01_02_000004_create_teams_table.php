@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignUuid('organizer_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignUuid('default_yacht_id')
                 ->nullable()
-                ->after('organizer_id')
                 ->constrained('yachts')
                 ->nullOnDelete();
             //$table->foreignUuid('yacht_id')->nullable()->constrained('yachts')->nullOnDelete(); // default yacht for the team
