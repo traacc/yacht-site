@@ -45,7 +45,7 @@
                             {{ $regatta->water_area }}
                         </span>
                     </div>
-                    <p class="text-sm md:text-lg text-brand-gray mt-2">{{ $regatta->description }}</p>
+                    <p class="text-sm md:text-lg text-brand-gray mt-2">{{ Str::limit($regatta->description, 100) }}</p>
                     <a href="{{ route('competition-details', ['regatta' => $regatta->id]) }}" class="flex items-center gap-2 mt-3 text-[#2E325C] text-sm md:text-xl font-semibold hover:underline">Подробнее о регате {!! file_get_contents(public_path('images/icons/l-arrow-right.svg')) !!}</a>
                 </div>
 
