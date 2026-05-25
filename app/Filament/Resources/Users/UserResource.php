@@ -77,7 +77,8 @@ class UserResource extends Resource
                     ->required(),
                 DatePicker::make('birth_date')
                     ->displayFormat('d.m.Y')
-                    ->label('Дата рождения'),
+                    ->label('Дата рождения')
+                    ->required(),
                 TextInput::make('email')
                     ->label('Email')
                     ->placeholder('email@example.com')
@@ -96,6 +97,7 @@ class UserResource extends Resource
                     ->label('Телефон')
                     ->mask('+7 (999) 999-99-99')
                     ->placeholder('+7 (___) ___-__-__')
+                    ->required()
                     ->mask('+7 (999) 999-99-99')
                     ->telRegex('/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/'),
                 Select::make('sport_category')
