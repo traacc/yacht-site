@@ -19,7 +19,7 @@ class ManageYachts extends ManageRecords
             Action::make('documentSettings')
                 ->label('Обязательные документы')
                 ->icon('heroicon-o-document-check')
-                ->color('gray')
+                ->color('white')
                 ->url(fn () => \App\Filament\Pages\YachtDocumentSettings::getUrl()),
             CreateAction::make(),
         ];
