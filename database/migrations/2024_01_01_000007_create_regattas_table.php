@@ -21,9 +21,10 @@ return new class extends Migration
             $table->string('background_image')->nullable();
             $table->string('location')->nullable();
             $table->string('water_area')->nullable();
+            $table->string('short_description')->nullable();
             $table->text('description')->nullable();
             $table->text('regulations')->nullable();
-            $table->text('map_html')->nullable();
+            $table->json('coordinates')->nullable();
             $table->unsignedTinyInteger('race_days_count')->default(1);
             $table->unsignedTinyInteger('races_count')->default(1);
             $table->text('prizes')->nullable();

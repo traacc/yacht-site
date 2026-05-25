@@ -14,6 +14,11 @@ return new class extends Migration
             $table->text('description')->nullable();
             // Организатор команды; SET NULL при удалении (команда не удаляется)
             $table->foreignUuid('organizer_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignUuid('default_yacht_id')
+                ->nullable()
+                ->after('organizer_id')
+                ->constrained('yachts')
+                ->nullOnDelete();
             //$table->foreignUuid('yacht_id')->nullable()->constrained('yachts')->nullOnDelete(); // default yacht for the team
             $table->boolean('is_archived')->default(false);
             $table->string('picture')->nullable();

@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignUuid('team_id')->constrained('teams')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             // Роль внутри команды
-            $table->enum('role', ['organizer', 'admin', 'member'])->default('member');
+            $table->enum('role', ['organizer', 'team_admin', 'member'])->default('member');
             // Статус приглашения
             $table->enum('status', ['invited', 'active', 'declined'])->default('invited');
             $table->timestamp('joined_at')->nullable();
