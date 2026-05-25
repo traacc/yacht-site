@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class News extends Model
+class News extends Model implements HasMedia
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, HasUuids, SoftDeletes, InteractsWithMedia;
 
     protected $fillable = [
         'author_id',
@@ -71,10 +72,14 @@ class News extends Model
         return $query->where('type', 'external');
     }
 
-    /** Альбомы Новости */
-    public function albums(): MorphMany
+    // ──────────────────────────────────────────────
+    // Media Library
+    // ──────────────────────────────────────────────
+
+    public function registerMediaCollections(): void
     {
-        return $this->morphMany(Album::class, 'albumable');
+        $this->addMediaCollection('gallery')
+             ->useDisk('public');
     }
 
     // ──────────────────────────────────────────────
