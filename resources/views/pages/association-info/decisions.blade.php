@@ -27,7 +27,7 @@ bgImage="{{ asset('images/bg/decisions.webp') }}"
                 </div>
             @empty
                 <div class="col-span-3 text-center text-brand-gray-light py-8">
-                    Документы пока не загружены.
+                    Решений общего собрания в выбранный период нет
                 </div>
             @endforelse
         </div>
