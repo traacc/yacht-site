@@ -27,21 +27,22 @@
             @if($items->isNotEmpty())
                 <div class="grid md:grid-cols-3 gap-6 container mx-auto">
                     @foreach($items as $item)
-                        <div class="item flex md:flex-col">
-                            <div class="img max-w-[140px] md:max-w-full md:h-52 shrink-0">
-                                <img
-                                    class="md:w-full w-[140px] md:max-w-full h-full object-cover"
-                                    src="{{ $item->cover_image_url ? asset('storage/' . $item->cover_image_url) : asset('images/gallery.png') }}"
-                                    alt="{{ $item->title }}"
-                                >
+                        <article class="overflow-hidden shadow-xs hover:shadow-md transition-shadow group flex md:flex-col">
+                            <div class="overflow-hidden md:h-52 shrink-0">
+                                <img src="{{ $item->cover_image_url ? Storage::url($item->cover_image_url) : asset('images/news/news_1.png') }}"
+                                    alt="{{ $item->title }}" class="w-full max-w-[150px] md:max-w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                             </div>
-                            <div class="info p-4 bg-[#F8F8F8]">
-                                <h4 class="text-xl font-semibold mb-4">{{ $item->title }}</h4>
-                                <p class="mb-4 font-medium">{{ Str::limit(strip_tags($item->content), 40) }}</p>
-                                <div class="date mb-4 text-brand-gray-light">{{ $item->published_at->isoFormat('D MMMM Y') }}</div>
-                                <a href="{{ route('news-details', $item) }}" class="text-lg font-semibold hover:underline">Читать далее →</a>
+                            <div class="md:p-4 p-2 bg-[#F8F8F8]">
+                                <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2 md:h-14">
+                                    {{ $item->title }}
+                                </h3>
+                                <p class="font-medium text-brand-gray mb-3 text-xs md:text-base">{{ Str::limit(strip_tags($item->content), 60) }}</p>
+                                <div class="mb-2 text-brand-gray-light text-xs md:text-base">{{ $item->published_at->translatedFormat('j F Y') }}</div>
+                                <div class="">
+                                    <a href="{{ route('news-details', $item) }}" class="text-[#2E325C] font-semibold hover:underline text-xs md:text-lg">Читать далее →</a>
+                                </div>
                             </div>
-                        </div>
+                        </article>
                     @endforeach
                 </div>
             @endif
