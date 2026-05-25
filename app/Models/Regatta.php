@@ -25,6 +25,7 @@ class Regatta extends Model
         'background_image',
         'location',
         'water_area',
+        'short_description',
         'description',
         'coordinates',
         'schedule',

@@ -16,6 +16,7 @@ use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -134,7 +135,11 @@ class RegattaResource extends Resource
                 TextInput::make('water_area')
                     ->label('Акватория')
                     ->placeholder('Введите акваторию'),
-                Textarea::make('description')
+                TextInput::make('short_description')
+                    ->label('Краткое описание')
+                    ->placeholder('Краткое описание')
+                    ->columnSpanFull(),
+                RichEditor::make('description')
                     ->label('О регате')
                     ->placeholder('Описание о регате')
                     ->columnSpanFull(),
