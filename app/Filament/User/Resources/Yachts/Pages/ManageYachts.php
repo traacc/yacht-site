@@ -49,7 +49,10 @@ class ManageYachts extends ManageRecords
         foreach (static::getRequiredDocuments() as $doc) {
             $yacht->documents()->firstOrCreate(
                 ['doc_type' => $doc['doc_type']],
-                ['title'    => $doc['title']],
+                [
+                    'title' => $doc['title'],
+                    'url'   => '',
+                ],
             );
         }
     }

@@ -259,8 +259,8 @@ class YachtResource extends Resource
 
     /**
      * Определяет читаемую метку для документа в Repeater.
-     * Использует YachtDocumentType enum для всех известных типов,
-     * для неизвестных — возвращает title из состояния.
+     * Читает название из таблицы yacht_document_types, для неизвестных —
+     * возвращает title из состояния.
      */
     public static function resolveDocumentLabel(array $state): ?string
     {
@@ -270,9 +270,10 @@ class YachtResource extends Resource
             return $state['title'] ?? null;
         }
 
-        $enum = \App\Enums\YachtDocumentType::tryFrom($docType);
+        $model = \App\Models\YachtDocumentType::cachedAll()
+            ->first(fn (\App\Models\YachtDocumentType $t) => $t->key === $docType);
 
-        return $enum?->label() ?? ($state['title'] ?? null);
+        return $model?->label ?? ($state['title'] ?? null);
     }
 
 }

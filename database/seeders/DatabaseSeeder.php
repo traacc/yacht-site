@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
         DB::disableQueryLog();
         // User::factory(10)->create();
 
+        $this->call(YachtDocumentTypeSeeder::class);
         $this->call(SeasonSeeder::class);
         $this->call(TeamSeeder::class);
         $this->call(RegattaSeeder::class);

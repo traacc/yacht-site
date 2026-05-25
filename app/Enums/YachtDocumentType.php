@@ -4,25 +4,29 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
+/**
+ * @deprecated Используйте модель App\Models\YachtDocumentType.
+ *
+ * Сохранён для обратной совместимости. Методы делегируют чтение
+ * к таблице yacht_document_types.
+ */
 enum YachtDocumentType: string
 {
-    case OrcCertificate = 'orc_certificate';
-    case ShipTicket     = 'ship_ticket';
-    case Insurance      = 'insurance';
-    /*case Regulation     = 'regulation';
+    case OrcCertificate   = 'orc_certificate';
+    case ShipTicket       = 'ship_ticket';
+    case Insurance        = 'insurance';
+    case Regulation       = 'regulation';
     case RaceInstructions = 'race_instructions';
-    case Charter        = 'charter';
-    case Protocol       = 'protocol';
-    case Other          = 'other';*/
+    case Charter          = 'charter';
+    case Protocol         = 'protocol';
+    case Other            = 'other';
 
     public function label(): string
     {
-        return match ($this) {
-            self::OrcCertificate   => 'ORC-сертификат',
-            self::ShipTicket       => 'Судовой билет',
-            self::Insurance        => 'Страховка',
+        $model = \App\Models\YachtDocumentType::cachedAll()
+            ->first(fn (\App\Models\YachtDocumentType $t) => $t->key === $this->value);
 
-        };
+        return $model?->label ?? $this->legacyLabel();
     }
 
     /**
@@ -30,29 +34,31 @@ enum YachtDocumentType: string
      */
     public static function options(): array
     {
-        return array_reduce(
-            self::cases(),
-            fn (array $acc, self $case) => $acc + [$case->value => $case->label()],
-            [],
-        );
+        return \App\Models\YachtDocumentType::options();
     }
 
     /**
-     * Типы, доступные для настройки обязательности.
-     * Не все типы документов имеет смысл делать обязательными (например 'other').
-     *
      * @return self[]
      */
     public static function configurable(): array
     {
-        return [
-            self::OrcCertificate,
-            self::ShipTicket,
-            self::Insurance,
-            /*self::Regulation,
-            self::RaceInstructions,
-            self::Charter,
-            self::Protocol,*/
-        ];
+        return \App\Models\YachtDocumentType::cachedConfigurable()
+            ->map(fn (\App\Models\YachtDocumentType $t) => self::tryFrom($t->key))
+            ->filter()
+            ->all();
+    }
+
+    private function legacyLabel(): string
+    {
+        return match ($this) {
+            self::OrcCertificate   => 'ORC-сертификат',
+            self::ShipTicket       => 'Судовой билет',
+            self::Insurance        => 'Страховка',
+            self::Regulation       => 'Положение',
+            self::RaceInstructions => 'Гоночная инструкция',
+            self::Charter          => 'Устав',
+            self::Protocol         => 'Протокол',
+            self::Other            => 'Прочее',
+        };
     }
 }

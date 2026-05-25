@@ -124,14 +124,7 @@ class YachtResource extends Resource
                     ->schema([
                         Select::make('doc_type')
                             ->label('Тип')
-                            ->options([
-                                'orc_certificate' => 'ORC-сертификат',
-                                'regulation' => 'Положение',
-                                'race_instructions' => 'Гоночная инструкция',
-                                'charter' => 'Устав',
-                                'protocol' => 'Протокол',
-                                'other' => 'Прочее',
-                            ])
+                            ->options(fn () => \App\Models\YachtDocumentType::options())
                             ->default('other')
                             ->required(),
                         TextInput::make('title')
