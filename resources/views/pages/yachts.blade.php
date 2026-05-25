@@ -53,7 +53,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                     </thead>
                     <tbody>
                         <template x-for="yacht in filteredYachts" :key="yacht.id">
-                        <tr class="border-t text-[10px]">
+                        <tr class="border-t text-[10px]  text-sm lg:text-2xl">
                             <td data-label="Название" class="py-2 text-center" x-text="yacht.name"></td>
                             <td data-label="Парус №" class="py-2 text-center" x-text="yacht.vfps_number"></td>
                             <td data-label="Владелец" class="py-2 text-center" x-text="yacht.owner_name || '—'"></td>
