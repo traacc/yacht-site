@@ -53,20 +53,17 @@ class YachtDocumentTypeResource extends Resource
 
                 Textarea::make('description')
                     ->label('Описание')
-                    ->placeholder('Краткое описание типа документа...')
                     ->rows(2)
                     ->maxLength(500),
 
                 Toggle::make('is_configurable')
-                    ->label('Можно настроить обязательность')
-                    ->helperText('Если включено — этот тип будет доступен в настройках обязательных документов.')
+                    ->label('Обязателен')
                     ->default(true),
 
                 TextInput::make('sort_order')
                     ->label('Порядок')
                     ->numeric()
                     ->default(0)
-                    ->helperText('Чем меньше число, тем выше в списке.'),
             ]);
     }
 

@@ -103,11 +103,6 @@ class YachtDocumentSettings extends Page
             ->statePath('data')
             ->components([
                 Section::make('Обязательные документы')
-                    ->description(
-                        'Отметьте типы документов, которые будут обязательными для каждой яхты. '
-                        . 'Пользователи должны будут загрузить эти документы при регистрации или редактировании яхты. '
-                        . 'Изменения применяются мгновенно во всех панелях.'
-                    )
                     ->schema(
                         $types->map(
                             fn (\App\Models\YachtDocumentType $type) => Toggle::make($type->key)
