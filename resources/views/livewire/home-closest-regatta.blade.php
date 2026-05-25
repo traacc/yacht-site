@@ -16,7 +16,7 @@
                     Ближайшая регата
                 </span>
             </div>
-            <div class="grid justify-between items-center gap-2 md:gap-4 grid-cols-1 md:grid-cols-[320px_300px]">
+            <div class="grid justify-between items-center gap-2 md:gap-4 grid-cols-1 md:grid-cols-[380px_300px]">
                 <h3 class="font-display text-white text-2xl/7 mb-2 md:mb-0 md:text-4xl font-bold a-font">{!! nl2br(e($regatta->name)) !!}</h3>
                 <div class="flex flex-col gap-2 md:gap-0 mb-4 justify-between text-white font-medium text-sm md:text-lg md:row-span-2 h-full">
                     <div class="flex items-center gap-2">
