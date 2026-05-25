@@ -120,7 +120,7 @@ class HomePageSettings extends Page
                 // ── TOP-3 команд ──────────────────────────────
                 Section::make('TOP-3 команд')
                     ->description('Выберите три команды и укажите количество очков для отображения в рейтинговом блоке на главной странице.')
-                    ->icon(Heroicon::OutlinedTrophy)
+                    //->icon(Heroicon::OutlinedTrophy)
                     ->schema([
                         // 1-е место
                         Grid::make(2)->schema([
@@ -186,7 +186,7 @@ class HomePageSettings extends Page
                 // ── TOP-3 участников ──────────────────────────
                 Section::make('TOP-3 участников')
                     ->description('Выберите трёх участников и укажите количество очков для отображения в рейтинговом блоке на главной странице.')
-                    ->icon(Heroicon::OutlinedUsers)
+                    //->icon(Heroicon::OutlinedUsers)
                     ->schema([
                         // 1-е место
                         Grid::make(2)->schema([
@@ -269,7 +269,7 @@ class HomePageSettings extends Page
         return [
             Action::make('save')
                 ->label('Сохранить настройки')
-                ->icon(Heroicon::OutlinedCheckCircle)
+                //->icon(Heroicon::OutlinedCheckCircle)
                 ->color('primary')
                 ->submit('save'),
         ];
