@@ -1,5 +1,5 @@
-<div x-data="{ isOpen: false, tab: 'login' }" 
-     @open-login-modal.window="isOpen = true" 
+<div x-data="{ isOpen: false, tab: 'login' }"
+     @open-login-modal.window="tab = $event.detail?.tab || 'login'; isOpen = true"
      @keydown.escape.window="isOpen = false">
 
 
@@ -28,7 +28,7 @@
              class="bg-white overflow-hidden shadow-xl transform transition-all sm:max-w-md sm:w-full p-6 z-10">
             
             <div class="flex items-center justify-between pb-3">
-                <h3 class="text-3xl a-font text-[#2E325C]">Вход в аккаунт</h3>
+                <h3 class="text-3xl a-font text-[#2E325C]" x-text="tab === 'login' ? 'Вход в аккаунт' : 'Регистрация'"></h3>
                 <button @click="isOpen = false" class="text-gray-400 hover:text-gray-500">
                     <span class="sr-only">Закрыть</span>
                     &#x2715; </button>

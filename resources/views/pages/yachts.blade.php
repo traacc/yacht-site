@@ -29,7 +29,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
             <div class="flex items-center flex-col md:flex-row justify-between mb-6">
                 <h2 class="section-title a-font">Список яхт</h2>
                 @guest
-                <a href="#" @click.prevent="$dispatch('open-login-modal')" class="bg-[#2D92CE] cursor-pointer text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту →</a>
+                <a href="#" @click.prevent="$dispatch('open-login-modal', { tab: 'register' })" class="bg-[#2D92CE] cursor-pointer text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту →</a>
                 @else
                 <a href="/user/yachts" class="bg-[#2D92CE] cursor-pointer text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту →</a>
                 @endguest

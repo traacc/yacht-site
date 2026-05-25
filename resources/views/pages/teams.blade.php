@@ -14,7 +14,7 @@ bgImage="{{ asset('images/bg/teams.webp') }}"
                 <h2 class="section-title a-font mb-4 tracking-tighter md:tracking-normal">Зарегистрированные команды</h2>
                 <div class="flex gap-1 md:gap-2 justify-between w-full md:w-auto">
                     @guest
-                    <button @click="$dispatch('open-login-modal')" class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-4 transition-colors cursor-pointer">Зарегистрировать команду  →</button>
+                    <button @click="$dispatch('open-login-modal', { tab: 'register' })" class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-4 transition-colors cursor-pointer">Зарегистрировать команду  →</button>
                     @else
                     <a href="/user/teams" class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-1.5 sm:px-2 md:px-4 transition-colors tracking-tighter md:tracking-normal">Зарегистрировать команду  →</a>
                     @endguest
