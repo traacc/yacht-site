@@ -1,6 +1,6 @@
 <style>
     .feedback-form {
-        background-image: url('{{ asset('images/bg/feedback_bg.png') }}');
+        background-image: url('{{ asset('images/bg/feedback_bg.webp') }}');
     }
     @media (max-width:768px) {
         .feedback-form {

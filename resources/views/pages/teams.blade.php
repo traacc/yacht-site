@@ -3,7 +3,7 @@
 </x-breadcrumbs_page>
 <x-hero-section title="Команды Ассоциации"
 desc="Зарегистрированные команды класса Carter 30, участвующие в регатах сезона."
-bgImage="{{ asset('images/bg/teams.png') }}"
+bgImage="{{ asset('images/bg/teams.webp') }}"
 >
 </x-hero-section>
 

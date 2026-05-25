@@ -3,7 +3,7 @@
 </x-breadcrumbs_page>
 <x-hero-section title="Руководство Ассоциации"
 desc="Команда, отвечающая за развитие Ассоциации, организацию соревнований и управление деятельностью сообщества." 
-bgImage="{{ asset('images/bg/management.png') }}"
+bgImage="{{ asset('images/bg/management.webp') }}"
 >
     
 </x-hero-section>

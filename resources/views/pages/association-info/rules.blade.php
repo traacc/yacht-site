@@ -3,7 +3,7 @@
 </x-breadcrumbs_page>
 <x-hero-section title="Правила вступления в Ассоциацию"
 desc="Порядок и условия вступления в Ассоциацию CarterPro для владельцев яхт и участников экипажей." 
-bgImage="{{ asset('images/bg/rules.png') }}"
+bgImage="{{ asset('images/bg/rules.webp') }}"
 >
     
 </x-hero-section>

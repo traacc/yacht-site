@@ -3,7 +3,7 @@
 </x-breadcrumbs_page>
 <x-hero-section title="Результаты соревнований"
 desc="Итоги сезона Ассоциации CarterPro. Таблицы публикуются от новых соревнований к более ранним."
-bgImage="{{ asset('images/bg/results.png') }}"
+bgImage="{{ asset('images/bg/results.webp') }}"
 >
 </x-hero-section>
 

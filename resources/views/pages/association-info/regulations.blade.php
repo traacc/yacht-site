@@ -3,7 +3,7 @@
 </x-breadcrumbs_page>
 <x-hero-section title="Технический регламент яхт"
 desc="Правила и требования к яхтам класса Carter 30, участвующим в регатах Ассоциации." 
-bgImage="{{ asset('images/bg/regulations.png') }}"
+bgImage="{{ asset('images/bg/regulations.webp') }}"
 >
     
 </x-hero-section>

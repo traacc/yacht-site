@@ -3,7 +3,7 @@
 </x-breadcrumbs_page>
 <x-hero-section title="Решения общего собрания"
 desc="Официальные решения, принятые участниками Ассоциации CarterPro в рамках общего собрания." 
-bgImage="{{ asset('images/bg/decisions.png') }}"
+bgImage="{{ asset('images/bg/decisions.webp') }}"
 >
     
 </x-hero-section>

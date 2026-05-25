@@ -3,7 +3,7 @@
 </x-breadcrumbs_page>
 <x-hero-section title="Попечительский совет Ассоциации"
 desc="Попечительский совет объединяет представителей сообщества и партнёров, оказывающих поддержку развитию Ассоциации и парусного спорта." 
-bgImage="{{ asset('images/bg/trustees.png') }}"
+bgImage="{{ asset('images/bg/trustees.webp') }}"
 >
     
 </x-hero-section>

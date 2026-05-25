@@ -3,7 +3,7 @@
 </x-breadcrumbs_page>
 <x-hero-section title="Политика Ассоциации"
 desc="Основные принципы деятельности Ассоциации, направленные на развитие класса, организацию соревнований и формирование профессионального сообщества." 
-bgImage="{{ asset('images/bg/policy.png') }}"
+bgImage="{{ asset('images/bg/policy.webp') }}"
 >
     
 </x-hero-section>

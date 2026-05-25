@@ -43,7 +43,7 @@
             
 
             <!-- Контент формы захвата -->
-            <img class="absolute right-0 top-0 z-0 h-full md:h-auto " src="{!! asset('images/bg/capture-form.png') !!}" alt="">
+            <img class="absolute right-0 top-0 z-0 h-full md:h-auto " src="{!! asset('images/bg/capture-form.webp') !!}" alt="">
             <button @click="closeModal()" class="text-2xl md:text-white text-[#2E325C] absolute right-5 top-5 font-bold z-30">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
             <div class="absolute hidden md:block inset-0 left-[489px] w-[560px] bg-linear-to-r from-[#FFFFFF] to-[#FFFFFF]/0 z-2"></div>
             <div class="absolute block md:hidden inset-0 left-[0%] w-full bg-linear-to-r from-[#FFFFFF] to-[#FFFFFF]/80 z-2"></div>

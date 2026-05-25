@@ -4,7 +4,7 @@
 </x-breadcrumbs_page>
 <x-hero-section title="Об Ассоциации"
 desc="Основной документ, регулирующий деятельность Ассоциации, права и обязанности участников, а также порядок проведения соревнований." 
-bgImage="{{ asset('images/bg/charter.png') }}"
+bgImage="{{ asset('images/bg/charter.webp') }}"
 >
     
 </x-hero-section>

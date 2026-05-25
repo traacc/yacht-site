@@ -3,7 +3,7 @@
 </x-breadcrumbs_page>
 <x-hero-section title="Соревнования сезона"
 desc="Регаты сезона CarterPro: даты, места проведения и карточки соревнований для подачи заявки на участие."
-bgImage="{{ asset('images/bg/competitions.png') }}"
+bgImage="{{ asset('images/bg/competitions.webp') }}"
 >
 </x-hero-section>
 

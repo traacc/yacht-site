@@ -3,7 +3,7 @@
 </x-breadcrumbs_page>
 <x-hero-section title="Яхты Ассоциации"
 desc="Список яхт класса Carter 30, зарегистрированных в Ассоциации и участвующих в регатах сезона."
-bgImage="{{ asset('images/bg/yachts.png') }}"
+bgImage="{{ asset('images/bg/yachts.webp') }}"
 >
 </x-hero-section>
 

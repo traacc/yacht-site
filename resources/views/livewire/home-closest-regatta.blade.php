@@ -1,6 +1,6 @@
 <section class="relative h-[480px] md:h-[788px]">
     <!--<video autoplay muted playsinline loop src="{{ '/videos/hero_video_2.mp4' }}"  class="absolute inset-0 w-full h-full object-cover"></video>-->
-    <img class="absolute inset-0 -top-15 object-[29%_50%] lg:object-[50%_50%] lg:-top-30 w-full h-full object-cover" src="{{ asset('/images/bg/bg_hero.png') }}" alt="">
+    <img class="absolute inset-0 -top-15 object-[29%_50%] lg:object-[50%_50%] lg:-top-30 w-full h-full object-cover" src="{{ asset('/images/bg/bg_hero.webp') }}" alt="">
 
     <div class="hero-overlay absolute inset-0"></div>
 
