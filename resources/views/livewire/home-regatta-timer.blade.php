@@ -34,7 +34,7 @@
                     <div class="flex items-center gap-2 mb-1">
                         <span class="bg-[#F2484226] text-[#F24842] font-bold px-2.5 py-1 uppercase text-xs">Ближайшая регата</span>
                     </div>
-                    <h2 class="font-display text-brand-navy md:text-5xl text-3xl mt-2 a-font">{{ $regatta->name }}</h2>
+                    <h2 class="font-display text-brand-navy md:text-5xl text-3xl mt-2 a-font">{!! nl2br(e($regatta->name)) !!}</h2>
                     <div class="flex flex-col gap-3 md:gap-4 text-sm md:text-lg text-brand-gray mt-2 font-medium">
                         <span class="flex items-center gap-1.5">
                             <img src="{{ asset('images/icons/marker.svg') }}" alt="">

@@ -63,7 +63,7 @@ class RegattaResource extends Resource
     {
         return $schema
             ->components([
-                TextInput::make('name')
+                TextArea::make('name')
                     ->label('Название')
                     ->placeholder('Введите название регаты')
                     ->required(),
