@@ -52,6 +52,40 @@
                 </div>
             </div>
         </section>
+        {{-- ===== РАСПИСАНИЕ ===== --}}
+        @if($scheduleDays->isNotEmpty())
+            <section class="py-10">
+                <div class="container mx-auto lg:p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="section-title a-font">Расписание</h2>
+                    </div>
+                    <div class="list grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @foreach($scheduleDays as $day)
+                            <div class="card bg-brand-light-bg p-4">
+                                <div class="card-header border-b flex gap-4 border-brand-border items-center pb-6">
+                                    <span class="rounded-full bg-brand-blue-light text-brand-blue text-center flex justify-center items-center shrink-0 aspect-square size-11">
+                                        <x-icon-2 name="calendar" />
+                                    </span>
+                                    <h3 class="a-font text-2xl">{{ $day['date'] }}</h3>
+                                </div>
+                                @foreach($day['events'] as $event)
+                                    <div class="card-item flex gap-6 py-6 border-b border-brand-border last:border-b-0">
+                                        <div class="time flex gap-2 font-medium">
+                                            <span><x-icon-2 name="time" /></span>
+                                            <span>{{ $event['time'] }}</span>
+                                        </div>
+                                        <div class="info">
+                                            <h4 class="pb-3 font-medium">{{ $event['title'] }}</h4>
+                                            <p class="text-sm">{{ $event['description'] }}</p>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </section>
+        @endif
 
         {{-- ===== ЗАЯВЛЕННЫЕ КОМАНДЫ ===== --}}
         @if(!$regatta->isFinished())
@@ -143,40 +177,7 @@
             </div>
         </section>
 
-        {{-- ===== РАСПИСАНИЕ ===== --}}
-        @if($scheduleDays->isNotEmpty())
-            <section class="py-10">
-                <div class="container mx-auto lg:p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="section-title a-font">Расписание</h2>
-                    </div>
-                    <div class="list grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        @foreach($scheduleDays as $day)
-                            <div class="card bg-brand-light-bg p-4">
-                                <div class="card-header border-b flex gap-4 border-brand-border items-center pb-6">
-                                    <span class="rounded-full bg-brand-blue-light text-brand-blue text-center flex justify-center items-center shrink-0 aspect-square size-11">
-                                        <x-icon-2 name="calendar" />
-                                    </span>
-                                    <h3 class="a-font text-2xl">{{ $day['date'] }}</h3>
-                                </div>
-                                @foreach($day['events'] as $event)
-                                    <div class="card-item flex gap-6 py-6 border-b border-brand-border last:border-b-0">
-                                        <div class="time flex gap-2 font-medium">
-                                            <span><x-icon-2 name="time" /></span>
-                                            <span>{{ $event['time'] }}</span>
-                                        </div>
-                                        <div class="info">
-                                            <h4 class="pb-3 font-medium">{{ $event['title'] }}</h4>
-                                            <p class="text-sm">{{ $event['description'] }}</p>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </section>
-        @endif
+
 
         {{-- ===== ДОКУМЕНТЫ РЕГАТЫ ===== --}}
         @if($documents->isNotEmpty())
