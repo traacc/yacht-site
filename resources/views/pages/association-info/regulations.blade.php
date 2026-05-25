@@ -85,7 +85,7 @@ bgImage="{{ asset('images/bg/regulations.webp') }}"
         </button>
     </div>
     <div class="pic shrink-0">
-        <img class="w-full" src="{{ asset('images/regulation.png') }}" alt="">
+        <img class="w-full" src="{{ asset('images/regulation.webp') }}" alt="">
     </div>
 </div>
 </section>
