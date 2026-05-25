@@ -112,7 +112,7 @@
             <div class="relative overflow-hidden md:min-h-[440px] group cursor-pointer">
                 <img src="{{ asset('images/main/main-r.webp') }}"
                      alt="Яхты Carter Pro" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
-                <div class="absolute inset-0 bg-linear-to-r from-[#F8F8F8]/0 to-[#F8F8F8]/40"></div>
+                <div class="absolute inset-0 bg-linear-to-r from-[#F8F8F8]/100 to-[#F8F8F8]/40"></div>
                 <div class="relative p-8 h-full flex flex-col justify-center text-[#2E325C] max-w-[500px]">
                     <h3 class="font-display text-3xl md:text-5xl font-medium mb-2 a-font">Яхты CarterPro</h3>
                     <p class="md:text-lg text-sm leading-[1.3] mb-5">
