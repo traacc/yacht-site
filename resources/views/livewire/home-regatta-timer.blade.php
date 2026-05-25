@@ -25,7 +25,7 @@
     <div class="container mx-auto">
         @if($regatta)
         <div class="flex flex-col md:flex-row gap-8 items-center bg-[#F8F8F8] pb-6 md:pb-0">
-            <div class="shrink-0">
+            <div class="">
                 <img src="{{ $regatta->background_image ? asset('storage/' . $regatta->background_image) : asset('images/regatas/reg_preview.png') }}"
                      alt="{{ $regatta->name }}" class=" w-full h-full object-cover">
             </div>
