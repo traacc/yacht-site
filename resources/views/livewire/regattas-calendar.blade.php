@@ -9,6 +9,19 @@
         <div class="flex md:items-center justify-between mb-6 flex-col md:flex-row">
             <h2 class="section-title a-font mb-4 md:mb-0">Календарь регат сезона</h2>
             <div class="flex items-center gap-4 flex-col md:flex-row">
+                {{-- Кнопка скачивания PDF --}}
+                <a
+                    href="{{ route('regattas.calendar.pdf', ['year' => $year]) }}"
+                    target="_blank"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-[#2E325C] hover:bg-[#1e2240] text-white text-sm font-semibold transition-colors duration-200 shrink-0"
+                    title="Скачать календарь регат в PDF"
+                >
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M7 7h10"/>
+                    </svg>
+                    Скачать календарь
+                </a>
                 {{-- Легенда --}}
                 <div class="flex items-center gap-4 text-[#2E325C]">
                     <span class="flex items-center gap-1.5 text-xs md:text-base"><span class="size-2 md:size-4 rounded-full bg-[#157949] inline-block"></span>Состоявшиеся</span>

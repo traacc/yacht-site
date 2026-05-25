@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Feedback\SubmitFeedbackAction;
+use App\Actions\GenerateCalendarPdfAction;
 use App\Models\News;
 use App\Models\Regatta;
 use App\Models\Team;
@@ -24,6 +25,12 @@ Route::view('/association/policy', 'pages/association-info/policy')->name('polic
 Route::view('/association/rules', 'pages/association-info/rules')->name('rules');
 Route::view('/association/regulations', 'pages/association-info/regulations')->name('regulations');
 Route::view('/association/decisions', 'pages/association-info/decisions')->name('decisions');
+
+Route::get('/regattas/calendar/pdf', function (Request $request) {
+    $year = $request->integer('year', (int) now()->format('Y'));
+    return app(GenerateCalendarPdfAction::class)->execute($year);
+})->name('regattas.calendar.pdf');
+
 Route::get('/competitions', function () {
     $regattas = Regatta::with([
         'results.items' => fn ($q) => $q->orderBy('final_position'),
