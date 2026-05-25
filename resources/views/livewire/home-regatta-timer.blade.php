@@ -26,7 +26,7 @@
         @if($regatta)
         <div class="flex flex-col md:flex-row gap-8 items-center bg-[#F8F8F8] pb-6 md:pb-0">
             <div class="">
-                <img src="{{ $regatta->background_image ? asset('storage/' . $regatta->background_image) : asset('images/regatas/reg_preview.png') }}"
+                <img src="{{ asset('storage/' . $regatta->background_image) }}"
                      alt="{{ $regatta->name }}" class=" w-full h-full object-cover">
             </div>
             <div class="flex-1 h-auto flex flex-col justify-between  gap-4 md:gap-5 px-3 md:px-0">
@@ -45,7 +45,7 @@
                             {{ $regatta->water_area }}
                         </span>
                     </div>
-                    <p class="text-sm md:text-lg text-brand-gray mt-2">{{ Str::limit($regatta->description, 100) }}</p>
+                    <p class="text-sm md:text-lg text-brand-gray mt-2">{{ Str::limit($regatta->short_description, 100) }}</p>
                     <a href="{{ route('competition-details', ['regatta' => $regatta->id]) }}" class="flex items-center gap-2 mt-3 text-[#2E325C] text-sm md:text-xl font-semibold hover:underline">Подробнее о регате {!! file_get_contents(public_path('images/icons/l-arrow-right.svg')) !!}</a>
                 </div>
 
