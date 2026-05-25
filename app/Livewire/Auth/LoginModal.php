@@ -57,6 +57,8 @@ class LoginModal extends Component
             'email'                 => ['required', 'email', 'unique:users,email'],
             'password'              => ['required', Password::defaults(), 'same:password_confirmation'],
             'password_confirmation' => ['required'],
+            'phone'                 => ['required'],
+            'birth_date'            => ['required'],
             'sports_category'       => ['nullable', Rule::enum(SportCategory::class)],
         ], attributes: [
             'first_name'            => 'имя',
