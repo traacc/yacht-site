@@ -34,10 +34,10 @@
                                     >
                                 </div>
                                 <div class="info p-2 bg-[#F8F8F8]">
-                                    <h4 class="text-lg font-semibold mb-3">{{ $other->title }}</h4>
-                                    <p class="mb-3 font-medium">{{ Str::limit(strip_tags($other->content), 30) }}</p>
-                                    <div class="date mb-3 text-brand-gray-light">{{ $other->published_at->isoFormat('D MMMM Y') }}</div>
-                                    <a href="{{ route('news-details', $other) }}" class="text-lg font-semibold hover:underline">Читать далее →</a>
+                                    <h4 class="text-sm md:text-lg font-semibold mb-3">{{ $other->title }}</h4>
+                                    <p class="mb-3 font-medium text-xs md:text-base">{{ Str::limit(strip_tags($other->content), 30) }}</p>
+                                    <div class="date mb-3 text-brand-gray-light text-xs md:text-base">{{ $other->published_at->isoFormat('D MMMM Y') }}</div>
+                                    <a href="{{ route('news-details', $other) }}" class="text-xs md:text-lg font-semibold hover:underline">Читать далее →</a>
                                 </div>
                             </div>
                         @endforeach
