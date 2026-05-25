@@ -12,7 +12,7 @@
                     © 2026 CarterPro. Все права защищены.
                 </div>
                 <ul class="space-y-1 mb-4">
-                    <li><a href="#"  class="hover:text-white transition-colors">Политика конфиденциальности</a></li>
+                    <li><a href="/files/Политика_обработки_персональных_данных_1.docx"  class="hover:text-white transition-colors">Политика конфиденциальности</a></li>
                     <li><a href="#"  class="hover:text-white transition-colors">Пользовательское соглашение</a></li>
                 </ul>
             </div>
