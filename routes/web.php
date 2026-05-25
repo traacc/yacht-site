@@ -23,8 +23,59 @@ Route::get('/', function () {
     return view('pages.home', compact('latestNews', 'galleryPhotos'));
 })->name('home');
 Route::view('/association/charter', 'pages/association-info/charter')->name('charter');
-Route::view('/association/management', 'pages/association-info/management')->name('management');
-Route::view('/association/trustees', 'pages/association-info/trustees')->name('trustees');
+Route::get('/association/management', function () {
+    $members = app(SettingsService::class)->get('management.members', []);
+
+    // Нормализуем фото: генерируем публичные URL из путей storage
+    $members = collect((array) $members)
+        ->filter(fn (array $m) => ! empty($m['name']) && ! empty($m['position']))
+        ->map(function (array $m): array {
+            $photoPath = $m['photo'] ?? null;
+            $photoUrl  = null;
+
+            if (is_string($photoPath) && $photoPath !== '') {
+                $photoUrl = Storage::disk('public')->url($photoPath);
+            }
+
+            return [
+                'name'            => $m['name'] ?? '',
+                'position'        => $m['position'] ?? '',
+                'description'     => $m['description'] ?? '',
+                'image'           => $photoUrl,
+                'responsibilities' => $m['responsibilities'] ?? [],
+            ];
+        })
+        ->values()
+        ->all();
+
+    return view('pages.association-info.management', compact('members'));
+})->name('management');
+Route::get('/association/trustees', function () {
+    $members = app(SettingsService::class)->get('trustees.members', []);
+
+    $members = collect((array) $members)
+        ->filter(fn (array $m) => ! empty($m['name']) && ! empty($m['position']))
+        ->map(function (array $m): array {
+            $photoPath = $m['photo'] ?? null;
+            $photoUrl  = null;
+
+            if (is_string($photoPath) && $photoPath !== '') {
+                $photoUrl = Storage::disk('public')->url($photoPath);
+            }
+
+            return [
+                'name'            => $m['name'] ?? '',
+                'position'        => $m['position'] ?? '',
+                'description'     => $m['description'] ?? '',
+                'image'           => $photoUrl,
+                'responsibilities' => $m['responsibilities'] ?? [],
+            ];
+        })
+        ->values()
+        ->all();
+
+    return view('pages.association-info.trustees', compact('members'));
+})->name('trustees');
 Route::view('/association/policy', 'pages/association-info/policy')->name('policy');
 Route::view('/association/rules', 'pages/association-info/rules')->name('rules');
 Route::view('/association/regulations', 'pages/association-info/regulations')->name('regulations');
