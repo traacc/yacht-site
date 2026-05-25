@@ -71,22 +71,25 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                 @endforeach
             </div>
             <div class="reggata-list__items" x-show="view === 'list'">
-                <table class="w-full text-left border-collapse bg-[#F8F8F8] responsive-table">
-                    <thead>
+                <table class="w-full text-left border-collapse bg-[#F8F8F8]">
+                    <thead class="text-sm lg:text-2xl">
                         <tr>
-                            <th class="py-2 a-font text-center text-2xl">Команда</th>
-                            <th class="py-2 a-font text-center text-2xl">Капитан</th>
+                            <th class="py-2 a-font text-center">Команда</th>
+                            <th class="py-2 a-font text-center">Капитан</th>
+                            <!--
                             <th class="py-2 a-font text-center text-2xl">Статус</th>
                             <th class="py-2 a-font text-center text-2xl">Участие в регатах</th>
-                            <th class="py-2 a-font text-center text-2xl">Рейтинг</th>
+                            -->
+                            <th class="py-2 a-font text-center">Рейтинг</th>
                             <th class="py-2 a-font text-center"></th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($teams as $team)
-                        <tr class="border-t">
+                        <tr class="border-t text-sm lg:text-2xl">
                             <td data-label="Команда" class="py-2 text-center">{{ $team->name }}</td>
                             <td data-label="Капитан" class="py-2 text-center">{{ $team->organizer?->full_name ?? '—' }}</td>
+                            <!--
                             <td data-label="Статус" class="py-2 text-center">
                                 @if($team->is_archived)
                                 <div class="bg-[#F2484233] px-3 py-1 text-[#F24842] inline-block font-semibold max-w-[150px] w-full">Неактивная</div>
@@ -95,9 +98,10 @@ bgImage="{{ asset('images/bg/teams.png') }}"
                                 @endif
                             </td>
                             <td data-label="Участие в регатах" class="py-2 text-center">{{ $team->regattaEntries->count() }} регат{{ $team->regattaEntries->count() === 1 ? 'а' : ($team->regattaEntries->count() >= 2 && $team->regattaEntries->count() <= 4 ? 'ы' : '') }}</td>
+                            -->
                             <td data-label="Рейтинг" class="py-2 text-center">{{ $team->ratings->where('rating_type', 'team')->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first()?->rank_position ?? '—' }}</td>
                             <td data-label="" class="py-2 text-center">
-                                <a href="#" @click.prevent="setTeam({{ $loop->index }})" class="text-[#2D92CE] font-semibold hover:underline">Подробнее  →</a>
+                                <a href="#" @click.prevent="setTeam({{ $loop->index }})" class="text-[#2D92CE] font-semibold hover:underline [&>span]:hidden md:[&>span]:inline">Подробнее  <span>→</span></a>
                             </td>
                         </tr>
                         @endforeach

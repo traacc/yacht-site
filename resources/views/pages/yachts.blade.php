@@ -38,24 +38,26 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                 <input x-model="search" class="w-full pl-8 bg-[#F8F8F8] border-none" type="text" placeholder="Поиск">
             </div>
             <div class="reggata-list__items">
-                <table class="w-full text-left border-collapse responsive-table bg-[#F8F8F8]">
-                    <thead>
+                <table class="w-full text-left border-collapse bg-[#F8F8F8]">
+                    <thead class="text-sm lg:text-2xl">
                         <tr>
-                            <th class="py-2 a-font text-center text-2xl">Название</th>
-                            <th class="py-2 a-font text-center text-2xl">Парус №</th>
-                            <th class="py-2 a-font text-center text-2xl">Владелец</th>
+                            <th class="py-2 a-font text-center">Название</th>
+                            <th class="py-2 a-font text-center">Парус №</th>
+                            <th class="py-2 a-font text-center">Владелец</th>
+                            <!--
                             <th class="py-2 a-font text-center text-2xl">Балл ORC</th>
                             <th class="py-2 a-font text-center text-2xl">Сертификат ORC</th>
+                            -->
                             <th class="py-2 a-font text-center"></th>
                         </tr>
                     </thead>
                     <tbody>
                         <template x-for="yacht in filteredYachts" :key="yacht.id">
-                        <tr class="border-t">
+                        <tr class="border-t text-[10px]">
                             <td data-label="Название" class="py-2 text-center" x-text="yacht.name"></td>
                             <td data-label="Парус №" class="py-2 text-center" x-text="yacht.vfps_number"></td>
                             <td data-label="Владелец" class="py-2 text-center" x-text="yacht.owner_name || '—'"></td>
-                            <td data-label="Балл ORC" class="py-2 text-center">—</td>
+                            <!--<td data-label="Балл ORC" class="py-2 text-center">—</td>
                             <td data-label="Сертификат ORC" class="py-2 text-center">
                                 <template x-if="yacht.has_orc_cert">
                                     <span class="">Есть</span>
@@ -64,8 +66,9 @@ bgImage="{{ asset('images/bg/yachts.png') }}"
                                     <span class="">Нет</span>
                                 </template>
                             </td>
+                            -->
                             <td class="py-2 text-center">
-                                <a href="#" @click.prevent="openYachtModal(yacht)" class="text-[#2D92CE] font-semibold hover:underline">Подробнее  →</a>
+                                <a href="#" @click.prevent="openYachtModal(yacht)" class="text-[#2D92CE] font-semibold hover:underline [&>span]:hidden md:[&>span]:inline">Подробнее  <span>→</span></a>
                             </td>
                         </tr>
                         </template>
