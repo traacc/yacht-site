@@ -62,47 +62,24 @@ bgImage="{{ asset('images/bg/charter.webp') }}"
     <div class="container mx-auto pdf-list">
         <h2 class="section-title a-font mb-8">Документы Ассоциации</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <template x-data="
-            {
-                documents: [
-                    {'title': 'Устав Ассоциации',
-                     'desc': 'Актуальная редакция от 12 мая 2025',
-                     'path': '#'
-                    },
-                    {'title': 'Правила участия',
-                     'desc': 'Актуальная редакция от 12 мая 2025',
-                     'path': '#'
-                    },
-                    {'title': 'Решения общего собрания',
-                     'desc': 'Актуальная редакция от 12 мая 2025',
-                     'path': '#'
-                    },
-                    {'title': 'Устав Ассоциации',
-                     'desc': 'Актуальная редакция от 12 мая 2025',
-                     'path': '#'
-                    },
-                    {'title': 'Правила участия',
-                     'desc': 'Актуальная редакция от 12 мая 2025',
-                     'path': '#'
-                    },
-                    {'title': 'Решения общего собрания',
-                     'desc': 'Актуальная редакция от 12 мая 2025',
-                     'path': '#'
-                    },
-                ]
-            }
-            " x-for="doc in documents">
+            @forelse ($documents as $document)
                 <div class="bg-[#F8F8F8] flex gap-4 hover:shadow-md transition-shadow cursor-pointer p-4">
                     <div class="max-w-10 md:max-w-16">
                         <img class="w-full" src="{{ asset('images/icons/pdf.png') }}" alt="">
                     </div>
                     <div class="">
-                        <div class="text-[#2E325C] text-sm md:text-lg font-semibold mb-4" x-text='doc.title'></div>
-                        <div class="text-brand-gray-light font-medium mb-4 text-xs md:text-base" x-text='doc.desc'></div>
-                        <a x-bind:href="doc.path" class="text-[#2E325C] text-sm md:text-lg font-semibold flex gap-4 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> <span>Скачать PDF</span></a>
+                        <div class="text-[#2E325C] text-sm md:text-lg font-semibold mb-4">{{ $document['title'] }}</div>
+                        <div class="text-brand-gray-light font-medium mb-4 text-xs md:text-base">{{ $document['desc'] }}</div>
+                        @if ($document['file_url'])
+                        <a href="{{ $document['file_url'] }}" class="text-[#2E325C] text-sm md:text-lg font-semibold flex gap-4 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> <span>Скачать PDF</span></a>
+                        @endif
                     </div>
                 </div>
-            </template>
+            @empty
+                <div class="col-span-3 text-center text-brand-gray-light py-8">
+                    Документы пока не загружены.
+                </div>
+            @endforelse
         </div>
     </div>
 </section>

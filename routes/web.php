@@ -22,7 +22,34 @@ Route::get('/', function () {
 
     return view('pages.home', compact('latestNews', 'galleryPhotos'));
 })->name('home');
-Route::view('/association/charter', 'pages/association-info/charter')->name('charter');
+Route::get('/association/charter', function () {
+    $documents = app(SettingsService::class)->get('charter.documents', []);
+
+    // Нормализуем документы: генерируем публичные URL из путей storage
+    $documents = collect((array) $documents)
+        ->filter(fn (array $d) => ! empty($d['title']))
+        ->map(function (array $d): array {
+            $filePath = $d['file'] ?? null;
+            $fileUrl  = null;
+            $originalName = null;
+
+            if (is_string($filePath) && $filePath !== '') {
+                $fileUrl  = Storage::disk('public')->url($filePath);
+                $originalName = basename($filePath);
+            }
+
+            return [
+                'title'         => $d['title'] ?? '',
+                'desc'          => $d['desc'] ?? '',
+                'file_url'      => $fileUrl,
+                'original_name' => $originalName,
+            ];
+        })
+        ->values()
+        ->all();
+
+    return view('pages.association-info.charter', compact('documents'));
+})->name('charter');
 Route::get('/association/management', function () {
     $members = app(SettingsService::class)->get('management.members', []);
 
