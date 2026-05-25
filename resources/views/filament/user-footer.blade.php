@@ -34,7 +34,7 @@
                 <h4 class="font-semibold mb-6">Ассоциация</h4>
                 <ul class="space-y-4">
                     <li><a href="{{ route('charter') }}"  class="hover:text-white transition-colors">Об Ассоциации</a></li>
-                    <li><a href="{{ route('management') }}"  class="hover:text-white transition-colors">Руководство</a></li>
+                    <li><a href="{{ route('management') }}"  class="hover:text-white transition-colors">Руководство Ассоциации</a></li>
                     <li><a href="{{ route('trustees') }}"  class="hover:text-white transition-colors">Попечительский совет</a></li>
                     <li><a href="{{ route('policy') }}"  class="hover:text-white transition-colors">Политика Ассоциации</a></li>
                     <li><a href="{{ route('rules') }}"  class="hover:text-white transition-colors">Правила вступления</a></li>
