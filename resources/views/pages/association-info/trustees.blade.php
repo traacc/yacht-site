@@ -66,8 +66,8 @@ bgImage="{{ asset('images/bg/trustees.webp') }}"
                 </div>
                 <h5 class="font-semibold text-[#2E325C] mt-4 md:mt-0 md:mb-6">О попечителе</h5>
                 <p class="text-brand-gray mb-6" x-html="selectedPerson?.description"></p>
-                <h5 class="font-semibold text-[#2E325C] mb-6">Зоны ответственности в Ассоциации</h5>
-                <ul class="text-brand-gray list-disc pl-6 space-y-3.5">
+                <h5 class="font-semibold text-[#2E325C] mb-6 hidden">Зоны ответственности в Ассоциации</h5>
+                <ul class="text-brand-gray list-disc pl-6 space-y-3.5 hidden">
                     <template x-for="responsibility in selectedPerson?.responsibilities" :key="responsibility">
                         <li x-text="responsibility"></li>
                     </template>
