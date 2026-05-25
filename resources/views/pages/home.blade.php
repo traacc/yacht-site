@@ -16,8 +16,8 @@
         </div>
     </div>
     <div class="container mx-auto">
-        <h1 class="md:text-9xl text-5xl text-center tracking-tighter mt-0.5 mb-4 md:mb-0 a-font">
-            РЕГАТЫ CarterPro
+        <h1 class="md:text-9xl text-5xl text-center tracking-[-0.1em] uppercase mt-0.5 mb-4 md:mb-0 a-font">
+            РЕГАТЫ Carter Pro
         </h1>
     </div>
 </div>
