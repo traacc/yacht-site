@@ -18,10 +18,8 @@
                     <div x-show="open" x-cloak x-transition
                         class="absolute top-full right-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
                         <a href="{{ route('charter') }}"  class="block px-4 py-2 text-gray-700">Об Ассоциации</a>
-                        <!--
                         <a href="{{ route('management') }}"  class="block px-4 py-2 text-gray-700">Руководство</a>
                         <a href="{{ route('trustees') }}"  class="block px-4 py-2 text-gray-700">Попечительский совет</a>
-                        -->
                         <a href="{{ route('policy') }}"  class="block px-4 py-2 text-gray-700">Политика Ассоциации</a>
                         <a href="{{ route('rules') }}"  class="block px-4 py-2 text-gray-700">Правила вступления</a>
                         <a href="{{ route('regulations') }}"  class="block px-4 py-2 text-gray-700">Технический регламент яхт</a>
@@ -146,10 +144,8 @@
                     <div x-show="open" x-cloak x-transition
                         class="">
                         <a href="{{ route('charter') }}"  class="block px-4 py-2 text-sm">Об Ассоциации</a>
-                        <!--
                         <a href="{{ route('management') }}"  class="block px-4 py-2 text-sm">Руководство</a>
                         <a href="{{ route('trustees') }}"  class="block px-4 py-2 text-sm">Попечительский совет</a>
-                        -->
                         <a href="{{ route('policy') }}"  class="block px-4 py-2 text-sm">Политика Ассоциации</a>
                         <a href="{{ route('rules') }}"  class="block px-4 py-2 text-sm">Правила вступления</a>
                         <a href="{{ route('regulations') }}"  class="block px-4 py-2 text-sm">Технический регламент яхт</a>
