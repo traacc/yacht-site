@@ -238,4 +238,74 @@
       white-space: nowrap;
     }
   }
+
+  /* Custom checkbox */
+    /* Контейнер для всего компонента */
+  .custom-checkbox {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  font-family: sans-serif;
+  font-size: 16px;
+  color: #333;
+  }
+
+  /* Скрываем дефолтный чекбокс, но оставляем его доступным для скринридеров */
+  .custom-checkbox input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+  }
+
+  /* Создаем кастомный квадрат */
+  .checkbox-box {
+  position: relative;
+  height: 22px;
+  width: 22px;
+  background-color: #fff;
+  border: 2px solid #2D92CE;
+  margin-right: 10px;
+  transition: all 0.2s ease-in-out;
+  }
+
+  /* Эффект при наведении на неотмеченный чекбокс */
+  .custom-checkbox:hover input ~ .checkbox-box {
+  border-color: #2D92CE;
+  }
+
+  /* Стили для чекбокса, когда он СТАНОВИТСЯ отмеченным */
+  .custom-checkbox input:checked ~ .checkbox-box {
+  background-color: #2D92CE;
+  border-color: #2D92CE;
+  }
+
+  /* Создаем галочку внутри (изначально она скрыта) */
+  .checkbox-box::after {
+  content: "";
+  position: absolute;
+  display: none;
+  
+  /* Рисуем галочку с помощью границ прямоугольника */
+  left: 7px;
+  top: 3px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  }
+
+  /* Показываем галочку при активации */
+  .custom-checkbox input:checked ~ .checkbox-box::after {
+  display: block;
+  }
+
+  /* Добавляем фокус для доступности с клавиатуры (Tab) */
+  .custom-checkbox input:focus-visible ~ .checkbox-box {
+  outline: 2px solid #0056b3;
+  outline-offset: 2px;
+  }
 }
