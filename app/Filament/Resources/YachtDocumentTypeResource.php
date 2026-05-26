@@ -10,12 +10,14 @@ use BackedEnum;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 use UnitEnum;
 
 class YachtDocumentTypeResource extends Resource
@@ -49,7 +51,9 @@ class YachtDocumentTypeResource extends Resource
                     ->label('Название')
                     ->placeholder('ORC-сертификат')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn (string $state, Set $set) => $set('key', Str::slug($state, '_'))),
 
                 Textarea::make('description')
                     ->label('Описание')
