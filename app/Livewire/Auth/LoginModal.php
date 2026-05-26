@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
+use Illuminate\Support\Facades\Http;
 
 use App\Rules\YandexCaptcha;
 
