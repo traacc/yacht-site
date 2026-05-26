@@ -254,6 +254,7 @@ class RegattaResource extends Resource
                     ]),
 
                 // ── Дополнительные документы (произвольные) ──
+                /*
                 Repeater::make('extra_documents')
                     ->label('Дополнительные документы')
                     ->columnSpanFull()
@@ -284,6 +285,7 @@ class RegattaResource extends Resource
                             ->downloadable()
                             ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
                     ]),
+                */
             ]);
     }
 
