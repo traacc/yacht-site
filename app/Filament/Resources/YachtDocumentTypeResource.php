@@ -26,11 +26,11 @@ class YachtDocumentTypeResource extends Resource
 
     protected static ?string $navigationLabel = 'Типы документов';
 
-    protected static ?string $title = 'Типы документов яхт';
+    protected static ?string $title = 'Типы документов';
 
     protected static ?int $navigationSort = 51;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Яхты';
+    protected static string|UnitEnum|null $navigationGroup = 'Сайт';
 
     public static function form(Schema $schema): Schema
     {
