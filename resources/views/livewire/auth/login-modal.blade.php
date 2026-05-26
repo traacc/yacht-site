@@ -192,8 +192,10 @@
             </form>
         </div>
     </div>
+    @script
     <script>
-        function loginCaptchaCallback(token) { @this.set('loginCaptchaToken', token); }
-        function registerCaptchaCallback(token) { @this.set('registerCaptchaToken', token); }
+        window.loginCaptchaCallback = (token) => $wire.set('loginCaptchaToken', token);
+        window.registerCaptchaCallback = (token) => $wire.set('registerCaptchaToken', token);
     </script>
+    @endscript
 </div>

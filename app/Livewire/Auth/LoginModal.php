@@ -32,14 +32,16 @@ class LoginModal extends Component
 
     public function login()
     {
-        $credentials = $this->validate([
+        $this->validate([
             'email'    => ['required', 'email'],
             'password' => ['required'],
             'loginCaptchaToken' => ['required', new YandexCaptcha()],
-        ], attributes: [
+        ], messages: [
             'loginCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
+        ], attributes: [
             'email'    => 'email',
             'password' => 'пароль',
+            'loginCaptchaToken' => 'капча',
         ]);
 
         
