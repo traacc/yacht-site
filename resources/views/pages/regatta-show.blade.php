@@ -6,7 +6,7 @@
         <section class="py-10 bg-white">
             <div class="container mx-auto bg-brand-light-bg flex flex-col md:flex-row gap-10 justify-between items-center">
                 <div class="info">
-                    @if($regatta->startsInLessThanMonth() && $regatta->regatta_status === \App\Enums\RegattaStatus::Upcoming)
+                    @if($regatta->regatta_status === \App\Enums\RegattaStatus::Closest)
                         <div class="bg-brand-pink-bg px-4 py-2 max-w-56 text-center">
                             <span class="text-brand-red font-bold uppercase">БЛИЖАЙШАЯ РЕГАТА</span>
                         </div>

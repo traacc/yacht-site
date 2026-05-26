@@ -32,7 +32,7 @@
                         alt="{{ $regatta->name }}"
                         class="w-full h-64 object-cover"
                     />
-                    @if ($regatta->startsInLessThanMonth() && $regatta->regatta_status === \App\Enums\RegattaStatus::Upcoming)
+                    @if ($regatta->regatta_status === \App\Enums\RegattaStatus::Closest)
                     <div class="absolute top-0 right-0 bg-[#FDE4E3] px-4 py-2 text-[10px] text-sm">
                         <span class="text-[#F24842] font-bold text-sm uppercase">БЛИЖАЙШАЯ РЕГАТА</span>
                     </div>
@@ -110,7 +110,7 @@
                         <td data-label="Локация" class="py-2 text-center">{{ $regatta->location }}</td>
                         <td data-label="Акватория" class="py-2 text-center">{{ $regatta->water_area }}</td>
                         <td data-label="Статус" class="py-2 text-center">
-                            @if ($regatta->startsInLessThanMonth() && $regatta->regatta_status === \App\Enums\RegattaStatus::Upcoming)
+                            @if ($regatta->regatta_status === \App\Enums\RegattaStatus::Closest)
                             <div class="bg-[#FDE4E3] px-3 py-1 w-full max-w-[200px] text-[#F24842] inline-block font-semibold">Ближайшая регата</div>
                             @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Upcoming)
                             <div class="bg-[#ECECEC] px-3 py-1 w-full max-w-[200px] text-brand-gray-light inline-block font-semibold">Планируемая</div>
