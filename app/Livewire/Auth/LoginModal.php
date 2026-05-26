@@ -33,7 +33,7 @@ class LoginModal extends Component
             'password' => ['required'],
         ], attributes: [
             'email'    => 'email',
-            'password' => 'password',
+            'password' => 'пароль',
         ]);
 
         // Попытка авторизации
@@ -64,6 +64,8 @@ class LoginModal extends Component
             'first_name'            => 'имя',
             'last_name'             => 'фамилия',
             'email'                 => 'email',
+            'phone'                 => 'телефон',
+            'birthday'              => 'дата рождения',
             'password'              => 'пароль',
             'password_confirmation' => 'подтверждение пароля',
             'sports_category'       => 'спортивный разряд',
