@@ -452,7 +452,7 @@ Route::post('/feedback', function (Request $request) {
         'name' => ['required', 'string', 'max:255'],
         'phone' => ['required', 'string', 'max:20'],
         'message' => ['nullable', 'string', 'max:2000'],
-        'captchaToken' => ['required', new YandexCaptcha()],
+        //'captchaToken' => ['required', new YandexCaptcha()],
     ]);
 
     app(SubmitFeedbackAction::class)->handle(
