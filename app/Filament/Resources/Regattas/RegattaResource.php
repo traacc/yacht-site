@@ -259,6 +259,7 @@ class RegattaResource extends Resource
                     ->columnSpanFull()
                     ->addActionLabel('Добавить документ')
                     ->collapsible()
+                    ->defaultItems(0)
                     ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
                     ->schema([
                         Select::make('doc_type')
