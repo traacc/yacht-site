@@ -162,6 +162,11 @@ class RegattaResource extends Resource
                     ->label('Призы')
                     ->placeholder('Описание призового фонда')
                     ->columnSpanFull(),
+                Select::make('regatta_status')
+                    ->label('Статус')
+                    ->options(\App\Enums\RegattaStatus::class)
+                    ->default(\App\Enums\RegattaStatus::Upcoming)
+                    ->required(),
                 Textarea::make('regulations')
                     ->label('Регламент')
                     ->placeholder('Описание регламента')
@@ -296,31 +301,9 @@ class RegattaResource extends Resource
                     ->getStateUsing(fn (Regatta $regatta): string => $regatta->dateRange()),
                 TextColumn::make('water_area')
                     ->label('Акватория'),
-                TextColumn::make('status')
+                TextColumn::make('regatta_status')
                     ->label('Статус')
-                    ->badge()
-                    ->getStateUsing(function (Regatta $regatta): string {
-                        if ($regatta->startsInLessThanMonth()) {
-                            return 'closest';
-                        } elseif ($regatta->isUpcoming()) {
-                            return 'planned';
-                        } elseif ($regatta->isFinished()) {
-                            return 'completed';
-                        }
-                        return 'planned';
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'closest'   => 'Ближайшая',
-                        'planned'   => 'Планируемая',
-                        'completed' => 'Завершена',
-                        default     => $state,
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        'planned'   => 'warning',
-                        'completed' => 'success',
-                        'closest'   => 'danger',
-                        default     => 'gray',
-                    }),
+                    ->badge(),
             ])
             ->stackedOnMobile()
             ->emptyStateHeading('Записей пока нет')
@@ -341,26 +324,9 @@ class RegattaResource extends Resource
                                 ->whereDate('date_end', '>=', $date),
                         );
                     }),
-                SelectFilter::make('status')
+                SelectFilter::make('regatta_status')
                     ->label('Статус')
-                    ->options([
-                        'closest'   => 'Ближайшая',
-                        'planned'   => 'Планируемая',
-                        'completed' => 'Завершена',
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query->when(
-                            $data['value'],
-                            function (Builder $query, $value) {
-                                match ($value) {
-                                    'closest'   => $query->where('date_start', '<=', now()->addMonth())->where('date_start', '>', now()),
-                                    'planned'   => $query->where('date_start', '>', now()->addMonth()),
-                                    'completed' => $query->where('date_end', '<', now()),
-                                    default     => $query,
-                                };
-                            }
-                        );
-                    }),
+                    ->options(\App\Enums\RegattaStatus::class),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
             ->deferFilters(false)

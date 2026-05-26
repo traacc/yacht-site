@@ -18,7 +18,7 @@ enum RegattaStatus: string implements HasLabel, HasColor
     public function getLabel(): string
     {
         return match ($this) {
-            self::Upcoming  => 'Предстоящая',
+            self::Upcoming  => 'Ближайшая',
             self::Active    => 'Идёт',
             self::Finished  => 'Завершена',
             self::Cancelled => 'Отменена',
