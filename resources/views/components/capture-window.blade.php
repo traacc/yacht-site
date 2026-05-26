@@ -1,14 +1,17 @@
-@guest
 <div x-data="{
         isOpen: false,
+        getCookie(name) {
+            const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            return match ? decodeURIComponent(match[2]) : null;
+        },
         init() {
-            if (!localStorage.getItem('capture_window_shown')) {
-                setTimeout(() => { this.isOpen = true; }, 600000);
+            if (!this.getCookie('capture_window_shown')) {
+                setTimeout(() => { this.isOpen = true; }, 120000);
             }
         },
         closeModal() {
             this.isOpen = false;
-            localStorage.setItem('capture_window_shown', '1');
+            document.cookie = 'capture_window_shown=1; path=/';
         }
      }"
      x-show="isOpen"
@@ -75,4 +78,3 @@
         </div>
     </div>
 </div>
-@endguest
