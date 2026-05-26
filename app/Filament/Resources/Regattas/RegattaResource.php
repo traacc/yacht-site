@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Resources\Regattas;
 
 use App\Filament\Resources\Regattas\Pages\ManageRegattas;
@@ -16,32 +18,26 @@ use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\TrashedFilter;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-
-use Filament\Tables\Filters\Filter;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Enums\FiltersLayout;
 
 use Kpebedko22\FilamentYandexMap\Forms\Components\YandexMap;
 use Kpebedko22\FilamentYandexMap\Enums\YandexMapMode;
 use Kpebedko22\FilamentYandexMap\DTOs\Buttons\{ButtonData, ButtonOptions};
 use Kpebedko22\FilamentYandexMap\Enums\Buttons\{ButtonFloat, ButtonSize};
-
-use Filament\Forms\Components\Repeater;
 
 class RegattaResource extends Resource
 {
@@ -51,19 +47,31 @@ class RegattaResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return 'Регата'; // Название в единственном числе
+        return 'Регата';
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'Регаты'; // Название во множественном числе
+        return 'Регаты';
     }
 
     public static function form(Schema $schema): Schema
     {
+        $maxFiles      = (int) config('documents.max_files_per_type', 10);
+        $acceptedTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+        ];
+
         return $schema
             ->components([
-                TextArea::make('name')
+                Textarea::make('name')
                     ->label('Название')
                     ->placeholder('Введите название регаты')
                     ->required(),
@@ -76,7 +84,8 @@ class RegattaResource extends Resource
                     ->placeholder('Введите коэффициент соревнований')
                     ->required()
                     ->numeric()
-                    ->default(1.0)->columnSpanFull(),
+                    ->default(1.0)
+                    ->columnSpanFull(),
                 DatePicker::make('date_start')
                     ->label('Дата начала')
                     ->displayFormat('d.m.Y')
@@ -110,7 +119,6 @@ class RegattaResource extends Resource
                     ->center([55.7558, 37.6173])
                     ->zoom(10)
                     ->height('450px')
-                    // При загрузке: "55.75,37.61" → ['lat' => 55.75, 'lng' => 37.61]
                     ->formatStateUsing(function ($state) {
                         if (is_string($state) && str_contains($state, ',')) {
                             [$lat, $lng] = explode(',', $state, 2);
@@ -125,7 +133,6 @@ class RegattaResource extends Resource
                         new ButtonData('Поставить'),
                         new ButtonOptions(float: ButtonFloat::Right),
                     )
-                    // Перед сохранением: ['lat' => ..., 'lng' => ...] → "55.75,37.61"
                     ->dehydrateStateUsing(function ($state) {
                         if (is_array($state) && isset($state['lat'], $state['lng'])) {
                             return "{$state['lat']},{$state['lng']}";
@@ -151,12 +158,6 @@ class RegattaResource extends Resource
                     ->directory('regattas/covers')
                     ->visibility('public'),
 
-                /*
-                Textarea::make('map_html')
-                    ->label('Карта (HTML)')
-                    ->placeholder('HTML-код карты')
-                    ->columnSpanFull(),
-                */
                 Textarea::make('prizes')
                     ->label('Призы')
                     ->placeholder('Описание призового фонда')
@@ -166,29 +167,118 @@ class RegattaResource extends Resource
                     ->placeholder('Описание регламента')
                     ->columnSpanFull(),
 
-                Repeater::make('regatta_events') // Имя отношения из модели Regatta
-                ->relationship('races') // Указываем Filament автоматически управлять связью
-                ->label('Расписание регаты')
-                ->schema([
-                    TextInput::make('name')
-                        ->label('Событие')
-                        ->required(),
-                    DateTimePicker::make('event_datetime')
-                        ->label('Время')
-                        ->displayFormat('d.m.Y H:i')
-                        ->format('Y-m-d H:i:s')
-                        ->required(),
-                    TextInput::make('description')
-                        ->label('Описание'),
+                Repeater::make('regatta_events')
+                    ->relationship('races')
+                    ->label('Расписание регаты')
+                    ->schema([
+                        TextInput::make('name')
+                            ->label('Событие')
+                            ->required(),
+                        DateTimePicker::make('event_datetime')
+                            ->label('Время')
+                            ->displayFormat('d.m.Y H:i')
+                            ->format('Y-m-d H:i:s')
+                            ->required(),
+                        TextInput::make('description')
+                            ->label('Описание'),
+                    ])
+                    ->itemLabel(fn (array $state, int $index): ?string => (! empty($state['event_datetime']) && ! empty($state['name']))
+                        ? ($index + 1) . ". {$state['event_datetime']} — {$state['name']}"
+                        : ($index + 1) . '. Новое событие')
+                    ->columns(4)
+                    ->columnSpanFull()
+                    ->addActionLabel('Добавить пункт расписания')
+                    ->collapsible(),
 
-                ])->itemLabel(fn (array $state, int $index): ?string => (!empty($state['event_datetime']) && !empty($state['name']))
-            ? ($index + 1) . ". {$state['event_datetime']} — {$state['name']}"
-            : ($index + 1) . '. Новое событие')
-                ->columns(4) // Разместим поля ввода внутри карточки в 4 колонки для компактности
-                ->columnSpanFull()
-                ->addActionLabel('Добавить пункт расписания') // Текст на кнопке добавления
-                ->collapsible(), // Позволит сворачивать пункты, чтобы не занимали много места
+                // ── Обязательные документы ──────────────────
+                Repeater::make('required_documents')
+                    ->label('Обязательные документы')
+                    ->columnSpanFull()
+                    ->addable(false)
+                    ->deletable(false)
+                    ->reorderable(false)
+                    ->default(fn () => array_map(
+                        fn (array $doc) => [
+                            'doc_type' => $doc['doc_type'],
+                            'title'    => $doc['title'],
+                            'files'    => [],
+                        ],
+                        ManageRegattas::getRequiredDocuments(),
+                    ))
+                    ->columns(1)
+                    ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
+                    ->rules([
+                        function (): \Closure {
+                            return function (string $attribute, mixed $value, \Closure $fail): void {
+                                $requiredDocs = ManageRegattas::getRequiredDocuments();
+                                $missing = [];
 
+                                foreach ($requiredDocs as $required) {
+                                    $docType = $required['doc_type'];
+                                    $item = collect((array) $value)->first(
+                                        fn (array $doc): bool => ($doc['doc_type'] ?? '') === $docType
+                                    );
+
+                                    $files = array_filter((array) ($item['files'] ?? []));
+
+                                    if ($item === null || $files === []) {
+                                        $missing[] = $required['title'];
+                                    }
+                                }
+
+                                if ($missing !== []) {
+                                    $fail('Загрузите следующие обязательные документы: ' . implode(', ', $missing) . '.');
+                                }
+                            };
+                        },
+                    ])
+                    ->schema([
+                        Hidden::make('doc_type'),
+                        Hidden::make('title'),
+                        FileUpload::make('files')
+                            ->label('Файлы')
+                            ->multiple()
+                            ->reorderable()
+                            ->appendFiles()
+                            ->directory('documents')
+                            ->disk('public')
+                            ->acceptedFileTypes($acceptedTypes)
+                            ->maxSize(20480)
+                            ->maxFiles($maxFiles)
+                            ->downloadable()
+                            ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
+                    ]),
+
+                // ── Дополнительные документы (произвольные) ──
+                Repeater::make('extra_documents')
+                    ->label('Дополнительные документы')
+                    ->columnSpanFull()
+                    ->addActionLabel('Добавить документ')
+                    ->collapsible()
+                    ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
+                    ->schema([
+                        Select::make('doc_type')
+                            ->label('Тип')
+                            ->options(fn () => \App\Models\YachtDocumentType::options())
+                            ->default('other')
+                            ->required(),
+                        TextInput::make('title')
+                            ->label('Название')
+                            ->placeholder('Название документа')
+                            ->required(),
+                        FileUpload::make('files')
+                            ->label('Файлы')
+                            ->multiple()
+                            ->reorderable()
+                            ->appendFiles()
+                            ->directory('documents')
+                            ->disk('public')
+                            ->acceptedFileTypes($acceptedTypes)
+                            ->maxSize(20480)
+                            ->maxFiles($maxFiles)
+                            ->downloadable()
+                            ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
+                    ]),
             ]);
     }
 
@@ -200,38 +290,41 @@ class RegattaResource extends Resource
                     ->label('Регата')
                     ->searchable(),
                 TextColumn::make('season.year')
-                    ->label('Сезон')->searchable(),
+                    ->label('Сезон')
+                    ->searchable(),
                 TextColumn::make('date')
                     ->label('Дата')
-                    ->getStateUsing(function (Regatta $regatta): string {
-                        // Доступ к текущей строке (модели) через $record
-                        return $regatta->dateRange();
-                    }),
+                    ->getStateUsing(fn (Regatta $regatta): string => $regatta->dateRange()),
                 TextColumn::make('water_area')
                     ->label('Акватория'),
                 TextColumn::make('status')
-                    ->label('Статус')->badge()
-                ->getStateUsing(function (Regatta $regatta): string {
-                    if($regatta->startsInLessThanMonth())
-                        return 'closest';
-                    else if ($regatta->isUpcoming()) {
+                    ->label('Статус')
+                    ->badge()
+                    ->getStateUsing(function (Regatta $regatta): string {
+                        if ($regatta->startsInLessThanMonth()) {
+                            return 'closest';
+                        } elseif ($regatta->isUpcoming()) {
+                            return 'planned';
+                        } elseif ($regatta->isFinished()) {
+                            return 'completed';
+                        }
                         return 'planned';
-                    } else if ($regatta->isFinished()) {
-                        return 'completed';
-                    }
-                })
-                ->formatStateUsing(fn (string $state): string => match ($state) {
-                    'closest' => 'Ближайшая',
-                    'planned' => 'Планируемая',
-                    'completed' => 'Завершена',
-                    default => $state,
-                })->color(fn (string $state): string => match ($state) {
-                    'planned' => 'warning',
-                    'completed' => 'success',
-                    'closest' => 'danger',
-                    default => 'gray',
-                }),
-            ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'closest'   => 'Ближайшая',
+                        'planned'   => 'Планируемая',
+                        'completed' => 'Завершена',
+                        default     => $state,
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'planned'   => 'warning',
+                        'completed' => 'success',
+                        'closest'   => 'danger',
+                        default     => 'gray',
+                    }),
+            ])
+            ->stackedOnMobile()
+            ->emptyStateHeading('Записей пока нет')
             ->filters([
                 Filter::make('created_at_day')
                     ->label('Дата')
@@ -244,33 +337,64 @@ class RegattaResource extends Resource
                     ->query(function (Builder $query, array $data): Builder {
                         return $query->when(
                             $data['date'],
-                            fn (Builder $query, $date) => $query->whereDate('date_start', '<=', $date)
-                                     ->whereDate('date_end', '>=', $date),
+                            fn (Builder $query, $date) => $query
+                                ->whereDate('date_start', '<=', $date)
+                                ->whereDate('date_end', '>=', $date),
                         );
                     }),
-            SelectFilter::make('status')
-                ->label('Статус') // Красивое название для пользователя
-                ->options([
-                    'closest' => 'Ближайшая',
-                    'planned' => 'Планируемая',
-                    'completed' => 'Завершена',
-                        ])->query(function (Builder $query, array $data): Builder {
-                    return $query->when(
-                        $data['value'],
-                        function (Builder $query, $value) {
-                            // Здесь вы переносите логику ваших методов из модели Regatta в SQL-запросы
-                            match ($value) {
-                                'closest' => $query->where('date_start', '<=', now()->addMonth())->where('date_start', '>', now()),
-                                'planned' => $query->where('date_start', '>', now()->addMonth()),
-                                'completed' => $query->where('date_end', '<', now()),
-                                default => $query,
-                            };
-                        }
-                    );
-                }),
-            ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
+                SelectFilter::make('status')
+                    ->label('Статус')
+                    ->options([
+                        'closest'   => 'Ближайшая',
+                        'planned'   => 'Планируемая',
+                        'completed' => 'Завершена',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['value'],
+                            function (Builder $query, $value) {
+                                match ($value) {
+                                    'closest'   => $query->where('date_start', '<=', now()->addMonth())->where('date_start', '>', now()),
+                                    'planned'   => $query->where('date_start', '>', now()->addMonth()),
+                                    'completed' => $query->where('date_end', '<', now()),
+                                    default     => $query,
+                                };
+                            }
+                        );
+                    }),
+            ], layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(3)
+            ->deferFilters(false)
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->mountUsing(function (Schema $form, Regatta $record): void {
+                        $sync         = app(\App\Actions\Document\SyncDocumentFilesAction::class);
+                        $requiredDocs = ManageRegattas::getRequiredDocuments();
+                        $requiredDocTypes = array_column($requiredDocs, 'doc_type');
+
+                        $data = $record->toArray();
+                        $data['required_documents'] = $sync->load($record, $requiredDocs);
+                        $data['extra_documents']    = $sync->loadExtra($record, $requiredDocTypes);
+
+                        $form->fill($data);
+                    })
+                    ->using(function (Regatta $record, array $data): Regatta {
+                        $requiredDocs = $data['required_documents'] ?? [];
+                        $extraDocs    = $data['extra_documents'] ?? [];
+                        unset($data['required_documents'], $data['extra_documents']);
+
+                        $record->update($data);
+
+                        $sync = app(\App\Actions\Document\SyncDocumentFilesAction::class);
+                        $sync->execute($record, $requiredDocs);
+                        $sync->execute($record, $extraDocs);
+
+                        $requiredDocTypes = array_column(ManageRegattas::getRequiredDocuments(), 'doc_type');
+                        $activeExtraTypes = array_filter(array_column($extraDocs, 'doc_type'));
+                        $sync->pruneOrphanedDocTypes($record, $requiredDocTypes, $activeExtraTypes);
+
+                        return $record;
+                    }),
                 DeleteAction::make(),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
@@ -297,5 +421,22 @@ class RegattaResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    /**
+     * Определяет читаемую метку для документа в Repeater.
+     */
+    public static function resolveDocumentLabel(array $state): ?string
+    {
+        $docType = $state['doc_type'] ?? null;
+
+        if ($docType === null) {
+            return $state['title'] ?? null;
+        }
+
+        $model = \App\Models\YachtDocumentType::cachedAll()
+            ->first(fn (\App\Models\YachtDocumentType $t) => $t->key === $docType);
+
+        return $model?->label ?? ($state['title'] ?? null);
     }
 }
