@@ -182,7 +182,7 @@ Route::get('/competitions', function () {
                         ->where('date_end', '>=', now());
                   });
         })
-        ->orderBy('date_end', 'desc')
+        ->orderBy('date_end', 'asc')
         ->get()
         ->each(fn ($r) => $r->setRelation('resultItems', $r->results->flatMap->items));
 

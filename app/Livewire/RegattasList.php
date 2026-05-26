@@ -19,7 +19,7 @@ class RegattasList extends Component
 
     public string $sortField = 'date_start';
 
-    public string $sortDirection = 'desc';
+    public string $sortDirection = 'asc';
 
     public int $perPage = 10;
 
