@@ -34,12 +34,15 @@ class Yacht extends Model
         'owner_email',
         'owner_phone',
         'owner_photo',
+
+        'past_regattas',
     ];
 
     protected function casts(): array
     {
         return [
             'current_mass_kg' => 'decimal:2',
+            'past_regattas'   => 'array',
             //'rent_price'      => 'decimal:2',
             //'for_rent'        => 'boolean',
         ];

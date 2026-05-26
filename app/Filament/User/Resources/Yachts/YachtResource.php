@@ -16,6 +16,7 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
@@ -165,6 +166,26 @@ class YachtResource extends Resource
                             ->maxSize(20480)
                             ->downloadable(),
                     ]),
+
+                Repeater::make('past_regattas')
+                    ->label('Прошедшие регаты')
+                    ->columnSpanFull()
+                    ->addActionLabel('Добавить регату')
+                    ->collapsible()
+                    ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Новая регата')
+                    ->schema([
+                        TextInput::make('name')
+                            ->label('Название регаты')
+                            ->placeholder('Введите название регаты')
+                            ->required(),
+                        DatePicker::make('date_start')
+                            ->label('Дата начала')
+                            ->required(),
+                        DatePicker::make('date_end')
+                            ->label('Дата окончания')
+                            ->required(),
+                    ])
+                    ->columns(3),
                 
             ]);
     }
