@@ -62,7 +62,7 @@
                         <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                     @enderror
                 </div>
-                <div class="smart-captcha mt-4" data-callback="loginCaptchaCallback"
+                <div wire:ignore class="smart-captcha mt-4" data-callback="loginCaptchaCallback"
                     data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
                 </div>
                 
@@ -168,7 +168,7 @@
                         </svg>
                     </button>
                 </div>
-                <div class="smart-captcha mt-4" data-callback="registerCaptchaCallback"
+                <div wire:ignore class="smart-captcha mt-4" data-callback="registerCaptchaCallback"
                     data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
                 </div>
                 
