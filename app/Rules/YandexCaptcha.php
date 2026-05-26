@@ -6,6 +6,8 @@ use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Translation\PotentiallyTranslatedString;
 
+use Illuminate\Support\Facades\Http;
+
 class YandexCaptcha implements ValidationRule
 {
     /**
