@@ -18,6 +18,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -117,6 +118,25 @@ class YachtResource extends Resource
                     ->directory('owners')
                     ->disk('public')->columnSpanFull(),
                 */
+                Repeater::make('past_regattas')
+                    ->label('Прошедшие регаты')
+                    ->columnSpanFull()
+                    ->addActionLabel('Добавить регату')
+                    ->collapsible()
+                    ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Новая регата')
+                    ->schema([
+                        TextInput::make('name')
+                            ->label('Название регаты')
+                            ->placeholder('Введите название регаты')
+                            ->required(),
+                        DatePicker::make('date_start')
+                            ->label('Дата начала')
+                            ->required(),
+                        DatePicker::make('date_end')
+                            ->label('Дата окончания')
+                            ->required(),
+                    ])
+                    ->columns(3),
                 Repeater::make('documents')
                     ->relationship()
                     ->label('Документы')
