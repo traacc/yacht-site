@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class RegattaEntry extends Model
 {
@@ -50,6 +51,12 @@ class RegattaEntry extends Model
     public function raceResults(): HasMany
     {
         return $this->hasMany(RaceResult::class)->orderBy('race_id');
+    }
+
+    /** Документы заявки (ORC-сертификаты, страховка и т.д.) */
+    public function documents(): MorphMany
+    {
+        return $this->morphMany(Document::class, 'documentable');
     }
 
     // ──────────────────────────────────────────────
