@@ -10,7 +10,7 @@ use BackedEnum;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Set;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -38,14 +38,7 @@ class YachtDocumentTypeResource extends Resource
     {
         return $schema
             ->components([
-                TextInput::make('key')
-                    ->label('Ключ')
-                    ->placeholder('orc_certificate')
-                    ->required()
-                    ->unique(table: 'yacht_document_types', column: 'key', ignoreRecord: true)
-                    ->helperText('Уникальный строковый идентификатор. Только латиница, цифры и подчёркивание.')
-                    ->regex('/^[a-z][a-z0-9_]+$/')
-                    ->maxLength(100),
+
 
                 TextInput::make('label')
                     ->label('Название')
@@ -67,7 +60,15 @@ class YachtDocumentTypeResource extends Resource
                 TextInput::make('sort_order')
                     ->label('Порядок')
                     ->numeric()
-                    ->default(0)
+                    ->default(0),
+                TextInput::make('key')
+                    ->label('Ключ')
+                    ->placeholder('orc_certificate')
+                    ->required()
+                    ->unique(table: 'yacht_document_types', column: 'key', ignoreRecord: true)
+                    ->helperText('Уникальный строковый идентификатор. Только латиница, цифры и подчёркивание.')
+                    ->regex('/^[a-z][a-z0-9_]+$/')
+                    ->maxLength(100)
             ]);
     }
 
