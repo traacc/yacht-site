@@ -56,6 +56,17 @@
                     Перейти в личный кабинет
                 </a>
             </div>
+        @elseif ($submitted)
+            <div class="flex items-center justify-between pb-3 mb-4">
+                <h3 class="text-lg font-medium text-[#2E325C] a-font">Заявка подана</h3>
+                <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
+            </div>
+            <div class=" p-6 text-center">
+                <svg class="mx-auto h-12 w-12 text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <p class="font-medium text-lg">Ваша заявка успешно подана, ожидайте подтверждения</p>
+            </div>
         @else
             <div class="flex items-center justify-between pb-3 mb-4">
                 <h3 class="text-lg font-medium text-[#2E325C] a-font">Подать заявку</h3>

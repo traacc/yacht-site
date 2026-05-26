@@ -27,6 +27,8 @@ class JoinRegattaModal extends Component
 
     public bool $isOpen = false;
 
+    public bool $submitted = false;
+
     /** @var array<string, \Livewire\TemporaryUploadedFile|null> */
     public array $documentFiles = [];
 
@@ -37,13 +39,14 @@ class JoinRegattaModal extends Component
         $this->teamId = null;
         $this->yachtId = null;
         $this->documentFiles = [];
+        $this->submitted = false;
         $this->isOpen = true;
     }
 
     public function closeModal(): void
     {
         $this->isOpen = false;
-        $this->reset(['regattaId', 'teamId', 'yachtId', 'documentFiles']);
+        $this->reset(['regattaId', 'teamId', 'yachtId', 'documentFiles', 'submitted']);
     }
 
     public function submit(SubmitRegattaEntryAction $action): void
@@ -110,11 +113,7 @@ class JoinRegattaModal extends Component
         }
 
         $this->dispatch('regatta-entry-submitted', entryId: $entry->id);
-        $this->closeModal();
-        $this->dispatch('notify',
-            type: 'success',
-            message: 'Заявка на регату успешно подана!'
-        );
+        $this->submitted = true;
     }
 
     #[Computed]
