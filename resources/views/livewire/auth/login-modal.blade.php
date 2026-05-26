@@ -62,7 +62,7 @@
                         <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                     @enderror
                 </div>
-                <div class="smart-captcha mt-4" data-callback="smartCaptchaCallback"
+                <div class="smart-captcha mt-4" data-callback="loginCaptchaCallback"
                     data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
                 </div>
                 
@@ -168,7 +168,7 @@
                         </svg>
                     </button>
                 </div>
-                <div class="smart-captcha mt-4" data-callback="smartCaptchaCallback"
+                <div class="smart-captcha mt-4" data-callback="registerCaptchaCallback"
                     data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
                 </div>
                 
@@ -193,12 +193,7 @@
         </div>
     </div>
     <script>
-        function smartCaptchaCallback(token) {
-            // Передаем полученный токен в свойство $captchaToken компонента
-            @this.set('captchaToken', token);
-            
-            // Если используете Livewire 3, можно использовать так:
-            // $wire.set('captchaToken', token);
-        }
+        function loginCaptchaCallback(token) { @this.set('loginCaptchaToken', token); }
+        function registerCaptchaCallback(token) { @this.set('registerCaptchaToken', token); }
     </script>
 </div>

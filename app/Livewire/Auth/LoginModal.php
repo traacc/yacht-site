@@ -25,7 +25,8 @@ class LoginModal extends Component
     public string $email = '';
     public string $password = '';
     public string $password_confirmation = '';
-    public string $captchaToken = '';
+    public string $loginCaptchaToken = '';
+    public string $registerCaptchaToken = '';
     public bool $remember = false;
 
 
@@ -34,9 +35,9 @@ class LoginModal extends Component
         $credentials = $this->validate([
             'email'    => ['required', 'email'],
             'password' => ['required'],
-            'captchaToken' => ['required', new YandexCaptcha()],
+            'loginCaptchaToken' => ['required', new YandexCaptcha()],
         ], attributes: [
-            'captchaToken.required' => 'Вам необходимо пройти проверку на бота',
+            'loginCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
             'email'    => 'email',
             'password' => 'пароль',
         ]);
@@ -66,9 +67,9 @@ class LoginModal extends Component
             'phone'                 => ['required'],
             'birthday'              => ['required'],
             'sports_category'       => ['nullable', Rule::enum(SportCategory::class)],
-            'captchaToken' => ['required', new YandexCaptcha()],
+            'registerCaptchaToken' => ['required', new YandexCaptcha()],
         ], attributes: [
-            'captchaToken' => 'Вам необходимо пройти проверку на бота',
+            'registerCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
             'first_name'            => 'имя',
             'last_name'             => 'фамилия',
             'email'                 => 'email',
