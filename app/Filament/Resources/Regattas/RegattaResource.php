@@ -198,7 +198,7 @@ class RegattaResource extends Resource
 
                 // ── Обязательные документы ──────────────────
                 Repeater::make('required_documents')
-                    ->label('Обязательные документы')
+                    ->label('​')
                     ->columnSpanFull()
                     ->addable(false)
                     ->deletable(false)
@@ -256,6 +256,7 @@ class RegattaResource extends Resource
                     ]),
 
                 // ── Дополнительные документы (произвольные) ──
+                /*
                 Repeater::make('extra_documents')
                     ->label('Дополнительные документы')
                     ->columnSpanFull()
@@ -286,7 +287,7 @@ class RegattaResource extends Resource
                             ->downloadable()
                             ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
                     ]),
-
+                */
                 // ── Обязательные документы для подачи заявок ──
                 Section::make('Документы для заявок')
                     ->description('Документы, которые участник обязан приложить при подаче заявки на эту регату. Если ничего не выбрано — применяются глобальные настройки обязательных документов заявок.')
