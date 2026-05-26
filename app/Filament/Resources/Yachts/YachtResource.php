@@ -122,9 +122,13 @@ class YachtResource extends Resource
                             ->required(),
                         DatePicker::make('date_start')
                             ->label('Дата начала')
+                            ->minDate(now()->subYears(100)) 
+                            ->maxDate(now()->addYears(100))
                             ->required(),
                         DatePicker::make('date_end')
                             ->label('Дата окончания')
+                            ->minDate(now()->subYears(100)) 
+                            ->maxDate(now()->addYears(100))
                             ->required(),
                     ])
                     ->columns(3),

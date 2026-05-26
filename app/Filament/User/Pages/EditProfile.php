@@ -98,6 +98,8 @@ class EditProfile extends BaseEditProfile
                             ->maxLength(255),
                         DatePicker::make('birth_date')
                             ->label('Дата рождения')
+                            ->minDate(now()->subYears(100)) 
+                            ->maxDate(now()->addYears(100))
                             ->displayFormat('d.m.Y')
                             ->native(false),
                         TextInput::make('email')

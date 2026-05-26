@@ -184,9 +184,13 @@ class YachtResource extends Resource
                             ->placeholder('Введите название регаты')
                             ->required(),
                         DatePicker::make('date_start')
+                            ->minDate(now()->subYears(100)) 
+                            ->maxDate(now()->addYears(100))
                             ->label('Дата начала')
                             ->required(),
                         DatePicker::make('date_end')
+                            ->minDate(now()->subYears(100)) 
+                            ->maxDate(now()->addYears(100))
                             ->label('Дата окончания')
                             ->required(),
                     ])

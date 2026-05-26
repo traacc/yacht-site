@@ -73,7 +73,9 @@ class GalleryResource extends Resource
                     ->maxLength(255),
 
                 DatePicker::make('date')
-                    ->label('Дата'),
+                    ->label('Дата')
+                    ->minDate(now()->subYears(100)) 
+                    ->maxDate(now()->addYears(100)),
 
                 FileUpload::make('cover_path')
                     ->label('Обложка')
