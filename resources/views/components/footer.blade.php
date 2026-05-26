@@ -3,19 +3,6 @@
 <footer class="bg-[#2E325C] text-white" x-data="">
     <div class="container mx-auto py-12">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 text-sm md:text-base">
-            {{-- Лого и описание --}}
-            <div class="col-span-2 md:col-span-1 font-light">
-                <a href="/"  class="shrink-0 block mb-6">
-                    {!! file_get_contents(public_path('images/logo.svg')) !!}
-                </a>
-                <div class="mb-6">
-                    © 2026 CarterPro. Все права защищены.
-                </div>
-                <ul class="space-y-1 mb-4">
-                    <li><a href="/files/Политика_обработки_персональных_данных_1.docx"  class="hover:text-white transition-colors">Политика конфиденциальности</a></li>
-                    <li><a href="#"  class="hover:text-white transition-colors">Пользовательское соглашение</a></li>
-                </ul>
-            </div>
 
             {{-- Навигация --}}
             <div>
@@ -69,6 +56,20 @@
                         </a>
                     </li>
                 </ul>
+
+                {{-- Лого и описание --}}
+                <div class="col-span-2 md:col-span-1 font-light">
+                    <a href="/"  class="shrink-0 block mb-6">
+                        {!! file_get_contents(public_path('images/logo.svg')) !!}
+                    </a>
+                    <div class="mb-6">
+                        © 2026 CarterPro. Все права защищены.
+                    </div>
+                    <ul class="space-y-1 mb-4">
+                        <li><a href="/files/Политика_обработки_персональных_данных_1.docx"  class="hover:text-white transition-colors">Политика конфиденциальности</a></li>
+                        <li><a href="#"  class="hover:text-white transition-colors">Пользовательское соглашение</a></li>
+                    </ul>
+                </div>
                 @guest
                 <a href="#" @click.prevent="$dispatch('open-login-modal')" class="font-semibold color-white px-4 py-2 mt-6 transition-colors justify-center border-white border flex gap-2 md:hidden">
                     {!! file_get_contents(public_path('images/icons/login.svg')) !!} Войти
