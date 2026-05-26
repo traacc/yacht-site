@@ -145,6 +145,8 @@ class RegattaResource extends Resource
                     ->columnSpanFull(),
                 FileUpload::make('background_image')
                     ->label('Загрузить обложку')
+                    ->image()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                     ->disk('public')
                     ->directory('regattas/covers')
                     ->visibility('public'),

@@ -107,6 +107,7 @@ class TeamResource extends Resource
                 FileUpload::make('picture')
                     ->label('Добавить фотографию')
                     ->image()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                     ->avatar()
                     ->directory('owners')
                     ->disk('public')->columnSpanFull(),
@@ -136,6 +137,7 @@ class TeamResource extends Resource
                     ->multiple()
                     ->reorderable()
                     ->image()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                     ->imageEditor()
                     ->disk('public')
                     ->visibility('public')

@@ -264,6 +264,7 @@ class HomePageSettings extends Page
                             ->label('Фотографии галереи')
                             ->helperText('Загрузите фотографии для галереи. Порядок файлов определяет порядок показа при ручной сортировке.')
                             ->image()
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                             ->multiple()
                             ->reorderable()
                             ->disk('public')

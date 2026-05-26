@@ -59,6 +59,7 @@ class NewsResource extends Resource
                 FileUpload::make('cover_image_url')
                     ->label('Обложка')
                     ->image()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                     ->disk('public')
                     ->directory('news/covers')
                     ->visibility('public'),
@@ -73,6 +74,7 @@ class NewsResource extends Resource
                     ->multiple()
                     ->reorderable()
                     ->image()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                     ->imageEditor()
                     ->disk('public')
                     ->visibility('public')
