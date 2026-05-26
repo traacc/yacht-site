@@ -11,6 +11,8 @@ use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords;
 
+use Filament\Notifications\Notification;
+
 class ManageYachts extends ManageRecords
 {
     protected static string $resource = YachtResource::class;
@@ -39,7 +41,12 @@ class ManageYachts extends ManageRecords
                 })
                 ->after(function (): void {
                     $this->mountAction('showInfoModal');
-                })->createAnother(false),
+                })->createAnother(false)->successNotification(
+                Notification::make()
+                    ->success()
+                    ->title('Готово!')
+                    ->body('Поздравляем с успешной регистрацией яхты'),
+            ),
         ];
     }
 

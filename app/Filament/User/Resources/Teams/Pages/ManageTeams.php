@@ -19,6 +19,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
 use Illuminate\Validation\ValidationException;
 
+
 class ManageTeams extends ManageRecords
 {
     protected static string $resource = TeamResource::class;
@@ -146,7 +147,11 @@ class ManageTeams extends ManageRecords
                         $data,
                         auth()->user(),
                     );
-                })->createAnother(false),
+                })->createAnother(false)->successNotification(
+                Notification::make()
+                    ->success()
+                    ->title('Готово!')
+                    ->body('Поздравляем с успешной регистрацией команды')),
         ];
     }
 

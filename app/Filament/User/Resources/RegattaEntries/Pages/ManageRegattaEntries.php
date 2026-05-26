@@ -45,7 +45,11 @@ class ManageRegattaEntries extends ManageRecords
 
                         $this->halt();
                     }
-                })->createAnother(false),
+                })->createAnother(false)->successNotification(
+                Notification::make()
+                    ->success()
+                    ->title('Готово!')
+                    ->body('Ваша заявка успешно подана, ожидайте подтверждения')),
         ];
     }
 
