@@ -96,6 +96,28 @@
                     @enderror
                 </div>
 
+                @if ($this->requiredDocuments())
+                    <div class="border-t border-gray-200 pt-4">
+                        <p class="text-sm font-medium text-[#2E325C] mb-3">Обязательные документы</p>
+                        @foreach ($this->requiredDocuments() as $doc)
+                            <div class="mb-3">
+                                <label for="doc_{{ $doc['doc_type'] }}" class="block text-sm text-brand-gray-light">
+                                    {{ $doc['title'] }}
+                                </label>
+                                <input type="file"
+                                       id="doc_{{ $doc['doc_type'] }}"
+                                       wire:model="documentFiles.{{ $doc['doc_type'] }}"
+                                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
+                                       class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-[#F8F8F8] file:text-[#2E325C] hover:file:bg-gray-200">
+                                @error('documentFiles.' . $doc['doc_type'])
+                                    <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                @enderror
+                                <div wire:loading wire:target="documentFiles.{{ $doc['doc_type'] }}" class="text-xs text-blue-500 mt-1">Загрузка...</div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
                 <div class="mt-5 sm:mt-6">
                     <button type="submit"
                             wire:loading.attr="disabled"

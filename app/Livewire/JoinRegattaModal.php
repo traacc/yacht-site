@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Actions\Regatta\SubmitRegattaEntryAction;
+use App\Actions\RegattaEntry\UpdateRegattaEntryRequiredDocumentsAction;
 use App\Models\Regatta;
 use App\Models\Team;
 use App\Models\User;
@@ -12,9 +13,12 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class JoinRegattaModal extends Component
 {
+    use WithFileUploads;
+
     public ?string $regattaId = null;
 
     public ?string $teamId = null;
@@ -23,19 +27,23 @@ class JoinRegattaModal extends Component
 
     public bool $isOpen = false;
 
+    /** @var array<string, \Livewire\TemporaryUploadedFile|null> */
+    public array $documentFiles = [];
+
     #[On('open-join-regatta-modal')]
     public function openModal(string $regattaId): void
     {
         $this->regattaId = $regattaId;
         $this->teamId = null;
         $this->yachtId = null;
+        $this->documentFiles = [];
         $this->isOpen = true;
     }
 
     public function closeModal(): void
     {
         $this->isOpen = false;
-        $this->reset(['regattaId', 'teamId', 'yachtId']);
+        $this->reset(['regattaId', 'teamId', 'yachtId', 'documentFiles']);
     }
 
     public function submit(SubmitRegattaEntryAction $action): void
@@ -47,9 +55,20 @@ class JoinRegattaModal extends Component
             return;
         }
 
-        $this->validate([
+        $rules = [
             'teamId' => ['required', 'string', 'uuid'],
             'yachtId' => ['required', 'string', 'uuid'],
+        ];
+
+        // Добавляем правила валидации для обязательных документов
+        foreach ($this->requiredDocuments() as $doc) {
+            $key = 'documentFiles.' . $doc['doc_type'];
+            $rules[$key] = ['required', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png,webp', 'max:20480'];
+        }
+
+        $this->validate($rules, [], [
+            'teamId' => 'команда',
+            'yachtId' => 'яхта',
         ]);
 
         $regatta = Regatta::findOrFail($this->regattaId);
@@ -75,6 +94,19 @@ class JoinRegattaModal extends Component
             report($e);
 
             return;
+        }
+
+        // Сохраняем загруженные документы
+        foreach ($this->requiredDocuments() as $doc) {
+            $file = $this->documentFiles[$doc['doc_type']] ?? null;
+            if ($file) {
+                $path = $file->store('documents', 'public');
+                $entry->documents()->create([
+                    'doc_type' => $doc['doc_type'],
+                    'title'    => $doc['title'],
+                    'url'      => $path,
+                ]);
+            }
         }
 
         $this->dispatch('regatta-entry-submitted', entryId: $entry->id);
@@ -111,6 +143,15 @@ class JoinRegattaModal extends Component
         }
 
         return $user->yachts()->get();
+    }
+
+    /**
+     * @return array<int, array{doc_type: string, title: string}>
+     */
+    #[Computed]
+    public function requiredDocuments(): array
+    {
+        return app(UpdateRegattaEntryRequiredDocumentsAction::class)->getRequiredList();
     }
 
     #[Computed]
