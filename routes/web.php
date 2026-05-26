@@ -205,9 +205,12 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
     $entries = $regatta->approvedEntries;
 
     // Проверяем, является ли текущий юзер участником уже заявленной команды
+    // Учитываем pending + approved, чтобы кнопка «Подать заявку» скрывалась сразу после подачи
     $userIsEntered = false;
     if (auth()->check()) {
-        $enteredTeamIds = $entries->pluck('team_id');
+        $enteredTeamIds = $regatta->entries()
+            ->whereIn('status', ['pending', 'approved'])
+            ->pluck('team_id');
         $userIsEntered = \App\Models\TeamMember::query()
             ->where('user_id', auth()->id())
             ->whereIn('team_id', $enteredTeamIds)
