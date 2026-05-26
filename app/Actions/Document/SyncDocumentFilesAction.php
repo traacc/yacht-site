@@ -35,8 +35,7 @@ final class SyncDocumentFilesAction
             $newFiles = array_values(array_filter((array) ($item['files'] ?? [])));
 
             /** @var \Illuminate\Database\Eloquent\Collection<int, Document> $existing */
-            $existing    = $documentable->documents()->where('doc_type', $docType)->get();
-            $existingMap = $existing->keyBy('url');
+            $existing = $documentable->documents()->where('doc_type', $docType)->get();
 
             $existingUrls = $existing->pluck('url')->filter()->values()->toArray();
 
@@ -87,9 +86,33 @@ final class SyncDocumentFilesAction
     }
 
     /**
+     * Удалить все документы с doc_type, отсутствующими в текущем списке extra-документов.
+     *
+     * Вызывается для синхронизации «дополнительных» документов в админке:
+     * если админ удалил весь блок extra-документа определённого типа, его записи тоже удаляются.
+     *
+     * @param Model    $documentable
+     * @param string[] $excludeDocTypes  Типы обязательных документов (не трогать)
+     * @param string[] $activeDocTypes   doc_type из текущего extra-repeater (оставить)
+     */
+    public function pruneOrphanedDocTypes(Model $documentable, array $excludeDocTypes, array $activeDocTypes): void
+    {
+        $orphaned = $documentable->documents()
+            ->whereNotIn('doc_type', array_merge($excludeDocTypes, $activeDocTypes))
+            ->get();
+
+        foreach ($orphaned as $doc) {
+            if ($doc->url !== '' && $doc->url !== null && Storage::disk('public')->exists($doc->url)) {
+                Storage::disk('public')->delete($doc->url);
+            }
+            $doc->delete();
+        }
+    }
+
+    /**
      * Загрузить существующие документы в формат Repeater-state.
      *
-     * @param Model                                            $documentable
+     * @param Model                                              $documentable
      * @param array<int, array{doc_type: string, title: string}> $requiredDocs
      *
      * @return array<int, array{doc_type: string, title: string, files: string[]}>
@@ -119,5 +142,42 @@ final class SyncDocumentFilesAction
                 'files'    => $files,
             ];
         }, $requiredDocs);
+    }
+
+    /**
+     * Загрузить «дополнительные» документы (не входящие в список обязательных).
+     *
+     * Группирует по doc_type, для каждого типа собирает все url-файлы.
+     *
+     * @param Model    $documentable
+     * @param string[] $requiredDocTypes  Ключи обязательных типов (исключить из выборки)
+     *
+     * @return array<int, array{doc_type: string, title: string, files: string[]}>
+     */
+    public function loadExtra(Model $documentable, array $requiredDocTypes): array
+    {
+        $query = $documentable->documents()
+            ->orderBy('sort_order')
+            ->orderBy('created_at');
+
+        if ($requiredDocTypes !== []) {
+            $query->whereNotIn('doc_type', $requiredDocTypes);
+        }
+
+        $grouped = $query->get()->groupBy('doc_type');
+
+        $result = [];
+        foreach ($grouped as $docType => $docs) {
+            $title = $docs->first()?->title ?? '';
+            $files = $docs->pluck('url')->filter(fn (string $u) => $u !== '')->values()->toArray();
+
+            $result[] = [
+                'doc_type' => $docType,
+                'title'    => $title,
+                'files'    => $files,
+            ];
+        }
+
+        return $result;
     }
 }

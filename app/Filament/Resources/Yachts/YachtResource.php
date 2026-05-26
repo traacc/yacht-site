@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Resources\Yachts;
 
 use App\Filament\Resources\Yachts\Pages\ManageYachts;
@@ -13,47 +15,51 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\TrashedFilter;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-use Filament\Tables\Filters\Filter;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Enums\FiltersLayout;
-
-use Filament\Schemas\Components\Utilities\Get;
-
 class YachtResource extends Resource
 {
-    public static function getModelLabel(): string
-    {
-        return 'Яхта'; // Название в единственном числе
-    }
-
-    public static function getPluralModelLabel(): string
-    {
-        return 'Яхты'; // Название во множественном числе
-    }
-
     protected static ?string $model = Yacht::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'yacht';
 
+    public static function getModelLabel(): string
+    {
+        return 'Яхта';
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return 'Яхты';
+    }
+
     public static function form(Schema $schema): Schema
     {
+        $maxFiles       = (int) config('documents.max_files_per_type', 10);
+        $acceptedTypes  = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+        ];
+
         return $schema
             ->components([
                 TextInput::make('name')
@@ -87,7 +93,6 @@ class YachtResource extends Resource
                     ->label('Класс')
                     ->placeholder('Класс яхты'),
 
-
                 TextInput::make('reg_place')
                     ->label('Место регистрации')
                     ->placeholder('Место регистрации'),
@@ -95,29 +100,14 @@ class YachtResource extends Resource
                 Select::make('approval_status')
                     ->label('Статус одобрения')
                     ->placeholder('Выберите статус')
-                    ->options(['pending' => 'На рассмотрении', 'approved' => 'Одобрена', 'rejected' => 'Отклонена'])
+                    ->options([
+                        'pending'  => 'На рассмотрении',
+                        'approved' => 'Одобрена',
+                        'rejected' => 'Отклонена',
+                    ])
                     ->default('pending')
                     ->required(),
-                /*
-                TextInput::make('owner_name')
-                    ->label('Имя владельца')
-                    ->placeholder('Имя владельца')->columnSpanFull(),
-                TextInput::make('owner_email')
-                    ->label('Email владельца')
-                    ->placeholder('email@example.com')
-                    ->email(),
-                TextInput::make('owner_phone')
-                    ->label('Телефон владельца')
-                    ->placeholder('+7 (999) 123-45-67')
-                    ->mask('+7 (999) 999-99-99')
-                    ->telRegex('/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/'),
-                FileUpload::make('owner_photo')
-                    ->label('Фото владельца')
-                    ->image()
-                    ->avatar()
-                    ->directory('owners')
-                    ->disk('public')->columnSpanFull(),
-                */
+
                 Repeater::make('past_regattas')
                     ->label('Прошедшие регаты')
                     ->columnSpanFull()
@@ -137,12 +127,73 @@ class YachtResource extends Resource
                             ->required(),
                     ])
                     ->columns(3),
-                Repeater::make('documents')
-                    ->relationship()
-                    ->label('Документы')
-                    ->addActionLabel('Добавить документ')
-                    ->columns(3)
+
+                // ── Обязательные документы ──────────────────
+                Repeater::make('required_documents')
+                    ->label('Обязательные документы')
                     ->columnSpanFull()
+                    ->addable(false)
+                    ->deletable(false)
+                    ->reorderable(false)
+                    ->default(fn () => array_map(
+                        fn (array $doc) => [
+                            'doc_type' => $doc['doc_type'],
+                            'title'    => $doc['title'],
+                            'files'    => [],
+                        ],
+                        ManageYachts::getRequiredDocuments(),
+                    ))
+                    ->columns(1)
+                    ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
+                    ->rules([
+                        function (): \Closure {
+                            return function (string $attribute, mixed $value, \Closure $fail): void {
+                                $requiredDocs = ManageYachts::getRequiredDocuments();
+                                $missing = [];
+
+                                foreach ($requiredDocs as $required) {
+                                    $docType = $required['doc_type'];
+                                    $item = collect((array) $value)->first(
+                                        fn (array $doc): bool => ($doc['doc_type'] ?? '') === $docType
+                                    );
+
+                                    $files = array_filter((array) ($item['files'] ?? []));
+
+                                    if ($item === null || $files === []) {
+                                        $missing[] = $required['title'];
+                                    }
+                                }
+
+                                if ($missing !== []) {
+                                    $fail('Загрузите следующие обязательные документы: ' . implode(', ', $missing) . '.');
+                                }
+                            };
+                        },
+                    ])
+                    ->schema([
+                        Hidden::make('doc_type'),
+                        Hidden::make('title'),
+                        FileUpload::make('files')
+                            ->label('Файлы')
+                            ->multiple()
+                            ->reorderable()
+                            ->appendFiles()
+                            ->directory('documents')
+                            ->disk('public')
+                            ->acceptedFileTypes($acceptedTypes)
+                            ->maxSize(20480)
+                            ->maxFiles($maxFiles)
+                            ->downloadable()
+                            ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
+                    ]),
+
+                // ── Дополнительные документы (произвольные) ──
+                Repeater::make('extra_documents')
+                    ->label('Дополнительные документы')
+                    ->columnSpanFull()
+                    ->addActionLabel('Добавить документ')
+                    ->collapsible()
+                    ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
                     ->schema([
                         Select::make('doc_type')
                             ->label('Тип')
@@ -153,23 +204,18 @@ class YachtResource extends Resource
                             ->label('Название')
                             ->placeholder('Название документа')
                             ->required(),
-                        FileUpload::make('url')
-                            ->label('Файл')
+                        FileUpload::make('files')
+                            ->label('Файлы')
+                            ->multiple()
+                            ->reorderable()
+                            ->appendFiles()
                             ->directory('documents')
                             ->disk('public')
-                            ->acceptedFileTypes([
-                                'application/pdf',
-                                'application/msword',
-                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                                'application/vnd.ms-excel',
-                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                                'image/jpeg',
-                                'image/png',
-                                'image/webp',
-                            ])
+                            ->acceptedFileTypes($acceptedTypes)
                             ->maxSize(20480)
+                            ->maxFiles($maxFiles)
                             ->downloadable()
-                            ->required(),
+                            ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
                     ]),
             ]);
     }
@@ -192,45 +238,75 @@ class YachtResource extends Resource
                     ->searchable(),
                 TextColumn::make('orc_cert')
                     ->label('ORC-сертификат')
-                    ->state(function ($record) {
-                    // Проверяем, существует ли связанный документ с нужным doc_type
-                    return $record->documents() // Название вашей связи в модели
-                        ->where('doc_type', 'orc_cert_type') // Ваше условие для doc_type
-                        ->exists();
-                })
-                ->formatStateUsing(fn ($state) => $state ? 'Есть' : 'Нет')
-                ->color(fn ($state) => $state ? 'success' : 'danger'),
+                    ->state(fn ($record) => $record->documents()
+                        ->where('doc_type', 'orc_cert_type')
+                        ->exists())
+                    ->formatStateUsing(fn ($state) => $state ? 'Есть' : 'Нет')
+                    ->color(fn ($state) => $state ? 'success' : 'danger'),
 
                 TextColumn::make('approval_status')
                     ->label('Статус')
-                    ->badge()->formatStateUsing(fn (string $state): string => match ($state) {
-                    'pending' => 'На рассмотрении',
-                    'approved' => 'Одобрена',
-                    'rejected' => 'Отклонена',
-                    'withdrawn' => 'Отозвана',
-                    default => $state,
-                })
-                ->color(fn (string $state): string => match ($state) {
-                    'pending' => 'warning',
-                    'approved' => 'success',
-                    'rejected' => 'danger',
-                    'withdrawn' => 'gray',
-                    default => 'gray',
-                }),
-            ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'pending'   => 'На рассмотрении',
+                        'approved'  => 'Одобрена',
+                        'rejected'  => 'Отклонена',
+                        'withdrawn' => 'Отозвана',
+                        default     => $state,
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending'   => 'warning',
+                        'approved'  => 'success',
+                        'rejected'  => 'danger',
+                        'withdrawn' => 'gray',
+                        default     => 'gray',
+                    }),
+            ])
+            ->stackedOnMobile()
+            ->emptyStateHeading('Записей пока нет')
             ->filters([
                 SelectFilter::make('approval_status')
-                ->label('Статус') // Красивое название для пользователя
-                ->options([
-                    'pending' => 'На рассмотрении',
-                    'approved' => 'Одобрена',
-                    'rejected' => 'Отклонена',
-                    'withdrawn' => 'Отозвана',
-                ])
-
-            ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
+                    ->label('Статус')
+                    ->options([
+                        'pending'   => 'На рассмотрении',
+                        'approved'  => 'Одобрена',
+                        'rejected'  => 'Отклонена',
+                        'withdrawn' => 'Отозвана',
+                    ]),
+            ], layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(3)
+            ->deferFilters(false)
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->mountUsing(function (Schema $form, Yacht $record): void {
+                        $sync = app(\App\Actions\Document\SyncDocumentFilesAction::class);
+                        $requiredDocs = ManageYachts::getRequiredDocuments();
+                        $requiredDocTypes = array_column($requiredDocs, 'doc_type');
+
+                        $data = $record->toArray();
+                        $data['required_documents'] = $sync->load($record, $requiredDocs);
+                        $data['extra_documents']    = $sync->loadExtra($record, $requiredDocTypes);
+
+                        $form->fill($data);
+                    })
+                    ->using(function (Yacht $record, array $data): Yacht {
+                        $requiredDocs = $data['required_documents'] ?? [];
+                        $extraDocs    = $data['extra_documents'] ?? [];
+                        unset($data['required_documents'], $data['extra_documents']);
+
+                        $record->update($data);
+
+                        $sync = app(\App\Actions\Document\SyncDocumentFilesAction::class);
+                        $sync->execute($record, $requiredDocs);
+                        $sync->execute($record, $extraDocs);
+
+                        // Удалить осиротевшие типы, которых больше нет в extra
+                        $requiredDocTypes = array_column(ManageYachts::getRequiredDocuments(), 'doc_type');
+                        $activeExtraTypes = array_filter(array_column($extraDocs, 'doc_type'));
+                        $sync->pruneOrphanedDocTypes($record, $requiredDocTypes, $activeExtraTypes);
+
+                        return $record;
+                    }),
                 DeleteAction::make(),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
@@ -257,5 +333,22 @@ class YachtResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    /**
+     * Определяет читаемую метку для документа в Repeater.
+     */
+    public static function resolveDocumentLabel(array $state): ?string
+    {
+        $docType = $state['doc_type'] ?? null;
+
+        if ($docType === null) {
+            return $state['title'] ?? null;
+        }
+
+        $model = \App\Models\YachtDocumentType::cachedAll()
+            ->first(fn (\App\Models\YachtDocumentType $t) => $t->key === $docType);
+
+        return $model?->label ?? ($state['title'] ?? null);
     }
 }
