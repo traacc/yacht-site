@@ -53,7 +53,7 @@ class ManageRegattaEntries extends ManageRecords
                     $docs = $data['required_documents'] ?? [];
                     unset($data['required_documents']);
 
-                    $data['status'] = 'approved';
+                    $data['status'] = 'pending';
 
                     try {
                         /** @var RegattaEntry $record */
