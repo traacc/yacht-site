@@ -26,9 +26,9 @@ class CharterPageSettings extends Page
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
-    protected static ?string $navigationLabel = 'Устав';
+    protected static ?string $navigationLabel = 'Об ассоциации';
 
-    protected static ?string $title = 'Управление документами устава';
+    protected static ?string $title = 'Управление документами ассоциации';
 
     protected static ?int $navigationSort = 22;
 
