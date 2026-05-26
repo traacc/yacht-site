@@ -181,9 +181,9 @@ class RegattaResource extends Resource
                     TextInput::make('description')
                         ->label('Описание'),
 
-                ])->itemLabel(fn (array $state): ?string => (!empty($state['event_datetime']) && !empty($state['name']))
-            ? "{$state['event_datetime']} — {$state['name']}"
-            : 'Новое событие')
+                ])->itemLabel(fn (array $state, int $index): ?string => (!empty($state['event_datetime']) && !empty($state['name']))
+            ? ($index + 1) . ". {$state['event_datetime']} — {$state['name']}"
+            : ($index + 1) . '. Новое событие')
                 ->columns(4) // Разместим поля ввода внутри карточки в 4 колонки для компактности
                 ->columnSpanFull()
                 ->addActionLabel('Добавить пункт расписания') // Текст на кнопке добавления
