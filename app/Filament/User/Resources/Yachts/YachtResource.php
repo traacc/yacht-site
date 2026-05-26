@@ -57,10 +57,14 @@ class YachtResource extends Resource
                 ->hiddenLabel()
                 ->content(new HtmlString('Выберите яхту из базы Ассоциации или заполните данные вручную. Номер ВФПС будет использован как уникальный ID яхты в системе.'))
                 ->columnSpanFull(),
+                Hidden::make('selected_yacht_id'),
                 Select::make('yacht_search')->placeholder('Номер ВФПС или название яхты')->columnSpanFull()->label('Найти яхту в базе')->searchable()
                 ->getSearchResultsUsing(fn (string $search): array => \App\Models\Yacht::query()
-                    ->where('name', 'like', "%{$search}%")
-                    ->orWhere('vfps_number', 'like', "%{$search}%")
+                    ->whereNull('user_id')
+                    ->where(function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                          ->orWhere('vfps_number', 'like', "%{$search}%");
+                    })
                     ->limit(50)
                     ->pluck('name', 'id')
                     ->toArray())
@@ -69,18 +73,30 @@ class YachtResource extends Resource
                 ->afterStateUpdated(function ($state, $set) {
                     $yacht = \App\Models\Yacht::find($state);
                     if ($yacht) {
+                        $set('selected_yacht_id', $yacht->id);
                         $set('name', $yacht->name);
                         $set('vfps_number', $yacht->vfps_number);
+                        $set('gims_number', $yacht->gims_number);
+                        $set('class', $yacht->class);
+                        $set('project', $yacht->project);
+                        $set('year', $yacht->year);
+                        $set('reg_place', $yacht->reg_place);
+                        $set('current_mass_kg', $yacht->current_mass_kg);
                     }
                 }),
                 TextInput::make('name')
-                    ->required()->label('Название яхты')->placeholder('Введите название яхты'),
+                    ->required()->label('Название яхты')->placeholder('Введите название яхты')
+                    ->disabled(fn (callable $get) => filled($get('selected_yacht_id'))),
                 TextInput::make('gims_number')->label('Номер ГИМС')->placeholder('Введите номер ГИМС'),
                 TextInput::make('vfps_number')
-                    ->required()->unique(table: 'yachts', column: 'vfps_number', ignoreRecord: true)
+                    ->required()
+                    ->rules([
+                        fn (callable $get) => \Illuminate\Validation\Rule::unique('yachts', 'vfps_number')->ignore($get('selected_yacht_id')),
+                    ])
                 ->validationMessages([
                     'unique' => 'Яхта с таким номером ВФПС уже существует в системе.',
-                ])->label('Номер паруса')->placeholder('Введите номер паруса (ВФПС)'),
+                ])->label('Номер паруса')->placeholder('Введите номер паруса (ВФПС)')
+                    ->disabled(fn (callable $get) => filled($get('selected_yacht_id'))),
                 TextInput::make('class')->label('Класс')->placeholder('Введите класс яхты'),
 
                 Placeholder::make('Параметры')->columnSpanFull(),

@@ -35,13 +35,24 @@ class ManageYachts extends ManageRecords
                 ->modalHeading('Зарегистрировать яхту')
                 ->using(function (array $data, string $model): Yacht {
                     $docs = $data['required_documents'] ?? [];
-                    unset($data['required_documents'], $data['yacht_search']);
+                    $selectedYachtId = $data['selected_yacht_id'] ?? null;
+                    unset($data['required_documents'], $data['yacht_search'], $data['selected_yacht_id']);
 
-                    $data['user_id']          = auth()->id();
-                    $data['approval_status']  = 'approved';
+                    if ($selectedYachtId) {
+                        /** @var Yacht $record */
+                        $record = Yacht::findOrFail($selectedYachtId);
+                        $record->update([
+                            ...$data,
+                            'user_id'         => auth()->id(),
+                            'approval_status' => 'approved',
+                        ]);
+                    } else {
+                        $data['user_id']         = auth()->id();
+                        $data['approval_status'] = 'approved';
 
-                    /** @var Yacht $record */
-                    $record = $model::create($data);
+                        /** @var Yacht $record */
+                        $record = $model::create($data);
+                    }
 
                     app(SyncDocumentFilesAction::class)->execute($record, $docs);
 
