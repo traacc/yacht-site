@@ -69,9 +69,10 @@ class LoginModal extends Component
             'phone'                 => ['required'],
             'birthday'              => ['required'],
             'sports_category'       => ['nullable', Rule::enum(SportCategory::class)],
-            'registerCaptchaToken' => ['required', new YandexCaptcha()],
-        ], attributes: [
+            'registerCaptchaToken'  => ['required', new YandexCaptcha()],
+        ], messages: [
             'registerCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
+        ], attributes: [
             'first_name'            => 'имя',
             'last_name'             => 'фамилия',
             'email'                 => 'email',
@@ -80,6 +81,7 @@ class LoginModal extends Component
             'password'              => 'пароль',
             'password_confirmation' => 'подтверждение пароля',
             'sports_category'       => 'спортивный разряд',
+            'registerCaptchaToken'  => 'капча',
         ]);
 
 

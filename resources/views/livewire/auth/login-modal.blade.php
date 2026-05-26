@@ -66,8 +66,8 @@
                     data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
                 </div>
                 
-                @error('captchaToken')
-                    <div style="color: red;">{{ $message }}</div>
+                @error('loginCaptchaToken')
+                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
                 @enderror
 
                 <div class="text-right text-brand-gray-light text-sm">
@@ -172,8 +172,8 @@
                     data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
                 </div>
                 
-                @error('captchaToken')
-                    <div style="color: red;">{{ $message }}</div>
+                @error('registerCaptchaToken')
+                    <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
                 @enderror
                 <label class="custom-checkbox">
                     <input type="checkbox" name="privacy" required/>
