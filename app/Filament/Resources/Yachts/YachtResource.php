@@ -114,6 +114,7 @@ class YachtResource extends Resource
                     ->addActionLabel('Добавить регату')
                     ->collapsible()
                     ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Новая регата')
+                    ->defaultItems(0)
                     ->schema([
                         TextInput::make('name')
                             ->label('Название регаты')
