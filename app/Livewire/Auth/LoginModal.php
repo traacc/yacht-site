@@ -87,6 +87,8 @@ class LoginModal extends Component
 
         session()->regenerate();
 
+        session()->flash('registered', true);
+
         // 3. Редирект на главную или в личный кабинет
         return $this->redirect(route('home'), navigate: true);
     }
