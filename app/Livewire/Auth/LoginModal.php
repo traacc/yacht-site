@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
-use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 use App\Rules\YandexCaptcha;
@@ -34,27 +33,22 @@ class LoginModal extends Component
     public function login()
     {
         $this->validate([
-            'email'    => ['required', 'email'],
-            'password' => ['required'],
+            'email'             => ['required', 'email'],
+            'password'          => ['required'],
             'loginCaptchaToken' => ['required', new YandexCaptcha()],
         ], messages: [
-            'loginCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
+            'loginCaptchaToken.required' => 'Вам необходимо пройти проверку на бота.',
         ], attributes: [
-            'email'    => 'email',
-            'password' => 'пароль',
+            'email'             => 'email',
+            'password'          => 'пароль',
             'loginCaptchaToken' => 'капча',
         ]);
 
-        
-        // Попытка авторизации
         if (Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
             session()->regenerate();
-
-            // Перенаправляем пользователя или обновляем страницу
             return $this->redirect(route('home'), navigate: true);
         }
 
-        // Если пароль не подошел, возвращаем ошибку в форму
         $this->addError('email', 'Неверный email или пароль.');
     }
 

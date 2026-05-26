@@ -1,6 +1,8 @@
-<div x-data="{ isOpen: false, tab: 'login' }"
+<div x-data="{ isOpen: false, tab: 'login', loginToken: '', registerToken: '' }"
      @open-login-modal.window="tab = $event.detail?.tab || 'login'; isOpen = true"
-     @keydown.escape.window="isOpen = false">
+     @keydown.escape.window="isOpen = false"
+     @login-captcha-solved.window="loginToken = $event.detail"
+     @register-captcha-solved.window="registerToken = $event.detail">
 
 
     <div x-show="isOpen" 
@@ -34,7 +36,7 @@
                     &#x2715; </button>
             </div>
 
-            <form wire:submit.prevent="login" class="space-y-4 mt-2" x-show="tab === 'login'">
+            <form @submit.prevent="$wire.set('loginCaptchaToken', loginToken).then(() => $wire.login())" class="space-y-4 mt-2" x-show="tab === 'login'">
                 
                 <div>
                     <input type="email" id="email" wire:model="email" placeholder="Адрес электронной почты"
@@ -62,7 +64,6 @@
                         <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                     @enderror
                 </div>
-                <input type="hidden" wire:model="loginCaptchaToken" id="loginCaptchaTokenInput">
                 <div wire:ignore class="smart-captcha mt-4" data-callback="loginCaptchaCallback"
                     data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
                 </div>
@@ -88,7 +89,7 @@
                 
             </form>
             
-            <form wire:submit.prevent="register" class="space-y-4 mt-2" x-show="tab === 'register'">
+            <form @submit.prevent="$wire.set('registerCaptchaToken', registerToken).then(() => $wire.register())" class="space-y-4 mt-2" x-show="tab === 'register'">
                 <div>
                     <input type="text" id="first_name" wire:model="first_name" placeholder="Имя"
                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('first_name') border-red-300 @enderror">
@@ -169,7 +170,6 @@
                         </svg>
                     </button>
                 </div>
-                <input type="hidden" wire:model="registerCaptchaToken" id="registerCaptchaTokenInput">
                 <div wire:ignore class="smart-captcha mt-4" data-callback="registerCaptchaCallback"
                     data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
                 </div>
@@ -194,24 +194,12 @@
             </form>
         </div>
     </div>
-    @script
     <script>
         window.loginCaptchaCallback = function(token) {
-            const input = document.getElementById('loginCaptchaTokenInput');
-            if (input) {
-                input.value = token;
-                input.dispatchEvent(new Event('input'));
-            }
-            $wire.set('loginCaptchaToken', token);
+            window.dispatchEvent(new CustomEvent('login-captcha-solved', { detail: token }));
         };
         window.registerCaptchaCallback = function(token) {
-            const input = document.getElementById('registerCaptchaTokenInput');
-            if (input) {
-                input.value = token;
-                input.dispatchEvent(new Event('input'));
-            }
-            $wire.set('registerCaptchaToken', token);
+            window.dispatchEvent(new CustomEvent('register-captcha-solved', { detail: token }));
         };
     </script>
-    @endscript
 </div>
