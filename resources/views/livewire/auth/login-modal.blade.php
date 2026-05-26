@@ -62,6 +62,7 @@
                         <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                     @enderror
                 </div>
+                <input type="hidden" wire:model="loginCaptchaToken" id="loginCaptchaTokenInput">
                 <div wire:ignore class="smart-captcha mt-4" data-callback="loginCaptchaCallback"
                     data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
                 </div>
@@ -168,6 +169,7 @@
                         </svg>
                     </button>
                 </div>
+                <input type="hidden" wire:model="registerCaptchaToken" id="registerCaptchaTokenInput">
                 <div wire:ignore class="smart-captcha mt-4" data-callback="registerCaptchaCallback"
                     data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
                 </div>
@@ -194,8 +196,22 @@
     </div>
     @script
     <script>
-        window.loginCaptchaCallback = (token) => $wire.set('loginCaptchaToken', token);
-        window.registerCaptchaCallback = (token) => $wire.set('registerCaptchaToken', token);
+        window.loginCaptchaCallback = function(token) {
+            const input = document.getElementById('loginCaptchaTokenInput');
+            if (input) {
+                input.value = token;
+                input.dispatchEvent(new Event('input'));
+            }
+            $wire.set('loginCaptchaToken', token);
+        };
+        window.registerCaptchaCallback = function(token) {
+            const input = document.getElementById('registerCaptchaTokenInput');
+            if (input) {
+                input.value = token;
+                input.dispatchEvent(new Event('input'));
+            }
+            $wire.set('registerCaptchaToken', token);
+        };
     </script>
     @endscript
 </div>
