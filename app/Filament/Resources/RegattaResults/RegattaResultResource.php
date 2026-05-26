@@ -200,7 +200,7 @@ class RegattaResultResource extends Resource
             ])
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
+                EditAction::make()->modalHeading('Редактировать результат регаты'),
                 Action::make('import_csv')
                     ->label('Импорт CSV')
                     ->icon(Heroicon::ArrowUpTray)

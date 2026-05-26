@@ -277,7 +277,7 @@ class YachtResource extends Resource
             ->filtersFormColumns(3)
             ->deferFilters(false)
             ->recordActions([
-                EditAction::make()
+                EditAction::make()->modalHeading('Редактировать яхту')
                     ->mountUsing(function (Schema $form, Yacht $record): void {
                         $sync = app(\App\Actions\Document\SyncDocumentFilesAction::class);
                         $requiredDocs = ManageYachts::getRequiredDocuments();

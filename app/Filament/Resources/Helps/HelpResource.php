@@ -232,7 +232,7 @@ class HelpResource extends Resource
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()->modalHeading('Редактировать раздел о помощи'),
                 DeleteAction::make(),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),

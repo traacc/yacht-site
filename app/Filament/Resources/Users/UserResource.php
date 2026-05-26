@@ -194,7 +194,7 @@ class UserResource extends Resource
                 ])
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()->modalHeading('Редактировать пользователя'),
                 DeleteAction::make(),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),

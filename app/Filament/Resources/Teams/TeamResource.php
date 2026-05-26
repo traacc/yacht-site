@@ -168,7 +168,7 @@ class TeamResource extends Resource
                 ])
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()->modalHeading('Редактировать команду'),
                 DeleteAction::make(),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),

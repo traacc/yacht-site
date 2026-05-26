@@ -244,7 +244,7 @@ class YachtResource extends Resource
                 TrashedFilter::make(),
             ])->emptyStateHeading('Записей пока нет')
             ->recordActions([
-                EditAction::make()->hiddenLabel()
+                EditAction::make()->hiddenLabel()->modalHeading('Редактировать яхту')
                     ->mountUsing(function (\Filament\Schemas\Schema $form, Yacht $record): void {
                         $data = $record->toArray();
                         $data['required_documents'] = app(\App\Actions\Document\SyncDocumentFilesAction::class)

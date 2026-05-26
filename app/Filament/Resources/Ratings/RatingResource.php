@@ -119,7 +119,7 @@ class RatingResource extends Resource
                 //
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()->modalHeading('Редактировать рейтинг'),
                 DeleteAction::make(),
             ])
             ->toolbarActions([

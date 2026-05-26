@@ -227,7 +227,7 @@ class TeamResource extends Resource
                 TrashedFilter::make(),
             ])->emptyStateHeading('Записей пока нет')
             ->recordActions([
-                EditAction::make()
+                EditAction::make()->modalHeading('Редактировать команду')
                     ->hiddenLabel()
                     ->visible(fn (Team $record): bool => auth()->user()?->can('editTeam', $record) ?? false),
                 RestoreAction::make()

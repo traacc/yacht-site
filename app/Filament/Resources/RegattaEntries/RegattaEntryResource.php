@@ -209,7 +209,7 @@ class RegattaEntryResource extends Resource
             ->emptyStateHeading('Записей пока нет')
             ->filters([])
             ->recordActions([
-                EditAction::make()
+                EditAction::make()->modalHeading('Редактировать заявку на регату')
                     ->mountUsing(function (Schema $form, RegattaEntry $record): void {
                         $sync = app(\App\Actions\Document\SyncDocumentFilesAction::class);
                         $requiredDocs = ManageRegattaEntries::getRequiredDocuments($record->regatta_id);

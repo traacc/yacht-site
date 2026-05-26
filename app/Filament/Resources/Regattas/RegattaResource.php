@@ -351,7 +351,7 @@ class RegattaResource extends Resource
             ->filtersFormColumns(3)
             ->deferFilters(false)
             ->recordActions([
-                EditAction::make()
+                EditAction::make()->modalHeading('Редактировать регату')
                     ->mountUsing(function (Schema $form, Regatta $record): void {
                         $sync         = app(\App\Actions\Document\SyncDocumentFilesAction::class);
                         $requiredDocs = ManageRegattas::getRequiredDocuments();
