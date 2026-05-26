@@ -6,7 +6,7 @@
         <section class="py-10 bg-white">
             <div class="container mx-auto bg-brand-light-bg flex flex-col md:flex-row gap-10 justify-between items-center">
                 <div class="info">
-                    @if($regatta->isUpcoming())
+                    @if($regatta->startsInLessThanMonth() && $regatta->regatta_status === \App\Enums\RegattaStatus::Upcoming)
                         <div class="bg-brand-pink-bg px-4 py-2 max-w-56 text-center">
                             <span class="text-brand-red font-bold uppercase">БЛИЖАЙШАЯ РЕГАТА</span>
                         </div>
@@ -33,10 +33,15 @@
                         <div class="mt-6 bg-brand-light-bg border border-brand-blue text-brand-blue py-2 px-6 text-lg font-semibold inline-block">
                             Вы уже заявлены
                         </div>
-                    @elseif($regatta->isFinished())
+                    @elseif($regatta->regatta_status === \App\Enums\RegattaStatus::Finished)
                         <button disabled
                                 class="mt-6 bg-gray-300 text-gray-500 py-2 px-6 text-lg font-semibold cursor-not-allowed opacity-60">
                             Регата завершена
+                        </button>
+                    @elseif($regatta->regatta_status === \App\Enums\RegattaStatus::Cancelled)
+                        <button disabled
+                                class="mt-6 bg-gray-300 text-gray-500 py-2 px-6 text-lg font-semibold cursor-not-allowed opacity-60">
+                            Регата отменена
                         </button>
                     @else
                         <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"
@@ -88,7 +93,7 @@
         @endif
 
         {{-- ===== ЗАЯВЛЕННЫЕ КОМАНДЫ ===== --}}
-        @if(!$regatta->isFinished())
+        @if($regatta->regatta_status !== \App\Enums\RegattaStatus::Finished && $regatta->regatta_status !== \App\Enums\RegattaStatus::Cancelled)
         <section class="py-10 teams">
             <div class="container mx-auto lg:p-6 bg-brand-light-bg">
                 <div class="flex items-center justify-between mb-6">

@@ -59,7 +59,7 @@
                             {!! file_get_contents(public_path('images/icons/calendar.svg')) !!}
                             {{ $regatta->dateRange() }}
                         </div>
-                        @if($regatta->isFinished())
+                        @if($regatta->regatta_status === \App\Enums\RegattaStatus::Finished)
                             <div class="bg-[#15794933] px-3 py-1 text-[#157949] inline-block font-semibold max-w-[140px] w-full uppercase">
                                 Завершено
                             </div>
@@ -69,7 +69,7 @@
                             </div>
                         @endif
                     </div>
-                    @if(!$regatta->isFinished())
+                    @if($regatta->regatta_status !== \App\Enums\RegattaStatus::Finished)
                         <p class="mb-6">Таблица обновляется по мере обработки результатов. Финальные очки будут опубликованы после утверждения итогов соревнования.</p>
                     @endif
                     <div class="overflow-x-auto relative p-6 bg-white responsive-table">
@@ -142,7 +142,7 @@
     @elseif($mode === 'show')
     {{-- ===== РЕЖИМ: СТРАНИЦА РЕГАТЫ ===== --}}
 
-        @if($regatta && $regatta->isFinished())
+        @if($regatta && $regatta->regatta_status === \App\Enums\RegattaStatus::Finished)
             <section class="results mb-12">
                 <div class="container mx-auto bg-[#F8F8F8]">
                     <div class="flex justify-between mb-6">
@@ -238,7 +238,7 @@
                                     {!! file_get_contents(public_path('images/icons/calendar.svg')) !!}
                                     {{ $regatta->dateRange() }}
                                 </div>
-                                @if($regatta->isFinished())
+                                @if($regatta->regatta_status === \App\Enums\RegattaStatus::Finished)
                                     <div class="bg-[#15794933] px-3 py-1 text-[#157949] inline-block font-semibold max-w-[140px] w-full uppercase md:text-base text-sm">
                                         Завершено
                                     </div>
@@ -248,7 +248,7 @@
                                     </div>
                                 @endif
                             </div>
-                            @if(!$regatta->isFinished())
+                            @if($regatta->regatta_status !== \App\Enums\RegattaStatus::Finished)
                                 <p class="mb-6">Таблица обновляется по мере обработки результатов. Финальные очки будут опубликованы после утверждения итогов соревнования.</p>
                             @endif
                             <div class="overflow-x-auto relative p-2 md:p-6 md:pt-0 bg-white responsive-table md:max-h-[220px]">

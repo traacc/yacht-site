@@ -262,7 +262,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'location' => $r->water_area,
         'img' => '/storage/' . $r->background_image,
         'url' => route('competition-details', $r),
-        'statusLabel' => $r->isUpcoming() ? 'Планируемые' : ($r->isFinished() ? 'Завершены' : 'Идут'),
+        'statusLabel' => $r->regatta_status->getLabel(),
     ])->values()->toArray();
 
     return view('pages.regatta-show', compact(

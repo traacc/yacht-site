@@ -66,12 +66,10 @@ class RegattasCalendar extends Component
                 'is_current' => $num === $currentMonth,
                 'events' => $grouped->has($num)
                     ? $grouped->get($num)->map(fn (Regatta $r) => [
-                        'date' => $r->dateRange(), // Проверьте, что метод существует в модели
+                        'date' => $r->dateRange(),
                         'title' => $r->name,
                         'city' => $r->location,
-                        'status' => $r->isFinished()
-                                    ? 'completed'
-                                    : ($r->isActive() ? 'upcoming' : 'planned'),
+                        'status' => $r->regatta_status->value,
                         'url' => route('competition-details', $r->id),
                     ])->values()->toArray()
                     : [],

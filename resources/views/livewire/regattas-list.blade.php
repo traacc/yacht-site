@@ -32,17 +32,29 @@
                         alt="{{ $regatta->name }}"
                         class="w-full h-64 object-cover"
                     />
-                    @if ($regatta->startsInLessThanMonth())
+                    @if ($regatta->startsInLessThanMonth() && $regatta->regatta_status === \App\Enums\RegattaStatus::Upcoming)
                     <div class="absolute top-0 right-0 bg-[#FDE4E3] px-4 py-2 text-[10px] text-sm">
                         <span class="text-[#F24842] font-bold text-sm uppercase">БЛИЖАЙШАЯ РЕГАТА</span>
                     </div>
-                    @elseif ($regatta->isUpcoming())
+                    @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Upcoming)
                     <div class="absolute top-0 right-0 bg-[#ECECEC] px-4 py-2 text-[10px] text-sm">
                         <span class="text-brand-gray-light font-bold text-sm uppercase">Планируемые</span>
                     </div>
-                    @elseif ($regatta->isFinished())
+                    @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Finished)
                     <div class="absolute top-0 right-0 bg-[#E6F4EA] px-4 py-2 text-[10px] text-sm">
                         <span class="text-[#157949] font-bold text-sm uppercase">Завершена</span>
+                    </div>
+                    @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Active)
+                    <div class="absolute top-0 right-0 bg-[#FFF3E0] px-4 py-2 text-[10px] text-sm">
+                        <span class="text-[#E67E22] font-bold text-sm uppercase">Идёт сейчас</span>
+                    </div>
+                    @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Cancelled)
+                    <div class="absolute top-0 right-0 bg-[#FDE4E3] px-4 py-2 text-[10px] text-sm">
+                        <span class="text-[#F24842] font-bold text-sm uppercase">Отменена</span>
+                    </div>
+                    @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Postponed)
+                    <div class="absolute top-0 right-0 bg-[#FFF3E0] px-4 py-2 text-[10px] text-sm">
+                        <span class="text-[#E67E22] font-bold text-sm uppercase">Перенесена</span>
                     </div>
                     @endif
                     <div class="absolute bottom-0 left-0 bg-[#F8F8F8] text-[#2E325C] px-4 py-2  text-[10px] text-sm">
@@ -98,14 +110,18 @@
                         <td data-label="Локация" class="py-2 text-center">{{ $regatta->location }}</td>
                         <td data-label="Акватория" class="py-2 text-center">{{ $regatta->water_area }}</td>
                         <td data-label="Статус" class="py-2 text-center">
-                            @if ($regatta->startsInLessThanMonth())
+                            @if ($regatta->startsInLessThanMonth() && $regatta->regatta_status === \App\Enums\RegattaStatus::Upcoming)
                             <div class="bg-[#FDE4E3] px-3 py-1 w-full max-w-[200px] text-[#F24842] inline-block font-semibold">Ближайшая регата</div>
-                            @elseif ($regatta->isUpcoming())
+                            @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Upcoming)
                             <div class="bg-[#ECECEC] px-3 py-1 w-full max-w-[200px] text-brand-gray-light inline-block font-semibold">Планируемая</div>
-                            @elseif ($regatta->isFinished())
+                            @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Finished)
                             <div class="bg-[#E6F4EA] px-3 py-1 w-full max-w-[200px] text-[#157949] inline-block font-semibold">Состоявшаяся</div>
-                            @else
+                            @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Active)
                             <div class="bg-[#FFF3E0] px-3 py-1 w-full max-w-[200px] text-[#E67E22] inline-block font-semibold">Идёт сейчас</div>
+                            @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Cancelled)
+                            <div class="bg-[#FDE4E3] px-3 py-1 w-full max-w-[200px] text-[#F24842] inline-block font-semibold">Отменена</div>
+                            @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Postponed)
+                            <div class="bg-[#FFF3E0] px-3 py-1 w-full max-w-[200px] text-[#E67E22] inline-block font-semibold">Перенесена</div>
                             @endif
                         </td>
                         <td class="py-2 text-center">
