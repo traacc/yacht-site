@@ -32,23 +32,26 @@ class LoginModal extends Component
 
     public function login()
     {
-        $this->validate([
-            'email'             => ['required', 'email'],
-            'password'          => ['required'],
+        $credentials = $this->validate([
+            'email'    => ['required', 'email'],
+            'password' => ['required'],
             'loginCaptchaToken' => ['required', new YandexCaptcha()],
-        ], messages: [
-            'loginCaptchaToken.required' => 'Вам необходимо пройти проверку на бота.',
         ], attributes: [
-            'email'             => 'email',
-            'password'          => 'пароль',
-            'loginCaptchaToken' => 'капча',
+            'loginCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
+            'email'    => 'email',
+            'password' => 'пароль',
         ]);
 
+        
+        // Попытка авторизации
         if (Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
             session()->regenerate();
+
+            // Перенаправляем пользователя или обновляем страницу
             return $this->redirect(route('home'), navigate: true);
         }
 
+        // Если пароль не подошел, возвращаем ошибку в форму
         $this->addError('email', 'Неверный email или пароль.');
     }
 
@@ -64,10 +67,9 @@ class LoginModal extends Component
             'phone'                 => ['required'],
             'birthday'              => ['required'],
             'sports_category'       => ['nullable', Rule::enum(SportCategory::class)],
-            'registerCaptchaToken'  => ['required', new YandexCaptcha()],
-        ], messages: [
-            'registerCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
+            'registerCaptchaToken' => ['required', new YandexCaptcha()],
         ], attributes: [
+            'registerCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
             'first_name'            => 'имя',
             'last_name'             => 'фамилия',
             'email'                 => 'email',
@@ -76,7 +78,6 @@ class LoginModal extends Component
             'password'              => 'пароль',
             'password_confirmation' => 'подтверждение пароля',
             'sports_category'       => 'спортивный разряд',
-            'registerCaptchaToken'  => 'капча',
         ]);
 
 
