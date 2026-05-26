@@ -33,13 +33,13 @@ class YachtDocumentSettings extends Page
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCheck;
 
-    protected static ?string $navigationLabel = 'Документы яхт';
+    protected static ?string $navigationLabel = 'Настрока документов';
 
-    protected static ?string $title = 'Обязательные документы яхт';
+    protected static ?string $title = 'Обязательные документы';
 
     protected static ?int $navigationSort = 50;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Яхты';
+    protected static string|UnitEnum|null $navigationGroup = 'Сайт';
 
     /** @var array<string, bool> */
     public array $data = [];
