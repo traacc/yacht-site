@@ -17,14 +17,12 @@ class RegattaEvents extends Model
         'name',
         'description',
         'event_type',
-        'event_number',
         'event_datetime',
     ];
 
     protected function casts(): array
     {
         return [
-            'event_number' => 'integer',
             'event_datetime'   => 'datetime',
         ];
     }

@@ -27,16 +27,15 @@ class RegattaEventsSeeder extends Seeder
         foreach ($regattas as $regatta) {
             // --- Schedule events (non-race) ---
             $scheduleEvents = [
-                ['name' => 'Регистрация участников', 'event_number' => 0, 'time' => '08:00'],
-                ['name' => 'Открытие регаты',        'event_number' => 1, 'time' => '09:30'],
-                ['name' => 'Брифинг для рулевых',    'event_number' => 2, 'time' => '10:00'],
+                ['name' => 'Регистрация участников', 'time' => '08:00'],
+                ['name' => 'Открытие регаты',        'time' => '09:30'],
+                ['name' => 'Брифинг для рулевых',    'time' => '10:00'],
             ];
 
             foreach ($scheduleEvents as $i => $event) {
                 RegattaEvents::factory()
                     ->schedule()
                     ->forRegatta($regatta)
-                    ->eventNumber($event['event_number'])
                     ->create([
                         'name'        => $event['name'],
                         'description' => $i === 0
@@ -59,7 +58,6 @@ class RegattaEventsSeeder extends Seeder
                 RegattaEvents::factory()
                     ->race()
                     ->forRegatta($regatta)
-                    ->eventNumber($raceNum + 2) // after schedule events
                     ->create([
                         'name'        => "Гонка №{$raceNum}",
                         'description' => "Гоночный заезд №{$raceNum} регаты «{$regatta->name}».",

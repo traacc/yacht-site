@@ -62,7 +62,7 @@ class Regatta extends Model
 
     public function races(): HasMany
     {
-        return $this->hasMany(RegattaEvents::class)->orderBy('event_number');
+        return $this->hasMany(RegattaEvents::class)->orderBy('event_datetime');
     }
 
     public function entries(): HasMany

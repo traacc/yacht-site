@@ -170,14 +170,13 @@ class RegattaResource extends Resource
                 ->relationship('races') // Указываем Filament автоматически управлять связью
                 ->label('Расписание регаты')
                 ->schema([
-                    TextInput::make('event_number')
-                        ->label('№')
-                        ->hidden(),
                     TextInput::make('name')
                         ->label('Событие')
                         ->required(),
                     DateTimePicker::make('event_datetime')
                         ->label('Время')
+                        ->displayFormat('d.m.Y H:i')
+                        ->format('Y-m-d H:i:s')
                         ->required(),
                     TextInput::make('description')
                         ->label('Описание'),
@@ -185,7 +184,6 @@ class RegattaResource extends Resource
                 ])->itemLabel(fn (array $state): ?string => (!empty($state['event_datetime']) && !empty($state['name']))
             ? "{$state['event_datetime']} — {$state['name']}"
             : 'Новое событие')
-                ->orderColumn('event_number')
                 ->columns(4) // Разместим поля ввода внутри карточки в 4 колонки для компактности
                 ->columnSpanFull()
                 ->addActionLabel('Добавить пункт расписания') // Текст на кнопке добавления
