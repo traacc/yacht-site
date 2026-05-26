@@ -16,7 +16,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
         return this.yachtsData.filter(yacht =>
             yacht.name.toLowerCase().includes(this.search.toLowerCase()) ||
             yacht.vfps_number.toLowerCase().includes(this.search.toLowerCase()) ||
-            (yacht.owner_name && yacht.owner_name.toLowerCase().includes(this.search.toLowerCase()))
+            (yacht.owner && yacht.owner.name && yacht.owner.name.toLowerCase().includes(this.search.toLowerCase()))
         );
     },
     openYachtModal(yacht) {
@@ -56,7 +56,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                         <tr class="border-t text-[10px]  text-sm lg:text-2xl">
                             <td data-label="Название" class="py-2 text-center" x-text="yacht.name"></td>
                             <td data-label="Парус №" class="py-2 text-center" x-text="yacht.vfps_number"></td>
-                            <td data-label="Владелец" class="py-2 text-center" x-text="yacht.owner_name || '—'"></td>
+                            <td data-label="Владелец" class="py-2 text-center" x-text="yacht.owner?.name || '—'"></td>
                             <!--<td data-label="Балл ORC" class="py-2 text-center">—</td>
                             <td data-label="Сертификат ORC" class="py-2 text-center">
                                 <template x-if="yacht.has_orc_cert">
@@ -189,23 +189,23 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                     <h3 class="text-3xl a-font mb-6">Владелец яхты</h3>
                     <div class="flex flex-col md:flex-row gap-4 items-center bg-[#F8F8F8]">
                         <div class="owner__pic">
-                            <img :src="selectedYacht.owner_photo" alt="">
+                            <img :src="selectedYacht.owner?.photo_url" alt="">
                         </div>
                         <div class="owner__info">
-                            <h3 class="text-2xl a-font mb-4" x-text="selectedYacht.owner_name"></h3>
+                            <h3 class="text-2xl a-font mb-4" x-text="selectedYacht.owner?.name"></h3>
                             <p class="mb-6" x-text="'Владелец яхты «' + selectedYacht.name + '»'"></p>
                             <ul class="space-y-3">
                                 <li class="flex items-center gap-2">
                                     {!! file_get_contents(public_path('images/icons/phone.svg')) !!}
-                                    <span x-text="selectedYacht.owner_phone"></span>
+                                    <span x-text="selectedYacht.owner?.phone"></span>
                                 </li>
                                 <li class="flex items-center gap-2">
                                     {!! file_get_contents(public_path('images/icons/mail.svg')) !!}
-                                    <span x-text="selectedYacht.owner_email"></span>
+                                    <span x-text="selectedYacht.owner?.email"></span>
                                 </li>
                                 <li class="flex items-center gap-2">
                                     {!! file_get_contents(public_path('images/icons/marker.svg')) !!}
-                                    <span x-text="selectedYacht.owner_city"></span>
+                                    <span x-text="selectedYacht.owner?.city"></span>
                                 </li>
                             </ul>
                             <div class="mt-6"><span class="font-semibold">Яхта зарегистрирована:</span> <span x-text="selectedYacht.registered_at"></span></div>

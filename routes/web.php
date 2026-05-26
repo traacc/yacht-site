@@ -325,7 +325,7 @@ Route::get('/teams', function () {
     return view('pages.teams', compact('teams', 'teamsJson'));
 })->name('teams');
 Route::get('/yachts', function () {
-    $yachts = Yacht::with(['documents', 'regattaEntries.regatta', 'regattaEntries.team'])
+    $yachts = Yacht::with(['user', 'documents', 'regattaEntries.regatta', 'regattaEntries.team'])
         ->where('approval_status', 'approved')
         ->orderBy('name')
         ->paginate(12);
@@ -334,12 +334,14 @@ Route::get('/yachts', function () {
         'id' => $yacht->id,
         'name' => $yacht->name,
         'vfps_number' => $yacht->vfps_number,
-        'owner_name' => $yacht->owner_name ?? '—',
-        'owner_phone' => $yacht->owner_phone ?? '—',
-        'owner_email' => $yacht->owner_email ?? '—',
-        'owner_photo' => $yacht->owner_photo
-                                    ? asset('storage/'.$yacht->owner_photo)
-                                    : asset('images/yachts/owner.png'),
+        'owner' => [
+            'name' => $yacht->user?->full_name ?? '—',
+            'phone' => $yacht->user?->phone ?? '—',
+            'email' => $yacht->user?->email ?? '—',
+            'photo_url' => $yacht->user?->photo_url
+                ? asset('storage/'.$yacht->user->photo_url)
+                : asset('images/yachts/owner.png'),
+        ],
         'class' => $yacht->class ?? 'Carter 30',
         'project' => $yacht->project ?? '—',
         'year' => $yacht->year ?? '—',

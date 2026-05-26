@@ -167,7 +167,7 @@ class YachtResource extends Resource
                 TextColumn::make('vfps_number')
                     ->label('Парус №')
                     ->searchable(),
-                TextColumn::make('owner_name')
+                TextColumn::make('user.full_name')
                     ->label('Владелец')
                     ->searchable(),
                 TextColumn::make('orc_cert')
