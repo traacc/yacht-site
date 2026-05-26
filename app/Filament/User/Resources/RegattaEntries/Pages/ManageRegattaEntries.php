@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\User\Resources\RegattaEntries\Pages;
 
+use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\RegattaEntry\UpdateRegattaEntryRequiredDocumentsAction;
 use App\Filament\User\Resources\RegattaEntries\RegattaEntryResource;
 use App\Models\RegattaEntry;
@@ -30,12 +31,15 @@ class ManageRegattaEntries extends ManageRecords
     {
         return [
             CreateAction::make()
-                ->mutateFormDataUsing(fn (array $data): array => array_merge($data, [
-                    'status' => 'approved',
-                ]))
                 ->using(function (array $data, string $model): \Illuminate\Database\Eloquent\Model {
+                    $docs = $data['required_documents'] ?? [];
+                    unset($data['required_documents']);
+
+                    $data['status'] = 'approved';
+
                     try {
-                        return $model::create($data);
+                        /** @var RegattaEntry $record */
+                        $record = $model::create($data);
                     } catch (UniqueConstraintViolationException) {
                         Notification::make()
                             ->title('Заявка уже существует')
@@ -45,25 +49,18 @@ class ManageRegattaEntries extends ManageRecords
 
                         $this->halt();
                     }
-                })->createAnother(false)->successNotification(
-                Notification::make()
-                    ->success()
-                    ->title('Готово!')
-                    ->body('Ваша заявка успешно подана, ожидайте подтверждения')),
-        ];
-    }
 
-    /** Создаёт недостающие обязательные документы для заявки */
-    public static function ensureRequiredDocuments(RegattaEntry $entry): void
-    {
-        foreach (static::getRequiredDocuments() as $doc) {
-            $entry->documents()->firstOrCreate(
-                ['doc_type' => $doc['doc_type']],
-                [
-                    'title' => $doc['title'],
-                    'url'   => '',
-                ],
-            );
-        }
+                    app(SyncDocumentFilesAction::class)->execute($record, $docs);
+
+                    return $record;
+                })
+                ->createAnother(false)
+                ->successNotification(
+                    Notification::make()
+                        ->success()
+                        ->title('Готово!')
+                        ->body('Ваша заявка успешно подана, ожидайте подтверждения'),
+                ),
+        ];
     }
 }

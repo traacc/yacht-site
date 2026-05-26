@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 class Document extends Model
@@ -57,6 +58,49 @@ class Document extends Model
     public function documentable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    // ──────────────────────────────────────────────
+    // Scopes
+    // ──────────────────────────────────────────────
+
+    /**
+     * Область видимости: документы определённого типа.
+     */
+    public function scopeOfType($query, string $docType)
+    {
+        return $query->where('doc_type', $docType);
+    }
+
+    // ──────────────────────────────────────────────
+    // Static helpers
+    // ──────────────────────────────────────────────
+
+    /**
+     * Сгруппировать документы по doc_type и вернуть массив url-ов.
+     *
+     * @param \Illuminate\Database\Eloquent\Collection<int, self> $documents
+     * @return array<string, string[]>  doc_type => [url, url, …]
+     */
+    public static function groupUrlsByType($documents): array
+    {
+        return $documents
+            ->groupBy('doc_type')
+            ->map(fn (Collection $group) => $group->pluck('url')->filter(fn ($u) => $u !== '')->values()->toArray())
+            ->toArray();
+    }
+
+    /**
+     * Проверить, есть ли хотя бы один загруженный файл для заданного doc_type.
+     *
+     * @param \Illuminate\Database\Eloquent\Collection<int, self> $documents
+     */
+    public static function hasFileForType($documents, string $docType): bool
+    {
+        return $documents
+            ->where('doc_type', $docType)
+            ->filter(fn (self $doc) => $doc->url !== '' && $doc->url !== null)
+            ->isNotEmpty();
     }
 
     // ──────────────────────────────────────────────

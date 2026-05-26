@@ -6,7 +6,6 @@ namespace App\Filament\User\Resources\Yachts;
 
 use App\Filament\User\Resources\Yachts\Pages\ManageYachts;
 use App\Models\Yacht;
-use App\Models\Document;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -22,12 +21,9 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
@@ -45,12 +41,12 @@ class YachtResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return 'Моя Яхта'; // Название в единственном числе
+        return 'Моя Яхта';
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'Мои Яхты'; // Название во множественном числе
+        return 'Мои Яхты';
     }
 
     public static function form(Schema $schema): Schema
@@ -60,7 +56,7 @@ class YachtResource extends Resource
                 Placeholder::make('note_form')
                 ->hiddenLabel()
                 ->content(new HtmlString('Выберите яхту из базы Ассоциации или заполните данные вручную. Номер ВФПС будет использован как уникальный ID яхты в системе.'))
-                ->columnSpanFull(), // Растягиваем на всю ширину
+                ->columnSpanFull(),
                 Select::make('yacht_search')->placeholder('Номер ВФПС или название яхты')->columnSpanFull()->label('Найти яхту в базе')->searchable()
                 ->getSearchResultsUsing(fn (string $search): array => \App\Models\Yacht::query()
                     ->where('name', 'like', "%{$search}%")
@@ -75,7 +71,6 @@ class YachtResource extends Resource
                     if ($yacht) {
                         $set('name', $yacht->name);
                         $set('vfps_number', $yacht->vfps_number);
-                        // Заполните остальные поля аналогично
                     }
                 }),
                 TextInput::make('name')
@@ -95,22 +90,7 @@ class YachtResource extends Resource
                 TextInput::make('current_mass_kg')->label('Масса яхты')->placeholder('Введите массу яхты')->numeric(),
                 TextInput::make('reg_place')->label('Место регистрации')->placeholder('Введите место регистрации'),
 
-                /*
-                Placeholder::make('owner_title')->label('Контакты собственика')->columnSpanFull(),
-                TextInput::make('owner_name')->label('Имя владельца')->placeholder('Введите имя владельца яхты')->columnSpanFull(),
-                TextInput::make('owner_phone')->label('Телефон владельца')->placeholder('Введите телефон владельца яхты'),
-                TextInput::make('owner_email')->label('Email владельца')->placeholder('Введите email владельца яхты'),
-                FileUpload::make('owner_photo')
-                    ->label('Фото владельца')
-                    ->image()
-                    ->avatar()
-                    ->directory('owners')
-                    ->disk('public')
-                    ->columnSpanFull(),
-                */
-
-                Repeater::make('documents')
-                    ->relationship()
+                Repeater::make('required_documents')
                     ->label('Документы')
                     ->columnSpanFull()
                     ->addable(false)
@@ -120,7 +100,7 @@ class YachtResource extends Resource
                         fn (array $doc) => [
                             'doc_type' => $doc['doc_type'],
                             'title'    => $doc['title'],
-                            'url'      => null,
+                            'files'    => [],
                         ],
                         ManageYachts::getRequiredDocuments(),
                     ))
@@ -134,10 +114,13 @@ class YachtResource extends Resource
 
                                 foreach ($requiredDocs as $required) {
                                     $docType = $required['doc_type'];
-                                    $uploaded = collect((array) $value)->first(
+                                    $item = collect((array) $value)->first(
                                         fn (array $doc): bool => ($doc['doc_type'] ?? '') === $docType
                                     );
-                                    if ($uploaded === null || empty($uploaded['url'])) {
+
+                                    $files = array_filter((array) ($item['files'] ?? []));
+
+                                    if ($item === null || $files === []) {
                                         $missing[] = $required['title'];
                                     }
                                 }
@@ -151,8 +134,11 @@ class YachtResource extends Resource
                     ->schema([
                         Hidden::make('doc_type'),
                         Hidden::make('title'),
-                        FileUpload::make('url')
-                            ->label('Файл')
+                        FileUpload::make('files')
+                            ->label('Файлы')
+                            ->multiple()
+                            ->reorderable()
+                            ->appendFiles()
                             ->directory('documents')
                             ->disk('public')
                             ->acceptedFileTypes([
@@ -164,7 +150,9 @@ class YachtResource extends Resource
                                 'image/webp',
                             ])
                             ->maxSize(20480)
-                            ->downloadable(),
+                            ->maxFiles(config('documents.max_files_per_type', 10))
+                            ->downloadable()
+                            ->helperText(fn () => 'Можно загрузить до ' . config('documents.max_files_per_type', 10) . ' файлов'),
                     ]),
 
                 Repeater::make('past_regattas')
@@ -242,8 +230,21 @@ class YachtResource extends Resource
             ->recordActions([
                 EditAction::make()->hiddenLabel()
                     ->mountUsing(function (\Filament\Schemas\Schema $form, Yacht $record): void {
-                        ManageYachts::ensureRequiredDocuments($record);
-                        $form->fill($record->toArray());
+                        $data = $record->toArray();
+                        $data['required_documents'] = app(\App\Actions\Document\SyncDocumentFilesAction::class)
+                            ->load($record, ManageYachts::getRequiredDocuments());
+                        $form->fill($data);
+                    })
+                    ->using(function (Yacht $record, array $data): Yacht {
+                        $docs = $data['required_documents'] ?? [];
+                        unset($data['required_documents'], $data['yacht_search']);
+
+                        $record->update($data);
+
+                        app(\App\Actions\Document\SyncDocumentFilesAction::class)
+                            ->execute($record, $docs);
+
+                        return $record;
                     }),
                 DeleteAction::make()->hiddenLabel(),
                 ForceDeleteAction::make(),
@@ -282,8 +283,6 @@ class YachtResource extends Resource
 
     /**
      * Определяет читаемую метку для документа в Repeater.
-     * Читает название из таблицы yacht_document_types, для неизвестных —
-     * возвращает title из состояния.
      */
     public static function resolveDocumentLabel(array $state): ?string
     {
@@ -298,5 +297,4 @@ class YachtResource extends Resource
 
         return $model?->label ?? ($state['title'] ?? null);
     }
-
 }

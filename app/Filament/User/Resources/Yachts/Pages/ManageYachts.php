@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Filament\User\Resources\Yachts\Pages;
 
+use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\Yacht\UpdateYachtRequiredDocumentsAction;
 use App\Filament\User\Resources\Yachts\YachtResource;
-use App\Models\Document;
+use App\Models\Yacht;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
-
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ManageRecords;
 
 class ManageYachts extends ManageRecords
 {
@@ -33,35 +33,31 @@ class ManageYachts extends ManageRecords
             CreateAction::make()
                 ->label('Зарегистрировать яхту')
                 ->modalHeading('Зарегистрировать яхту')
-                ->mutateFormDataUsing(function (array $data): array {
-                    $data['user_id'] = auth()->id();
-                    $data['approval_status'] = 'approved';
+                ->using(function (array $data, string $model): Yacht {
+                    $docs = $data['required_documents'] ?? [];
+                    unset($data['required_documents'], $data['yacht_search']);
 
-                    return $data;
+                    $data['user_id']          = auth()->id();
+                    $data['approval_status']  = 'approved';
+
+                    /** @var Yacht $record */
+                    $record = $model::create($data);
+
+                    app(SyncDocumentFilesAction::class)->execute($record, $docs);
+
+                    return $record;
                 })
                 ->after(function (): void {
                     $this->mountAction('showInfoModal');
-                })->createAnother(false)->successNotification(
-                Notification::make()
-                    ->success()
-                    ->title('Готово!')
-                    ->body('Поздравляем с успешной регистрацией яхты'),
-            ),
+                })
+                ->createAnother(false)
+                ->successNotification(
+                    Notification::make()
+                        ->success()
+                        ->title('Готово!')
+                        ->body('Поздравляем с успешной регистрацией яхты'),
+                ),
         ];
-    }
-
-    /** Создаёт недостающие обязательные документы для яхты */
-    public static function ensureRequiredDocuments(\App\Models\Yacht $yacht): void
-    {
-        foreach (static::getRequiredDocuments() as $doc) {
-            $yacht->documents()->firstOrCreate(
-                ['doc_type' => $doc['doc_type']],
-                [
-                    'title' => $doc['title'],
-                    'url'   => '',
-                ],
-            );
-        }
     }
 
     public function getShowInfoModalAction(): Action

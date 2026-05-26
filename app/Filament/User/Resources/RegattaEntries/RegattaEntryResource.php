@@ -6,17 +6,12 @@ namespace App\Filament\User\Resources\RegattaEntries;
 
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Models\RegattaEntry;
-use App\Models\Document;
 use App\Models\User;
 use BackedEnum;
-use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
@@ -25,7 +20,6 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\HtmlString;
 
 class RegattaEntryResource extends Resource
 {
@@ -35,12 +29,12 @@ class RegattaEntryResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return 'Заявка на соревнование'; // Название в единственном числе
+        return 'Заявка на соревнование';
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'Заявки на соревнования'; // Название во множественном числе
+        return 'Заявки на соревнования';
     }
 
     public static function getEloquentQuery(): Builder
@@ -70,8 +64,7 @@ class RegattaEntryResource extends Resource
                 Select::make('yacht_id')
                     ->relationship('yacht', 'name', modifyQueryUsing: fn (Builder $query) => $query->where('user_id', auth()->id()))->label('Яхта'),
 
-                Repeater::make('documents')
-                    ->relationship()
+                Repeater::make('required_documents')
                     ->label('Документы')
                     ->columnSpanFull()
                     ->addable(false)
@@ -81,7 +74,7 @@ class RegattaEntryResource extends Resource
                         fn (array $doc) => [
                             'doc_type' => $doc['doc_type'],
                             'title'    => $doc['title'],
-                            'url'      => null,
+                            'files'    => [],
                         ],
                         ManageRegattaEntries::getRequiredDocuments(),
                     ))
@@ -95,10 +88,13 @@ class RegattaEntryResource extends Resource
 
                                 foreach ($requiredDocs as $required) {
                                     $docType = $required['doc_type'];
-                                    $uploaded = collect((array) $value)->first(
+                                    $item = collect((array) $value)->first(
                                         fn (array $doc): bool => ($doc['doc_type'] ?? '') === $docType
                                     );
-                                    if ($uploaded === null || empty($uploaded['url'])) {
+
+                                    $files = array_filter((array) ($item['files'] ?? []));
+
+                                    if ($item === null || $files === []) {
                                         $missing[] = $required['title'];
                                     }
                                 }
@@ -112,8 +108,11 @@ class RegattaEntryResource extends Resource
                     ->schema([
                         Hidden::make('doc_type'),
                         Hidden::make('title'),
-                        FileUpload::make('url')
-                            ->label('Файл')
+                        FileUpload::make('files')
+                            ->label('Файлы')
+                            ->multiple()
+                            ->reorderable()
+                            ->appendFiles()
                             ->directory('documents')
                             ->disk('public')
                             ->acceptedFileTypes([
@@ -125,7 +124,9 @@ class RegattaEntryResource extends Resource
                                 'image/webp',
                             ])
                             ->maxSize(20480)
-                            ->downloadable(),
+                            ->maxFiles(config('documents.max_files_per_type', 10))
+                            ->downloadable()
+                            ->helperText(fn () => 'Можно загрузить до ' . config('documents.max_files_per_type', 10) . ' файлов'),
                     ]),
             ]);
     }
@@ -167,18 +168,25 @@ class RegattaEntryResource extends Resource
             ->recordActions([
                 EditAction::make()
                     ->mountUsing(function (Schema $form, RegattaEntry $record): void {
-                        ManageRegattaEntries::ensureRequiredDocuments($record);
-                        $form->fill($record->toArray());
+                        $data = $record->toArray();
+                        $data['required_documents'] = app(\App\Actions\Document\SyncDocumentFilesAction::class)
+                            ->load($record, ManageRegattaEntries::getRequiredDocuments());
+                        $form->fill($data);
+                    })
+                    ->using(function (RegattaEntry $record, array $data): RegattaEntry {
+                        $docs = $data['required_documents'] ?? [];
+                        unset($data['required_documents']);
+
+                        $record->update($data);
+
+                        app(\App\Actions\Document\SyncDocumentFilesAction::class)
+                            ->execute($record, $docs);
+
+                        return $record;
                     }),
                 DeleteAction::make(),
             ])
-            ->toolbarActions([
-                /*
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-                */
-            ]);
+            ->toolbarActions([]);
     }
 
     public static function getPages(): array
@@ -190,8 +198,6 @@ class RegattaEntryResource extends Resource
 
     /**
      * Определяет читаемую метку для документа в Repeater.
-     * Читает название из таблицы yacht_document_types, для неизвестных —
-     * возвращает title из состояния.
      */
     public static function resolveDocumentLabel(array $state): ?string
     {
