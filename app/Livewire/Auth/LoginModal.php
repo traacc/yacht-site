@@ -25,6 +25,7 @@ class LoginModal extends Component
     public string $email = '';
     public string $password = '';
     public string $password_confirmation = '';
+    public string $captchaToken = '';
     public bool $remember = false;
 
 
