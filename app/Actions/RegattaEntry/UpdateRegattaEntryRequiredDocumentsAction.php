@@ -61,8 +61,9 @@ final class UpdateRegattaEntryRequiredDocumentsAction
         return array_values(array_filter(
             array_map(
                 fn (YachtDocumentTypeModel $type) => [
-                    'doc_type' => $type->key,
-                    'title'    => $type->label,
+                    'doc_type'    => $type->key,
+                    'title'       => $type->label,
+                    'description' => $type->description,
                 ],
                 YachtDocumentTypeModel::cachedConfigurable()->all(),
             ),

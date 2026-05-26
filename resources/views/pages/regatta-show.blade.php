@@ -210,6 +210,28 @@
             </section>
         @endif
 
+        {{-- ===== НЕОБХОДИМЫЕ ДОКУМЕНТЫ ДЛЯ УЧАСТИЯ ===== --}}
+        @if(!empty($requiredEntryDocuments))
+            <section class="py-10">
+                <div class="container mx-auto pdf-list">
+                    <h2 class="section-title a-font mb-8">Необходимые документы для участия</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        @foreach($requiredEntryDocuments as $doc)
+                            <div class="bg-brand-light-bg flex gap-4 hover:shadow-md transition-shadow p-4">
+                                <div class="max-w-16">
+                                    <img class="w-full" src="{{ asset('images/icons/pdf.png') }}" alt="Документ" />
+                                </div>
+                                <div>
+                                    <div class="text-brand-dark text-lg font-semibold mb-4">{{ $doc['title'] }}</div>
+                                    <div class="text-brand-gray-light font-medium">{{ $doc['description'] }}</div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </section>
+        @endif
+
         {{-- ===== ЛОКАЦИЯ ===== --}}
         <section class="py-10">
             <div class="container mx-auto">

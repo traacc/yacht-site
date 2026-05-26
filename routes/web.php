@@ -247,6 +247,10 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
     // Документы
     $documents = $regatta->documents;
 
+    // Необходимые документы для участия в регате
+    $requiredEntryDocuments = app(\App\Actions\RegattaEntry\UpdateRegattaEntryRequiredDocumentsAction::class)
+        ->getRequiredList();
+
     // Другие регаты того же сезона (для слайдера)
     $otherRegattas = Regatta::query()
         ->where('season_id', $regatta->season_id)
@@ -271,6 +275,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'entriesJson',
         'scheduleDays',
         'documents',
+        'requiredEntryDocuments',
         'otherRegattas',
         'otherRegattasData',
         'userIsEntered'
