@@ -13,7 +13,7 @@ class ManageHelps extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->createAnother(false),
+            CreateAction::make()->createAnother(false)->modalHeading('Новый раздел помощи'),
         ];
     }
 }

@@ -49,6 +49,7 @@ class ManageRegattaEntries extends ManageRecords
     {
         return [
             CreateAction::make()
+            ->modalHeading('Подать заявку')
                 ->using(function (array $data, string $model): \Illuminate\Database\Eloquent\Model {
                     $docs = $data['required_documents'] ?? [];
                     unset($data['required_documents']);

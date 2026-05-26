@@ -16,6 +16,7 @@ class ManageTeams extends ManageRecords
     {
         return [
             CreateAction::make()
+            ->modalHeading('Новая команда')
                 ->using(fn (array $data, ManageRecords $livewire) => app(CreateTeamAction::class)->handle(
                     $data,
                     User::find($data['organizer_id']),

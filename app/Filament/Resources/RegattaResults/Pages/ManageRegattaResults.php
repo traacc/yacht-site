@@ -23,8 +23,8 @@ class ManageRegattaResults extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->createAnother(false),
-
+            CreateAction::make()->createAnother(false)->modalHeading('Новые результаты регаты'),
+            
             Action::make('import_csv_new')
                 ->label('Импорт из CSV')
                 ->icon(Heroicon::ArrowUpTray)

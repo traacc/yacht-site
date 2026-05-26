@@ -52,6 +52,7 @@ class ManageRegattaEntries extends ManageRecords
                 ->color('white')
                 ->url(fn () => \App\Filament\Pages\RegattaEntryDocumentSettings::getUrl()),
             CreateAction::make()
+            ->modalHeading('Новая заявка на регату')
                 ->createAnother(false)
                 ->using(function (array $data, string $model): RegattaEntry {
                     $requiredDocs = $data['required_documents'] ?? [];

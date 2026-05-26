@@ -15,7 +15,7 @@ class ManageDocumentTypes extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()
+            CreateAction::make()->modalHeading('Новый тип документа')
                 ->label('Добавить тип')
                 ->createAnother(false),
         ];

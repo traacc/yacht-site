@@ -36,6 +36,7 @@ class ManageYachts extends ManageRecords
                 ->url(fn () => \App\Filament\Pages\YachtDocumentSettings::getUrl()),
             CreateAction::make()
                 ->createAnother(false)
+                ->modalHeading('Новая яхта')
                 ->using(function (array $data, string $model): Yacht {
                     $requiredDocs = $data['required_documents'] ?? [];
                     $extraDocs    = $data['extra_documents'] ?? [];
