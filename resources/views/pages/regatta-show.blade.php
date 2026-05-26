@@ -52,7 +52,7 @@
                 </div>
                 <div class="pic max-w-[720px]">
                     <img class="w-full"
-                         src="{{ asset('storage/' . $regatta->background_image) }}"
+                         src="{{ $regatta->background_image ? asset('storage/' . $regatta->background_image) : asset('images/regatas/reg_preview.png') }}"
                          alt="{{ $regatta->name }}" />
                 </div>
             </div>
@@ -149,7 +149,7 @@
         <section class="py-10">
             <div class="container mx-auto bg-brand-light-bg flex flex-col md:flex-row gap-10 items-center">
                 <div class="pic max-w-[720px] shrink-0">
-                    <img class="w-full h-full" src="{{ asset('storage/' . $regatta->background_image) }}" alt="{{ $regatta->name }}" />
+                    <img class="w-full h-full" src="{{ $regatta->background_image ? asset('storage/' . $regatta->background_image) : asset('images/regatas/reg_preview.png') }}" alt="{{ $regatta->name }}" />
                 </div>
                 <div class="info py-4">
                     <h2 class="section-title a-font text-brand-dark text-5xl mb-8">О регате</h2>
