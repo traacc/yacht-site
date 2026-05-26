@@ -257,7 +257,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'date' => $r->dateRange(),
         'city' => $r->location,
         'location' => $r->water_area,
-        'img' => 'storage/' . $r->background_image,
+        'img' => '/storage/' . $r->background_image,
         'url' => route('competition-details', $r),
         'statusLabel' => $r->isUpcoming() ? 'Планируемые' : ($r->isFinished() ? 'Завершены' : 'Идут'),
     ])->values()->toArray();
