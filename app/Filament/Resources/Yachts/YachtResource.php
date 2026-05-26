@@ -97,6 +97,7 @@ class YachtResource extends Resource
                     ->options(['pending' => 'На рассмотрении', 'approved' => 'Одобрена', 'rejected' => 'Отклонена'])
                     ->default('pending')
                     ->required(),
+                /*
                 TextInput::make('owner_name')
                     ->label('Имя владельца')
                     ->placeholder('Имя владельца')->columnSpanFull(),
@@ -115,6 +116,7 @@ class YachtResource extends Resource
                     ->avatar()
                     ->directory('owners')
                     ->disk('public')->columnSpanFull(),
+                */
                 Repeater::make('documents')
                     ->relationship()
                     ->label('Документы')

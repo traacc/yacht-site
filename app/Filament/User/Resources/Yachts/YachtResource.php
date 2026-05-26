@@ -94,6 +94,7 @@ class YachtResource extends Resource
                 TextInput::make('current_mass_kg')->label('Масса яхты')->placeholder('Введите массу яхты')->numeric(),
                 TextInput::make('reg_place')->label('Место регистрации')->placeholder('Введите место регистрации'),
 
+                /*
                 Placeholder::make('owner_title')->label('Контакты собственика')->columnSpanFull(),
                 TextInput::make('owner_name')->label('Имя владельца')->placeholder('Введите имя владельца яхты')->columnSpanFull(),
                 TextInput::make('owner_phone')->label('Телефон владельца')->placeholder('Введите телефон владельца яхты'),
@@ -105,6 +106,7 @@ class YachtResource extends Resource
                     ->directory('owners')
                     ->disk('public')
                     ->columnSpanFull(),
+                */
 
                 Repeater::make('documents')
                     ->relationship()
