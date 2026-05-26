@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RegattaStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -32,6 +33,7 @@ class Regatta extends Model
         'race_days_count',
         'races_count',
         'prizes',
+        'regatta_status',
     ];
 
     protected function casts(): array
@@ -43,6 +45,7 @@ class Regatta extends Model
             'date_end'          => 'date',
             'race_days_count'   => 'integer',
             'races_count'       => 'integer',
+            'regatta_status'    => RegattaStatus::class,
         ];
     }
 
