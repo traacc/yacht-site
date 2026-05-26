@@ -17,11 +17,13 @@ use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -283,6 +285,22 @@ class RegattaResource extends Resource
                             ->maxFiles($maxFiles)
                             ->downloadable()
                             ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
+                    ]),
+
+                // ── Обязательные документы для подачи заявок ──
+                Section::make('Документы для заявок')
+                    ->description('Документы, которые участник обязан приложить при подаче заявки на эту регату. Если ничего не выбрано — применяются глобальные настройки обязательных документов заявок.')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->schema([
+                        CheckboxList::make('entry_required_documents')
+                            ->label('Обязательные документы')
+                            ->options(fn () => \App\Models\YachtDocumentType::cachedConfigurable()
+                                ->pluck('label', 'key')
+                                ->all())
+                            ->columns(2)
+                            ->gridDirection('row')
+                            ->helperText('Отметьте типы документов, обязательных для заявки на эту регату.'),
                     ]),
             ]);
     }

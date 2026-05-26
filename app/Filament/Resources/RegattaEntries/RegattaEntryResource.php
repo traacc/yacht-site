@@ -19,6 +19,8 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -58,7 +60,19 @@ class RegattaEntryResource extends Resource
                     ->label('Регата')
                     ->relationship('regatta', 'name')
                     ->required()
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
+                    ->live()
+                    ->afterStateUpdated(function (?string $state, Set $set): void {
+                        $docs = array_map(
+                            fn (array $doc) => [
+                                'doc_type' => $doc['doc_type'],
+                                'title'    => $doc['title'],
+                                'files'    => [],
+                            ],
+                            ManageRegattaEntries::getRequiredDocuments($state),
+                        );
+                        $set('required_documents', $docs);
+                    }),
                 Select::make('team_id')
                     ->label('Команда')
                     ->relationship('team', 'name')
@@ -94,20 +108,20 @@ class RegattaEntryResource extends Resource
                     ->addable(false)
                     ->deletable(false)
                     ->reorderable(false)
-                    ->default(fn () => array_map(
+                    ->default(fn (Get $get) => array_map(
                         fn (array $doc) => [
                             'doc_type' => $doc['doc_type'],
                             'title'    => $doc['title'],
                             'files'    => [],
                         ],
-                        ManageRegattaEntries::getRequiredDocuments(),
+                        ManageRegattaEntries::getRequiredDocuments($get('regatta_id')),
                     ))
                     ->columns(1)
                     ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
                     ->rules([
-                        function (): \Closure {
-                            return function (string $attribute, mixed $value, \Closure $fail): void {
-                                $requiredDocs = ManageRegattaEntries::getRequiredDocuments();
+                        function (Get $get): \Closure {
+                            return function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
+                                $requiredDocs = ManageRegattaEntries::getRequiredDocuments($get('regatta_id'));
                                 $missing = [];
 
                                 foreach ($requiredDocs as $required) {
@@ -198,7 +212,7 @@ class RegattaEntryResource extends Resource
                 EditAction::make()
                     ->mountUsing(function (Schema $form, RegattaEntry $record): void {
                         $sync = app(\App\Actions\Document\SyncDocumentFilesAction::class);
-                        $requiredDocs = ManageRegattaEntries::getRequiredDocuments();
+                        $requiredDocs = ManageRegattaEntries::getRequiredDocuments($record->regatta_id);
 
                         $data = $record->toArray();
                         $data['required_documents'] = $sync->load($record, $requiredDocs);

@@ -3,7 +3,7 @@
 namespace App\Livewire;
 
 use App\Actions\Regatta\SubmitRegattaEntryAction;
-use App\Actions\RegattaEntry\UpdateRegattaEntryRequiredDocumentsAction;
+use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Models\Regatta;
 use App\Models\Team;
 use App\Models\User;
@@ -145,12 +145,16 @@ class JoinRegattaModal extends Component
     }
 
     /**
+     * Возвращает список обязательных документов для текущей регаты.
+     * Если у регаты настроены собственные документы — применяются они,
+     * иначе — глобальные настройки.
+     *
      * @return array<int, array{doc_type: string, title: string}>
      */
     #[Computed]
     public function requiredDocuments(): array
     {
-        return app(UpdateRegattaEntryRequiredDocumentsAction::class)->getRequiredList();
+        return ManageRegattaEntries::getRequiredDocuments($this->regattaId);
     }
 
     #[Computed]

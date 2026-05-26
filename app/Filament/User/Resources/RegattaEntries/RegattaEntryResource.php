@@ -15,6 +15,8 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -57,7 +59,19 @@ class RegattaEntryResource extends Resource
                         modifyQueryUsing: fn (Builder $query) => $query->where('date_end', '>=', now()->toDateString()),
                     )
                     ->label('Регата')
-                    ->required(),
+                    ->required()
+                    ->live()
+                    ->afterStateUpdated(function (?string $state, Set $set): void {
+                        $docs = array_map(
+                            fn (array $doc) => [
+                                'doc_type' => $doc['doc_type'],
+                                'title'    => $doc['title'],
+                                'files'    => [],
+                            ],
+                            ManageRegattaEntries::getRequiredDocuments($state),
+                        );
+                        $set('required_documents', $docs);
+                    }),
                 Select::make('team_id')
                     ->relationship('team', 'name', modifyQueryUsing: fn (Builder $query) => $query->where('organizer_id', auth()->id()))->label('Команда')
                     ->required(),
@@ -70,20 +84,20 @@ class RegattaEntryResource extends Resource
                     ->addable(false)
                     ->deletable(false)
                     ->reorderable(false)
-                    ->default(fn () => array_map(
+                    ->default(fn (Get $get) => array_map(
                         fn (array $doc) => [
                             'doc_type' => $doc['doc_type'],
                             'title'    => $doc['title'],
                             'files'    => [],
                         ],
-                        ManageRegattaEntries::getRequiredDocuments(),
+                        ManageRegattaEntries::getRequiredDocuments($get('regatta_id')),
                     ))
                     ->columns(1)
                     ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
                     ->rules([
-                        function (): \Closure {
-                            return function (string $attribute, mixed $value, \Closure $fail): void {
-                                $requiredDocs = ManageRegattaEntries::getRequiredDocuments();
+                        function (Get $get): \Closure {
+                            return function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
+                                $requiredDocs = ManageRegattaEntries::getRequiredDocuments($get('regatta_id'));
                                 $missing = [];
 
                                 foreach ($requiredDocs as $required) {
@@ -170,7 +184,7 @@ class RegattaEntryResource extends Resource
                     ->mountUsing(function (Schema $form, RegattaEntry $record): void {
                         $data = $record->toArray();
                         $data['required_documents'] = app(\App\Actions\Document\SyncDocumentFilesAction::class)
-                            ->load($record, ManageRegattaEntries::getRequiredDocuments());
+                            ->load($record, ManageRegattaEntries::getRequiredDocuments($record->regatta_id));
                         $form->fill($data);
                     })
                     ->using(function (RegattaEntry $record, array $data): RegattaEntry {

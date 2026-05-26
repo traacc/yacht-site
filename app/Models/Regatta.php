@@ -34,18 +34,20 @@ class Regatta extends Model
         'races_count',
         'prizes',
         'regatta_status',
+        'entry_required_documents',
     ];
 
     protected function casts(): array
     {
         return [
-            'coordinates'       => 'array',
-            'level_coefficient' => 'decimal:2',
-            'date_start'        => 'date',
-            'date_end'          => 'date',
-            'race_days_count'   => 'integer',
-            'races_count'       => 'integer',
-            'regatta_status'    => RegattaStatus::class,
+            'coordinates'              => 'array',
+            'level_coefficient'        => 'decimal:2',
+            'date_start'               => 'date',
+            'date_end'                 => 'date',
+            'race_days_count'          => 'integer',
+            'races_count'              => 'integer',
+            'regatta_status'           => RegattaStatus::class,
+            'entry_required_documents' => 'array',
         ];
     }
 
