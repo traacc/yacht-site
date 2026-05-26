@@ -19,6 +19,8 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
+use App\Http\Middleware\FilamentAuthenticate;
+
 use Filament\View\PanelsRenderHook;
 
 use App\Filament\Widgets\UpcomingBirthdaysWidget;
@@ -73,7 +75,7 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
+                FilamentAuthenticate::class,
             ])->topNavigation(false)->renderHook(
     name: PanelsRenderHook::BODY_START,
     hook: fn () => view('components.nav'));
