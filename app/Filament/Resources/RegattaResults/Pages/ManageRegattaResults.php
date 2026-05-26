@@ -23,7 +23,7 @@ class ManageRegattaResults extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()->createAnother(false),
 
             Action::make('import_csv_new')
                 ->label('Импорт из CSV')

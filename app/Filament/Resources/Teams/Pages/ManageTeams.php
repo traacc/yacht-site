@@ -19,7 +19,7 @@ class ManageTeams extends ManageRecords
                 ->using(fn (array $data, ManageRecords $livewire) => app(CreateTeamAction::class)->handle(
                     $data,
                     User::find($data['organizer_id']),
-                )),
+                ))->createAnother(false),
         ];
     }
 }

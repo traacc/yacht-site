@@ -39,7 +39,7 @@ class ManageYachts extends ManageRecords
                 })
                 ->after(function (): void {
                     $this->mountAction('showInfoModal');
-                }),
+                })->createAnother(false),
         ];
     }
 

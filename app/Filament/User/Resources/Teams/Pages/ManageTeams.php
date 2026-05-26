@@ -146,7 +146,7 @@ class ManageTeams extends ManageRecords
                         $data,
                         auth()->user(),
                     );
-                }),
+                })->createAnother(false),
         ];
     }
 

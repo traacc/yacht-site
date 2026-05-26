@@ -31,7 +31,7 @@ class ManageRegattaEntries extends ManageRecords
 
                         $this->halt();
                     }
-                }),
+                })->createAnother(false),
         ];
     }
 }
