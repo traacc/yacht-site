@@ -109,11 +109,11 @@ class YachtResource extends Resource
                     ->required(),
 
                 Repeater::make('past_regattas')
-                    ->label('Прошедшие регаты')
+                    ->label('Прошедшие соревнования')
                     ->columnSpanFull()
-                    ->addActionLabel('Добавить регату')
+                    ->addActionLabel('Добавить соревнования')
                     ->collapsible()
-                    ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Новая регата')
+                    ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Новое соревнование')
                     ->defaultItems(0)
                     ->schema([
                         TextInput::make('name')
