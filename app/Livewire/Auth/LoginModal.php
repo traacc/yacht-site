@@ -10,6 +10,8 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
 
+use App\Rules\YandexCaptcha;
+
 class LoginModal extends Component
 {
     // Поля формы
@@ -31,11 +33,14 @@ class LoginModal extends Component
         $credentials = $this->validate([
             'email'    => ['required', 'email'],
             'password' => ['required'],
+            'smart-token' => ['required', new YandexCaptcha()],
         ], attributes: [
+            'smart-token.required' => 'Вам необходимо пройти проверку на бота',
             'email'    => 'email',
             'password' => 'пароль',
         ]);
 
+        
         // Попытка авторизации
         if (Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
             session()->regenerate();
@@ -60,7 +65,9 @@ class LoginModal extends Component
             'phone'                 => ['required'],
             'birthday'              => ['required'],
             'sports_category'       => ['nullable', Rule::enum(SportCategory::class)],
+            'smart-token' => ['required', new YandexCaptcha()],
         ], attributes: [
+            'smart-token.required' => 'Вам необходимо пройти проверку на бота',
             'first_name'            => 'имя',
             'last_name'             => 'фамилия',
             'email'                 => 'email',

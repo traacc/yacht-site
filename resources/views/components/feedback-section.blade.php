@@ -85,6 +85,13 @@
                        type="tel" name="phone" placeholder="+7 (___) ___-__-__" required maxlength="20"
                        x-mask="+7 (999) 999-99-99"
                        x-ref="phone">
+                <div class="smart-captcha" 
+                    data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
+                </div>
+                
+                @error('smart-token')
+                    <div style="color: red;">{{ $message }}</div>
+                @enderror
                 <button class="bg-[#2D92CE] text-white text-center w-full py-4 font-semibold mt-4"
                         :disabled="loading"
                         x-text="loading ? 'Отправка...' : 'Отправить'"></button>

@@ -41,5 +41,9 @@ return [
         'center'          => [55.7558, 37.6173],
         'zoom'            => 10,
     ],
-
+    // config/services.php
+    'yandex_captcha' => [
+        'site_key' => env('YANDEX_SMARTCAPTCHA_SITE_KEY'),
+        'server_key' => env('YANDEX_SMARTCAPTCHA_SERVER_KEY'),
+    ],
 ];
