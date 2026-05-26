@@ -177,8 +177,7 @@ class RegattaResource extends Resource
                         DateTimePicker::make('event_datetime')
                             ->label('Время')
                             ->displayFormat('d.m.Y H:i')
-                            ->format('Y-m-d H:i:s')
-                            ->required(),
+                            ->format('Y-m-d H:i:s'),
                         TextInput::make('description')
                             ->label('Описание'),
                     ])
