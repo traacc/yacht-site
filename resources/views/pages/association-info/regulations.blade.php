@@ -58,9 +58,15 @@ bgImage="{{ asset('images/bg/regulations.webp') }}"
     <div class="info px-4 sm:px-6 lg:px-8">
         <h2 class="section-title a-font text-[#2E325C] md:text-5xl text-3xl mb-8">Допуск яхты к соревнованиям</h2>
         <p class="text-brand-gray font-medium md:text-lg text-sm mb-8">Для участия в регате яхта должна быть зарегистрирована в базе Ассоциации и соответствовать техническому регламенту.</p>
-        <button @click="isRequestModalOpen=true" class="mt-6 bg-[#2D92CE] text-white py-2 px-6 hover:bg-[#0074CC] transition-colors md:text-lg text-sm font-semibold w-full max-w-[300px]">
-        Подать заявку →
+        @guest
+        <button @click.prevent="$dispatch('open-login-modal', { tab: 'register' })" class="mt-6 bg-[#2D92CE] text-white py-2 px-6 hover:bg-[#0074CC] transition-colors md:text-lg text-sm font-semibold w-full max-w-[300px]">
+        Зарегистрировать яхту →
         </button>
+        @else
+        <a href="/user/yacht" @click="isRequestModalOpen=true" class="mt-6 bg-[#2D92CE] text-white py-2 px-6 hover:bg-[#0074CC] transition-colors md:text-lg text-sm font-semibold w-full max-w-[300px]">
+        Зарегистрировать яхту →
+        </a>
+        @endguest
     </div>
     <div class="pic shrink-0">
         <img class="w-full" src="{{ asset('images/regulation.webp') }}" alt="">
