@@ -115,7 +115,10 @@ class RegattaResource extends Resource
                     ->default(1),
                 TextInput::make('location')
                     ->label('Локацию')
-                    ->placeholder('Выберите локацию'),
+                    ->placeholder('Вставьте ссылку на Яндекс карты'),
+                TextInput::make('water_area')
+                    ->label('Акватория')
+                    ->placeholder('Введите акваторию'),
                 YandexMap::make('coordinates')
                     ->label('Местоположение на Яндекс.Картах')
                     ->columnSpanFull()
@@ -145,9 +148,7 @@ class RegattaResource extends Resource
                         }
                         return $state;
                     }),
-                TextInput::make('water_area')
-                    ->label('Акватория')
-                    ->placeholder('Введите акваторию'),
+
                 TextInput::make('short_description')
                     ->label('Краткое описание')
                     ->placeholder('Краткое описание')
