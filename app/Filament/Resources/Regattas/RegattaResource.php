@@ -120,7 +120,7 @@ class RegattaResource extends Resource
                     ->label('Акватория')
                     ->placeholder('Введите акваторию'),
                 YandexMap::make('coordinates')
-                    ->label('Местоположение на Яндекс.Картах')
+                    ->label('Выберите на карте')
                     ->columnSpanFull()
                     ->mode(YandexMapMode::Placemark)
                     ->apiKey('ffd9d711-109d-415d-bf73-e1a935512160')
