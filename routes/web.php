@@ -312,7 +312,7 @@ Route::get('/teams', function () {
         'members' => $team->activeMembers->map(fn ($m) => [
             'name' => $m->full_name,
             'birthday' => $m->birth_date?->format('d.m.Y') ?? '',
-            'category' => $m->sport_category ?? '',
+            'category' => $m->sport_category?->getLabel() ?? '',
         ])->values()->toArray(),
         'years' => $team->regattaEntries
             ->pluck('regatta.date_start')
