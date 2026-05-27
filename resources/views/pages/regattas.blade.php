@@ -31,7 +31,7 @@ bgImage="{{ asset('images/bg/competitions.webp') }}"
             role="tab"
             :aria-selected="activeTab === 'calendar'"
         >
-            Календарь и список регат
+            Календарь регат
         </button>
     </nav>
 
@@ -40,7 +40,7 @@ bgImage="{{ asset('images/bg/competitions.webp') }}"
         <x-regatta-results :regattas="$regattas"></x-regatta-results>
     </div>
 
-    {{-- Содержимое вкладки «Календарь и список регат» --}}
+    {{-- Содержимое вкладки «Календарь регат» --}}
     <div x-show="activeTab === 'calendar'" role="tabpanel">
         @livewire('regattas-calendar')
         <livewire:regattas-list />

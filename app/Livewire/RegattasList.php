@@ -23,7 +23,7 @@ class RegattasList extends Component
 
     public int $perPage = 10;
 
-    public string $view = 'grid';
+    public string $view = 'list';
 
     /** Выбранный год для фильтрации; null — все годы */
     public ?int $year = null;
@@ -73,7 +73,7 @@ class RegattasList extends Component
 
     public function mount(): void
     {
-        $this->view = request()->query('view', session('regattas_view', 'grid'));
+        $this->view = request()->query('view', session('regattas_view', 'list'));
     }
 
     public function setView(string $view): void
