@@ -176,6 +176,9 @@
   box-shadow: none;
   border: none;
 }
+.fi-fo-rich-editor-main {
+  background-color: #FFFFFF;
+}
 .fi-ac {
   background-color: #F8F8F8;
 }
