@@ -14,7 +14,7 @@
     </style>
     <link rel="preload" href="{{ Vite::asset('resources/fonts/BankGothic-Medium.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ Vite::asset('resources/fonts/Montserrat-Regular.woff2') }}" as="font" type="font/woff2" crossorigin>
-    <link rel="shortcut icon" href="{{ asset('favicon.svg') }}?v=2" type="image/svg+xml">
+    <link rel="shortcut icon" href="{{ asset('favicon.jpg?v=3') }}?v=2" type="image/svg+xml">
     <script src="https://smartcaptcha.yandexcloud.net/captcha.js" defer></script>
 </head>
 <body class="font-sans bg-white text-[#2E325C] antialiased" x-data="{isRequestModalOpen: false }">
