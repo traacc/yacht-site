@@ -355,6 +355,8 @@ Route::get('/yachts', function () {
             'photo_url' => $yacht->user?->photo_url
                 ? asset('storage/'.$yacht->user->photo_url)
                 : asset('images/yachts/owner.png'),
+            'external_id' => $yacht->user?->formatted_external_id ?? '—',
+            'registered_at' => $yacht->user?->created_at?->format('d.m.Y') ?? '—',
         ],
         'class' => $yacht->class ?? 'Carter 30',
         'project' => $yacht->project ?? '—',

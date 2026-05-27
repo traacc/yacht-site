@@ -196,6 +196,11 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             <p class="mb-6" x-text="'Владелец яхты «' + selectedYacht.name + '»'"></p>
                             <ul class="space-y-3">
                                 <li class="flex items-center gap-2">
+                                    {!! file_get_contents(public_path('images/icons/user.svg')) !!}
+                                    <span class="font-semibold">ID:</span>
+                                    <span x-text="selectedYacht.owner?.external_id"></span>
+                                </li>
+                                <li class="flex items-center gap-2">
                                     {!! file_get_contents(public_path('images/icons/phone.svg')) !!}
                                     <span x-text="selectedYacht.owner?.phone"></span>
                                 </li>
@@ -206,6 +211,10 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                                 <li class="flex items-center gap-2">
                                     {!! file_get_contents(public_path('images/icons/marker.svg')) !!}
                                     <span x-text="selectedYacht.owner?.city"></span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="font-semibold">Пользователь зарегистрирован:</span>
+                                    <span x-text="selectedYacht.owner?.registered_at"></span>
                                 </li>
                             </ul>
                             <div class="mt-6"><span class="font-semibold">Яхта зарегистрирована:</span> <span x-text="selectedYacht.registered_at"></span></div>
