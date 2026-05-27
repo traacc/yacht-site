@@ -386,6 +386,11 @@ Route::get('/yachts', function () {
             'status' => $entry->status,
         ])->values()->toArray(),
         'participation_count' => $yacht->regattaEntries->count(),
+        'gallery' => $yacht->getMedia('gallery')->map(fn ($media) => [
+            'url' => $media->getUrl(),
+            'thumbnail' => $media->getUrl('thumb'),
+            'name' => $media->name,
+        ])->values()->toArray(),
         'params' => [
             ['label' => 'Класс',       'value' => $yacht->class ?? 'Carter 30'],
             ['label' => 'Парус №',     'value' => $yacht->vfps_number],

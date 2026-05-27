@@ -9,10 +9,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Yacht extends Model
+class Yacht extends Model implements HasMedia
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, HasUuids, SoftDeletes, InteractsWithMedia;
 
     protected $fillable = [
         'name',
@@ -71,6 +73,21 @@ class Yacht extends Model
     // ──────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('gallery')
+             ->useDisk('public');
+    }
+
+    public function registerMediaConversions(\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+             ->width(300)
+             ->height(300)
+             ->sharpen(10)
+             ->nonQueued();
+    }
 
     public function isApproved(): bool { return $this->approval_status === 'approved'; }
     public function isPending(): bool  { return $this->approval_status === 'pending'; }

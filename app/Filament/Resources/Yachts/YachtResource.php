@@ -21,6 +21,7 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -132,7 +133,17 @@ class YachtResource extends Resource
                             ->required(),
                     ])
                     ->columns(3),
-
+                SpatieMediaLibraryFileUpload::make('gallery')
+                    ->label('Галерея')
+                    ->collection('gallery')
+                    ->multiple()
+                    ->reorderable()
+                    ->image()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->imageEditor()
+                    ->disk('public')
+                    ->visibility('public')
+                    ->columnSpanFull(),
                 // ── Обязательные документы ──────────────────
                 Repeater::make('required_documents')
                     ->label('Обязательные документы')
