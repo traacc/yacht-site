@@ -139,9 +139,7 @@ class GalleryResource extends Resource
                     ->numeric()
                     ->default(0),
 
-                Toggle::make('is_published')
-                    ->label('Опубликовано')
-                    ->default(false),
+                // ★ УДАЛЕНО: is_published всегда true при создании (устанавливается в модели Gallery)
             ]);
     }
 
