@@ -68,6 +68,11 @@ class UserResource extends Resource
                     ->columnSpanFull()
                     ->visibility('public')
                     ->extraFieldWrapperAttributes(['class' => 'photo_wrapper']),
+                TextInput::make('external_id')
+                    ->label('ID')
+                    ->numeric()
+                    ->readOnly()
+                    ->columnSpanFull(),
                 TextInput::make('first_name')
                     ->label('Имя')
                     ->placeholder('Имя')

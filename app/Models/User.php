@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Carbon\Carbon;
 
-
+use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
@@ -37,6 +37,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         'password',
         'photo_url',
         'system_role',
+        'external_id',
     ];
 
     protected $hidden = [
@@ -53,6 +54,22 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             'password'          => 'hashed',
             'sport_category'    => SportCategory::class,
         ];
+    }
+
+    // ──────────────────────────────────────────────
+    // Boot
+    // ──────────────────────────────────────────────
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $user) {
+            if ($user->external_id === null) {
+                $user->external_id = DB::transaction(function () {
+                    $max = static::lockForUpdate()->max('external_id') ?? 0;
+                    return $max + 1;
+                });
+            }
+        });
     }
 
     // ──────────────────────────────────────────────

@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use Illuminate\Support\Facades\DB;
+
 class Regatta extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
@@ -33,6 +35,7 @@ class Regatta extends Model
         'race_days_count',
         'races_count',
         'prizes',
+        'external_id',
         'regatta_status',
         'entry_required_documents',
     ];
@@ -50,7 +53,22 @@ class Regatta extends Model
             'entry_required_documents' => 'array',
         ];
     }
+    // ──────────────────────────────────────────────
+    // Boot
+    // ──────────────────────────────────────────────
 
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $regatta) {
+            if ($regatta->external_id === null) {
+                $regatta->external_id = DB::transaction(function () {
+                    $max = static::lockForUpdate()->max('external_id') ?? 0;
+                    return $max + 1;
+                });
+            }
+        });
+    }
     // ──────────────────────────────────────────────
     // Relationships
     // ──────────────────────────────────────────────

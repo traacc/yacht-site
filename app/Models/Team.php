@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+use Illuminate\Support\Facades\DB;
+
 class Team extends Model implements HasMedia
 {
     use HasFactory, HasUuids, SoftDeletes, InteractsWithMedia;
@@ -30,17 +32,34 @@ class Team extends Model implements HasMedia
         'default_yacht_id',
         'is_archived',
         'picture',
+        'external_id',
         'approval_status',
         'rejection_reason',
     ];
 
+
+    
     protected function casts(): array
     {
         return [
             'is_archived' => 'boolean',
         ];
     }
+    // ──────────────────────────────────────────────
+    // Boot
+    // ──────────────────────────────────────────────
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $team) {
+            if ($team->external_id === null) {
+                $team->external_id = DB::transaction(function () {
+                    $max = static::lockForUpdate()->max('external_id') ?? 0;
+                    return $max + 1;
+                });
+            }
+        });
+    }
     // ──────────────────────────────────────────────
     // Relationships
     // ──────────────────────────────────────────────
