@@ -97,9 +97,7 @@
 .fi-ta-selection-cell {
   display: none;
 }
-.fi-pagination .fi-pagination-overview, .fi-pagination .fi-input-wrp {
-  display: none;
-}
+
 .fi-pagination {
   display: flex;
   justify-content: center;
