@@ -135,6 +135,14 @@ bgImage="{{ asset('images/bg/teams.webp') }}"
                 <p class="mb-6" x-text="activeTeam?.description"></p>
                 <table>
                     <tr>
+                        <td class="pr-4">ID</td>
+                        <td x-text="activeTeam?.external_id"></td>
+                    </tr>
+                    <tr>
+                        <td class="pr-4">Дата регистрации</td>
+                        <td x-text="activeTeam?.created_at"></td>
+                    </tr>
+                    <tr>
                         <td class="pr-4">Статус</td>
                         <td x-text="activeTeam?.status"></td>
                     </tr>

@@ -67,11 +67,11 @@ class TeamResource extends Resource
                     ->label('Название')
                     ->placeholder('Введите названия команды')
                     ->required()->columnSpanFull(),
-                TextInput::make('external_id')
+                TextInput::make('formatted_external_id')
                     ->label('ID')
                     ->readOnly()
                     ->columnSpanFull()
-                    ->formatStateUsing(fn ($state) => 'K' . str_pad($state, 4, '0', STR_PAD_LEFT)),
+                    ->formatStateUsing(fn (?Team $record) => $record?->formatted_external_id ?? '—'),
                 Select::make('organizer_id')
                     ->label('Капитан')
                     ->relationship('organizer', 'name')
@@ -139,6 +139,9 @@ class TeamResource extends Resource
         return $table
             ->modifyQueryUsing(fn (Builder $query) => $query->withCount('activeMembers'))
             ->columns([
+                TextColumn::make('formatted_external_id')
+                    ->label('ID')
+                    ->searchable(query: fn (Builder $query, string $search) => $query->where('external_id', $search)),
                 TextColumn::make('name')
                     ->label('Название')
                     ->searchable(),

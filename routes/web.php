@@ -224,7 +224,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'team_name' => $entry->team?->name ?? '',
         'crew' => $entry->team?->activeMembers?->map(fn ($member) => [
             'name' => $member->full_name ?? '',
-            'birthday' => $member->birth_date?->format('Y-m-d') ?? '',
+            'birthday' => $member->birth_date?->format('d.m.Y') ?? '',
             'rank' => $member->sport_category ?? '',
         ])->values()->toArray() ?? [],
     ])->values()->toArray();
@@ -299,9 +299,11 @@ Route::get('/teams', function () {
 
     $teamsJson = $teams->map(fn (Team $team) => [
         'id' => $team->id,
+        'external_id' => $team->getFormattedExternalIdAttribute(),
         'name' => $team->name,
         'description' => $team->description ?? '',
         'photo' => $team->picture ? Storage::url($team->picture) : asset('images/news/news_1.png'),
+        'created_at' => $team->created_at?->format('d.m.Y') ?? '—',
         'status' => $team->is_archived ? 'Неактивная' : 'Активная',
         'status_class' => $team->is_archived ? 'inactive' : 'active',
         'captain' => $team->organizer?->full_name ?? '—',
@@ -309,7 +311,7 @@ Route::get('/teams', function () {
         'participation_count' => $team->regattaEntries->count(),
         'members' => $team->activeMembers->map(fn ($m) => [
             'name' => $m->full_name,
-            'birthday' => $m->birth_date?->format('Y-m-d') ?? '',
+            'birthday' => $m->birth_date?->format('d.m.Y') ?? '',
             'category' => $m->sport_category ?? '',
         ])->values()->toArray(),
         'years' => $team->regattaEntries

@@ -130,6 +130,19 @@ class Team extends Model implements HasMedia
     }
 
     // ──────────────────────────────────────────────
+    // Accessors
+    // ──────────────────────────────────────────────
+
+    public function getFormattedExternalIdAttribute(): string
+    {
+        if ($this->external_id === null) {
+            return '—';
+        }
+
+        return 'K' . str_pad((string) $this->external_id, 4, '0', STR_PAD_LEFT);
+    }
+
+    // ──────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────
 
