@@ -82,7 +82,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             return '—';
         }
 
-        return 'K' . str_pad((string) $this->external_id, 4, '0', STR_PAD_LEFT);
+        return str_pad((string) $this->external_id, 4, '0', STR_PAD_LEFT);
     }
 
     public function getFullNameAttribute(): string
