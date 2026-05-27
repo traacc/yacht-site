@@ -106,7 +106,9 @@ Route::get('/association/trustees', function () {
 Route::view('/association/policy', 'pages/association-info/policy')->name('policy');
 Route::view('/association/rules', 'pages/association-info/rules')->name('rules');
 Route::get('/association/regulations', function () {
-    $documents = app(SettingsService::class)->get('regulations.documents', []);
+    $settings = app(SettingsService::class);
+    $documents = $settings->get('regulations.documents', []);
+    $before_note = $settings->get('regulations.before_note', '');
 
     // Нормализуем документы: генерируем публичные URL из путей storage
     $documents = collect((array) $documents)
@@ -131,7 +133,7 @@ Route::get('/association/regulations', function () {
         ->values()
         ->all();
 
-    return view('pages.association-info.regulations', compact('documents'));
+    return view('pages.association-info.regulations', compact('documents', 'before_note'));
 })->name('regulations');
 Route::get('/association/decisions', function () {
     $documents = app(SettingsService::class)->get('decisions.documents', []);

@@ -11,6 +11,7 @@ bgImage="{{ asset('images/bg/regulations.webp') }}"
 <section class="py-10 px-4 md:px-2">
     <div class="container mx-auto pdf-list">
         <h2 class="section-title a-font mb-8">Документы регламента</h2>
+        <div class="before_documents">{!! $before_note !!}</div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             @forelse ($documents as $document)
                 <div class="bg-[#F8F8F8] flex gap-4 hover:shadow-md transition-shadow cursor-pointer p-4 ">

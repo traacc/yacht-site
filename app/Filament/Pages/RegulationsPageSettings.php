@@ -10,6 +10,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\RichEditor;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
@@ -51,6 +52,7 @@ class RegulationsPageSettings extends Page
         $settings = app(SettingsService::class);
 
         $documents = $settings->get('regulations.documents', []);
+        $before_note = $settings->get('regulations.before_note', '');
 
         // Нормализуем file каждого документа — преобразуем в массив для FileUpload
         $documents = collect((array) $documents)
@@ -68,6 +70,7 @@ class RegulationsPageSettings extends Page
 
         $this->form->fill([
             'documents' => $documents,
+            'before_note' => $before_note,
         ]);
     }
 
@@ -96,6 +99,7 @@ class RegulationsPageSettings extends Page
                 Section::make('Документы регламента')
                     ->description('Загрузите документы (PDF), которые будут отображаться на странице «Технический регламент яхт». Перетаскивайте записи для изменения порядка отображения.')
                     ->schema([
+                        RichEditor::make('before_note')->label('Текст перед документами'),
                         Repeater::make('documents')
                             ->label('Документы')
                             ->addActionLabel('Добавить документ')
@@ -173,6 +177,9 @@ class RegulationsPageSettings extends Page
             ->values()
             ->all();
 
+        $before_note = $data['before_note'] ?? '';
+
+        $settings->set('regulations.before_note', $before_note, 'regulations');
         $settings->set('regulations.documents', $documents, 'regulations');
         $settings->forgetGroup('regulations');
 
