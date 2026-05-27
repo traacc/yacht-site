@@ -41,8 +41,8 @@
                             width: 32px;
                         }
                     </style>
-            <div class="hidden nav-social md:flex items-center gap-2">
-                <div class="hidden nav-social md:flex items-center gap-2">
+            <div class="hidden nav-social lg:flex items-center gap-2">
+                <div class="hidden nav-social lg:flex items-center gap-2">
                     <a href="https://t.me/a_carterpro" class="text-[#2D92CE]">
                         {!! file_get_contents(public_path('images/social_icons/tl.svg')) !!}
                     </a>
