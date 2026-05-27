@@ -70,7 +70,7 @@ class UserResource extends Resource
                     ->extraFieldWrapperAttributes(['class' => 'photo_wrapper']),
                 TextInput::make('external_id')
                     ->label('ID')
-                    ->numeric()
+                    ->formatStateUsing(fn ($state) => str_pad($state, 4, '0', STR_PAD_LEFT))
                     ->readOnly()
                     ->columnSpanFull(),
                 TextInput::make('first_name')

@@ -67,6 +67,11 @@ class TeamResource extends Resource
                     ->label('Название')
                     ->placeholder('Введите названия команды')
                     ->required()->columnSpanFull(),
+                TextInput::make('external_id')
+                    ->label('ID')
+                    ->readOnly()
+                    ->columnSpanFull()
+                    ->formatStateUsing(fn ($state) => 'K' . str_pad($state, 4, '0', STR_PAD_LEFT)),
                 Select::make('organizer_id')
                     ->label('Капитан')
                     ->relationship('organizer', 'name')
