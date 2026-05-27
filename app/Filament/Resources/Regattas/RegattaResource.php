@@ -6,7 +6,9 @@ namespace App\Filament\Resources\Regattas;
 
 use App\Filament\Resources\Regattas\Pages\ManageRegattas;
 use App\Models\Regatta;
+use App\Services\RegattaService;
 use BackedEnum;
+use Carbon\Carbon;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -26,6 +28,7 @@ use Filament\Forms\Components\Select;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -173,7 +176,16 @@ class RegattaResource extends Resource
                     ->label('Статус')
                     ->options(\App\Enums\RegattaStatus::class)
                     ->default(\App\Enums\RegattaStatus::Upcoming)
-                    ->required(),
+                    ->required()
+                    ->live(),
+
+                DatePicker::make('postponed_to_date')
+                    ->label('Дата переноса')
+                    ->displayFormat('d.m.Y')
+                    ->minDate(now()->subYears(100))
+                    ->maxDate(now()->addYears(100))
+                    ->visible(fn (Get $get): bool => static::statusEquals($get('regatta_status'), \App\Enums\RegattaStatus::Postponed))
+                    ->required(fn (Get $get): bool => static::statusEquals($get('regatta_status'), \App\Enums\RegattaStatus::Postponed)),
                 Textarea::make('regulations')
                     ->label('Регламент')
                     ->placeholder('Описание регламента')
@@ -374,6 +386,25 @@ class RegattaResource extends Resource
                         $extraDocs    = $data['extra_documents'] ?? [];
                         unset($data['required_documents'], $data['extra_documents']);
 
+                        $postponedToDate = $data['postponed_to_date'] ?? null;
+                        $newStatus       = $data['regatta_status'] ?? null;
+
+                        // Если статус postponed и указана дата — вызываем RegattaService
+                        if (static::statusEquals($newStatus, \App\Enums\RegattaStatus::Postponed) && $postponedToDate) {
+                            $service = app(RegattaService::class);
+                            $service->postpone($record, Carbon::parse($postponedToDate));
+
+                            $sync = app(\App\Actions\Document\SyncDocumentFilesAction::class);
+                            $sync->execute($record, $requiredDocs);
+                            $sync->execute($record, $extraDocs);
+
+                            $requiredDocTypes = array_column(ManageRegattas::getRequiredDocuments(), 'doc_type');
+                            $activeExtraTypes = array_filter(array_column($extraDocs, 'doc_type'));
+                            $sync->pruneOrphanedDocTypes($record, $requiredDocTypes, $activeExtraTypes);
+
+                            return $record->fresh();
+                        }
+
                         $record->update($data);
 
                         $sync = app(\App\Actions\Document\SyncDocumentFilesAction::class);
@@ -412,6 +443,18 @@ class RegattaResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    /**
+     * Сравнивает значение статуса (строка или enum) с целевым enum-кейсом.
+     */
+    public static function statusEquals(mixed $status, \App\Enums\RegattaStatus $target): bool
+    {
+        if ($status instanceof \App\Enums\RegattaStatus) {
+            return $status === $target;
+        }
+
+        return is_string($status) && $status === $target->value;
     }
 
     /**

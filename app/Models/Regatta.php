@@ -37,6 +37,8 @@ class Regatta extends Model
         'prizes',
         'external_id',
         'regatta_status',
+        'postponed_to_date',
+        'postponed_to_regatta_id',
         'entry_required_documents',
     ];
 
@@ -50,6 +52,7 @@ class Regatta extends Model
             'race_days_count'          => 'integer',
             'races_count'              => 'integer',
             'regatta_status'           => RegattaStatus::class,
+            'postponed_to_date'        => 'date',
             'entry_required_documents' => 'array',
         ];
     }
@@ -130,6 +133,11 @@ class Regatta extends Model
     public function albums(): MorphMany
     {
         return $this->morphMany(Album::class, 'albumable');
+    }
+
+    public function postponedToRegatta(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'postponed_to_regatta_id');
     }
 
     // ──────────────────────────────────────────────
