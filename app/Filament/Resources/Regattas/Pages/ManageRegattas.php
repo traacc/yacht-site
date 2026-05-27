@@ -32,8 +32,8 @@ class ManageRegattas extends ManageRecords
             Action::make('documentSettings')
                 ->label('Обязательные документы')
                 ->icon('heroicon-o-document-text')
-                ->color('white')
-                ->url(fn () => \App\Filament\Pages\RegattaDocumentSettings::getUrl()),
+                ->color('white'),
+                //->url(fn () => \App\Filament\Pages\RegattaDocumentSettings::getUrl()),
             CreateAction::make()->modalHeading('Новая регата')
                 ->createAnother(false)
                 ->using(function (array $data, string $model): Regatta {

@@ -49,8 +49,8 @@ class ManageRegattaEntries extends ManageRecords
             Action::make('documentSettings')
                 ->label('Обязательные документы')
                 ->icon('heroicon-o-clipboard-document-check')
-                ->color('white')
-                ->url(fn () => \App\Filament\Pages\RegattaEntryDocumentSettings::getUrl()),
+                ->color('white'),
+                //->url(fn () => \App\Filament\Pages\RegattaEntryDocumentSettings::getUrl()),
             CreateAction::make()
             ->modalHeading('Новая заявка на регату')
                 ->createAnother(false)
