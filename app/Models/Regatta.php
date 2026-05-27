@@ -53,6 +53,10 @@ class Regatta extends Model
             'entry_required_documents' => 'array',
         ];
     }
+    public function getRouteKeyName(): string
+    {
+        return 'external_id';
+    }
     // ──────────────────────────────────────────────
     // Boot
     // ──────────────────────────────────────────────

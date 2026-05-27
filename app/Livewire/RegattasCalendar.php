@@ -70,7 +70,7 @@ class RegattasCalendar extends Component
                         'title' => $r->name,
                         'city' => $r->location,
                         'status' => $r->regatta_status->value,
-                        'url' => route('competition-details', $r->id),
+                        'url' => route('competition-details', $r),
                     ])->values()->toArray()
                     : [],
             ];
