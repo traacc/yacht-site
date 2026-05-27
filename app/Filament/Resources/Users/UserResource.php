@@ -68,11 +68,11 @@ class UserResource extends Resource
                     ->columnSpanFull()
                     ->visibility('public')
                     ->extraFieldWrapperAttributes(['class' => 'photo_wrapper']),
-                TextInput::make('external_id')
+                TextInput::make('formatted_external_id')
                     ->label('ID')
-                    ->formatStateUsing(fn ($state) => str_pad($state, 4, '0', STR_PAD_LEFT))
                     ->readOnly()
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
+                    ->formatStateUsing(fn (?Team $record) => $record?->formatted_external_id ?? '—'),
                 TextInput::make('first_name')
                     ->label('Имя')
                     ->placeholder('Имя')
