@@ -26,7 +26,7 @@ bgImage="{{ asset('images/bg/trustees.webp') }}"
 
                 <template x-for="person in people" :key="person.id">
                     <div class="card bg-[#F8F8F8]">
-                        <img :src="person.image || '{{ asset('images/icons/avatar-default.svg') }}'" :alt="person.name">
+                        <img class="w-full aspect-3/4 object-cover" :src="person.image || '{{ asset('images/icons/avatar-default.svg') }}'" :alt="person.name">
                         <div class="info p-2 md:p-4">
                             <h4 class="text-[#2E325C] font-semibold md:text-xl text-sm mb-2 md:mb-4" x-text="person.name"></h4>
                             <div class="md:text-xl text-xs text-brand-gray mb-2 md:mb-4 md:h-14" x-text="person.position"></div>
