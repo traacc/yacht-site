@@ -6,6 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Создаёт таблицу gallery.
+     *
+     * ИЗМЕНЕНИЯ относительно исходной миграции:
+     *   – Удалена колонка cover_path (string) — обложка теперь хранится в таблице media
+     *     Spatie Media Library, коллекция 'cover'.
+     *   – Удалена колонка images (json) — изображения галереи теперь хранятся в таблице media
+     *     Spatie Media Library, коллекция 'images'.
+     *
+     * Таблица media уже создана отдельной миграцией (2026_05_25_190849) и адаптирована
+     * под UUID-модели (2026_05_25_194652).
+     */
     public function up(): void
     {
         Schema::create('gallery', function (Blueprint $table) {
@@ -15,9 +27,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('water_area')->nullable();
             $table->date('date')->nullable();
-            $table->string('cover_path')->nullable();
-            // JSON-массив путей к файлам галереи
-            $table->json('images')->nullable();
+            // ↓↓↓ УДАЛЕНО: $table->string('cover_path')->nullable();
+            // ↓↓↓ УДАЛЕНО: $table->json('images')->nullable();
+            // Медиафайлы (обложка, фотографии) хранятся через Spatie Media Library в таблице media.
             $table->boolean('is_published')->default(false);
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestamps();

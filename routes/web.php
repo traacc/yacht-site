@@ -2,6 +2,7 @@
 
 use App\Actions\Feedback\SubmitFeedbackAction;
 use App\Actions\GenerateCalendarPdfAction;
+use App\Models\Gallery;
 use App\Models\News;
 use App\Models\Regatta;
 use App\Models\Team;
@@ -433,7 +434,15 @@ Route::get('/ratings', function () {
 
     return view('pages.ratings', compact('teamRatings', 'personalRatings'));
 })->name('ratings');
-Route::view('/gallery', 'pages/gallery')->name('gallery');
+Route::get('/gallery', function () {
+    $galleries = Gallery::published()
+        ->with('season', 'regatta')
+        ->ordered()
+        ->get()
+        ->groupBy(fn (Gallery $g) => $g->season?->year ?? $g->date?->year ?? now()->year);
+
+    return view('pages.gallery', compact('galleries'));
+})->name('gallery');
 Route::view('/help', 'pages/help')->name('help');
 Route::get('/news', function () {
     $news = News::published()
