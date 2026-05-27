@@ -181,6 +181,7 @@ class RegattaResource extends Resource
                 Repeater::make('regatta_events')
                     ->relationship('races')
                     ->label('Расписание регаты')
+                    ->defaultItems(0)
                     ->schema([
                         TextInput::make('name')
                             ->label('Событие')
