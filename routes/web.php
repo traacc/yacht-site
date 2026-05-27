@@ -443,7 +443,41 @@ Route::get('/gallery', function () {
 
     return view('pages.gallery', compact('galleries'));
 })->name('gallery');
-Route::view('/help', 'pages/help')->name('help');
+Route::get('/help', function () {
+    $helpCategories = \App\Models\HelpCategory::with(['helps' => fn ($q) =>
+        $q->active()->orderBy('title')
+    ])
+        ->whereHas('helps', fn ($q) => $q->active())
+        ->orderBy('title')
+        ->get();
+
+    $categories = $helpCategories->mapWithKeys(fn (\App\Models\HelpCategory $cat) => [
+        $cat->slug => [
+            'title' => $cat->title,
+            'items' => $cat->helps->map(fn (\App\Models\Help $help) => [
+                'id'          => $help->id,
+                'title'       => $help->title,
+                'desc'        => $help->desc,
+                'includes'    => collect($help->includes ?? [])
+                    ->map(fn ($inc) => is_array($inc) ? ($inc['item'] ?? '') : (string) $inc)
+                    ->filter()
+                    ->values()
+                    ->all(),
+                'name'        => $help->specialist_name,
+                'phone'       => $help->specialist_phone,
+                'email'       => $help->specialist_email,
+                'sphere'      => $help->specialist_sphere,
+                'city'        => $help->specialist_city,
+                'contactType' => $help->contact_type,
+            ])->values()->toArray(),
+        ],
+    ])->toArray();
+
+    // Определяем первый slug для активной категории по умолчанию
+    $defaultCategory = $helpCategories->first()?->slug ?? '';
+
+    return view('pages.help', compact('categories', 'defaultCategory'));
+})->name('help');
 Route::get('/news', function () {
     $news = News::published()
         ->with('author')

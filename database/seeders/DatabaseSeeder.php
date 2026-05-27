@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
         $this->call(SeasonSeeder::class);
         $this->call(TeamSeeder::class);
         $this->call(RegattaSeeder::class);
+        $this->call(HelpSeeder::class);
 
         User::factory()->create([
             'id' => (string) Str::uuid(),
