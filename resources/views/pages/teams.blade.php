@@ -259,10 +259,12 @@ bgImage="{{ asset('images/bg/teams.webp') }}"
                         <thead>
                             <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
                                 <th class="pt-2 pb-2 text-center font-medium a-font">Регата</th>
-                                <th class="pt-2 pb-2 text-center font-medium a-font">Яхта</th>
                                 <th class="pt-2 pb-2 text-center font-medium a-font">Дата регаты</th>
+                                <th class="pt-2 pb-2 text-center font-medium a-font">Яхта</th>
+                                <!--
                                 <th class="pt-2 pb-2 text-center font-medium a-font">Дата регистрации</th>
                                 <th class="pt-2 pb-2 text-center font-medium a-font">Статус</th>
+                                -->
                             </tr>
                         </thead>
                         <tbody class="divide-y text-center font-medium">
@@ -270,10 +272,12 @@ bgImage="{{ asset('images/bg/teams.webp') }}"
                                 <template x-for="(p, i) in filteredParticipation" :key="i">
                                     <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
                                         <td data-label="Регата" class="py-3" x-text="p.regatta"></td>
-                                        <td data-label="Яхта" class="py-3" x-text="p.yacht"></td>
                                         <td data-label="Дата регаты" class="py-3" x-text="p.date_event"></td>
+                                        <td data-label="Яхта" class="py-3" x-text="p.yacht"></td>
+                                        <!--
                                         <td data-label="Дата регистрации" class="py-3" x-text="p.date_registration"></td>
                                         <td data-label="Статус" class="py-3" x-html="participation_status(p)"></td>
+                                        -->
                                     </tr>
                                 </template>
                             </template>
