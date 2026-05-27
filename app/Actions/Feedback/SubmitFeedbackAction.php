@@ -30,7 +30,7 @@ class SubmitFeedbackAction
             ?? config('mail.from.address');
 
         if ($recipient) {
-            Mail::to($recipient)->queue(new FeedbackSubmitted($feedback));
+            Mail::to($recipient)->send(new FeedbackSubmitted($feedback));
         }
 
         return $feedback;
