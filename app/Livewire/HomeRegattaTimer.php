@@ -23,7 +23,7 @@ class HomeRegattaTimer extends Component
 
         return view('livewire.home-regatta-timer', [
             'regatta' => $regatta,
-            'currentWeather' => $temp . '  ℃',
+            'currentWeather' => $temp . ' ℃',
         ]);
     }
 }
