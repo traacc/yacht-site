@@ -34,6 +34,16 @@ class YachtDocumentTypeResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Сайт';
 
+    public static function getModelLabel(): string
+    {
+        return 'Тип документов';
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return 'Типы документов';
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
