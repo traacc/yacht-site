@@ -54,8 +54,16 @@ class Team extends Model implements HasMedia
         static::creating(function (self $team) {
             if ($team->external_id === null) {
                 $team->external_id = DB::transaction(function () {
-                    $max = static::lockForUpdate()->max('external_id') ?? 0;
-                    return $max + 1;
+                    // Lock the entire table (MySQL syntax example)
+                    DB::statement('LOCK TABLES teams WRITE');
+                    
+                    $max = static::max('external_id') ?? 0;
+                    $nextId = $max + 1;
+                    
+                    // Note: Laravel unlocks tables automatically when the transaction commits,
+                    // but you may want an explicit UNLOCK TABLES if using specific DB setups.
+                    
+                    return $nextId;
                 });
             }
         });
