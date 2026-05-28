@@ -9,6 +9,7 @@ use App\Models\Team;
 use App\Models\Yacht;
 use App\Services\SettingsService;
 use App\Services\WeatherService;
+use App\Services\YandexMapService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -214,6 +215,13 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
             lon: (float) $regatta->coordinates[1],
         )
         : null;
+    
+    $mapUrl = $regatta?->coordinates
+        ? app(YandexMapService::class)->makeUrl(
+            lat: (float) $regatta->coordinates[0],
+            lon: (float) $regatta->coordinates[1],
+        )
+        : null;
         
     $temp = isset($currentWeather['current']['temperature_2m'])
         ? $currentWeather['current']['temperature_2m'] . ' ℃'
@@ -296,7 +304,8 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'otherRegattas',
         'otherRegattasData',
         'userIsEntered',
-        'temp'
+        'temp',
+        'mapUrl'
     ));
 })->name('competition-details');
 Route::get('/teams', function () {

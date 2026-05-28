@@ -17,12 +17,17 @@
                             <x-icon-2 name="calendar" />
                             {{ $regatta->dateRange() }}
                         </div>
-                        @if($regatta->water_area)
-                            <div class="flex items-center gap-2 pb-3">
-                                <x-icon-2 name="waves" />
-                                {{ $regatta->water_area }}
-                            </div>
-                        @endif
+                        <div class="flex items-center gap-2 pb-3">
+                            {!!  file_get_contents(public_path('images/icons/waves.svg')) !!}
+                            @if($mapUrl)
+                                <a href="{{ $mapUrl }}" target="_blank" rel="noopener noreferrer"
+                                class="inline-flex items-center gap-1  transition-colors  underline underline-offset-2">
+                                    {{ $regatta->water_area }}
+                                </a>
+                            @else
+                            {{ $regatta->water_area }}
+                            @endif
+                        </div>
                         <div class="flex items-center gap-2 pb-5">
                             <x-icon-2 name="weather" />
                             {{ $temp }}
