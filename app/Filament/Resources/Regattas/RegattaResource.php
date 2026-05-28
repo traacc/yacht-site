@@ -83,6 +83,8 @@ class RegattaResource extends Resource
                 Select::make('season_id')
                     ->label('Сезон')
                     ->relationship('season', 'year')
+                    ->searchable()
+                    ->preload()
                     ->required(),
                 TextInput::make('level_coefficient')
                     ->label('Коэффициент соревнований')

@@ -41,6 +41,8 @@ class RatingResource extends Resource
                 Select::make('season_id')
                     ->relationship('season', 'year')
                     ->label('Сезон')
+                    ->searchable()
+                    ->preload()
                     ->required(),
                 Select::make('rating_type')
                     ->label('Тип рейтинга')
