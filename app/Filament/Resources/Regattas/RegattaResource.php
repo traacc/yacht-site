@@ -82,7 +82,8 @@ class RegattaResource extends Resource
                     ->required(),
                 Select::make('season_id')
                     ->label('Сезон')
-                    ->relationship('season', 'year')
+                    ->relationship('season', 'year',
+                    modifyQueryUsing: fn (Builder $query) => $query->orderByDesc('year'),)
                     ->searchable()
                     ->preload()
                     ->required(),

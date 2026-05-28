@@ -17,6 +17,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
+use Illuminate\Database\Eloquent\Builder;
 
 class RatingResource extends Resource
 {
@@ -39,7 +40,8 @@ class RatingResource extends Resource
         return $schema
             ->components([
                 Select::make('season_id')
-                    ->relationship('season', 'year')
+                    ->relationship('season', 'year',
+                    modifyQueryUsing: fn (Builder $query) => $query->orderByDesc('year'),)
                     ->label('Сезон')
                     ->searchable()
                     ->preload()
