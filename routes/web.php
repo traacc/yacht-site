@@ -215,7 +215,9 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         )
         : null;
         
-    $temp = $currentWeather['current']['temperature_2m'] . ' ℃' ?? '—';
+    $temp = isset($currentWeather['current']['temperature_2m'])
+        ? $currentWeather['current']['temperature_2m'] . ' ℃'
+        : '—';
 
     // Проверяем, является ли текущий юзер участником уже заявленной команды
     // Учитываем pending + approved, чтобы кнопка «Подать заявку» скрывалась сразу после подачи
