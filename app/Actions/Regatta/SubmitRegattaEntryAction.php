@@ -9,6 +9,7 @@ use App\Exceptions\InsufficientTeamRoleException;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use App\Models\Team;
+use App\Models\TeamMember;
 use App\Models\User;
 use App\Models\Yacht;
 use App\Services\TeamRoleGuard;
@@ -20,10 +21,12 @@ final class SubmitRegattaEntryAction
      * Подать заявку команды на участие в регате.
      * Требует роль Organizer или TeamAdmin у вызывающего пользователя.
      *
+     * @param array<string, 'main'|'reserve'> $crew  team_member_id => role
+     *
      * @throws InsufficientTeamRoleException
      * @throws ValidationException
      */
-    public function handle(Regatta $regatta, Team $team, Yacht $yacht, User $actor): RegattaEntry
+    public function handle(Regatta $regatta, Team $team, Yacht $yacht, User $actor, array $crew = []): RegattaEntry
     {
         TeamRoleGuard::authorize($team, $actor, TeamMemberRole::ACTION_SUBMIT_ENTRY);
 
@@ -51,12 +54,41 @@ final class SubmitRegattaEntryAction
             ]);
         }
 
-        return RegattaEntry::create([
+        $entry = RegattaEntry::create([
             'regatta_id'   => $regatta->id,
             'team_id'      => $team->id,
             'yacht_id'     => $yacht->id,
             'status'       => 'pending',
             'submitted_at' => now(),
         ]);
+
+        // Сохраняем экипаж
+        if ($crew !== []) {
+            // Валидируем, что все team_member_id принадлежат этой команде и активны
+            $validMemberIds = $team->members()
+                ->wherePivot('status', 'active')
+                ->pluck('team_members.id')
+                ->toArray();
+
+            foreach ($crew as $memberId => $role) {
+                // Пропускаем участников без выбранной роли
+                if ($role === '' || $role === null) {
+                    continue;
+                }
+
+                if (! in_array($memberId, $validMemberIds, true)) {
+                    throw ValidationException::withMessages([
+                        'crew' => "Участник {$memberId} не состоит в команде или не активен.",
+                    ]);
+                }
+
+                $entry->crew()->create([
+                    'team_member_id' => $memberId,
+                    'role'           => $role,
+                ]);
+            }
+        }
+
+        return $entry;
     }
 }

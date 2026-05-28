@@ -51,12 +51,14 @@ class ManageRegattaEntries extends ManageRecords
                 ->createAnother(false)
                 ->using(function (array $data, string $model): RegattaEntry {
                     $requiredDocs = $data['required_documents'] ?? [];
-                    unset($data['required_documents']);
+                    $crew = $data['crew'] ?? [];
+                    unset($data['required_documents'], $data['crew']);
 
                     /** @var RegattaEntry $record */
                     $record = $model::create($data);
 
                     app(SyncDocumentFilesAction::class)->execute($record, $requiredDocs);
+                    RegattaEntryResource::syncCrew($record, $crew);
 
                     return $record;
                 }),

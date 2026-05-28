@@ -81,7 +81,7 @@
 
                 <div>
                     <label for="team" class="block text-sm text-brand-gray-light">Команда</label>
-                    <select id="team" wire:model="teamId"
+                    <select id="team" wire:model.live="teamId"
                             class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('teamId') border-red-300 @enderror">
                         <option value="">Выберите команду</option>
                         @foreach ($this->organizerTeams as $team)
@@ -106,6 +106,25 @@
                         <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                     @enderror
                 </div>
+
+                @php $teamMembers = $this->teamMembers(); @endphp
+                @if ($teamId && $teamMembers->isNotEmpty())
+                    <div class="border-t border-gray-200 pt-4">
+                        <p class="text-sm font-medium text-[#2E325C] mb-3">Экипаж</p>
+                        <p class="text-xs text-gray-500 mb-3">Выберите участников команды и укажите роль: основной или запасной.</p>
+                        @foreach ($teamMembers as $member)
+                            <div class="flex items-center gap-3 mb-2 py-2 px-3 bg-[#F8F8F8] rounded">
+                                <span class="text-sm flex-1">{{ $member->user?->name ?? 'Неизвестный участник' }}</span>
+                                <select wire:model.change="crew.{{ $member->id }}"
+                                        class="text-sm border-gray-200 bg-white rounded p-1 min-w-[140px]">
+                                    <option value="">Не участвует</option>
+                                    <option value="main">Основной</option>
+                                    <option value="reserve">Запасной</option>
+                                </select>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
 
                 @if ($this->requiredDocuments())
                     <div class="border-t border-gray-200 pt-4">

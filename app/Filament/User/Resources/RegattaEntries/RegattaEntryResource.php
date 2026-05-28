@@ -6,6 +6,7 @@ namespace App\Filament\User\Resources\RegattaEntries;
 
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Models\RegattaEntry;
+use App\Models\Team;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
@@ -74,10 +75,42 @@ class RegattaEntryResource extends Resource
                         $set('required_documents', $docs);
                     }),
                 Select::make('team_id')
-                    ->relationship('team', 'name', modifyQueryUsing: fn (Builder $query) => $query->where('organizer_id', auth()->id()))->label('Команда')
-                    ->required(),
+                    ->relationship('team', 'name', modifyQueryUsing: fn (Builder $query) => $query->where('organizer_id', auth()->id()))
+                    ->label('Команда')
+                    ->required()
+                    ->live()
+                    ->afterStateUpdated(function (?string $state, Set $set): void {
+                        $set('crew', []);
+                    }),
+
                 Select::make('yacht_id')
-                    ->relationship('yacht', 'name', modifyQueryUsing: fn (Builder $query) => $query->where('user_id', auth()->id()))->label('Яхта'),
+                    ->relationship('yacht', 'name', modifyQueryUsing: fn (Builder $query) => $query->where('user_id', auth()->id()))
+                    ->label('Яхта'),
+
+                Repeater::make('crew')
+                    ->label('Экипаж')
+                    ->columnSpanFull()
+                    ->addable(false)
+                    ->deletable(false)
+                    ->reorderable(false)
+                    ->default(fn (Get $get): array => static::buildCrewDefaults($get('team_id')))
+                    ->columns(1)
+                    ->itemLabel(fn (array $state): string => ($state['member_name'] ?? 'Участник') . ' — ' . match ($state['role'] ?? '') {
+                        'main'    => 'Основной',
+                        'reserve' => 'Запасной',
+                        default   => '—',
+                    })
+                    ->schema([
+                        Hidden::make('team_member_id'),
+                        Hidden::make('member_name'),
+                        Select::make('role')
+                            ->label('Роль')
+                            ->options([
+                                'main'    => 'Основной',
+                                'reserve' => 'Запасной',
+                            ])
+                            ->required(),
+                    ]),
 
                 Repeater::make('required_documents')
                     ->label('Документы')
@@ -164,16 +197,31 @@ class RegattaEntryResource extends Resource
                     ->searchable(),
                 TextColumn::make('status')
                     ->badge()->label('Статус')->formatStateUsing(fn (string $state): string => match ($state) {
-                    'pending' => 'На проверке',
+                    'pending'  => 'На проверке',
                     'approved' => 'Активная',
                     'rejected' => 'Отклонена',
-                    default => $state,
+                    default    => $state,
                 })->color(fn (string $state): string => match ($state) {
-                    'pending' => 'gray',
+                    'pending'  => 'gray',
                     'approved' => 'success',
                     'rejected' => 'danger',
-                    default => 'gray',
+                    default    => 'gray',
                 }),
+                TextColumn::make('crew')
+                    ->label('Экипаж')
+                    ->state(fn (RegattaEntry $record): string => $record->crew()
+                        ->with('teamMember.user')
+                        ->get()
+                        ->map(fn (\App\Models\RegattaEntryCrew $c): string =>
+                            ($c->teamMember?->user?->name ?? '?') . ' (' . match ($c->role) {
+                                'main'    => 'осн.',
+                                'reserve' => 'зап.',
+                                default   => $c->role,
+                            } . ')'
+                        )
+                        ->join(', ') ?: '—'
+                    ),
+
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -192,16 +240,20 @@ class RegattaEntryResource extends Resource
                         $data = $record->toArray();
                         $data['required_documents'] = app(\App\Actions\Document\SyncDocumentFilesAction::class)
                             ->load($record, ManageRegattaEntries::getRequiredDocuments($record->regatta_id));
+                        $data['crew'] = static::loadCrew($record);
                         $form->fill($data);
                     })
                     ->using(function (RegattaEntry $record, array $data): RegattaEntry {
                         $docs = $data['required_documents'] ?? [];
-                        unset($data['required_documents']);
+                        $crew = $data['crew'] ?? [];
+                        unset($data['required_documents'], $data['crew']);
 
                         $record->update($data);
 
                         app(\App\Actions\Document\SyncDocumentFilesAction::class)
                             ->execute($record, $docs);
+
+                        static::syncCrew($record, $crew);
 
                         return $record;
                     }),
@@ -235,5 +287,79 @@ class RegattaEntryResource extends Resource
         $isRequired = (bool) ($state['is_required'] ?? false);
 
         return $label ? ($label . ($isRequired ? ' *' : ' (необязательный)')) : null;
+    }
+
+    // ──────────────────────────────────────────────
+    // Crew helpers
+    // ──────────────────────────────────────────────
+
+    /**
+     * Строит дефолтный список экипажа для формы создания.
+     *
+     * @return array<int, array{team_member_id: string, member_name: string, role: string}>
+     */
+    public static function buildCrewDefaults(?string $teamId): array
+    {
+        if ($teamId === null) {
+            return [];
+        }
+
+        $team = Team::find($teamId);
+        if (! $team) {
+            return [];
+        }
+
+        return $team->members()
+            ->wherePivot('status', 'active')
+            ->with('user')
+            ->get()
+            ->map(fn (\App\Models\User $user): array => [
+                'team_member_id' => $user->pivot->id,
+                'member_name'    => $user->name,
+                'role'           => 'main',
+            ])
+            ->all();
+    }
+
+    /**
+     * Загружает существующий экипаж для формы редактирования.
+     *
+     * @return array<int, array{team_member_id: string, member_name: string, role: string}>
+     */
+    public static function loadCrew(RegattaEntry $record): array
+    {
+        return $record->crew()
+            ->with('teamMember.user')
+            ->get()
+            ->map(fn (\App\Models\RegattaEntryCrew $crew): array => [
+                'team_member_id' => $crew->team_member_id,
+                'member_name'    => $crew->teamMember?->user?->name ?? 'Неизвестный',
+                'role'           => $crew->role,
+            ])
+            ->all();
+    }
+
+    /**
+     * Синхронизирует экипаж после сохранения формы.
+     *
+     * @param array<int, array{team_member_id: string, role: string}> $crew
+     */
+    public static function syncCrew(RegattaEntry $record, array $crew): void
+    {
+        // Удаляем записи, которых нет в новом наборе
+        $incomingIds = collect($crew)->pluck('team_member_id')->filter()->toArray();
+
+        $record->crew()->whereNotIn('team_member_id', $incomingIds)->delete();
+
+        foreach ($crew as $item) {
+            if (empty($item['team_member_id'])) {
+                continue;
+            }
+
+            $record->crew()->updateOrCreate(
+                ['team_member_id' => $item['team_member_id']],
+                ['role'           => $item['role'] ?? 'main'],
+            );
+        }
     }
 }

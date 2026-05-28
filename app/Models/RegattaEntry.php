@@ -47,6 +47,12 @@ class RegattaEntry extends Model
         return $this->belongsTo(Yacht::class);
     }
 
+    /** Экипаж заявки: участники команды с ролями (main / reserve) */
+    public function crew(): HasMany
+    {
+        return $this->hasMany(RegattaEntryCrew::class);
+    }
+
     /** Результаты этой заявки по отдельным гонкам */
     public function raceResults(): HasMany
     {

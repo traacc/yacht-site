@@ -81,7 +81,7 @@ class Team extends Model implements HasMedia
     {
         return $this->belongsToMany(User::class, 'team_members')
             ->using(TeamMember::class)
-            ->withPivot(['role', 'status', 'joined_at'])
+            ->withPivot(['id', 'role', 'status', 'joined_at'])
             ->withTimestamps();
     }
 

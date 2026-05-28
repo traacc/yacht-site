@@ -47,7 +47,8 @@ class ManageRegattaEntries extends ManageRecords
             ->modalHeading('Подать заявку')
                 ->using(function (array $data, string $model): \Illuminate\Database\Eloquent\Model {
                     $docs = $data['required_documents'] ?? [];
-                    unset($data['required_documents']);
+                    $crew = $data['crew'] ?? [];
+                    unset($data['required_documents'], $data['crew']);
 
                     $data['status'] = 'pending';
 
@@ -65,6 +66,7 @@ class ManageRegattaEntries extends ManageRecords
                     }
 
                     app(SyncDocumentFilesAction::class)->execute($record, $docs);
+                    RegattaEntryResource::syncCrew($record, $crew);
 
                     return $record;
                 })

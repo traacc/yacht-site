@@ -78,7 +78,11 @@ class RegattaEntryResource extends Resource
                     ->label('Команда')
                     ->relationship('team', 'name')
                     ->required()
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
+                    ->live()
+                    ->afterStateUpdated(function (?string $state, Set $set): void {
+                        $set('crew', static::buildCrewDefaults($state));
+                    }),
                 Select::make('yacht_id')
                     ->label('Яхта')
                     ->relationship('yacht', 'name')
@@ -101,6 +105,32 @@ class RegattaEntryResource extends Resource
                     ->default('pending')
                     ->required()
                     ->columnSpanFull(),
+
+                // ── Экипаж ────────────────────────────
+                Repeater::make('crew')
+                    ->label('Экипаж')
+                    ->columnSpanFull()
+                    ->addable(false)
+                    ->deletable(false)
+                    ->reorderable(false)
+                    ->default(fn (Get $get): array => static::buildCrewDefaults($get('team_id')))
+                    ->columns(1)
+                    ->itemLabel(fn (array $state): string => ($state['member_name'] ?? 'Участник') . ' — ' . match ($state['role'] ?? '') {
+                        'main'    => 'Основной',
+                        'reserve' => 'Запасной',
+                        default   => '—',
+                    })
+                    ->schema([
+                        Hidden::make('team_member_id'),
+                        Hidden::make('member_name'),
+                        Select::make('role')
+                            ->label('Роль')
+                            ->options([
+                                'main'    => 'Основной',
+                                'reserve' => 'Запасной',
+                            ])
+                            ->required(),
+                    ]),
 
                 // ── Документы заявки ──────────────────
                 Repeater::make('required_documents')
@@ -182,6 +212,20 @@ class RegattaEntryResource extends Resource
                 TextColumn::make('team.organizer.name')
                     ->label('Капитан')
                     ->searchable(),
+                TextColumn::make('crew')
+                    ->label('Экипаж')
+                    ->state(fn (RegattaEntry $record): string => $record->crew()
+                        ->with('teamMember.user')
+                        ->get()
+                        ->map(fn (\App\Models\RegattaEntryCrew $c): string =>
+                            ($c->teamMember?->user?->name ?? '?') . ' (' . match ($c->role) {
+                                'main'    => 'осн.',
+                                'reserve' => 'зап.',
+                                default   => $c->role,
+                            } . ')'
+                        )
+                        ->join(', ') ?: '—'
+                    ),
                 TextColumn::make('submitted_at')
                     ->label('Дата')
                     ->dateTime()->dateTime('d M Y')
@@ -223,17 +267,21 @@ class RegattaEntryResource extends Resource
 
                         $data = $record->toArray();
                         $data['required_documents'] = $sync->load($record, $requiredDocs);
+                        $data['crew'] = static::loadCrew($record);
 
                         $form->fill($data);
                     })
                     ->using(function (RegattaEntry $record, array $data): RegattaEntry {
                         $requiredDocs = $data['required_documents'] ?? [];
-                        unset($data['required_documents']);
+                        $crew = $data['crew'] ?? [];
+                        unset($data['required_documents'], $data['crew']);
 
                         $record->update($data);
 
                         app(\App\Actions\Document\SyncDocumentFilesAction::class)
                             ->execute($record, $requiredDocs);
+
+                        static::syncCrew($record, $crew);
 
                         return $record;
                     }),
@@ -251,6 +299,79 @@ class RegattaEntryResource extends Resource
         return [
             'index' => ManageRegattaEntries::route('/'),
         ];
+    }
+
+    // ──────────────────────────────────────────────
+    // Crew helpers
+    // ──────────────────────────────────────────────
+
+    /**
+     * Строит дефолтный список экипажа для формы создания.
+     *
+     * @return array<int, array{team_member_id: string, member_name: string, role: string}>
+     */
+    public static function buildCrewDefaults(?string $teamId): array
+    {
+        if ($teamId === null) {
+            return [];
+        }
+
+        $team = \App\Models\Team::find($teamId);
+        if (! $team) {
+            return [];
+        }
+
+        return $team->members()
+            ->wherePivot('status', 'active')
+            ->with('user')
+            ->get()
+            ->map(fn (\App\Models\User $user): array => [
+                'team_member_id' => $user->pivot->id,
+                'member_name'    => $user->name,
+                'role'           => 'main',
+            ])
+            ->all();
+    }
+
+    /**
+     * Загружает существующий экипаж для формы редактирования.
+     *
+     * @return array<int, array{team_member_id: string, member_name: string, role: string}>
+     */
+    public static function loadCrew(RegattaEntry $record): array
+    {
+        return $record->crew()
+            ->with('teamMember.user')
+            ->get()
+            ->map(fn (\App\Models\RegattaEntryCrew $crew): array => [
+                'team_member_id' => $crew->team_member_id,
+                'member_name'    => $crew->teamMember?->user?->name ?? 'Неизвестный',
+                'role'           => $crew->role,
+            ])
+            ->all();
+    }
+
+    /**
+     * Синхронизирует экипаж после сохранения формы.
+     *
+     * @param array<int, array{team_member_id: string, role: string}> $crew
+     */
+    public static function syncCrew(RegattaEntry $record, array $crew): void
+    {
+        $incomingIds = collect($crew)->pluck('team_member_id')->filter()->toArray();
+
+        $record->crew()->whereNotIn('team_member_id', $incomingIds)->delete();
+
+        foreach ($crew as $item) {
+            if (empty($item['team_member_id'])) {
+                continue;
+            }
+
+            $record->crew()->updateOrCreate(
+                ['team_member_id' => $item['team_member_id']],
+                ['role'           => $item['role'] ?? 'main'],
+            );
+        }
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Actions\Regatta\SubmitRegattaEntryAction;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Models\Regatta;
 use App\Models\Team;
+use App\Models\TeamMember;
 use App\Models\User;
 use App\Models\Yacht;
 use Illuminate\Support\Collection;
@@ -32,6 +33,13 @@ class JoinRegattaModal extends Component
     /** @var array<string, \Livewire\TemporaryUploadedFile[]> */
     public array $documentFiles = [];
 
+    /**
+     * Экипаж: team_member_id => роль ('main'|'reserve').
+     *
+     * @var array<string, string>
+     */
+    public array $crew = [];
+
     #[On('open-join-regatta-modal')]
     public function openModal(string $regattaId): void
     {
@@ -39,6 +47,7 @@ class JoinRegattaModal extends Component
         $this->teamId = null;
         $this->yachtId = null;
         $this->documentFiles = [];
+        $this->crew = [];
         $this->submitted = false;
         $this->isOpen = true;
     }
@@ -46,7 +55,12 @@ class JoinRegattaModal extends Component
     public function closeModal(): void
     {
         $this->isOpen = false;
-        $this->reset(['regattaId', 'teamId', 'yachtId', 'documentFiles', 'submitted']);
+        $this->reset(['regattaId', 'teamId', 'yachtId', 'documentFiles', 'crew', 'submitted']);
+    }
+
+    public function updatedTeamId(): void
+    {
+        $this->crew = [];
     }
 
     public function submit(SubmitRegattaEntryAction $action): void
@@ -59,7 +73,7 @@ class JoinRegattaModal extends Component
         }
 
         $rules = [
-            'teamId' => ['required', 'string', 'uuid'],
+            'teamId'  => ['required', 'string', 'uuid'],
             'yachtId' => ['required', 'string', 'uuid'],
         ];
 
@@ -72,7 +86,7 @@ class JoinRegattaModal extends Component
         }
 
         $this->validate($rules, [], [
-            'teamId' => 'команда',
+            'teamId'  => 'команда',
             'yachtId' => 'яхта',
         ]);
 
@@ -81,7 +95,7 @@ class JoinRegattaModal extends Component
         $yacht = Yacht::findOrFail($this->yachtId);
 
         try {
-            $entry = $action->handle($regatta, $team, $yacht, $user);
+            $entry = $action->handle($regatta, $team, $yacht, $user, $this->crew);
         } catch (\Illuminate\Validation\ValidationException $e) {
             foreach ($e->errors() as $field => $messages) {
                 foreach ($messages as $message) {
@@ -165,6 +179,23 @@ class JoinRegattaModal extends Component
     public function requiredDocuments(): array
     {
         return ManageRegattaEntries::getRequiredDocuments($this->regattaId);
+    }
+
+    /**
+     * Активные участники выбранной команды.
+     *
+     * @return Collection<int, TeamMember>
+     */
+    public function teamMembers(): Collection
+    {
+        if (! $this->teamId) {
+            return collect();
+        }
+
+        return TeamMember::where('team_id', $this->teamId)
+            ->where('status', 'active')
+            ->with('user')
+            ->get();
     }
 
     #[Computed]
