@@ -92,7 +92,7 @@ class NewsResource extends Resource
                     ->searchable(),
                 TextColumn::make('published_at')
                     ->label('Дата публикации')
-                    ->dateTime()
+                    ->dateTime()->dateTime('d M Y')
                     ->sortable(),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([

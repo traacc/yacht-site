@@ -177,7 +177,7 @@ class RegattaEntryResource extends Resource
                     ->searchable(),
                 TextColumn::make('submitted_at')
                     ->label('Дата')
-                    ->dateTime()
+                    ->dateTime()->dateTime('d M Y')
                     ->sortable(),
                 TextColumn::make('status')
                     ->label('Статус')
