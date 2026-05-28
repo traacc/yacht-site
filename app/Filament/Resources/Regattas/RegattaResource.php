@@ -236,7 +236,6 @@ class RegattaResource extends Resource
                         ManageRegattas::getRequiredDocuments(),
                     ))
                     ->columns(1)
-                    ->default(0)
                     ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
                     ->rules([
                         function (): \Closure {
