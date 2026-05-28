@@ -63,10 +63,16 @@ class JoinRegattaModal extends Component
             'yachtId' => ['required', 'string', 'uuid'],
         ];
 
-        // Добавляем правила валидации для обязательных документов
+        // Добавляем правила валидации для документов
         foreach ($this->requiredDocuments() as $doc) {
             $key = 'documentFiles.' . $doc['doc_type'];
-            $rules[$key] = ['required', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png,webp', 'max:20480'];
+            $isRequired = $doc['is_required'] ?? false;
+            $rules[$key] = array_filter([
+                $isRequired ? 'required' : 'nullable',
+                'file',
+                'mimes:pdf,doc,docx,jpg,jpeg,png,webp',
+                'max:20480',
+            ]);
         }
 
         $this->validate($rules, [], [

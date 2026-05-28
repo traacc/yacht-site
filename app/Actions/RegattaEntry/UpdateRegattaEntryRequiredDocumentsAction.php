@@ -50,9 +50,11 @@ final class UpdateRegattaEntryRequiredDocumentsAction
     }
 
     /**
-     * Получить только обязательные типы документов (value === true).
+     * Получить только включённые типы документов с флагом обязательности.
      *
-     * @return array<int, array{doc_type: string, title: string}>
+     * Глобальные настройки: все включённые документы считаются обязательными.
+     *
+     * @return array<int, array{doc_type: string, title: string, is_required: bool}>
      */
     public function getRequiredList(): array
     {
@@ -63,7 +65,8 @@ final class UpdateRegattaEntryRequiredDocumentsAction
                 fn (YachtDocumentTypeModel $type) => [
                     'doc_type'    => $type->key,
                     'title'       => $type->label,
-                    'description' => $type->description,
+                    'description' => $type->description ?? '',
+                    'is_required' => true,
                 ],
                 YachtDocumentTypeModel::cachedConfigurable()->all(),
             ),

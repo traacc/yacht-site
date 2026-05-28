@@ -216,6 +216,51 @@ class Regatta extends Model
         // Different years: "30 December 2026 – 3 January 2027"
         return $start->isoFormat('LL') . ' – ' . $end->isoFormat('LL');
     }
-    
-    
+
+    /**
+     * Нормализованный список документов для заявок.
+     *
+     * Поддерживает обратную совместимость: старый формат ['key1', 'key2']
+     * преобразуется в новый [{doc_type, is_required}].
+     *
+     * @return array<int, array{doc_type: string, title: string, is_required: bool}>
+     */
+    public function getEntryDocuments(): array
+    {
+        $raw = $this->entry_required_documents;
+
+        if (! is_array($raw) || $raw === []) {
+            return [];
+        }
+
+        $types = YachtDocumentType::cachedConfigurable();
+
+        // Старый формат — плоский массив строк ['orc_certificate', 'ship_ticket']
+        if (isset($raw[0]) && is_string($raw[0])) {
+            return $types
+                ->filter(fn (YachtDocumentType $t) => in_array($t->key, $raw, true))
+                ->map(fn (YachtDocumentType $t) => [
+                    'doc_type'    => $t->key,
+                    'title'       => $t->label,
+                    'is_required' => true,
+                ])
+                ->values()
+                ->all();
+        }
+
+        // Новый формат — массив объектов [{doc_type, is_required}]
+        return collect($raw)
+            ->map(function (array $item) use ($types) {
+                $type = $types->first(fn (YachtDocumentType $t) => $t->key === ($item['doc_type'] ?? ''));
+
+                return $type ? [
+                    'doc_type'    => $type->key,
+                    'title'       => $type->label,
+                    'is_required' => (bool) ($item['is_required'] ?? false),
+                ] : null;
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
 }

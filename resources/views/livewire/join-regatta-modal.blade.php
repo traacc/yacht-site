@@ -109,11 +109,16 @@
 
                 @if ($this->requiredDocuments())
                     <div class="border-t border-gray-200 pt-4">
-                        <p class="text-sm font-medium text-[#2E325C] mb-3">Обязательные документы</p>
+                        <p class="text-sm font-medium text-[#2E325C] mb-3">Документы</p>
                         @foreach ($this->requiredDocuments() as $doc)
                             <div class="mb-3">
                                 <label for="doc_{{ $doc['doc_type'] }}" class="block text-sm text-brand-gray-light">
                                     {{ $doc['title'] }}
+                                    @if ($doc['is_required'] ?? false)
+                                        <span class="text-red-500">*</span>
+                                    @else
+                                        <span class="text-gray-400 text-xs">(необязательный)</span>
+                                    @endif
                                 </label>
                                 <input type="file"
                                        id="doc_{{ $doc['doc_type'] }}"

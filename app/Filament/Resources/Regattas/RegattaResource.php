@@ -19,7 +19,7 @@ use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
@@ -309,20 +309,32 @@ class RegattaResource extends Resource
                             ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
                     ]),
                 */
-                // ── Обязательные документы для подачи заявок ──
+                // ── Документы для подачи заявок ──
                 Section::make('Документы для заявок')
-                    ->description('Документы, которые участник обязан приложить при подаче заявки на эту регату. Если ничего не выбрано — применяются глобальные настройки обязательных документов заявок.')
+                    ->description('Документы, которые участник должен приложить при подаче заявки. Если ничего не добавлено — применяются глобальные настройки.')
                     ->columnSpanFull()
                     ->collapsible()
                     ->schema([
-                        CheckboxList::make('entry_required_documents')
-                            ->label('Обязательные документы')
-                            ->options(fn () => \App\Models\YachtDocumentType::cachedConfigurable()
-                                ->pluck('label', 'key')
-                                ->all())
+                        Repeater::make('entry_required_documents')
+                            ->label('Документы')
+                            ->defaultItems(0)
                             ->columns(2)
-                            ->gridDirection('row')
-                            ->helperText('Отметьте типы документов, обязательных для заявки на эту регату.'),
+                            ->addActionLabel('Добавить документ')
+                            ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
+                            ->schema([
+                                Select::make('doc_type')
+                                    ->label('Тип документа')
+                                    ->options(fn () => \App\Models\YachtDocumentType::cachedConfigurable()
+                                        ->pluck('label', 'key')
+                                        ->all())
+                                    ->required()
+                                    ->distinct(),
+                                Checkbox::make('is_required')
+                                    ->label('Обязательный')
+                                    ->default(false),
+                            ])
+                            ->collapsible()
+                            ->helperText('Добавьте типы документов для заявки. По умолчанию документ необязателен.'),
                     ]),
             ]);
     }

@@ -64,9 +64,10 @@ class RegattaEntryResource extends Resource
                     ->afterStateUpdated(function (?string $state, Set $set): void {
                         $docs = array_map(
                             fn (array $doc) => [
-                                'doc_type' => $doc['doc_type'],
-                                'title'    => $doc['title'],
-                                'files'    => [],
+                                'doc_type'    => $doc['doc_type'],
+                                'title'       => $doc['title'],
+                                'is_required' => $doc['is_required'] ?? false,
+                                'files'       => [],
                             ],
                             ManageRegattaEntries::getRequiredDocuments($state),
                         );
@@ -86,9 +87,10 @@ class RegattaEntryResource extends Resource
                     ->reorderable(false)
                     ->default(fn (Get $get) => array_map(
                         fn (array $doc) => [
-                            'doc_type' => $doc['doc_type'],
-                            'title'    => $doc['title'],
-                            'files'    => [],
+                            'doc_type'    => $doc['doc_type'],
+                            'title'       => $doc['title'],
+                            'is_required' => $doc['is_required'] ?? false,
+                            'files'       => [],
                         ],
                         ManageRegattaEntries::getRequiredDocuments($get('regatta_id')),
                     ))
@@ -101,6 +103,10 @@ class RegattaEntryResource extends Resource
                                 $missing = [];
 
                                 foreach ($requiredDocs as $required) {
+                                    if (! ($required['is_required'] ?? false)) {
+                                        continue;
+                                    }
+
                                     $docType = $required['doc_type'];
                                     $item = collect((array) $value)->first(
                                         fn (array $doc): bool => ($doc['doc_type'] ?? '') === $docType
@@ -122,6 +128,7 @@ class RegattaEntryResource extends Resource
                     ->schema([
                         Hidden::make('doc_type'),
                         Hidden::make('title'),
+                        Hidden::make('is_required'),
                         FileUpload::make('files')
                             ->label('Файлы')
                             ->multiple()
@@ -224,6 +231,9 @@ class RegattaEntryResource extends Resource
         $model = \App\Models\YachtDocumentType::cachedAll()
             ->first(fn (\App\Models\YachtDocumentType $t) => $t->key === $docType);
 
-        return $model?->label ?? ($state['title'] ?? null);
+        $label = $model?->label ?? ($state['title'] ?? null);
+        $isRequired = (bool) ($state['is_required'] ?? false);
+
+        return $label ? ($label . ($isRequired ? ' *' : ' (необязательный)')) : null;
     }
 }
