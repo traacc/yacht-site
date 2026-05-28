@@ -204,13 +204,13 @@ class Regatta extends Model
 
         // Same month and year: "14–16 May 2026"
         if ($start->isSameMonth($end) && $start->isSameYear($end)) {
-            return $start->isoFormat('D') . '–' . $end->isoFormat('D MMMM');
+            return $start->isoFormat('D') . '–' . $end->isoFormat('D MMMM Y');
         }
 
         // Same year, different months: "28 May – 2 June 2026"
         if ($start->isSameYear($end)) {
             // 'll' is the short/standard date without the year (e.g., "28 May" or "May 28")
-            return $start->isoFormat('D MMMM') . ' – ' . $end->isoFormat('D MMMM');
+            return $start->isoFormat('D MMMM Y') . ' – ' . $end->isoFormat('D MMMM Y');
         }
 
         // Different years: "30 December 2026 – 3 January 2027"
