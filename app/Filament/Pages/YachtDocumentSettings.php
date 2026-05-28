@@ -41,6 +41,11 @@ class YachtDocumentSettings extends Page
 
     protected static string|UnitEnum|null $navigationGroup = 'Яхты';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     /** @var array<string, bool> */
     public array $data = [];
 
