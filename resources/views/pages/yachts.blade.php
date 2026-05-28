@@ -31,7 +31,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                 @guest
                 <a href="#" @click.prevent="$dispatch('open-login-modal', { tab: 'register' })" class="bg-[#2D92CE] cursor-pointer text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту →</a>
                 @else
-                <a href="/user/yachts" class="bg-[#2D92CE] cursor-pointer text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту →</a>
+                <a href="/user/yachts?tableAction=create" class="bg-[#2D92CE] cursor-pointer text-white hover:bg-[#0074CC] py-2 px-4 transition-colors">Зарегистрировать яхту →</a>
                 @endguest
             </div>
             <div class="searchbar bg-[#F8F8F8] mb-6">

@@ -63,7 +63,7 @@ bgImage="{{ asset('images/bg/regulations.webp') }}"
         Зарегистрировать яхту →
         </button>
         @else
-        <a href="/user/yacht" @click="isRequestModalOpen=true" class="mt-6 bg-[#2D92CE] text-white py-2 px-6 hover:bg-[#0074CC] transition-colors md:text-lg text-sm font-semibold w-full max-w-[300px]">
+        <a href="/user/yachts?tableAction=create" @click="isRequestModalOpen=true" class="mt-6 bg-[#2D92CE] text-white py-2 px-6 hover:bg-[#0074CC] transition-colors md:text-lg text-sm font-semibold w-full max-w-[300px]">
         Зарегистрировать яхту →
         </a>
         @endguest
