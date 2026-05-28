@@ -151,7 +151,12 @@ class Regatta extends Model
 
     public function scopeClosest($query)
     {
-        return $query->upcoming()->orderBy('date_start');
+        return $query->upcoming()
+            ->whereNotIn('regatta_status', [
+                RegattaStatus::Cancelled,
+                RegattaStatus::Postponed,
+            ])
+            ->orderBy('date_start');
     }
 
     // ──────────────────────────────────────────────
