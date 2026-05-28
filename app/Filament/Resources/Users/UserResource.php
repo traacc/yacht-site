@@ -194,11 +194,14 @@ class UserResource extends Resource
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
                 SelectFilter::make('system_role')
-                ->label('Роль') // Красивое название для пользователя
+                ->label('Роль')
                 ->options([
                     'user' => 'Пользователь',
                     'admin' => 'Администратор',
-                ])
+                ]),
+                SelectFilter::make('sport_category')
+                    ->label('Спортивный разряд')
+                    ->options(SportCategory::class),
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать пользователя'),
