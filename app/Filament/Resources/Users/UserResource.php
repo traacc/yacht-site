@@ -72,7 +72,7 @@ class UserResource extends Resource
                     ->label('ID')
                     ->readOnly()
                     ->columnSpanFull()
-                    ->formatStateUsing(fn (?Team $record) => $record?->formatted_external_id ?? '—'),
+                    ->formatStateUsing(fn (?User $record) => $record?->formatted_external_id ?? '—'),
                 TextInput::make('first_name')
                     ->label('Имя')
                     ->placeholder('Имя')
