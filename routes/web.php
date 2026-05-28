@@ -8,6 +8,7 @@ use App\Models\Regatta;
 use App\Models\Team;
 use App\Models\Yacht;
 use App\Services\SettingsService;
+use App\Services\WeatherService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -207,6 +208,15 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
 
     $entries = $regatta->approvedEntries;
 
+    $currentWeather = $regatta?->coordinates
+        ? app(WeatherService::class)->getWeather(
+            lat: (float) $regatta->coordinates[0],
+            lon: (float) $regatta->coordinates[1],
+        )
+        : null;
+        
+    $temp = $currentWeather['current']['temperature_2m'] . ' ℃' ?? '—';
+
     // Проверяем, является ли текущий юзер участником уже заявленной команды
     // Учитываем pending + approved, чтобы кнопка «Подать заявку» скрывалась сразу после подачи
     $userIsEntered = false;
@@ -283,7 +293,8 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'requiredEntryDocuments',
         'otherRegattas',
         'otherRegattasData',
-        'userIsEntered'
+        'userIsEntered',
+        'temp'
     ));
 })->name('competition-details');
 Route::get('/teams', function () {

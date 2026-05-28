@@ -17,16 +17,16 @@
                             <x-icon-2 name="calendar" />
                             {{ $regatta->dateRange() }}
                         </div>
-                        <div class="flex items-center gap-2 pb-3">
-                            <x-icon-2 name="marker" />
-                            {{ $regatta->location }}
-                        </div>
                         @if($regatta->water_area)
-                            <div class="flex items-center gap-2 pb-5">
+                            <div class="flex items-center gap-2 pb-3">
                                 <x-icon-2 name="waves" />
                                 {{ $regatta->water_area }}
                             </div>
                         @endif
+                        <div class="flex items-center gap-2 pb-5">
+                            <x-icon-2 name="weather" />
+                            {{ $temp }}
+                        </div>
                     </div>
                     <p class="text-brand-gray text-lg">{{ $regatta->short_description }}</p>
                     @if($userIsEntered)
