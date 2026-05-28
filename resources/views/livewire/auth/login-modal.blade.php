@@ -87,87 +87,90 @@
                 
             </form>
             
-            <form wire:submit.prevent="register" class="space-y-4 mt-2" x-show="tab === 'register'">
-                <div>
-                    <input type="text" id="first_name" wire:model="first_name" placeholder="Имя"
-                           class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('first_name') border-red-300 @enderror">
-                    @error('first_name') 
-                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> 
-                    @enderror
-                </div>
-                <div>
-                    <input type="text" id="last_name" wire:model="last_name" placeholder="Фамилия"
-                           class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('last_name') border-red-300 @enderror">
-                    @error('last_name') 
-                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> 
-                    @enderror
-                </div>
-                <div>
-                    <input type="date" id="birthday" wire:model="birthday" placeholder="День рождения" max="2016-12-31" min="1926-01-01"
-                           class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('birthday') border-red-300 @enderror">
-                    @error('birthday') 
-                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> 
-                    @enderror
+            <form wire:submit.prevent="register" class="mt-2 space-y-2" x-show="tab === 'register'">
+                <div class="overflow-x-auto max-h-[40vh] space-y-2">
+                    <div>
+                        <input type="text" id="first_name" wire:model="first_name" placeholder="Имя"
+                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('first_name') border-red-300 @enderror">
+                        @error('first_name') 
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> 
+                        @enderror
+                    </div>
+                    <div>
+                        <input type="text" id="last_name" wire:model="last_name" placeholder="Фамилия"
+                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('last_name') border-red-300 @enderror">
+                        @error('last_name') 
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> 
+                        @enderror
+                    </div>
+                    <div>
+                        <input type="date" id="birthday" wire:model="birthday" placeholder="День рождения" max="2016-12-31" min="1926-01-01"
+                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('birthday') border-red-300 @enderror">
+                        @error('birthday') 
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> 
+                        @enderror
+                    </div>
+
+                    <div>
+                        <select id="sports_category" wire:model="sports_category" require placeholder="Спортивный разряд"
+                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('sports_category') border-red-300 @enderror">
+                            <option value="" disabled selected>Спортивный разряд</option>
+                            <option value="3">Третий</option>
+                            <option value="2">Второй</option>
+                            <option value="1">Первый</option>
+                            <option value="kms">КМС</option>
+                            <option value="ms">МС</option>
+                            <option value="msmk">МСМК</option>
+                            <option value="zms">ЗМС</option>
+                        </select>
+                        @error('sports_category') <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <input type="email" id="email" wire:model="email" placeholder="E-Mail"
+                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('email') border-red-300 @enderror">
+                        @error('email') <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <input type="tel" id="phone" wire:model="phone" placeholder="+7 (___) ___-__-__"
+                            x-mask="+7 (999) 999-99-99"
+                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('phone') border-red-300 @enderror">
+                        @error('phone') <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div x-data="{ show: false }" class="relative">
+                        <input :type="show ? 'text' : 'password'" id="password" wire:model="password" placeholder="Пароль"
+                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base pr-8 @error('password') border-red-300 @enderror">
+                        <button type="button" @click="show = !show"
+                                class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">
+                            <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <svg x-show="show" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                        </button>
+                        @error('password') <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div x-data="{ show: false }" class="relative">
+                        <input :type="show ? 'text' : 'password'" id="password_confirmation" wire:model="password_confirmation" placeholder="Подтвердите пароль"
+                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base pr-8">
+                        <button type="button" @click="show = !show"
+                                class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">
+                            <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <svg x-show="show" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
-                <div>
-                    <select id="sports_category" wire:model="sports_category" require placeholder="Спортивный разряд"
-                           class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('sports_category') border-red-300 @enderror">
-                        <option value="" disabled selected>Спортивный разряд</option>
-                        <option value="3">Третий</option>
-                        <option value="2">Второй</option>
-                        <option value="1">Первый</option>
-                        <option value="kms">КМС</option>
-                        <option value="ms">МС</option>
-                        <option value="msmk">МСМК</option>
-                        <option value="zms">ЗМС</option>
-                    </select>
-                    @error('sports_category') <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> @enderror
-                </div>
-
-                <div>
-                    <input type="email" id="email" wire:model="email" placeholder="E-Mail"
-                           class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('email') border-red-300 @enderror">
-                    @error('email') <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> @enderror
-                </div>
-
-                <div>
-                    <input type="tel" id="phone" wire:model="phone" placeholder="+7 (___) ___-__-__"
-                           x-mask="+7 (999) 999-99-99"
-                           class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('phone') border-red-300 @enderror">
-                    @error('phone') <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> @enderror
-                </div>
-
-                <div x-data="{ show: false }" class="relative">
-                    <input :type="show ? 'text' : 'password'" id="password" wire:model="password" placeholder="Пароль"
-                           class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base pr-8 @error('password') border-red-300 @enderror">
-                    <button type="button" @click="show = !show"
-                            class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">
-                        <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        <svg x-show="show" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                        </svg>
-                    </button>
-                    @error('password') <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> @enderror
-                </div>
-
-                <div x-data="{ show: false }" class="relative">
-                    <input :type="show ? 'text' : 'password'" id="password_confirmation" wire:model="password_confirmation" placeholder="Подтвердите пароль"
-                           class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base pr-8">
-                    <button type="button" @click="show = !show"
-                            class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">
-                        <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        <svg x-show="show" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                        </svg>
-                    </button>
-                </div>
                 <div wire:ignore class="smart-captcha mt-4" data-callback="registerCaptchaCallback"
                     data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
                 </div>
