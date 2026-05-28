@@ -24,7 +24,10 @@ class UpcomingBirthdaysWidget extends BaseWidget
                     ->orderByUpcomingBirthday()
             )
             ->columns([
-                Tables\Columns\TextColumn::make('name')->label('Имя')->url(fn (User $record): string => \App\Filament\Resources\Users\UserResource::getUrl('index')),
+                Tables\Columns\TextColumn::make('name')->label('Имя')->url(fn (User $record): string => \App\Filament\Resources\Users\UserResource::getUrl('index', [
+                    'tableAction'       => 'edit',
+                    'tableActionRecord' => $record->id,
+                ])),
                 Tables\Columns\TextColumn::make('next_birthday')
                     ->label('Дата рождения')
                     ->getStateUsing(fn (User $r) => $r->nextBirthday?->format('d.m.Y') ?? '—'),

@@ -242,16 +242,16 @@ class YachtResource extends Resource
             ->columns([
                 TextColumn::make('name')
                     ->label('Яхта')
-                    ->searchable(),
+                    ->searchable()->sortable(),
                 TextColumn::make('gims_number')
                     ->label('Номер ГИМС')
-                    ->searchable(),
+                    ->searchable()->sortable(),
                 TextColumn::make('vfps_number')
                     ->label('Парус №')
-                    ->searchable(),
+                    ->searchable()->sortable(),
                 TextColumn::make('user.full_name')
                     ->label('Владелец')
-                    ->searchable(),
+                    ->searchable()->sortable(['name']),
                 TextColumn::make('orc_cert')
                     ->label('ORC-сертификат')
                     ->state(fn ($record) => $record->documents()
