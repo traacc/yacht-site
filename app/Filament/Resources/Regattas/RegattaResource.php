@@ -125,6 +125,8 @@ class RegattaResource extends Resource
                 TextInput::make('water_area')
                     ->label('Акватория')
                     ->placeholder('Введите акваторию'),
+
+                
                 YandexMap::make('coordinates')
                     ->label('Выберите на карте')
                     ->columnSpanFull()
@@ -194,10 +196,6 @@ class RegattaResource extends Resource
                     ->maxDate(now()->addYears(100))
                     ->visible(fn (Get $get): bool => static::statusEquals($get('regatta_status'), \App\Enums\RegattaStatus::Postponed))
                     ->required(fn (Get $get): bool => static::statusEquals($get('regatta_status'), \App\Enums\RegattaStatus::Postponed)),
-                Textarea::make('regulations')
-                    ->label('Регламент')
-                    ->placeholder('Описание регламента')
-                    ->columnSpanFull(),
 
                 Repeater::make('regatta_events')
                     ->relationship('races')
@@ -238,6 +236,7 @@ class RegattaResource extends Resource
                         ManageRegattas::getRequiredDocuments(),
                     ))
                     ->columns(1)
+                    ->default(0)
                     ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
                     ->rules([
                         function (): \Closure {
@@ -281,10 +280,9 @@ class RegattaResource extends Resource
                             ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
                     ]),
 
-                // ── Дополнительные документы (произвольные) ──
-                /*
+                // ── Документы регаты (для отображения пользователям) ──
                 Repeater::make('extra_documents')
-                    ->label('Дополнительные документы')
+                    ->label('Документы регаты')
                     ->columnSpanFull()
                     ->addActionLabel('Добавить документ')
                     ->collapsible()
@@ -313,7 +311,6 @@ class RegattaResource extends Resource
                             ->downloadable()
                             ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
                     ]),
-                */
                 // ── Документы для подачи заявок ──
                 Section::make('Документы для заявок')
                     ->description('Документы, которые участник должен приложить при подаче заявки. Если ничего не добавлено — применяются глобальные настройки.')
