@@ -6,7 +6,7 @@
 
 <div x-data="regattaCalendar()" data-current-month="{{ now()->format('n') - 1 }}" class="py-12 bg-brand-light">
     <div class="">
-        <div class="flex md:items-center justify-between mb-6 flex-col md:flex-row">
+        <div class="flex md:items-center justify-between mb-6 flex-col lg:flex-row gap-y-3">
             <h2 class="section-title a-font mb-4 md:mb-0">Календарь регат сезона</h2>
             <div class="flex items-center gap-4 flex-col md:flex-row">
                 {{-- Кнопка скачивания PDF --}}
