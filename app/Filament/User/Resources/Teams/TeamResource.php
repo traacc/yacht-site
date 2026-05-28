@@ -143,21 +143,30 @@ class TeamResource extends Resource
                     ->visibility('public')
                     ->columnSpanFull(),
 
-                Select::make('initial_member_ids')
-                    ->label('Добавить участников')
-                    ->placeholder('Выберите участников (необязательно)')
-                    ->helperText('Свободные участники, которые будут добавлены в команду сразу при создании. Максимум ' . (Team::MAX_MEMBERS - 1) . ' чел. (одно место занимает капитан).')
-                    ->options(fn () => User::freeUsers()
-                        ->where('id', '!=', auth()->id())
-                        ->orderBy('last_name')
-                        ->orderBy('first_name')
-                        ->get()
-                        ->mapWithKeys(fn (User $u) => [$u->id => $u->full_name])
-                    )
-                    ->multiple()
-                    ->searchable()
-                    ->maxItems(Team::MAX_MEMBERS - 1)
-                    ->columnSpanFull(),
+                Repeater::make('teamMembers')
+                    ->label('Участники')
+                    ->relationship('teamMembers')
+                    ->addActionLabel('Добавить участника')
+                    ->columns(2)
+                    ->columnSpanFull()
+                    ->defaultItems(0)
+                    ->schema([
+                        Select::make('user_id')
+                            ->label('Пользователь')
+                            ->relationship('user', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                        Select::make('role')
+                            ->label('Роль')
+                            ->options(collect(TeamMemberRole::cases())->mapWithKeys(
+                                fn (TeamMemberRole $role) => [$role->value => $role->label()],
+                            ))
+                            ->default(TeamMemberRole::Member->value)
+                            ->required(),
+                        Hidden::make('status')
+                            ->default('active'),
+                    ]),
 
                 Hidden::make('organizer_id')
                     ->default(fn () => auth()->id()),
