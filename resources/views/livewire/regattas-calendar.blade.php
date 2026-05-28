@@ -68,10 +68,12 @@
                                 @foreach ($month['events'] as $event)
                                     <div class="flex gap-2 py-4 border-b border-b-[#EAEAEA] last:border-b-0">
                                         <div>
-                                            <span class="size-4 rounded-full block mt-0.5 
-                                                {{ $event['status'] === 'completed' ? 'bg-[#157949]' : '' }}
-                                                {{ $event['status'] === 'upcoming' ? 'bg-[#C2A36B]' : '' }}
-                                                {{ $event['status'] === 'planned' ? 'bg-[#C6C6C6]' : '' }}">
+                                            <span class="size-4 rounded-full block mt-0.5
+                                                {{ $event['status'] === 'cancelled' ? 'bg-[#a12f15]' : '' }}
+                                                {{ $event['status'] === 'postponed' ? 'bg-[#a19315]' : '' }}
+                                                {{ $event['status'] === 'finished' ? 'bg-[#157949]' : '' }}
+                                                {{ $event['status'] === 'closest' ? 'bg-[#C2A36B]' : '' }}
+                                                {{ $event['status'] === 'upcoming' ? 'bg-[#C6C6C6]' : '' }}">
                                             </span>
                                         </div>
                                         <div class="flex flex-col gap-1">
