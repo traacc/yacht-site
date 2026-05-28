@@ -177,7 +177,12 @@ class RegattaResource extends Resource
                     ->columnSpanFull(),
                 Select::make('regatta_status')
                     ->label('Статус')
-                    ->options(\App\Enums\RegattaStatus::class)
+                    ->options([
+                        \App\Enums\RegattaStatus::Upcoming->value  => \App\Enums\RegattaStatus::Upcoming->getLabel(),
+                        \App\Enums\RegattaStatus::Postponed->value => \App\Enums\RegattaStatus::Postponed->getLabel(),
+                        \App\Enums\RegattaStatus::Cancelled->value => \App\Enums\RegattaStatus::Cancelled->getLabel(),
+                        \App\Enums\RegattaStatus::Finished->value  => \App\Enums\RegattaStatus::Finished->getLabel(),
+                    ])
                     ->default(\App\Enums\RegattaStatus::Upcoming)
                     ->required()
                     ->live(),
@@ -379,7 +384,12 @@ class RegattaResource extends Resource
                     }),
                 SelectFilter::make('regatta_status')
                     ->label('Статус')
-                    ->options(\App\Enums\RegattaStatus::class),
+                    ->options([
+                        \App\Enums\RegattaStatus::Upcoming->value  => \App\Enums\RegattaStatus::Upcoming->getLabel(),
+                        \App\Enums\RegattaStatus::Postponed->value => \App\Enums\RegattaStatus::Postponed->getLabel(),
+                        \App\Enums\RegattaStatus::Cancelled->value => \App\Enums\RegattaStatus::Cancelled->getLabel(),
+                        \App\Enums\RegattaStatus::Finished->value  => \App\Enums\RegattaStatus::Finished->getLabel(),
+                    ]),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
             ->deferFilters(false)
