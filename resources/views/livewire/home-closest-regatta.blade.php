@@ -24,13 +24,14 @@
                         {{ $regatta->dateRange() }}
                     </div>
                     <div class="flex items-center gap-2">
-                        {!!  file_get_contents(public_path('images/icons/marker.svg')) !!}
-                        {{ $regatta->location }}
-                    </div>
-                    <div class="flex items-center gap-2">
                         {!!  file_get_contents(public_path('images/icons/waves.svg')) !!}
                         {{ $regatta->water_area }}
                     </div>
+                    <div class="flex items-center gap-2">
+                        {!!  file_get_contents(public_path('images/icons/weather.svg')) !!}
+                        {{ $currentWeather }}
+                    </div>
+
                 </div>
                 <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"
                         class="block w-full text-center bg-white font-semibold py-2.5 transition-colors cursor-pointer">
