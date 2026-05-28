@@ -330,18 +330,18 @@ class RegattaResource extends Resource
             ->columns([
                 TextColumn::make('name')
                     ->label('Регата')
-                    ->searchable(),
+                    ->searchable()->sortable(),
                 TextColumn::make('season.year')
                     ->label('Сезон')
-                    ->searchable(),
+                    ->searchable()->sortable(),
                 TextColumn::make('date')
-                    ->label('Дата')
+                    ->label('Дата')->sortable(['date_start', 'date_end'])
                     ->getStateUsing(fn (Regatta $regatta): string => $regatta->dateRange()),
                 TextColumn::make('water_area')
-                    ->label('Акватория'),
+                    ->label('Акватория')->sortable(),
                 TextColumn::make('regatta_status')
                     ->label('Статус')
-                    ->badge(),
+                    ->badge()->sortable(),
             ])
             ->stackedOnMobile()
             ->emptyStateHeading('Записей пока нет')
