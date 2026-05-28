@@ -29,7 +29,7 @@ class JoinRegattaModal extends Component
 
     public bool $submitted = false;
 
-    /** @var array<string, \Livewire\TemporaryUploadedFile|null> */
+    /** @var array<string, \Livewire\TemporaryUploadedFile[]> */
     public array $documentFiles = [];
 
     #[On('open-join-regatta-modal')]
@@ -63,16 +63,12 @@ class JoinRegattaModal extends Component
             'yachtId' => ['required', 'string', 'uuid'],
         ];
 
-        // Добавляем правила валидации для документов
+        // Добавляем правила валидации для документов (массив файлов)
         foreach ($this->requiredDocuments() as $doc) {
             $key = 'documentFiles.' . $doc['doc_type'];
             $isRequired = $doc['is_required'] ?? false;
-            $rules[$key] = array_filter([
-                $isRequired ? 'required' : 'nullable',
-                'file',
-                'mimes:pdf,doc,docx,jpg,jpeg,png,webp',
-                'max:20480',
-            ]);
+            $rules[$key] = [$isRequired ? 'required' : 'nullable', 'array'];
+            $rules[$key . '.*'] = ['file', 'mimes:pdf,doc,docx,jpg,jpeg,png,webp', 'max:20480'];
         }
 
         $this->validate($rules, [], [
@@ -105,10 +101,18 @@ class JoinRegattaModal extends Component
             return;
         }
 
-        // Сохраняем загруженные документы
+        // Сохраняем загруженные документы (поддержка нескольких файлов)
         foreach ($this->requiredDocuments() as $doc) {
-            $file = $this->documentFiles[$doc['doc_type']] ?? null;
-            if ($file) {
+            $files = $this->documentFiles[$doc['doc_type']] ?? [];
+
+            if (! is_array($files)) {
+                $files = [$files];
+            }
+
+            foreach ($files as $file) {
+                if (! $file) {
+                    continue;
+                }
                 $path = $file->store('documents', 'public');
                 $entry->documents()->create([
                     'doc_type' => $doc['doc_type'],

@@ -123,9 +123,12 @@
                                 <input type="file"
                                        id="doc_{{ $doc['doc_type'] }}"
                                        wire:model="documentFiles.{{ $doc['doc_type'] }}"
-                                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
+                                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" multiple
                                        class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-[#F8F8F8] file:text-[#2E325C] hover:file:bg-gray-200">
                                 @error('documentFiles.' . $doc['doc_type'])
+                                    <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                @enderror
+                                @error('documentFiles.' . $doc['doc_type'] . '.*')
                                     <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                                 @enderror
                                 <div wire:loading wire:target="documentFiles.{{ $doc['doc_type'] }}" class="text-xs text-blue-500 mt-1">Загрузка...</div>
