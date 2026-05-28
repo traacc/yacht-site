@@ -37,12 +37,12 @@
                     <h2 class="font-display text-brand-navy md:text-5xl text-3xl mt-2 a-font">{!! nl2br(e($regatta->name)) !!}</h2>
                     <div class="flex flex-col gap-3 md:gap-4 text-sm md:text-lg text-brand-gray mt-2 font-medium">
                         <span class="flex items-center gap-1.5">
-                            <img src="{{ asset('images/icons/marker.svg') }}" alt="">
-                            {{ $regatta->location }}
-                        </span>
-                        <span class="flex items-center gap-1.5">
                             <img src="{{ asset('images/icons/waves.svg') }}" alt="">
                             {{ $regatta->water_area }}
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            {!!  file_get_contents(public_path('images/icons/weather.svg')) !!}
+                            {{ $currentWeather }}
                         </span>
                     </div>
                     <p class="text-sm md:text-lg text-brand-gray mt-2">{{ Str::limit($regatta->short_description, 100) }}</p>
