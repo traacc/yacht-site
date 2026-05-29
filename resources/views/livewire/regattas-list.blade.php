@@ -96,7 +96,6 @@
                     <tr>
                         <th class="py-2 a-font text-center text-2xl">Дата</th>
                         <th class="py-2 a-font text-center text-2xl">Регата</th>
-                        <th class="py-2 a-font text-center text-2xl">Локация</th>
                         <th class="py-2 a-font text-center text-2xl">Акватория</th>
                         <th class="py-2 a-font text-center text-2xl">Статус</th>
                         <th class="py-2 a-font text-center"></th>
@@ -107,7 +106,6 @@
                     <tr class="border-t">
                         <td data-label="Дата" class="py-2 text-center">{{ $regatta->dateRange() }}</td>
                         <td data-label="Регата" class="py-2 text-center text-brand-navy">{{ $regatta->name }}</td>
-                        <td data-label="Локация" class="py-2 text-center">{{ $regatta->location }}</td>
                         <td data-label="Акватория" class="py-2 text-center">{{ $regatta->water_area }}</td>
                         <td data-label="Статус" class="py-2 text-center">
                             @if ($regatta->regatta_status === \App\Enums\RegattaStatus::Closest)
