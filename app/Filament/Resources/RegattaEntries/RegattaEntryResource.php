@@ -323,7 +323,6 @@ class RegattaEntryResource extends Resource
 
         return $team->members()
             ->wherePivot('status', 'active')
-            ->with('user')
             ->get()
             ->map(fn (\App\Models\User $user): array => [
                 'team_member_id' => $user->pivot->id,
