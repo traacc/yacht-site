@@ -79,7 +79,7 @@
                                         <div class="flex flex-col gap-1">
                                             <p class="text-[#2E325C] text-sm">{{ $event['date'] }}</p>
                                             <p class="text-[#2E325C] font-bold mt-0.5"><a class="hover:underline" href="{{ $event['url'] }}">{{ $event['title'] }}</a></p>
-                                            <p class="text-brand-gray-light text-sm">{{ $event['city'] }}</p>
+                                            <!--<p class="text-brand-gray-light text-sm">{{ $event['city'] }}</p>-->
                                         </div>
                                     </div>
                                 @endforeach
