@@ -85,13 +85,14 @@ class RegattaEntryResource extends Resource
 
                 Select::make('yacht_id')
                     ->label('Яхта')
-                    ->options(fn (Get $get) => \App\Models\Yacht::query()
+                    ->options(fn (Get $get, ?\App\Models\RegattaEntry $record = null) => \App\Models\Yacht::query()
                         //->where('user_id', auth()->id())
                         ->when(
                             $get('regatta_id'),
                             fn (Builder $query, string $regattaId) => $query->whereDoesntHave(
                                 'regattaEntries',
-                                fn (Builder $q) => $q->where('regatta_id', $regattaId),
+                                fn (Builder $q) => $q->where('regatta_id', $regattaId)
+                                    ->when($record, fn (Builder $q) => $q->where('id', '!=', $record->id)),
                             ),
                         )
                         ->pluck('name', 'id'),
