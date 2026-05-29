@@ -6,6 +6,7 @@ use Filament\Support\Contracts\HasLabel;
 
 enum SportCategory: string implements HasLabel
 {
+    case No  = 'no';
     case Third  = '3';
     case Second = '2';
     case First  = '1';
@@ -17,6 +18,7 @@ enum SportCategory: string implements HasLabel
     public function getLabel(): string
     {
         return match ($this) {
+            self::No  => 'Без категории',
             self::Third  => 'Третий',
             self::Second => 'Второй',
             self::First  => 'Первый',
