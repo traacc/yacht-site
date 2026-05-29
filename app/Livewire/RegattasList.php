@@ -21,7 +21,7 @@ class RegattasList extends Component
 
     public string $sortDirection = 'asc';
 
-    public int $perPage = 10;
+    public int $perPage = 50;
 
     public string $view = 'list';
 
