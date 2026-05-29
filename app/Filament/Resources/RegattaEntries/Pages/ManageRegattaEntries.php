@@ -42,7 +42,7 @@ class ManageRegattaEntries extends ManageRecords
     {
         return [
             Action::make('documentSettings')
-                ->label('Типы документов')
+                ->label('Документы')
                 ->icon('heroicon-o-document-text')
                 ->color('white')
                 ->url(fn () => \App\Filament\Resources\YachtDocumentTypeResource::getUrl()),
