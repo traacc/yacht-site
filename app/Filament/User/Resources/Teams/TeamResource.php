@@ -153,7 +153,7 @@ class TeamResource extends Resource
                                 ->count();
 
                             if ($organizerCount > 1) {
-                                $fail('В команде может быть только один капитан (organizer).');
+                                $fail('В команде может быть только один капитан');
                             }
                         },
                     ])
@@ -328,7 +328,7 @@ class TeamResource extends Resource
 
         if ($organizerCount > 1) {
             throw ValidationException::withMessages([
-                'teamMembers' => 'В команде может быть только один капитан (organizer).',
+                'teamMembers' => 'В команде может быть только один капитан',
             ]);
         }
     }

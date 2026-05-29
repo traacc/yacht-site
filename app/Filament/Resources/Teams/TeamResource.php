@@ -106,7 +106,7 @@ class TeamResource extends Resource
                                 ->count();
 
                             if ($organizerCount > 1) {
-                                $fail('В команде может быть только один капитан (organizer).');
+                                $fail('В команде может быть только один капитан.');
                             }
                         },
                     ])
