@@ -136,12 +136,10 @@ class RegattaResource extends Resource
                     ->required()
                     ->numeric()
                     ->default(1),
-                TextInput::make('location')
-                    ->label('Локация')
-                    ->placeholder('Введите населенный пункт'),
                 TextInput::make('water_area')
                     ->label('Акватория')
-                    ->placeholder('Введите акваторию'),
+                    ->placeholder('Введите акваторию')
+                    ->columnSpanFull(),
 
                 
                 YandexMap::make('coordinates')
