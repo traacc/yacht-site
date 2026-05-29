@@ -34,10 +34,15 @@
                         {{ $regatta->water_area }}
                         @endif
                     </div>
-                    <div class="flex items-center gap-2">
-                        {!!  file_get_contents(public_path('images/icons/weather.svg')) !!}
-                        {{ $currentWeather }}
+                    <div class="">
+                        <div class="lg:text-sm text-xs">Погода на текущую дату</div>
+                        <div class="flex items-center gap-2">
+                            
+                            {!!  file_get_contents(public_path('images/icons/weather.svg')) !!}
+                            {{ $currentWeather }}
+                        </div>
                     </div>
+
 
                 </div>
                 <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"
