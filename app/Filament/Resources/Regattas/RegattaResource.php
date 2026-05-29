@@ -22,6 +22,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
@@ -193,25 +194,43 @@ class RegattaResource extends Resource
                     ->label('Призы')
                     ->placeholder('Описание призового фонда')
                     ->columnSpanFull(),
-                Select::make('regatta_status')
-                    ->label('Статус')
-                    ->options([
-                        \App\Enums\RegattaStatus::Upcoming->value  => \App\Enums\RegattaStatus::Upcoming->getLabel(),
-                        \App\Enums\RegattaStatus::Postponed->value => \App\Enums\RegattaStatus::Postponed->getLabel(),
-                        \App\Enums\RegattaStatus::Cancelled->value => \App\Enums\RegattaStatus::Cancelled->getLabel(),
-                        \App\Enums\RegattaStatus::Finished->value  => \App\Enums\RegattaStatus::Finished->getLabel(),
-                    ])
-                    ->default(\App\Enums\RegattaStatus::Upcoming)
-                    ->required()
-                    ->live(),
+                Hidden::make('regatta_status')
+                    ->default(\App\Enums\RegattaStatus::Upcoming->value)
+                    ->required(),
+
+                Toggle::make('is_postponed')
+                    ->label('Перенесена')
+                    ->live()
+                    ->dehydrated(false)
+                    ->afterStateUpdated(function (bool $state, $set, $get) {
+                        if ($state) {
+                            $set('regatta_status', \App\Enums\RegattaStatus::Postponed->value);
+                            $set('is_cancelled', false);
+                        } elseif (! $get('is_cancelled')) {
+                            $set('regatta_status', \App\Enums\RegattaStatus::Upcoming->value);
+                        }
+                    }),
+
+                Toggle::make('is_cancelled')
+                    ->label('Отменена')
+                    ->live()
+                    ->dehydrated(false)
+                    ->afterStateUpdated(function (bool $state, $set, $get) {
+                        if ($state) {
+                            $set('regatta_status', \App\Enums\RegattaStatus::Cancelled->value);
+                            $set('is_postponed', false);
+                        } elseif (! $get('is_postponed')) {
+                            $set('regatta_status', \App\Enums\RegattaStatus::Upcoming->value);
+                        }
+                    }),
 
                 DatePicker::make('postponed_to_date')
                     ->label('Дата переноса')
                     ->displayFormat('d.m.Y')
                     ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100))
-                    ->visible(fn (Get $get): bool => static::statusEquals($get('regatta_status'), \App\Enums\RegattaStatus::Postponed))
-                    ->required(fn (Get $get): bool => static::statusEquals($get('regatta_status'), \App\Enums\RegattaStatus::Postponed)),
+                    ->visible(fn (Get $get): bool => (bool) $get('is_postponed'))
+                    ->required(fn (Get $get): bool => (bool) $get('is_postponed')),
 
                 Repeater::make('regatta_events')
                     ->relationship('races')
@@ -416,12 +435,15 @@ class RegattaResource extends Resource
                         $data['required_documents'] = $sync->load($record, $requiredDocs);
                         $data['extra_documents']    = $sync->loadExtra($record, $requiredDocTypes);
 
+                        $data['is_postponed'] = ($data['regatta_status'] ?? null) === \App\Enums\RegattaStatus::Postponed->value;
+                        $data['is_cancelled'] = ($data['regatta_status'] ?? null) === \App\Enums\RegattaStatus::Cancelled->value;
+
                         $form->fill($data);
                     })
                     ->using(function (Regatta $record, array $data): Regatta {
                         $requiredDocs = $data['required_documents'] ?? [];
                         $extraDocs    = $data['extra_documents'] ?? [];
-                        unset($data['required_documents'], $data['extra_documents']);
+                        unset($data['required_documents'], $data['extra_documents'], $data['is_postponed'], $data['is_cancelled']);
 
                         $postponedToDate = $data['postponed_to_date'] ?? null;
                         $newStatus       = $data['regatta_status'] ?? null;
