@@ -137,7 +137,7 @@ class RegattaResource extends Resource
                     ->default(1),
                 TextInput::make('location')
                     ->label('Локация')
-                    ->placeholder('Вставьте ссылку на Яндекс карты'),
+                    ->placeholder('Введите населенный пункт'),
                 TextInput::make('water_area')
                     ->label('Акватория')
                     ->placeholder('Введите акваторию'),
