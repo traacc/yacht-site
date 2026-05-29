@@ -98,7 +98,7 @@
                     <select id="yacht" wire:model="yachtId"
                             class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm  @error('yachtId') border-red-300 @enderror">
                         <option value="">Выберите яхту</option>
-                        @foreach ($this->userYachts as $yacht)
+                        @foreach ($this->allFreeYachts as $yacht)
                             <option value="{{ $yacht->id }}">{{ $yacht->name }} ({{ $yacht->vfps_number ?? 'без номера ВФПС' }})</option>
                         @endforeach
                     </select>

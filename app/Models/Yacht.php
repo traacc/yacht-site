@@ -51,6 +51,25 @@ class Yacht extends Model implements HasMedia
     }
 
     // ──────────────────────────────────────────────
+    // Scopes
+    // ──────────────────────────────────────────────
+
+    /**
+     * Яхты, свободные в указанный период (не имеют одобренных заявок на регаты,
+     * пересекающиеся с этим периодом).
+     */
+    public function scopeFreeDuring($query, string $dateStart, string $dateEnd)
+    {
+        return $query->whereDoesntHave('regattaEntries', function ($q) use ($dateStart, $dateEnd) {
+            $q->where('status', 'approved')
+              ->whereHas('regatta', function ($regattaQuery) use ($dateStart, $dateEnd) {
+                  $regattaQuery->where('date_start', '<=', $dateEnd)
+                               ->where('date_end', '>=', $dateStart);
+              });
+        });
+    }
+
+    // ──────────────────────────────────────────────
     // Relationships
     // ──────────────────────────────────────────────
 

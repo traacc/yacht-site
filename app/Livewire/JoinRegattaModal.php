@@ -161,23 +161,19 @@ class JoinRegattaModal extends Component
     public function userYachts(): Collection
     {
         $user = Auth::user();
-        if (! $user instanceof User || ! $this->regattaId) {
+        if (! $user instanceof User) {
             return collect();
         }
 
-        /** @var \App\Models\Regatta|null $regatta */
-        $regatta = Regatta::select(['id', 'date_start', 'date_end'])->find($this->regattaId);
-        if (! $regatta) {
-            return collect();
-        }
+        return $user->yachts()->get();
+    }
 
-        // Возвращаем яхты пользователя, у которых нет активной заявки (pending/approved) в эту регату
-        return $user->yachts()
-            ->whereDoesntHave('regattaEntries', function ($q) use ($regatta) {
-                $q->where('regatta_id', $regatta->id)
-                  ->whereIn('status', ['pending', 'approved']);
-            })
-            ->get();
+    #[Computed]
+    public function allFreeYachts(): Collection
+    {
+        return Yacht::whereDoesntHave('regattaEntries', function ($q) {
+            $q->where('regatta_id', $this->regattaId);
+        })->get();
     }
 
     /**
