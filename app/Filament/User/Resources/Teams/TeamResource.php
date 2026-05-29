@@ -246,8 +246,10 @@ class TeamResource extends Resource
                 EditAction::make()->modalHeading('Редактировать команду')
                     ->hiddenLabel()
                     ->visible(fn (Team $record): bool => auth()->user()?->can('editTeam', $record) ?? false),
+                /*
                 RestoreAction::make()
                     ->visible(fn (Team $record): bool => auth()->user()?->can('archiveTeam', $record) ?? false),
+                */
                 DeleteAction::make()
                     ->hiddenLabel()
                     ->visible(fn (Team $record): bool => auth()->user()?->can('archiveTeam', $record) ?? false),
