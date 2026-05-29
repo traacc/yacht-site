@@ -29,6 +29,17 @@ class LoginModal extends Component
     public string $registerCaptchaToken = '';
     public bool $remember = false;
 
+    public $selectedDate; 
+    public $minDate;
+    public $maxDate;
+
+    public function mount()
+    {
+        // 2. Инициализируем значения, чтобы Flatpickr знал границы
+        $this->minDate = '1926-01-01'; // 2026-01-01
+        $this->maxDate = '2016-12-31';   // 2026-12-31
+    }
+
 
     public function login()
     {
