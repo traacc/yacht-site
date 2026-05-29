@@ -13,6 +13,7 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 // ★ ЗАМЕНЕНО: FileUpload → SpatieMediaLibraryFileUpload
@@ -69,7 +70,22 @@ class GalleryResource extends Resource
                     ->relationship('season', 'year',
                     modifyQueryUsing: fn (Builder $query) => $query->orderByDesc('year'),)
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->createOptionForm([
+                        Forms\Components\TextInput::make('year')
+                            ->label('Год')
+                            ->required()
+                            ->numeric()
+                            ->minValue(2000)
+                            ->maxValue(2099),
+                        Forms\Components\DatePicker::make('start_date')
+                            ->label('Дата начала сезона')
+                            ->required(),
+                        Forms\Components\DatePicker::make('end_date')
+                            ->label('Дата окончания сезона')
+                            ->required(),
+                    ])
+                    ->createOptionUsing(fn (array $data): string => \App\Models\Season::create($data)->id),
 
                 Select::make('regatta_id')
                     ->label('Регата')

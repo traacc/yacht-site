@@ -9,6 +9,8 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -45,6 +47,21 @@ class RatingResource extends Resource
                     ->label('Сезон')
                     ->searchable()
                     ->preload()
+                    ->createOptionForm([
+                        Forms\Components\TextInput::make('year')
+                            ->label('Год')
+                            ->required()
+                            ->numeric()
+                            ->minValue(2000)
+                            ->maxValue(2099),
+                        Forms\Components\DatePicker::make('start_date')
+                            ->label('Дата начала сезона')
+                            ->required(),
+                        Forms\Components\DatePicker::make('end_date')
+                            ->label('Дата окончания сезона')
+                            ->required(),
+                    ])
+                    ->createOptionUsing(fn (array $data): string => \App\Models\Season::create($data)->id)
                     ->required(),
                 Select::make('rating_type')
                     ->label('Тип рейтинга')
