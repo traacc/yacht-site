@@ -66,7 +66,7 @@
                     data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
                 </div>
                 
-                @error('captchaToken')
+                @error('loginCaptchaToken')
                     <div style="color: red;">{{ $message }}</div>
                 @enderror
 
@@ -175,7 +175,7 @@
                     data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
                 </div>
                 
-                @error('captchaToken')
+                @error('registerCaptchaToken')
                     <div style="color: red;">{{ $message }}</div>
                 @enderror
                 <label class="custom-checkbox">
