@@ -115,7 +115,7 @@
                         <select id="sports_category" wire:model="sports_category" require placeholder="Спортивный разряд"
                             class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('sports_category') border-red-300 @enderror">
                             <option value="" disabled selected>Спортивный разряд</option>
-                            <option value="no">Без категории</option>
+                            <option value="no">б/з</option>
                             <option value="3">Третий</option>
                             <option value="2">Второй</option>
                             <option value="1">Первый</option>
