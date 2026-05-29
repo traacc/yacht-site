@@ -90,8 +90,8 @@ class RegattasList extends Component
             )
             ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%")
             )
-            ->when($this->filter === 'upcoming', fn ($q) => $q->where('regatta_status', 'upcoming')->where('date_start', '<=', now()->addMonth())->where('date_start', '>=', now()))
-            ->when($this->filter === 'planned', fn ($q) => $q->where('regatta_status', 'upcoming'))
+            ->when($this->filter === 'upcoming', fn ($q) => $q->where('regatta_status', 'upcoming'))
+            ->when($this->filter === 'closest', fn ($q) => $q->where('regatta_status', 'closest'))
             ->when($this->filter === 'finished', fn ($q) => $q->where('regatta_status', 'finished'))
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
