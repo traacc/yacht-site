@@ -87,15 +87,6 @@ class TeamResource extends Resource
         return auth()->user()?->can('archiveTeam', $record) ?? false;
     }
 
-    /**
-     * Восстанавливать команду может только Organizer.
-     */
-    public static function canRestore(Model $record): bool
-    {
-        /** @var Team $record */
-        return auth()->user()?->can('archiveTeam', $record) ?? false;
-    }
-
     // ──────────────────────────────────────────────
     // Form
     // ──────────────────────────────────────────────
@@ -124,7 +115,7 @@ class TeamResource extends Resource
                     ->label('Яхта по умолчанию')
                     ->placeholder('Выберите яхту')
                     ->options(fn () => Yacht::where('approval_status', 'approved')
-                        ->where('user_id', auth()->id())
+                        //->where('user_id', auth()->id())
                         ->orderBy('name')
                         ->pluck('name', 'id'))
                     ->searchable()

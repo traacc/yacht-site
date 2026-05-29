@@ -84,8 +84,20 @@ class RegattaEntryResource extends Resource
                     }),
 
                 Select::make('yacht_id')
-                    ->relationship('yacht', 'name', modifyQueryUsing: fn (Builder $query) => $query->where('user_id', auth()->id()))
-                    ->label('Яхта'),
+                    ->label('Яхта')
+                    ->options(fn (Get $get) => \App\Models\Yacht::query()
+                        //->where('user_id', auth()->id())
+                        ->when(
+                            $get('regatta_id'),
+                            fn (Builder $query, string $regattaId) => $query->whereDoesntHave(
+                                'regattaEntries',
+                                fn (Builder $q) => $q->where('regatta_id', $regattaId),
+                            ),
+                        )
+                        ->pluck('name', 'id'),
+                    )
+                    ->live()
+                    ->searchable(),
 
                 Repeater::make('crew')
                     ->label('Экипаж')
