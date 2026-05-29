@@ -13,6 +13,7 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <link rel="shortcut icon" href="{{ asset('favicon.jpg?v=4') }}?v=2" type="image/svg+xml">
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">
