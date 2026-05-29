@@ -39,7 +39,7 @@ class UserPanelProvider extends PanelProvider
             ->login()
             ->profile(\App\Filament\User\Pages\EditProfile::class, isSimple: false) 
             ->darkMode(false)
-            ->favicon(asset('favicon.jpg?v=3'))
+            ->favicon(asset('favicon.jpg?v=4'))
             ->colors([
                 'primary' => Color::Blue,
             ])
