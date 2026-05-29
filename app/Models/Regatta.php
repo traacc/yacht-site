@@ -69,10 +69,20 @@ class Regatta extends Model
     {
         static::creating(function (self $regatta) {
             if ($regatta->external_id === null) {
-                $regatta->external_id = DB::transaction(function () {
-                    $max = static::lockForUpdate()->max('external_id') ?? 0;
-                    return $max + 1;
-                });
+                // Атомарно увеличиваем счетчик и забираем новое значение
+                $sequence = DB::table('sequences')
+                    ->where('name', 'regattas_external_id')
+                    ->sharedLock() // Защита от race condition
+                    ->first();
+
+                $nextId = ($sequence ? $sequence->current_value : 0) + 1;
+
+                DB::table('sequences')->updateOrInsert(
+                    ['name' => 'regattas_external_id'],
+                    ['current_value' => $nextId]
+                );
+
+                $regatta->external_id = $nextId;
             }
         });
     }

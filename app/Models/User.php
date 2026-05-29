@@ -64,10 +64,20 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     {
         static::creating(function (self $user) {
             if ($user->external_id === null) {
-                $user->external_id = DB::transaction(function () {
-                    $max = static::lockForUpdate()->max('external_id') ?? 0;
-                    return $max + 1;
-                });
+                // Атомарно увеличиваем счетчик и забираем новое значение
+                $sequence = DB::table('sequences')
+                    ->where('name', 'users_external_id')
+                    ->sharedLock() // Защита от race condition
+                    ->first();
+
+                $nextId = ($sequence ? $sequence->current_value : 0) + 1;
+
+                DB::table('sequences')->updateOrInsert(
+                    ['name' => 'users_external_id'],
+                    ['current_value' => $nextId]
+                );
+
+                $regatta->external_id = $nextId;
             }
         });
     }
