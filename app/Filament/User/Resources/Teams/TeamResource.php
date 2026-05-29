@@ -10,6 +10,7 @@ use App\Models\Team;
 use App\Models\User;
 use App\Services\TeamRoleGuard;
 use BackedEnum;
+use Illuminate\Validation\ValidationException;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -141,6 +142,21 @@ class TeamResource extends Resource
                     ->columns(2)
                     ->columnSpanFull()
                     ->defaultItems(0)
+                    ->rules([
+                        fn (): \Closure => function (string $attribute, mixed $value, \Closure $fail): void {
+                            if (! is_array($value)) {
+                                return;
+                            }
+
+                            $organizerCount = collect($value)
+                                ->filter(fn (array $member): bool => ($member['role'] ?? null) === TeamMemberRole::Organizer->value)
+                                ->count();
+
+                            if ($organizerCount > 1) {
+                                $fail('В команде может быть только один капитан (organizer).');
+                            }
+                        },
+                    ])
                     ->schema([
                         Select::make('user_id')
                             ->label('Пользователь')
@@ -280,6 +296,8 @@ class TeamResource extends Resource
     {
         $data['organizer_id'] = auth()->id();
 
+        static::validateUniqueOrganizer($data);
+
         return $data;
     }
 
@@ -288,6 +306,28 @@ class TeamResource extends Resource
         // organizer_id не меняется при редактировании
         unset($data['organizer_id']);
 
+        static::validateUniqueOrganizer($data);
+
         return $data;
+    }
+
+    /**
+     * Проверяет, что в переданных данных формы не более одного участника с ролью organizer.
+     */
+    private static function validateUniqueOrganizer(array $data): void
+    {
+        if (! isset($data['teamMembers'])) {
+            return;
+        }
+
+        $organizerCount = collect($data['teamMembers'])
+            ->filter(fn (array $member): bool => ($member['role'] ?? null) === TeamMemberRole::Organizer->value)
+            ->count();
+
+        if ($organizerCount > 1) {
+            throw ValidationException::withMessages([
+                'teamMembers' => 'В команде может быть только один капитан (organizer).',
+            ]);
+        }
     }
 }
