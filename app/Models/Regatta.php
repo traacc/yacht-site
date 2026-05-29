@@ -85,6 +85,32 @@ class Regatta extends Model
                 $regatta->external_id = $nextId;
             }
         });
+
+        static::saving(function (self $regatta) {
+            // Автоматически пересчитываем статус только при изменении дат
+            if (! $regatta->isDirty(['date_start', 'date_end'])) {
+                return;
+            }
+
+            // Не сбрасываем ручные статусы
+            if (in_array($regatta->regatta_status, [
+                RegattaStatus::Cancelled,
+                RegattaStatus::Postponed,
+            ], true)) {
+                return;
+            }
+
+            $now = now();
+
+            if ($regatta->date_end && $regatta->date_end < $now) {
+                $regatta->regatta_status = RegattaStatus::Finished;
+            } elseif ($regatta->date_start && $regatta->date_end &&
+                $now->between($regatta->date_start, $regatta->date_end)) {
+                $regatta->regatta_status = RegattaStatus::Active;
+            } elseif ($regatta->date_start && $regatta->date_start > $now) {
+                $regatta->regatta_status = RegattaStatus::Upcoming;
+            }
+        });
     }
     // ──────────────────────────────────────────────
     // Relationships
