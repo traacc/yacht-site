@@ -35,7 +35,7 @@ class LoginModal extends Component
         $credentials = $this->validate([
             'email'    => ['required', 'email'],
             'password' => ['required'],
-            'loginCaptchaToken' => ['required', new YandexCaptcha()],
+            //'loginCaptchaToken' => ['required', new YandexCaptcha()],
         ], attributes: [
             'loginCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
             'email'    => 'email',
@@ -67,7 +67,7 @@ class LoginModal extends Component
             'phone'                 => ['required'],
             'birthday'              => ['required'],
             'sports_category'       => ['nullable', Rule::enum(SportCategory::class)],
-            'registerCaptchaToken' => ['required', new YandexCaptcha()],
+            //'registerCaptchaToken' => ['required', new YandexCaptcha()],
         ], attributes: [
             'registerCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
             'first_name'            => 'имя',

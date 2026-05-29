@@ -18,7 +18,7 @@ enum SportCategory: string implements HasLabel
     public function getLabel(): string
     {
         return match ($this) {
-            self::No  => 'Без категории',
+            self::No     => 'б/р',
             self::Third  => 'Третий',
             self::Second => 'Второй',
             self::First  => 'Первый',
