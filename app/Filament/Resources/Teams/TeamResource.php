@@ -95,6 +95,21 @@ class TeamResource extends Resource
                     ->columns(3)
                     ->columnSpanFull()
                     ->defaultItems(0)
+                    ->rules([
+                        fn (): \Closure => function (string $attribute, mixed $value, \Closure $fail): void {
+                            if (! is_array($value)) {
+                                return;
+                            }
+
+                            $organizerCount = collect($value)
+                                ->filter(fn (array $member): bool => ($member['role'] ?? null) === TeamMemberRole::Organizer->value)
+                                ->count();
+
+                            if ($organizerCount > 1) {
+                                $fail('В команде может быть только один капитан (organizer).');
+                            }
+                        },
+                    ])
                     ->schema([
                         Select::make('user_id')
                             ->label('Пользователь')
