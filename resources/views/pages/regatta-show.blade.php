@@ -242,12 +242,13 @@
         @endif
 
         {{-- ===== ЛОКАЦИЯ ===== --}}
+        @if(!empty($regatta->coordinates))
         <section class="py-10">
             <div class="container mx-auto">
                     <h2 class="section-title a-font pb-8">Локация</h2>
                     
                     {{-- Проверяем, заполнено ли поле в базе данных --}}
-                    @if(!empty($regatta->coordinates))
+                    
                         <div class="map" style="position: relative; overflow: hidden; border-radius: 8px;">
                             {{-- Контейнер, куда Яндекс.Карты встроят интерактивную карту --}}
                             <div id="public-yandex-map" style="width: 100%; height: 450px; background-color: #f3f4f6;"></div>
@@ -276,14 +277,9 @@
                                 myMap.behaviors.disable('scrollZoom');
                             });
                         </script>
-                    @else
-                        {{-- Резервный вариант, если в БД нет локации --}}
-                        <div class="map">
-                            <img src="{{ asset('images/map.png') }}" alt="Локация не указана" />
-                        </div>
-                    @endif
                 </div>
         </section>
+        @endif
 
         {{-- ===== ДРУГИЕ РЕГАТЫ СЕЗОНА ===== --}}
         @if($otherRegattas->isNotEmpty())
