@@ -23,7 +23,7 @@ class Team extends Model implements HasMedia
     use HasFactory, HasUuids, SoftDeletes, InteractsWithMedia;
 
     /** Максимальное количество активных участников в команде */
-    public const int MAX_MEMBERS = 10;
+    public const int MAX_MEMBERS = 50;
 
     protected $fillable = [
         'name',
