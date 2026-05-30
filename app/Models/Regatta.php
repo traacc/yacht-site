@@ -187,7 +187,16 @@ class Regatta extends Model
 
     public function scopeUpcoming($query)
     {
-        return $query->where('date_start', '>=', now());
+        $today = now()->format('Y-m-d');
+        $time = now()->format('H:i:s');
+
+        return $query->where(function ($q) use ($today, $time) {
+            $q->where('date_start', '>', $today)
+              ->orWhere(function ($q) use ($today, $time) {
+                  $q->where('date_start', '=', $today)
+                    ->whereRaw("COALESCE(time_start, '12:00:00') >= ?", [$time]);
+              });
+        });
     }
 
     public function scopeClosest($query)
@@ -198,7 +207,7 @@ class Regatta extends Model
                 RegattaStatus::Postponed,
             ])
             ->orderBy('date_start')
-            ->orderBy('time_start');
+            ->orderByRaw("COALESCE(time_start, '12:00:00') ASC");
     }
 
     public function pruningScope(): Builder
