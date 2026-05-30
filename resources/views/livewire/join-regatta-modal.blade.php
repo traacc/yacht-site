@@ -42,7 +42,6 @@
             </div>
         @elseif ($this->state === 'no-team')
             <div class="flex items-center justify-between pb-3 mb-4">
-                <h3 class="text-lg font-medium text-[#2E325C] a-font">Подать заявку пока нельзя</h3>
                 <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
             </div>
             <div class="text-center py-6">
