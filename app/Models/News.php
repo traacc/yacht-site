@@ -95,4 +95,10 @@ class News extends Model implements HasMedia
     {
         $this->update(['published_at' => now()]);
     }
+    
+    public function pruningScope(): Builder
+    {
+        // Удаляем записи, которые были "мягко удалены" более 7 дней назад
+        return static::onlyTrashed()->where('deleted_at', '<=', now()->subDays(7));
+    }
 }

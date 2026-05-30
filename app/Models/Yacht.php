@@ -68,6 +68,11 @@ class Yacht extends Model implements HasMedia
               });
         });
     }
+    public function pruningScope(): Builder
+    {
+        // Удаляем записи, которые были "мягко удалены" более 7 дней назад
+        return static::onlyTrashed()->where('deleted_at', '<=', now()->subDays(7));
+    }
 
     // ──────────────────────────────────────────────
     // Relationships

@@ -265,4 +265,10 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 
         return false;
     }
+
+    public function pruningScope(): Builder
+    {
+        // Удаляем записи, которые были "мягко удалены" более 7 дней назад
+        return static::onlyTrashed()->where('deleted_at', '<=', now()->subDays(7));
+    }
 }
