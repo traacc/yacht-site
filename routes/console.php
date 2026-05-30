@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('regattas:update-statuses')->everyMinute();
+Schedule::command('model:prune')->daily();
