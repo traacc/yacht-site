@@ -2,6 +2,9 @@
 <style>
     .slides   { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
     .page-dot { transition: width 0.3s ease, background-color 0.3s ease; }
+    .slider-dragging { transition: none !important; cursor: grabbing !important; user-select: none; }
+    .slider-grab    { cursor: grab; }
+    .slider-grab:active { cursor: grabbing; }
 </style>
 
 <div x-data="regattaCalendar()" data-current-month="{{ now()->format('n') - 1 }}" class="py-12 bg-brand-light">
@@ -54,8 +57,16 @@
 
             <div class="overflow-hidden">
                 <div
-                    class="slides flex will-change-transform"
-                    :style="`gap: ${gap}px; transform: translateX(${-offset * (cardWidth + gap)}px)`">
+                    class="slides flex will-change-transform slider-grab"
+                    :class="{ 'slider-dragging': dragging }"
+                    :style="`gap: ${gap}px; transform: translateX(${-offset * (cardWidth + gap)}px)`"
+                    @mousedown="onDragStart"
+                    @mousemove="onDragMove"
+                    @mouseup="onDragEnd"
+                    @mouseleave="onDragEnd"
+                    @touchstart="onTouchStart"
+                    @touchmove="onTouchMove"
+                    @touchend="onTouchEnd">
                     @foreach ($months as $month)
                         <div class="p-4 shadow-xs transition-all duration-200 shrink-0 hover:bg-[#2D92CE26]
                             {{ $month['is_current'] ? 'bg-[#2D92CE26]' : 'bg-[#F8F8F8]' }}"
@@ -127,6 +138,10 @@ function regattaCalendar() {
         offset: 0,
         cardWidth: 0,
 
+        dragging: false,
+        dragStartX: 0,
+        dragStartOffset: 0,
+
         get maxOffset() {
             return Math.max(0, 12 - this.visible);
         },
@@ -163,6 +178,55 @@ function regattaCalendar() {
                 this.visible = 5;
             }
             if (this.offset > this.maxOffset) this.offset = Math.max(0, this.maxOffset);
+        },
+
+        // --- Mouse drag ---
+        onDragStart(event) {
+            this.dragging = true;
+            this.dragStartX = event.clientX;
+            this.dragStartOffset = this.offset;
+        },
+
+        onDragMove(event) {
+            if (!this.dragging) return;
+            event.preventDefault();
+            const diff = event.clientX - this.dragStartX;
+            if (Math.abs(diff) > this.cardWidth * 0.25) {
+                const direction = diff > 0 ? -1 : 1;
+                const newOffset = this.dragStartOffset + direction;
+                if (newOffset >= 0 && newOffset <= this.maxOffset) {
+                    this.offset = newOffset;
+                }
+                this.dragging = false;
+            }
+        },
+
+        onDragEnd() {
+            this.dragging = false;
+        },
+
+        // --- Touch drag ---
+        onTouchStart(event) {
+            this.dragging = true;
+            this.dragStartX = event.touches[0].clientX;
+            this.dragStartOffset = this.offset;
+        },
+
+        onTouchMove(event) {
+            if (!this.dragging) return;
+            const diff = event.touches[0].clientX - this.dragStartX;
+            if (Math.abs(diff) > this.cardWidth * 0.25) {
+                const direction = diff > 0 ? -1 : 1;
+                const newOffset = this.dragStartOffset + direction;
+                if (newOffset >= 0 && newOffset <= this.maxOffset) {
+                    this.offset = newOffset;
+                }
+                this.dragging = false;
+            }
+        },
+
+        onTouchEnd() {
+            this.dragging = false;
         },
     }
 }
