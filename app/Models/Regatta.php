@@ -91,8 +91,8 @@ class Regatta extends Model
         });
 
         static::saving(function (self $regatta) {
-            // Автоматически пересчитываем статус только при изменении дат
-            if (! $regatta->isDirty(['date_start', 'date_end'])) {
+            // Автоматически пересчитываем статус только при изменении дат/времени
+            if (! $regatta->isDirty(['date_start', 'date_end', 'time_start', 'time_end'])) {
                 return;
             }
 
@@ -105,13 +105,14 @@ class Regatta extends Model
             }
 
             $now = now();
+            $start = $regatta->startDateTime();
+            $end = $regatta->endDateTime();
 
-            if ($regatta->date_end && $regatta->date_end < $now) {
+            if ($end && $end < $now) {
                 $regatta->regatta_status = RegattaStatus::Finished;
-            } elseif ($regatta->date_start && $regatta->date_end &&
-                $now->between($regatta->date_start, $regatta->date_end)) {
+            } elseif ($start && $end && $now->between($start, $end)) {
                 $regatta->regatta_status = RegattaStatus::Active;
-            } elseif ($regatta->date_start && $regatta->date_start > $now) {
+            } elseif ($start && $start > $now) {
                 $regatta->regatta_status = RegattaStatus::Upcoming;
             }
         });
@@ -196,7 +197,8 @@ class Regatta extends Model
                 RegattaStatus::Cancelled,
                 RegattaStatus::Postponed,
             ])
-            ->orderBy('date_start');
+            ->orderBy('date_start')
+            ->orderBy('time_start');
     }
 
     public function pruningScope(): Builder
@@ -209,7 +211,11 @@ class Regatta extends Model
     // Helpers
     // ──────────────────────────────────────────────
 
-    public function isUpcoming(): bool { return $this->date_start->isFuture(); }
+    public function isUpcoming(): bool
+    {
+        $start = $this->startDateTime();
+        return $start && $start->isFuture();
+    }
 
     /** Get the closest upcoming regatta by start date */
     public static function closestUpcoming(): ?self
@@ -219,11 +225,46 @@ class Regatta extends Model
 
     public function startsInLessThanMonth(): bool
     {
-        return $this->date_start && $this->date_start->isFuture() && now()->diffInDays($this->date_start, false) < 30;
+        $start = $this->startDateTime();
+        return $start && $start->isFuture() && now()->diffInDays($start, false) < 30;
     }
 
-    public function isActive(): bool   { return now()->between($this->date_start, $this->date_end); }
-    public function isFinished(): bool { return $this->date_end->isPast(); }
+    public function isActive(): bool
+    {
+        $start = $this->startDateTime();
+        $end = $this->endDateTime();
+        return $start && $end && now()->between($start, $end);
+    }
+
+    public function isFinished(): bool
+    {
+        $end = $this->endDateTime();
+        return $end && $end->isPast();
+    }
+
+    /**
+     * Комбинирует date_start + time_start (дефолт 12:00).
+     */
+    public function startDateTime(): ?\Carbon\Carbon
+    {
+        if (! $this->date_start) {
+            return null;
+        }
+        $time = $this->time_start ? $this->time_start->format('H:i') : '12:00';
+        return $this->date_start->copy()->setTimeFromTimeString($time);
+    }
+
+    /**
+     * Комбинирует date_end + time_end (дефолт 12:00).
+     */
+    public function endDateTime(): ?\Carbon\Carbon
+    {
+        if (! $this->date_end) {
+            return null;
+        }
+        $time = $this->time_end ? $this->time_end->format('H:i') : '12:00';
+        return $this->date_end->copy()->setTimeFromTimeString($time);
+    }
 
     public function hasTeam(Team $team): bool
     {

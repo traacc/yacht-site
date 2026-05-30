@@ -30,10 +30,7 @@ class HomeRegattaTimer extends Component
             : null;
 
         // Дататаргет для таймера: date_start + time_start (по умолчанию 12:00)
-        $startTime = $regatta?->time_start ? $regatta->time_start->format('H:i') : '12:00';
-        $startDateTime = $regatta
-            ? $regatta->date_start->format('Y-m-d') . 'T' . $startTime . ':00'
-            : null;
+        $startDateTime = $regatta?->startDateTime()?->format('Y-m-d\TH:i:s');
 
         return view('livewire.home-regatta-timer', [
             'regatta'         => $regatta,
