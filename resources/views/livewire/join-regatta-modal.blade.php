@@ -41,7 +41,7 @@
                 </button>
             </div>
         @elseif ($this->state === 'no-team')
-            <div class="flex items-center justify-between pb-3 mb-4">
+            <div class="flex items-center justify-end pb-3 mb-4">
                 <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
             </div>
             <div class="text-center py-6">
