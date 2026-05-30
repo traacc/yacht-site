@@ -77,7 +77,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
                     ['current_value' => $nextId]
                 );
 
-                $regatta->external_id = $nextId;
+                $user->external_id = $nextId;
             }
         });
     }
