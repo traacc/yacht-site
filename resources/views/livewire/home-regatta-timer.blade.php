@@ -24,13 +24,16 @@
 <div class="bg-white border-b border-gray-100 py-10">
     <div class="container mx-auto">
         @if($regatta)
-        <div class="flex flex-col md:flex-row gap-8 items-center bg-[#F8F8F8] pb-6 md:pb-0">
+        <div class="flex flex-col md:flex-row gap-4 items-center bg-[#F8F8F8] pb-6 md:pb-0">
+            @if($regatta->background_image)
             <div class="">
+                
                 <img src="{{ asset('storage/' . $regatta->background_image) }}"
                      alt="{{ $regatta->name }}" class=" w-full h-full object-cover">
             </div>
-            <div class="flex-1 h-auto flex flex-col justify-between  gap-4 md:gap-5 px-3 md:px-0">
-                <div>
+            @endif
+            <div class="flex-1 h-auto flex flex-col justify-between gap-4 md:gap-5 px-3 md:px-0">
+                <div class="md:pl-4">
                     <div class="flex items-center gap-2 mb-1">
                         <span class="bg-[#F2484226] text-[#F24842] font-bold px-2.5 py-1 uppercase text-xs">Ближайшая регата</span>
                     </div>
