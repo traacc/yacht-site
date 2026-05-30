@@ -20,6 +20,7 @@ use Filament\Actions\RestoreBulkAction;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Toggle;
@@ -119,10 +120,20 @@ class RegattaResource extends Resource
                     ->required(),
                 DatePicker::make('date_end')
                     ->label('Дата окончания')
-                    ->minDate(now()->subYears(100)) 
+                    ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100))
                     ->displayFormat('d.m.Y')
                     ->required(),
+
+                TimePicker::make('time_start')
+                    ->label('Время начала')
+                    ->displayFormat('H:i')
+                    ->seconds(false),
+
+                TimePicker::make('time_end')
+                    ->label('Время окончания')
+                    ->displayFormat('H:i')
+                    ->seconds(false),
 
                 TextInput::make('race_days_count')
                     ->label('Количество гоночных дней')
