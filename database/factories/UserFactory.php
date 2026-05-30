@@ -18,6 +18,11 @@ class UserFactory extends Factory
     protected static ?string $password;
 
     /**
+     * Auto-incrementing counter for external_id.
+     */
+    protected static int $externalIdCounter = 0;
+
+    /**
      * Define the model's default state.
      *
      * @return array<string, mixed>
@@ -28,6 +33,7 @@ class UserFactory extends Factory
         $last_name = fake()->lastName();
         $full_name = $first_name . ' ' . $last_name;
         return [
+            'external_id'         => ++static::$externalIdCounter,
             'name'                => $full_name,
             'first_name'          => $first_name,
             'last_name'           => $last_name,

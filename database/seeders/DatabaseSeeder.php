@@ -20,7 +20,13 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         DB::disableQueryLog();
-        // User::factory(10)->create();
+
+        // Инициализация последовательностей external_id
+        DB::table('sequences')->insertOrIgnore([
+            ['name' => 'users_external_id', 'current_value' => 0],
+            ['name' => 'teams_external_id', 'current_value' => 0],
+            ['name' => 'regattas_external_id', 'current_value' => 0],
+        ]);
 
         $this->call(YachtDocumentTypeSeeder::class);
         $this->call(SeasonSeeder::class);
@@ -30,6 +36,7 @@ class DatabaseSeeder extends Seeder
 
         User::factory()->create([
             'id' => (string) Str::uuid(),
+            'external_id' => 1001,
             'name' => 'admin',
             'email' => 'test@example.com',
             'password' => Hash::make('password123'),
@@ -37,6 +44,7 @@ class DatabaseSeeder extends Seeder
         ]);
         User::factory()->create([
             'id' => (string) Str::uuid(),
+            'external_id' => 1002,
             'name' => 'user',
             'email' => 'a@example.com',
             'password' => Hash::make('password'),

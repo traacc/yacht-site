@@ -4,18 +4,17 @@ namespace Database\Seeders;
 
 use App\Models\Regatta;
 use App\Models\Season;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class RegattaSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     public function run(): void
     {
         $items = [
             [
                 'season_year'       => 2026,
+                'external_id'       => 1,
                 'name'              => 'Волжская регата',
                 'level_coefficient' => 1.10,
                 'date_start'        => '2026-05-10',
@@ -23,13 +22,13 @@ class RegattaSeeder extends Seeder
                 'location'          => 'Нижний Новгород',
                 'water_area'        => 'Волга',
                 'description'       => 'Трехдневная серия для монокорпов и катамаранов.',
-                //'schedule'          => 'Opening ceremony, three race days, award ceremony.',
                 'race_days_count'   => 3,
                 'races_count'       => 4,
                 'prizes'            => 'Призы в каждой классовой группе.',
             ],
             [
                 'season_year'       => 2026,
+                'external_id'       => 2,
                 'name'              => 'Московская летняя регата',
                 'level_coefficient' => 1.20,
                 'date_start'        => '2026-06-15',
@@ -37,13 +36,13 @@ class RegattaSeeder extends Seeder
                 'location'          => 'Москва',
                 'water_area'        => 'Москва-река',
                 'description'       => 'Ежегодная летняя регата для крейсерских яхт.',
-                //'schedule'          => 'Registration, practice, three racing days, prize ceremony.',
                 'race_days_count'   => 3,
                 'races_count'       => 5,
                 'prizes'            => 'Кубки, призы от спонсоров.',
             ],
             [
                 'season_year'       => 2026,
+                'external_id'       => 3,
                 'name'              => 'Сибирская регата',
                 'level_coefficient' => 1.30,
                 'date_start'        => '2026-07-20',
@@ -51,13 +50,13 @@ class RegattaSeeder extends Seeder
                 'location'          => 'Новосибирск',
                 'water_area'        => 'Обское водохранилище',
                 'description'       => 'Регата для яхт всех классов с разнообразными дистанциями.',
-                //'schedule'          => 'Opening, practice,
                 'race_days_count'   => 3,
                 'races_count'       => 5,
                 'prizes'            => 'Кубки, призы от спонсоров.',
             ],
             [
                 'season_year'       => 2026,
+                'external_id'       => 4,
                 'name'              => 'Кубок Черного моря',
                 'level_coefficient' => 1.40,
                 'date_start'        => '2026-08-10',
@@ -65,13 +64,13 @@ class RegattaSeeder extends Seeder
                 'location'          => 'Сочи',
                 'water_area'        => 'Черное море',
                 'description'       => 'Прибрежная регата с вечерними гонками и развлекательной программой.',
-                //'schedule'          => 'Arrival, briefing',
                 'race_days_count'   => 4,
                 'races_count'       => 5,
                 'prizes'            => 'Медали, призы от спонсоров, сертификаты.',
             ],
             [
                 'season_year'       => 2026,
+                'external_id'       => 5,
                 'name'              => 'Baltic Challenge',
                 'level_coefficient' => 1.50,
                 'date_start'        => '2026-08-01',
@@ -79,12 +78,10 @@ class RegattaSeeder extends Seeder
                 'location'          => 'Санкт-Петербург',
                 'water_area'        => 'Финский залив',
                 'description'       => 'Открытая регата с прибрежными и оффшорными этапами.',
-                //'schedule'          => 'Arrival, briefing, four racing legs, closing party.',
                 'race_days_count'   => 3,
                 'races_count'       => 6,
                 'prizes'            => 'Медали, призы от спонсоров, сертификаты.',
             ],
-
         ];
 
         foreach ($items as $item) {
@@ -97,6 +94,7 @@ class RegattaSeeder extends Seeder
             $season->regattas()->updateOrCreate(
                 ['name' => $item['name']],
                 [
+                    'external_id'       => $item['external_id'],
                     'series_id'         => null,
                     'level_coefficient' => $item['level_coefficient'],
                     'date_start'        => $item['date_start'],
@@ -104,12 +102,18 @@ class RegattaSeeder extends Seeder
                     'location'          => $item['location'],
                     'water_area'        => $item['water_area'],
                     'description'       => $item['description'],
-                    //'schedule'          => $item['schedule'],
                     'race_days_count'   => $item['race_days_count'],
                     'races_count'       => $item['races_count'],
                     'prizes'            => $item['prizes'],
                 ]
             );
         }
+
+        // Синхронизируем счётчик sequences с максимальным external_id
+        $maxExternalId = Regatta::max('external_id') ?? 0;
+        DB::table('sequences')->updateOrInsert(
+            ['name' => 'regattas_external_id'],
+            ['current_value' => $maxExternalId]
+        );
     }
 }

@@ -14,10 +14,16 @@ class TeamFactory extends Factory
 {
     protected $model = Team::class;
 
+    /**
+     * Auto-incrementing counter for external_id.
+     */
+    protected static int $externalIdCounter = 0;
+
     public function definition(): array
     {
         return [
             'id' => Str::uuid(),
+            'external_id' => ++static::$externalIdCounter,
             'name' => $this->faker->regattaTeamName(),
             'description' => $this->faker->optional()->text(200),
             'organizer_id' => User::factory(), // Creates a new user or can be null

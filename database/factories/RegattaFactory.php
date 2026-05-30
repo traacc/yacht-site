@@ -15,6 +15,11 @@ class RegattaFactory extends Factory
     protected $model = Regatta::class;
 
     /**
+     * Auto-incrementing counter for external_id.
+     */
+    protected static int $externalIdCounter = 0;
+
+    /**
      * Define the model's default state.
      *
      * @return array<string, mixed>
@@ -27,6 +32,7 @@ class RegattaFactory extends Factory
         return [
             'season_id'         => Season::factory(),
             'series_id'         => null,
+            'external_id'       => ++static::$externalIdCounter,
             'name'              => fake()->sentence(3),
             'level_coefficient' => fake()->randomFloat(2, 0.50, 3.00),
             'date_start'        => $start->format('Y-m-d'),
