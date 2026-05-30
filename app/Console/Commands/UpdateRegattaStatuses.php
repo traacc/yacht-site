@@ -17,12 +17,26 @@ class UpdateRegattaStatuses extends Command
     public function handle(): int
     {
         $now = now();
+        $today = $now->format('Y-m-d');
+        $time = $now->format('H:i:s');
 
         // 1. Upcoming/Closest → Active: регата уже началась, но ещё не закончилась
         $activated = Regatta::query()
             ->whereIn('regatta_status', [RegattaStatus::Upcoming->value, RegattaStatus::Closest->value])
-            ->where('date_start', '<=', $now)
-            ->where('date_end', '>=', $now)
+            ->where(function ($q) use ($today, $time) {
+                $q->where('date_start', '<', $today)
+                  ->orWhere(function ($q) use ($today, $time) {
+                      $q->where('date_start', '=', $today)
+                        ->whereRaw("COALESCE(time_start, '12:00:00') <= ?", [$time]);
+                  });
+            })
+            ->where(function ($q) use ($today, $time) {
+                $q->where('date_end', '>', $today)
+                  ->orWhere(function ($q) use ($today, $time) {
+                      $q->where('date_end', '=', $today)
+                        ->whereRaw("COALESCE(time_end, '12:00:00') >= ?", [$time]);
+                  });
+            })
             ->update(['regatta_status' => RegattaStatus::Active->value]);
 
         if ($activated > 0) {
@@ -32,7 +46,13 @@ class UpdateRegattaStatuses extends Command
         // 2. Active → Finished: регата уже закончилась
         $finished = Regatta::query()
             ->where('regatta_status', RegattaStatus::Active->value)
-            ->where('date_end', '<', $now)
+            ->where(function ($q) use ($today, $time) {
+                $q->where('date_end', '<', $today)
+                  ->orWhere(function ($q) use ($today, $time) {
+                      $q->where('date_end', '=', $today)
+                        ->whereRaw("COALESCE(time_end, '12:00:00') < ?", [$time]);
+                  });
+            })
             ->update(['regatta_status' => RegattaStatus::Finished->value]);
 
         if ($finished > 0) {
@@ -48,11 +68,13 @@ class UpdateRegattaStatuses extends Command
         $closest = Regatta::query()
             ->where('regatta_status', RegattaStatus::Upcoming->value)
             ->orderBy('date_start')
+            ->orderBy('time_start')
             ->first();
 
         if ($closest !== null) {
             $closest->update(['regatta_status' => RegattaStatus::Closest->value]);
-            $this->info("Ближайшая регата: «{$closest->name}» (старт: {$closest->date_start->format('d.m.Y')})");
+            $startInfo = $closest->startDateTime()->format('d.m.Y H:i');
+            $this->info("Ближайшая регата: «{$closest->name}» (старт: {$startInfo})");
         }
 
         $this->info('Статусы регат обновлены.');
