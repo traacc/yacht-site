@@ -19,7 +19,7 @@ class HomeRegattaTimer extends Component
                 lon: (float) $regatta->coordinates[1],
             )
             : null;
-            
+
         $temp = $currentWeather['current']['temperature_2m'] ?? '—';
 
         $mapUrl = $regatta?->coordinates
@@ -29,10 +29,17 @@ class HomeRegattaTimer extends Component
             )
             : null;
 
+        // Дататаргет для таймера: date_start + time_start (по умолчанию 12:00)
+        $startTime = $regatta?->time_start ? $regatta->time_start->format('H:i') : '12:00';
+        $startDateTime = $regatta
+            ? $regatta->date_start->format('Y-m-d') . 'T' . $startTime . ':00'
+            : null;
+
         return view('livewire.home-regatta-timer', [
-            'regatta' => $regatta,
-            'currentWeather' => $temp . ' ℃',
-            'mapUrl'         => $mapUrl,
+            'regatta'         => $regatta,
+            'currentWeather'  => $temp . ' ℃',
+            'mapUrl'          => $mapUrl,
+            'startDateTime'   => $startDateTime,
         ]);
     }
 }

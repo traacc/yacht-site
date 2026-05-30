@@ -60,7 +60,7 @@
 
             {{-- Таймер обратного отсчёта --}}
             <div class="h-full p-6">
-                <div x-data="countdown('{{ $regatta->date_start->format('Y-m-d\TH:i:s') }}')" class="shrink-0 text-center bg-white p-6 md:py-20 h-full">
+                <div x-data="countdown('{{ $startDateTime }}')" class="shrink-0 text-center bg-white p-6 md:py-20 h-full">
                     <p class="text-2xl md:text-4xl font-display text-[#2E325C] font-semibold mb-1 a-font">{{ $regatta->dateRange() }}</p>
                     <p class="text-sm md:text-lg mb-4 text-[#2E325C]">До начала регаты осталось</p>
                     <div class="flex items-start gap-3 bg-[#F8F8F8] p-2">
