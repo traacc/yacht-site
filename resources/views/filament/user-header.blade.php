@@ -114,66 +114,69 @@
                 <h3 class="uppercase a-font text-xl">Меню</h3>
                 <button @click="mobileOpen = false" class="text-2xl font-bold">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
             </div>
-            <div class="space-y-2">
-                <div x-data="{ open: false }" class="relative">
-                    <button @click="open = !open"
-                        class="flex items-center gap-1  py-2 text-sm transition-colors">
-                        Ассоциация
-                        <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </button>
-                    <div x-show="open" x-cloak x-transition
-                        class="">
-                        <a href="{{ route('charter') }}"  class="block px-4 py-2 text-sm">Об Ассоциации</a>
-                        <a href="{{ route('management') }}"  class="block px-4 py-2 text-sm">Руководство Ассоциации</a>
-                        <a href="{{ route('trustees') }}"  class="block px-4 py-2 text-sm">Попечительский совет</a>
-                        <a href="{{ route('policy') }}"  class="block px-4 py-2 text-sm">Политика Ассоциации</a>
-                        <a href="{{ route('rules') }}"  class="block px-4 py-2 text-sm">Правила вступления</a>
-                        <a href="{{ route('regulations') }}"  class="block px-4 py-2 text-sm">Технический регламент яхт</a>
-                        <a href="{{ route('decisions') }}"  class="block px-4 py-2 text-sm">Решения общего собрания</a></li>
+            <div class="max-h-[89vh] overflow-y-auto">
+                <div class="space-y-2">
+                    <div x-data="{ open: false }" class="relative">
+                        <button @click="open = !open"
+                            class="flex items-center gap-1  py-2 text-sm transition-colors">
+                            Ассоциация
+                            <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" x-cloak x-transition
+                            class="">
+                            <a href="{{ route('charter') }}"  class="block px-4 py-2 text-sm">Об Ассоциации</a>
+                            <a href="{{ route('management') }}"  class="block px-4 py-2 text-sm">Руководство Ассоциации</a>
+                            <a href="{{ route('trustees') }}"  class="block px-4 py-2 text-sm">Попечительский совет</a>
+                            <a href="{{ route('policy') }}"  class="block px-4 py-2 text-sm">Политика Ассоциации</a>
+                            <a href="{{ route('rules') }}"  class="block px-4 py-2 text-sm">Правила вступления</a>
+                            <a href="{{ route('regulations') }}"  class="block px-4 py-2 text-sm">Технический регламент яхт</a>
+                            <a href="{{ route('decisions') }}"  class="block px-4 py-2 text-sm">Решения общего собрания</a></li>
+                        </div>
                     </div>
+                    <a href="{{ route('competitions') }}"  class="block py-2 text-sm">Соревнования</a>
+                    <a href="{{ route('teams') }}"  class="block py-2 text-sm">Команды</a>
+                    <a href="{{ route('yachts') }}"  class="block py-2 text-sm">Яхты</a>
+                    <a href="{{ route('ratings') }}"  class="block py-2 text-sm">Рейтинги</a>
+                    <a href="{{ route('gallery') }}"  class="block py-2 text-sm">Галерея</a>
+                    <a href="{{ route('news') }}"  class="block py-2 text-sm">Новости</a>
+                    <a href="{{ route('help') }}"  class="block py-2 text-sm">Помощь</a>
                 </div>
-                <a href="{{ route('competitions') }}"  class="block py-2 text-sm">Соревнования</a>
-                <a href="{{ route('teams') }}"  class="block py-2 text-sm">Команды</a>
-                <a href="{{ route('yachts') }}"  class="block py-2 text-sm">Яхты</a>
-                <a href="{{ route('ratings') }}"  class="block py-2 text-sm">Рейтинги</a>
-                <a href="{{ route('gallery') }}"  class="block py-2 text-sm">Галерея</a>
-                <a href="{{ route('news') }}"  class="block py-2 text-sm">Новости</a>
-                <a href="{{ route('help') }}"  class="block py-2 text-sm">Помощь</a>
+                
+                @auth
+                <!--<div class="flex items-center gap-3 py-2 border-b border-white/20 mb-2">
+                    <img src="{{ auth()->user()->photo_url ? asset('storage/' . auth()->user()->photo_url) : asset('images/icons/avatar-default.svg') }}"
+                        alt="" class="w-10 h-10 rounded-full object-cover border-2 border-white/30">
+                    <div>
+                        <p class="text-sm font-medium">{{ auth()->user()->first_name }}</p>
+                        <p class="text-xs text-gray-300">{{ auth()->user()->email }}</p>
+                    </div>
+                </div>-->
+                @if(auth()->user()->isAdmin() || auth()->user()->isJudge() || auth()->user()->isSecretary() || auth()->user()->isAccountant())
+                    <a href="{{ url('/admin') }}" class="block py-2 text-sm">Панель управления</a>
+                    <a href="{{ url('/admin/regattas') }}" class="block py-2 text-sm pl-3 text-white/80">— Регаты</a>
+                    <a href="{{ url('/admin/teams') }}" class="block py-2 text-sm pl-3 text-white/80">— Команды</a>
+                    <a href="{{ url('/admin/yachts') }}" class="block py-2 text-sm pl-3 text-white/80">— Яхты</a>
+                    <a href="{{ url('/admin/users') }}" class="block py-2 text-sm pl-3 text-white/80">— Пользователи</a>
+                    <a href="{{ url('/admin/ratings') }}" class="block py-2 text-sm pl-3 text-white/80">— Рейтинги</a>
+                    <a href="{{ url('/admin/news') }}" class="block py-2 text-sm pl-3 text-white/80">— Новости</a>
+                @else
+                    <a href="{{ url('/user') }}" class="block py-2 text-sm">Личный кабинет</a>
+                    <a href="{{ url('/user/yachts') }}" class="block py-2 text-sm pl-3 text-white/80">— Мои яхты</a>
+                    <a href="{{ url('/user/teams') }}" class="block py-2 text-sm pl-3 text-white/80">— Мои команды</a>
+                    <a href="{{ url('/user/regatta-entries') }}" class="block py-2 text-sm pl-3 text-white/80">— Заявки на регаты</a>
+                    <a href="{{ url('/user/regatta-result-items') }}" class="block py-2 text-sm pl-3 text-white/80">— Результаты</a>
+                @endif
+                <form method="POST" action="{{ route('logout') }}" class="mt-2">
+                    @csrf
+                    <button type="submit" class="w-full text-left py-2 text-sm text-red-300 hover:text-red-200">Выйти</button>
+                </form>
+                @else
+                <a href="#" @click="$dispatch('open-login-modal')" class="login-btn font-semibold px-4 py-2 transition-colors border-white border text-white justify-center flex items-center gap-2">
+                    {!! file_get_contents(public_path('images/icons/login.svg')) !!} Войти
+                </a>
+                @endauth
             </div>
-            
-            @auth
-            <!--<div class="flex items-center gap-3 py-2 border-b border-white/20 mb-2">
-                <img src="{{ auth()->user()->photo_url ? asset('storage/' . auth()->user()->photo_url) : asset('images/icons/avatar-default.svg') }}"
-                    alt="" class="w-10 h-10 rounded-full object-cover border-2 border-white/30">
-                <div>
-                    <p class="text-sm font-medium">{{ auth()->user()->first_name }}</p>
-                    <p class="text-xs text-gray-300">{{ auth()->user()->email }}</p>
-                </div>
-            </div>-->
-            @if(auth()->user()->isAdmin() || auth()->user()->isJudge() || auth()->user()->isSecretary() || auth()->user()->isAccountant())
-                <a href="{{ url('/admin') }}" class="block py-2 text-sm">Панель управления</a>
-                <a href="{{ url('/admin/regattas') }}" class="block py-2 text-sm pl-3 text-white/80">— Регаты</a>
-                <a href="{{ url('/admin/teams') }}" class="block py-2 text-sm pl-3 text-white/80">— Команды</a>
-                <a href="{{ url('/admin/yachts') }}" class="block py-2 text-sm pl-3 text-white/80">— Яхты</a>
-                <a href="{{ url('/admin/users') }}" class="block py-2 text-sm pl-3 text-white/80">— Пользователи</a>
-                <a href="{{ url('/admin/ratings') }}" class="block py-2 text-sm pl-3 text-white/80">— Рейтинги</a>
-                <a href="{{ url('/admin/news') }}" class="block py-2 text-sm pl-3 text-white/80">— Новости</a>
-            @else
-                <a href="{{ url('/user') }}" class="block py-2 text-sm">Личный кабинет</a>
-                <a href="{{ url('/user/yachts') }}" class="block py-2 text-sm pl-3 text-white/80">— Мои яхты</a>
-                <a href="{{ url('/user/teams') }}" class="block py-2 text-sm pl-3 text-white/80">— Мои команды</a>
-                <a href="{{ url('/user/regatta-entries') }}" class="block py-2 text-sm pl-3 text-white/80">— Заявки на регаты</a>
-                <a href="{{ url('/user/regatta-result-items') }}" class="block py-2 text-sm pl-3 text-white/80">— Результаты</a>
-            @endif
-            <form method="POST" action="{{ route('logout') }}" class="mt-2">
-                @csrf
-                <button type="submit" class="w-full text-left py-2 text-sm text-red-300 hover:text-red-200">Выйти</button>
-            </form>
-            @else
-            <a href="#" @click="$dispatch('open-login-modal')" class="login-btn font-semibold px-4 py-2 transition-colors border-white border text-white justify-center flex items-center gap-2">
-                {!! file_get_contents(public_path('images/icons/login.svg')) !!} Войти
-            </a>
-            @endauth
+
 
         </div>
     </div>
