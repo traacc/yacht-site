@@ -35,7 +35,7 @@
                         @endif
                     </div>
                     <div class="">
-                        <div class="lg:text-sm text-xs">Погода на текущую дату</div>
+                        <div class="lg:text-sm text-xs">Прогноз на дату регаты</div>
                         <div class="flex items-center gap-2">
                             
                             {!!  file_get_contents(public_path('images/icons/weather.svg')) !!}
