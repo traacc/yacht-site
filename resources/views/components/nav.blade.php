@@ -127,7 +127,7 @@
         x-transition:leave="transition transform ease-in duration-200"
         x-transition:leave-start="translate-y-80 opacity-100"
         x-transition:leave-end="translate-y-120 opacity-0"
-        x-transition class="lg:hidden bg-[#2E325C] py-2 px-4 space-y-1  min-w-[220px] h-full text-white fixed right-0 "
+        x-transition class="lg:hidden bg-[#2E325C] py-2 px-4 space-y-1  min-w-[220px] h-screen text-white fixed right-0 "
         @click.outside="mobileOpen=false"
         >
             <div class="flex justify-between items-center mt-4 mb-4">
