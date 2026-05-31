@@ -210,6 +210,25 @@ class Regatta extends Model
             ->orderByRaw("COALESCE(time_start, '12:00:00') ASC");
     }
 
+    /**
+     * Активные + Ближайшие регаты.
+     *
+     * Возвращает регаты, которые либо сейчас идут (Active),
+     * либо будут ближайшими (Closest/Upcoming) —
+     * исключая Finished, Cancelled, Postponed.
+     */
+    public function scopeActiveAndClosest($query)
+    {
+        return $query
+            ->whereNotIn('regatta_status', [
+                RegattaStatus::Cancelled,
+                RegattaStatus::Postponed,
+                RegattaStatus::Finished,
+            ])
+            ->orderBy('date_start')
+            ->orderByRaw("COALESCE(time_start, '12:00:00') ASC");
+    }
+
     public function pruningScope(): Builder
     {
         // Удаляем записи, которые были "мягко удалены" более 7 дней назад
@@ -230,6 +249,11 @@ class Regatta extends Model
     public static function closestUpcoming(): ?self
     {
         return static::closest()->first();
+    }
+    /** Get the closest upcoming regatta by start date */
+    public static function closestUpcomingAndActive(): ?self
+    {
+        return static::scopeActiveAndClosest()->first();
     }
 
     public function startsInLessThanMonth(): bool

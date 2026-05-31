@@ -11,7 +11,7 @@ class HomeRegattaTimer extends Component
 {
     public function render(WeatherService $weather, YandexMapService $map): \Illuminate\View\View
     {
-        $regatta = Regatta::closestUpcoming();
+        $regatta = Regatta::closestUpcomingAndActive();
 
         $currentWeather = $regatta?->coordinates
             ? $weather->getWeather(
