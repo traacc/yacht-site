@@ -31,6 +31,7 @@
     x-transition:leave="transition ease-in duration-300"
     x-transition:leave-start="opacity-100 translate-x-0"
     x-transition:leave-end="opacity-0 translate-x-full"
+    x-init="setTimeout(() => show = false, 10000)"
     x-init=""
     class="fixed top-20 right-4 z-50 bg-white text-sm md:text-xl text-[#2E325C] px-6 py-4 shadow-lg max-w-sm flex items-center gap-3"
 >
