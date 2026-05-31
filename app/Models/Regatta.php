@@ -250,10 +250,9 @@ class Regatta extends Model
     {
         return static::closest()->first();
     }
-    /** Get the closest upcoming regatta by start date */
     public static function closestUpcomingAndActive(): ?self
     {
-        return static::scopeActiveAndClosest()->first();
+        return static::activeAndClosest()->first();
     }
 
     public function startsInLessThanMonth(): bool
