@@ -118,9 +118,12 @@
                                 if (typeof flatpickr !== 'undefined') {
                                     flatpickr($refs.input, {
                                         locale: typeof flatpickrRussian !== 'undefined' ? flatpickrRussian : 'ru',
+                                        altInput: true,
                                         dateFormat: 'Y-m-d',
                                         minDate: this.min,
                                         maxDate: this.max,
+                                        disableMobile: 'true',
+                                        altFormat: 'd.m.Y',
                                         onChange: (selectedDates, dateStr) => {
                                             this.value = dateStr;
                                         }
@@ -133,7 +136,7 @@
                     x-init="initFlatpickr()">
                         <input
                         x-ref="input" 
-                        x-model="value"
+                        x-model="value" placeholder="Выберите дату"
                         type="date" id="birthday" wire:model="birthday" placeholder="День рождения" max="2016-12-31" min="1926-01-01" onkeydown="return false"
                             class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('birthday') border-red-300 @enderror">
                         @error('birthday') 
