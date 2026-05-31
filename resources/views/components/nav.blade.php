@@ -134,7 +134,7 @@
                 <h3 class="uppercase a-font text-xl">Меню</h3>
                 <button @click="mobileOpen = false" class="text-2xl font-bold">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
             </div>
-            <div class="max-h-[89vh] overflow-y-auto">
+            <div class="max-h-[89dvh] overflow-y-auto">
                 <div class="space-y-2">
                     <div x-data="{ open: false }" class="relative">
                         <button @click="open = !open"
