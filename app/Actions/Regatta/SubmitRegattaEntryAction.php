@@ -31,12 +31,14 @@ final class SubmitRegattaEntryAction
         TeamRoleGuard::authorize($team, $actor, TeamMemberRole::ACTION_SUBMIT_ENTRY);
 
         // Проверяем, что яхта принадлежит пользователю
+        /*
         if ($yacht->user_id !== $actor->id) {
             throw ValidationException::withMessages([
                 'yachtId' => 'Выбранная яхта не принадлежит вам.',
             ]);
         }
-
+        */
+        
         // Проверяем, не подана ли уже заявка от этой команды
         if ($regatta->hasTeam($team)) {
             throw ValidationException::withMessages([
