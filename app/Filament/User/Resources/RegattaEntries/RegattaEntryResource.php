@@ -122,9 +122,10 @@ class RegattaEntryResource extends Resource
                     ->default(fn (Get $get): array => static::buildCrewDefaults($get('team_id')))
                     ->columns(1)
                     ->itemLabel(fn (array $state): string => ($state['member_name'] ?? 'Участник') . ' — ' . match ($state['role'] ?? '') {
-                        'main'    => 'Основной',
-                        'reserve' => 'Запасной',
-                        default   => '—',
+                        'main'              => 'Основной',
+                        'reserve'           => 'Запасной',
+                        'not_participating' => 'Не участвует',
+                        default             => '—',
                     })
                     ->schema([
                         Hidden::make('team_member_id'),
@@ -132,8 +133,9 @@ class RegattaEntryResource extends Resource
                         Select::make('role')
                             ->label('Роль')
                             ->options([
-                                'main'    => 'Основной',
-                                'reserve' => 'Запасной',
+                                'main'              => 'Основной',
+                                'reserve'           => 'Запасной',
+                                'not_participating' => 'Не участвует',
                             ])
                             ->required(),
                     ]),
@@ -240,9 +242,10 @@ class RegattaEntryResource extends Resource
                         ->get()
                         ->map(fn (\App\Models\RegattaEntryCrew $c): string =>
                             ($c->teamMember?->user?->name ?? '?') . ' (' . match ($c->role) {
-                                'main'    => 'осн.',
-                                'reserve' => 'зап.',
-                                default   => $c->role,
+                                'main'              => 'осн.',
+                                'reserve'           => 'зап.',
+                                'not_participating' => 'не уч.',
+                                default             => $c->role,
                             } . ')'
                         )
                         ->join(', ') ?: '—'
@@ -372,7 +375,7 @@ class RegattaEntryResource extends Resource
             ->map(fn (\App\Models\User $user): array => [
                 'team_member_id' => $user->pivot->id,
                 'member_name'    => $user->name,
-                'role'           => 'main',
+                'role'           => 'not_participating',
             ])
             ?? collect();
 
