@@ -20,7 +20,7 @@ class RaceResult extends Model
 
     protected $fillable = [
         'race_id',
-        'regatta_entry_id',
+        //'regatta_result_items_id',
         'position',
         'points',
         'penalty_code',
@@ -42,12 +42,12 @@ class RaceResult extends Model
     {
         return $this->belongsTo(RegattaEvents::class);
     }
-
-    public function entry(): BelongsTo
+    /*
+    public function regattaResultItem(): BelongsTo
     {
-        return $this->belongsTo(RegattaEntry::class, 'regatta_entry_id');
+        return $this->belongsTo(RegattaResultItem::class, 'regatta_result_items_id');
     }
-
+    */
     // ──────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────
