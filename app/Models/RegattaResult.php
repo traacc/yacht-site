@@ -16,6 +16,7 @@ class RegattaResult extends Model
         'regatta_id',
         'result_type',
         'source',
+        'pdf_path',
     ];
 
     protected function casts(): array
