@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SystemRole;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -42,7 +43,7 @@ class UserFactory extends Factory
             'phone'               => fake()->unique()->optional()->e164PhoneNumber(),
             'phone_verified_at'   => fake()->optional()->dateTimeBetween('-1 year', 'now'),
             'email_verified_at'   => now(),
-            'system_role'         => 'user',
+            'system_role'         => SystemRole::User,
             'password'            => static::$password ??= Hash::make('password'),
             'remember_token'      => Str::random(10),
         ];
@@ -72,21 +73,21 @@ class UserFactory extends Factory
     /** Specific role shortcuts */
     public function admin(): static
     {
-        return $this->state(fn () => ['system_role' => 'admin']);
+        return $this->state(fn () => ['system_role' => SystemRole::Admin]);
     }
 
     public function judge(): static
     {
-        return $this->state(fn () => ['system_role' => 'judge']);
+        return $this->state(fn () => ['system_role' => SystemRole::Judge]);
     }
 
     public function secretary(): static
     {
-        return $this->state(fn () => ['system_role' => 'secretary']);
+        return $this->state(fn () => ['system_role' => SystemRole::Secretary]);
     }
 
     public function accountant(): static
     {
-        return $this->state(fn () => ['system_role' => 'accountant']);
+        return $this->state(fn () => ['system_role' => SystemRole::Accountant]);
     }
 }

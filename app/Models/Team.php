@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\SystemRole;
 use App\Enums\TeamMemberRole;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -185,7 +186,7 @@ class Team extends Model implements HasMedia
     public function scopeVisibleForUser(Builder $query, User $user): Builder
     {
         // Staff (admin, judge, secretary, accountant) видят всё
-        if ($user->system_role !== 'user') {
+        if ($user->system_role !== SystemRole::User) {
             return $query;
         }
 

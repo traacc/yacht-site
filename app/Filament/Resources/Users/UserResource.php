@@ -118,11 +118,8 @@ class UserResource extends Resource
                 Select::make('system_role')
                     ->label('Системная роль')
                     ->placeholder('Выберите роль')
-                    ->options([
-                        'user' => 'Пользователь',
-                        'admin' => 'Администратор',
-                    ])
-                    ->default('user')
+                    ->options(\App\Enums\SystemRole::class)
+                    ->default(\App\Enums\SystemRole::User->value)
                     ->required(),
                 Toggle::make('is_banned')
                     ->label('Забанен'),
@@ -186,19 +183,14 @@ class UserResource extends Resource
                     ->badge(),
                 TextColumn::make('system_role')
                     ->label('Роль')
-                    ->badge()->formatStateUsing(fn (string $state): string => match ($state) {
-                        'user' => 'Пользователь',
-                        'admin' => 'Администратор',
-                    }),
+                    ->badge()
+                    ->formatStateUsing(fn (\App\Enums\SystemRole $state): string => $state->label()),
 
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
                 SelectFilter::make('system_role')
-                ->label('Роль')
-                ->options([
-                    'user' => 'Пользователь',
-                    'admin' => 'Администратор',
-                ]),
+                    ->label('Роль')
+                    ->options(\App\Enums\SystemRole::class),
                 SelectFilter::make('sport_category')
                     ->label('Спортивный разряд')
                     ->options(SportCategory::class),

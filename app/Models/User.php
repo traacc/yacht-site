@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use App\Enums\SportCategory;
+use App\Enums\SystemRole;
 use Illuminate\Notifications\Notifiable;
 
 use Filament\Models\Contracts\FilamentUser;
@@ -53,6 +54,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             'phone_verified_at' => 'datetime',
             'password'          => 'hashed',
             'sport_category'    => SportCategory::class,
+            'system_role'       => SystemRole::class,
         ];
     }
 
@@ -130,10 +132,10 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     // Role helpers
     // ──────────────────────────────────────────────
 
-    public function isAdmin(): bool      { return $this->system_role === 'admin'; }
-    public function isJudge(): bool      { return $this->system_role === 'judge'; }
-    public function isSecretary(): bool  { return $this->system_role === 'secretary'; }
-    public function isAccountant(): bool { return $this->system_role === 'accountant'; }
+    public function isAdmin(): bool      { return $this->system_role === SystemRole::Admin; }
+    public function isJudge(): bool      { return $this->system_role === SystemRole::Judge; }
+    public function isSecretary(): bool  { return $this->system_role === SystemRole::Secretary; }
+    public function isAccountant(): bool { return $this->system_role === SystemRole::Accountant; }
 
     /**
      * Является ли пользователь капитаном (организатором) хотя бы одной команды.
@@ -255,10 +257,10 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 
     public function canAccessPanel(Panel $panel): bool
     {
-
-        if ($this->isAdmin()) {
-            return $this->system_role === 'admin'; 
+        if ($panel->getId() === 'admin') {
+            return $this->isAdmin();
         }
+
         if ($panel->getId() === 'user') {
             return true;
         }

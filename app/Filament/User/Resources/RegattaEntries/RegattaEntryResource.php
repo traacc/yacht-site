@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\User\Resources\RegattaEntries;
 
+use App\Enums\SystemRole;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Models\RegattaEntry;
 use App\Models\Team;
@@ -75,7 +76,19 @@ class RegattaEntryResource extends Resource
                         $set('required_documents', $docs);
                     }),
                 Select::make('team_id')
-                    ->relationship('team', 'name', modifyQueryUsing: fn (Builder $query) => $query->where('organizer_id', auth()->id()))
+                    ->relationship('team', 'name', modifyQueryUsing: function (Builder $query) {
+                        /** @var User $user */
+                        $user = auth()->user();
+
+                        if ($user->system_role !== SystemRole::User) {
+                            return; // staff видят все команды
+                        }
+
+                        $query->where(function (Builder $q) use ($user) {
+                            $q->where('organizer_id', $user->id)
+                                ->orWhereHas('members', fn (Builder $q) => $q->where('user_id', $user->id));
+                        });
+                    })
                     ->label('Команда')
                     ->required()
                     ->live()
