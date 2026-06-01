@@ -49,10 +49,13 @@
                 <div class="container mx-auto bg-[#F8F8F8] py-2 md:py-4">
                     <div class="flex justify-between mb-6 flex-col md:flex-row">
                         <h3 class="a-font text-lg md:text-3xl">{{ $regatta->name }}</h3>
-                        <a class="text-[#2E325C] text-lg font-semibold gap-2 items-center hidden md:flex cursor-pointer">
-                            <img src="{{ asset('images/icons/download.svg') }}" alt="">
-                            <span>Скачать результаты PDF</span>
-                        </a>
+                        @php $pdfUrl = $regatta->results->first()?->pdf_url; @endphp
+                        @if($pdfUrl)
+                            <a href="{{ $pdfUrl }}" target="_blank" class="text-[#2E325C] text-lg font-semibold gap-2 items-center hidden md:flex cursor-pointer">
+                                <img src="{{ asset('images/icons/download.svg') }}" alt="">
+                                <span>Скачать результаты PDF</span>
+                            </a>
+                        @endif
                     </div>
                     <div class="flex gap-6 items-center mb-6">
                         <div class="date flex gap-2 md:text-lg font-medium">
@@ -125,10 +128,12 @@
                             </tbody>
                         </table>
                     </div>
-                    <a class="text-[#2E325C] text-sm font-semibold gap-2 items-center flex md:hidden justify-center mt-4 cursor-pointer">
-                        <img src="{{ asset('images/icons/download.svg') }}" alt="">
-                        <span>Скачать результаты PDF</span>
-                    </a>
+                    @if($pdfUrl)
+                        <a href="{{ $pdfUrl }}" target="_blank" class="text-[#2E325C] text-sm font-semibold gap-2 items-center flex md:hidden justify-center mt-4 cursor-pointer">
+                            <img src="{{ asset('images/icons/download.svg') }}" alt="">
+                            <span>Скачать результаты PDF</span>
+                        </a>
+                    @endif
                 </div>
             </section>
         @empty
@@ -152,10 +157,13 @@
                                 Предварительные результаты
                             </div>
                         </div>
-                        <a class="text-[#2E325C] text-lg font-semibold flex gap-2 items-center cursor-pointer">
-                            <img src="{{ asset('images/icons/download.svg') }}" alt="">
-                            <span>Скачать результаты PDF</span>
-                        </a>
+                        @php $pdfUrl = $regatta->results->first()?->pdf_url; @endphp
+                        @if($pdfUrl)
+                            <a href="{{ $pdfUrl }}" target="_blank" class="text-[#2E325C] text-lg font-semibold flex gap-2 items-center cursor-pointer">
+                                <img src="{{ asset('images/icons/download.svg') }}" alt="">
+                                <span>Скачать результаты PDF</span>
+                            </a>
+                        @endif
                     </div>
                     <div class="overflow-x-auto relative p-2 md:p-6 bg-white">
                         <table class="w-full responsive-table">
@@ -304,10 +312,13 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <a class="text-[#2E325C] text-sm font-semibold gap-2 items-center flex md:hidden justify-center mt-4 cursor-pointer">
-                                <img src="{{ asset('images/icons/download.svg') }}" alt="">
-                                <span>Скачать результаты PDF</span>
-                            </a>
+                            @php $pdfUrl = $regatta->results->first()?->pdf_url; @endphp
+                            @if($pdfUrl)
+                                <a href="{{ $pdfUrl }}" target="_blank" class="text-[#2E325C] text-sm font-semibold gap-2 items-center flex md:hidden justify-center mt-4 cursor-pointer">
+                                    <img src="{{ asset('images/icons/download.svg') }}" alt="">
+                                    <span>Скачать результаты PDF</span>
+                                </a>
+                            @endif
                         </div>
                     </section>
                 @endif

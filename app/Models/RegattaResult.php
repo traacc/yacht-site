@@ -45,6 +45,11 @@ class RegattaResult extends Model
     // Helpers
     // ──────────────────────────────────────────────
 
+    public function getPdfUrlAttribute(): ?string
+    {
+        return $this->pdf_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->pdf_path) : null;
+    }
+
     public function isPreliminary(): bool
     {
         return $this->result_type === 'preliminary';
