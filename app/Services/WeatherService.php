@@ -9,13 +9,13 @@ class WeatherService
 {
     public function getWeather(float $lat, float $lon): array
     {
-        return Cache::remember("weather:{$lat}:{$lon}", now()->addMinutes(60), function () use ($lat, $lon) {
+        return Cache::remember("weather:{$lat}:{$lon}", now()->addMinutes(240), function () use ($lat, $lon) {
             $response = Http::get('https://api.open-meteo.com/v1/forecast', [
                 'latitude'       => $lat,
                 'longitude'      => $lon,
-                'current'        => 'temperature_2m',
+                'hourly'         => 'temperature_2m',
+                'forecast_days'  => '14'
             ]);
-
             return $response->json();
         });
     }

@@ -7,6 +7,10 @@ use App\Services\WeatherService;
 use App\Services\YandexMapService;
 use Livewire\Component;
 
+use DateTime;
+
+use Illuminate\Support\Facades\Log;
+
 class HomeClosestRegatta extends Component
 {
     public function render(WeatherService $weather, YandexMapService $map): \Illuminate\View\View
@@ -19,9 +23,26 @@ class HomeClosestRegatta extends Component
                 lon: (float) $regatta->coordinates[1],
             )
             : null;
-            
-        $temp = $currentWeather['current']['temperature_2m'] ?? '—';
+        
+        Log::info('JSON:', ['user' => $currentWeather]);
 
+        $temp = '—';
+        if($currentWeather) {
+            $hourly = array_combine(
+                $currentWeather['hourly']['time'],
+                $currentWeather['hourly']['temperature_2m']
+            );
+            $datetime = "2026-06-15 00:00:00";
+
+            $date = $regatta?->date_start;
+            $datetime = (new DateTime($date))
+                ->setTime(12, 0)
+                ->format('Y-m-d\TH:i');
+            Log::info('datetime:', ['datetime' => $datetime]);
+            $temp = $hourly[$datetime] ?? '—';
+
+
+        }
         $mapUrl = $regatta?->coordinates
             ? $map->makeUrl(
                 lat: (float) $regatta->coordinates[0],
