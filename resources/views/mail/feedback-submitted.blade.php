@@ -14,8 +14,5 @@
 | **Источник** | {{ $feedback->source }} |
 | **Дата** | {{ $feedback->created_at->format('d.m.Y H:i') }} |
 
-<x-mail::button url="{{ url('/filament') }}">
-Перейти в админ-панель
-</x-mail::button>
 
 </x-mail::message>
