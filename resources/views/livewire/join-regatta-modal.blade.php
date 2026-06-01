@@ -27,7 +27,7 @@
          class="bg-white overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full p-6 z-10 relative">
 
 
-
+        {{ $this->state }}
         @if ($this->state === 'guest')
             <div class="flex items-center justify-between pb-3 mb-4">
                 <h3 class="text-lg font-medium text-[#2E325C] a-font">Войдите в личный кабинет</h3>

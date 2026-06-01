@@ -149,7 +149,7 @@ class JoinRegattaModal extends Component
         }
 
         return $user->teamMemberships()
-            ->where('role', 'organizer')
+            ->whereIn('role', ['organizer', 'team_admin'])
             ->where('status', 'active')
             ->with('team')
             ->get()
@@ -217,15 +217,15 @@ class JoinRegattaModal extends Component
         $user = Auth::user();
 
         $hasOrganizerTeam = $user->teamMemberships()
-            ->where('role', 'organizer')
+            ->whereIn('role', ['organizer', 'team_admin'])
             ->where('status', 'active')
             ->exists();
 
         if (! $hasOrganizerTeam) {
-            return 'no-team';
+            return $hasOrganizerTeam;
         }
 
-        return 'can-apply';
+        return $hasOrganizerTeam;
     }
 
     public function render()
