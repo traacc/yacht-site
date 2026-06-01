@@ -230,11 +230,20 @@
                 @if($regatta)
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="section-title a-font">Результаты регат</h2>
+                        @php $pdfUrl = $regatta->results->first()?->pdf_url; @endphp
+                        @if($pdfUrl)
+                            <a href="{{ $pdfUrl }}" target="_blank" class="text-[#2E325C] text-lg font-semibold gap-2 items-center hidden md:flex cursor-pointer">
+                                <img src="{{ asset('images/icons/download.svg') }}" alt="">
+                                <span>Скачать результаты PDF</span>
+                            </a>
+                        @endif
+
+                    </div>
+                    <div class="flex justify-end">
                         <a href="{{ route('ratings') }}" class="text-[#2E325C] text-lg font-semibold hover:underline hidden md:block">
                             Все результаты →
                         </a>
                     </div>
-
                     {{-- Таблица этапа --}}
                     <section class="rating_1 mb-12">
                         <div class="bg-[#F8F8F8]">
