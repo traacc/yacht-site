@@ -23,8 +23,6 @@ class HomeClosestRegatta extends Component
                 lon: (float) $regatta->coordinates[1],
             )
             : null;
-        
-        Log::info('JSON:', ['user' => $currentWeather]);
 
         $temp = '—';
         if($currentWeather) {
@@ -32,13 +30,12 @@ class HomeClosestRegatta extends Component
                 $currentWeather['hourly']['time'],
                 $currentWeather['hourly']['temperature_2m']
             );
-            $datetime = "2026-06-15 00:00:00";
 
             $date = $regatta?->date_start;
             $datetime = (new DateTime($date))
                 ->setTime(12, 0)
                 ->format('Y-m-d\TH:i');
-            Log::info('datetime:', ['datetime' => $datetime]);
+
             $temp = $hourly[$datetime] ?? '—';
 
 

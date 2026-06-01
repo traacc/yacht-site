@@ -7,6 +7,8 @@ use App\Services\WeatherService;
 use App\Services\YandexMapService;
 use Livewire\Component;
 
+use DateTime;
+
 class HomeRegattaTimer extends Component
 {
     public function render(WeatherService $weather, YandexMapService $map): \Illuminate\View\View
@@ -20,8 +22,21 @@ class HomeRegattaTimer extends Component
             )
             : null;
 
-        $temp = $currentWeather['current']['temperature_2m'] ?? '—';
+        $temp = '—';
+        if($currentWeather) {
+            $hourly = array_combine(
+                $currentWeather['hourly']['time'],
+                $currentWeather['hourly']['temperature_2m']
+            );
 
+            $date = $regatta?->date_start;
+            $datetime = (new DateTime($date))
+                ->setTime(12, 0)
+                ->format('Y-m-d\TH:i');
+            $temp = $hourly[$datetime] ?? '—';
+
+
+        }
         $mapUrl = $regatta?->coordinates
             ? $map->makeUrl(
                 lat: (float) $regatta->coordinates[0],

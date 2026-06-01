@@ -223,9 +223,20 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         )
         : null;
         
-    $temp = isset($currentWeather['current']['temperature_2m'])
-        ? $currentWeather['current']['temperature_2m'] . ' ℃'
-        : '—';
+
+    $temp = '—';
+    if($currentWeather) {
+        $hourly = array_combine(
+            $currentWeather['hourly']['time'],
+            $currentWeather['hourly']['temperature_2m']
+        );
+
+        $date = $regatta?->date_start;
+        $datetime = (new DateTime($date))
+            ->setTime(12, 0)
+            ->format('Y-m-d\TH:i');
+        $temp = $hourly[$datetime] ?? '—';
+    }
 
     // Проверяем, является ли текущий юзер участником уже заявленной команды
     // Учитываем pending + approved, чтобы кнопка «Подать заявку» скрывалась сразу после подачи
