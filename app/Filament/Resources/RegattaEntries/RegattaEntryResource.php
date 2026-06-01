@@ -334,20 +334,36 @@ class RegattaEntryResource extends Resource
 
     /**
      * Загружает существующий экипаж для формы редактирования.
+     * Добавляет новых активных участников команды, которых ещё нет в заявке.
      *
      * @return array<int, array{team_member_id: string, member_name: string, role: string}>
      */
     public static function loadCrew(RegattaEntry $record): array
     {
-        return $record->crew()
+        $existing = $record->crew()
             ->with('teamMember.user')
             ->get()
             ->map(fn (\App\Models\RegattaEntryCrew $crew): array => [
                 'team_member_id' => $crew->team_member_id,
                 'member_name'    => $crew->teamMember?->user?->name ?? 'Неизвестный',
                 'role'           => $crew->role,
+            ]);
+
+        $existingMemberIds = $existing->pluck('team_member_id')->all();
+
+        $newMembers = \App\Models\Team::find($record->team_id)
+            ?->members()
+            ->wherePivot('status', 'active')
+            ->get()
+            ->filter(fn (\App\Models\User $user): bool => ! in_array($user->pivot->id, $existingMemberIds, true))
+            ->map(fn (\App\Models\User $user): array => [
+                'team_member_id' => $user->pivot->id,
+                'member_name'    => $user->name,
+                'role'           => 'main',
             ])
-            ->all();
+            ?? collect();
+
+        return $existing->concat($newMembers)->all();
     }
 
     /**
