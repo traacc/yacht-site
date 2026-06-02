@@ -257,7 +257,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'crew' => $entry->team?->activeMembers?->map(fn ($member) => [
             'name' => $member->full_name ?? '',
             'birthday' => $member->birth_date?->format('d.m.Y') ?? '',
-            'rank' => $member->sport_category ?? '',
+            'rank' => $member->sport_category?->getLabel() ?? '',
         ])->values()->toArray() ?? [],
     ])->values()->toArray();
 
