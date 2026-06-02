@@ -81,7 +81,8 @@ class YachtResource extends Resource
 
                 TextInput::make('project')
                     ->label('Проект')
-                    ->placeholder('Проект яхты'),
+                    ->placeholder('Проект яхты')
+                    ->default('Carter30'),
                 TextInput::make('year')
                     ->label('Год выпуска')
                     ->placeholder('Год выпуска')
@@ -92,7 +93,8 @@ class YachtResource extends Resource
                     ->numeric(),
                 TextInput::make('class')
                     ->label('Класс')
-                    ->placeholder('Класс яхты'),
+                    ->placeholder('Класс яхты')
+                    ->default('Carter30'),
 
                 TextInput::make('reg_place')
                     ->label('Место регистрации')

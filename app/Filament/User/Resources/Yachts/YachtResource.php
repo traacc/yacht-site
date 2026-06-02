@@ -21,6 +21,7 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -97,10 +98,10 @@ class YachtResource extends Resource
                     'unique' => 'Яхта с таким номером ВФПС уже существует в системе.',
                 ])->label('Номер паруса')->placeholder('Введите номер паруса (ВФПС)')
                     ->disabled(fn (callable $get) => filled($get('selected_yacht_id'))),
-                TextInput::make('class')->label('Класс')->placeholder('Введите класс яхты'),
+                TextInput::make('class')->label('Класс')->placeholder('Введите класс яхты')->default('Carter30'),
 
                 Placeholder::make('Параметры')->columnSpanFull(),
-                TextInput::make('project')->label('Проект')->placeholder('Введите проект яхты'),
+                TextInput::make('project')->label('Проект')->placeholder('Введите проект яхты')->default('Carter30'),
                 TextInput::make('year')->label('Год выпуска')->placeholder('Введите год выпуска')
                     ->numeric(),
                 TextInput::make('current_mass_kg')->label('Масса яхты')->placeholder('Введите массу яхты')->numeric(),
