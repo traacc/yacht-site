@@ -91,7 +91,7 @@ class RegattaEntryResource extends Resource
                     ->label('Капитан')
                     ->columnSpanFull(),
                 DatePicker::make('submitted_at')
-                    ->label('Дата')
+                    ->label('Дата рассмотрения')
                     ->displayFormat('d.m.Y')
                     ->required(),
                 Select::make('status')
@@ -230,7 +230,7 @@ class RegattaEntryResource extends Resource
                         ->join(', ') ?: '—'
                     ),
                 TextColumn::make('submitted_at')
-                    ->label('Дата')
+                    ->label('Дата рассмотрения')
                     ->dateTime()->dateTime('d M Y')
                     ->sortable(),
                 TextColumn::make('status')
