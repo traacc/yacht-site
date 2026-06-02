@@ -230,18 +230,9 @@ class RegattaEntryResource extends Resource
                     ->searchable(),
                 TextColumn::make('crew')
                     ->label('Экипаж')
-                    ->state(fn (RegattaEntry $record): string => $record->crew()
-                        ->with('teamMember.user')
-                        ->get()
-                        ->map(fn (\App\Models\RegattaEntryCrew $c): string =>
-                            ($c->teamMember?->user?->name ?? '?') . ' (' . match ($c->role) {
-                                'main'              => 'осн.',
-                                'reserve'           => 'зап.',
-                                'not_participating' => 'не уч.',
-                                default             => $c->role,
-                            } . ')'
-                        )
-                        ->join(', ') ?: '—'
+                    ->state(fn (RegattaEntry $record): string => (string) $record->crew()
+                        ->whereIn('role', ['main', 'reserve'])
+                        ->count()
                     ),
                 TextColumn::make('submitted_at')
                     ->label('Дата рассмотрения')
