@@ -113,7 +113,14 @@ class TeamResource extends Resource
                     ->schema([
                         Select::make('user_id')
                             ->label('Пользователь')
-                            ->relationship(name:'user', titleAttribute:'name', modifyQueryUsing: fn (Builder $query) => $query->freeUsers())
+                            ->relationship(name:'user', titleAttribute:'name', modifyQueryUsing: function (Builder $query, $component) {
+                                /** @var \Filament\Forms\Components\Select $component */
+                                $record = $component->getContainer()?->getRecord();
+
+                                return $query->freeUsers(
+                                    exceptTeamId: $record?->team_id,
+                                );
+                            })
                             ->searchable()
                             ->preload()
                             ->required(),

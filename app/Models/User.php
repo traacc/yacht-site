@@ -147,11 +147,15 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 
     /**
      * Scope: пользователи, не состоящие ни в одной активной команде.
+     * Если указан $exceptTeamId — участники этой команды не исключаются.
      */
-    public function scopeFreeUsers(Builder $query): Builder
+    public function scopeFreeUsers(Builder $query, ?string $exceptTeamId = null): Builder
     {
         return $query->whereDoesntHave('teamMemberships', fn (Builder $q) =>
             $q->where('status', 'active')
+              ->when($exceptTeamId, fn (Builder $inner) =>
+                  $inner->where('team_id', '!=', $exceptTeamId)
+              )
         );
     }
 
