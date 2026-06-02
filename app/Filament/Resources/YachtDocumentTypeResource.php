@@ -62,7 +62,7 @@ class YachtDocumentTypeResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn (string $state, Set $set) => $set('key', Str::slug($state, '_'))),
+                    ->afterStateUpdated(fn (?string $state, Set $set) => $set('key', $state ? Str::slug($state, '_') : null)),
 
                 Textarea::make('description')
                     ->label('Описание')
