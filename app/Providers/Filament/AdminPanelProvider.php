@@ -25,6 +25,8 @@ use Filament\View\PanelsRenderHook;
 
 use App\Filament\Widgets\UpcomingBirthdaysWidget;
 
+use Filament\Navigation\NavigationItem;
+
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -33,6 +35,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->profile(\App\Filament\Pages\EditProfile::class, isSimple: false) 
             ->login()
             ->darkMode(false)
             ->favicon(asset('favicon.jpg?v=4'))
@@ -41,6 +44,13 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
+            ->navigationItems([
+                NavigationItem::make('Профиль')
+                    ->url(fn (): string => \App\Filament\Pages\EditProfile::getUrl(), shouldOpenInNewTab: false)
+                    ->icon('profile')
+                    ->isActiveWhen(fn () => request()->routeIs('filament.admin.auth.profile'))
+                    
+            ])
             /*
             ->renderHook(
                 name: PanelsRenderHook::TOPBAR_BEFORE,
