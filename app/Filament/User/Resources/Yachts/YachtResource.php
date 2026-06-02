@@ -106,6 +106,18 @@ class YachtResource extends Resource
                 TextInput::make('current_mass_kg')->label('Масса яхты')->placeholder('Введите массу яхты')->numeric(),
                 TextInput::make('reg_place')->label('Место регистрации')->placeholder('Введите место регистрации'),
 
+                SpatieMediaLibraryFileUpload::make('gallery')
+                    ->label('Галерея')
+                    ->collection('gallery')
+                    ->multiple()
+                    ->reorderable()
+                    ->image()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->imageEditor()
+                    ->disk('public')
+                    ->visibility('public')
+                    ->columnSpanFull(),
+
                 Repeater::make('required_documents')
                     ->label('Документы')
                     ->columnSpanFull()
@@ -170,7 +182,7 @@ class YachtResource extends Resource
                             ->downloadable()
                             ->helperText(fn () => 'Можно загрузить до ' . config('documents.max_files_per_type', 10) . ' файлов'),
                     ]),
-
+                /*
                 Repeater::make('past_regattas')
                     ->label('Прошедшие соревнования')
                     ->columnSpanFull()
@@ -195,6 +207,7 @@ class YachtResource extends Resource
                             ->required(),
                     ])
                     ->columns(3),
+                */
                 
             ]);
     }

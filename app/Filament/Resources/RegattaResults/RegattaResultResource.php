@@ -68,7 +68,8 @@ class RegattaResultResource extends Resource
                 FileUpload::make('pdf_path')
                     ->label('PDF файл')
                     ->directory('documents')
-                    ->disk('public'),
+                    ->disk('public')
+                    ->preserveFilenames(),
 
                 Select::make('source')
                     ->label('Источник')
