@@ -88,7 +88,7 @@
             </form>
             
             <form wire:submit.prevent="register" class="mt-2 md:space-y-2" x-show="tab === 'register'">
-                <div class="overflow-x-auto max-h-[44vh] space-y-2">
+                <div class="overflow-x-auto max-h-[50vh] space-y-2">
                     <div>
                         <input type="text" id="first_name" wire:model="first_name" placeholder="Имя"
                             class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('first_name') border-red-300 @enderror">
