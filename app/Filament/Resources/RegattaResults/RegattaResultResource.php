@@ -141,11 +141,11 @@ class RegattaResultResource extends Resource
                     }),
                 TextEntry::make('created_at')
                     ->label('Создан')
-                    ->dateTime()
+                    ->dateTime('d.m.Y H:i')
                     ->placeholder('-'),
                 TextEntry::make('updated_at')
                     ->label('Обновлён')
-                    ->dateTime()
+                    ->dateTime('d.m.Y H:i')
                     ->placeholder('-'),
 
                 RepeatableEntry::make('items')
