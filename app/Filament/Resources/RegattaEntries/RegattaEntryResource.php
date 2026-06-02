@@ -259,6 +259,7 @@ class RegattaEntryResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('created_at', 'desc')
             ->stackedOnMobile()
             ->emptyStateHeading('Записей пока нет')
             ->filters([])
