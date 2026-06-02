@@ -99,11 +99,7 @@ class RegattaEntryResource extends Resource
                     })
                     ->label('Команда')
                     ->required()
-                    ->live()
-                    ->afterStateUpdated(function (?string $state, Set $set): void {
-                        $set('crew', static::buildCrewDefaults($state));
-                    }),
-
+                    ->live(),
                 Select::make('yacht_id')
                     ->label('Яхта')
                     ->options(fn (Get $get, ?\App\Models\RegattaEntry $record = null) => \App\Models\Yacht::query()
@@ -124,10 +120,10 @@ class RegattaEntryResource extends Resource
                 Repeater::make('crew')
                     ->label('Экипаж')
                     ->columnSpanFull()
-                    ->addable(false)
-                    ->deletable(false)
+                    ->addable(true)
+                    ->deletable(true)
                     ->reorderable(false)
-                    ->default(fn (Get $get): array => static::buildCrewDefaults($get('team_id')))
+                    ->default([])
                     ->columns(1)
                     ->itemLabel(fn (array $state): string => ($state['member_name'] ?? 'Участник') . ' — ' . match ($state['role'] ?? '') {
                         'main'              => 'Основной',
@@ -136,7 +132,50 @@ class RegattaEntryResource extends Resource
                         default             => '—',
                     })
                     ->schema([
-                        Hidden::make('team_member_id'),
+                        Select::make('team_member_id')
+                            ->label('Участник')
+                            ->options(function (Get $get): array {
+                                $teamId = $get('../../team_id');
+                                if (! $teamId) {
+                                    return [];
+                                }
+
+                                $team = Team::find($teamId);
+                                if (! $team) {
+                                    return [];
+                                }
+
+                                return $team->members()
+                                    ->wherePivot('status', 'active')
+                                    ->get()
+                                    ->mapWithKeys(fn (\App\Models\User $user): array => [
+                                        $user->pivot->id => $user->name,
+                                    ])
+                                    ->all();
+                            })
+                            ->required()
+                            ->live()
+                            ->searchable()
+                            ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                            ->afterStateUpdated(function (?string $state, Set $set, Get $get): void {
+                                if (! $state) {
+                                    $set('member_name', '');
+                                    return;
+                                }
+
+                                $teamId = $get('../../../team_id');
+                                if (! $teamId) {
+                                    return;
+                                }
+
+                                $team = Team::find($teamId);
+                                $member = $team?->members()
+                                    ->wherePivot('status', 'active')
+                                    ->wherePivot('id', $state)
+                                    ->first();
+
+                                $set('member_name', $member?->name ?? '');
+                            }),
                         Hidden::make('member_name'),
                         Select::make('role')
                             ->label('Роль')
@@ -339,24 +378,7 @@ class RegattaEntryResource extends Resource
      */
     public static function buildCrewDefaults(?string $teamId): array
     {
-        if ($teamId === null) {
-            return [];
-        }
-
-        $team = Team::find($teamId);
-        if (! $team) {
-            return [];
-        }
-
-        return $team->members()
-            ->wherePivot('status', 'active')
-            ->get()
-            ->map(fn (\App\Models\User $user): array => [
-                'team_member_id' => $user->pivot->id,
-                'member_name'    => $user->name,
-                'role'           => 'main',
-            ])
-            ->all();
+        return [];
     }
 
     /**
@@ -366,30 +388,15 @@ class RegattaEntryResource extends Resource
      */
     public static function loadCrew(RegattaEntry $record): array
     {
-        $existing = $record->crew()
+        return $record->crew()
             ->with('teamMember.user')
             ->get()
             ->map(fn (\App\Models\RegattaEntryCrew $crew): array => [
                 'team_member_id' => $crew->team_member_id,
                 'member_name'    => $crew->teamMember?->user?->name ?? 'Неизвестный',
                 'role'           => $crew->role,
-            ]);
-
-        $existingMemberIds = $existing->pluck('team_member_id')->all();
-
-        $newMembers = \App\Models\Team::find($record->team_id)
-            ?->members()
-            ->wherePivot('status', 'active')
-            ->get()
-            ->filter(fn (\App\Models\User $user): bool => ! in_array($user->pivot->id, $existingMemberIds, true))
-            ->map(fn (\App\Models\User $user): array => [
-                'team_member_id' => $user->pivot->id,
-                'member_name'    => $user->name,
-                'role'           => 'not_participating',
             ])
-            ?? collect();
-
-        return $existing->concat($newMembers)->all();
+            ->all();
     }
 
     /**
