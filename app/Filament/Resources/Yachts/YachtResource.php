@@ -108,7 +108,7 @@ class YachtResource extends Resource
                     ])
                     ->default('pending')
                     ->required(),
-
+                /*
                 Repeater::make('past_regattas')
                     ->label('Прошедшие соревнования')
                     ->columnSpanFull()
@@ -133,6 +133,7 @@ class YachtResource extends Resource
                             ->required(),
                     ])
                     ->columns(3),
+                */
                 SpatieMediaLibraryFileUpload::make('gallery')
                     ->label('Галерея')
                     ->collection('gallery')
