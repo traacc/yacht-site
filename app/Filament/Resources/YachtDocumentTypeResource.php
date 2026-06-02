@@ -9,6 +9,7 @@ use App\Models\YachtDocumentType;
 use BackedEnum;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Resources\Resource;
@@ -68,7 +69,7 @@ class YachtDocumentTypeResource extends Resource
                     ->rows(2)
                     ->maxLength(500),
 
-                Toggle::make('is_configurable')
+                Hidden::make('is_configurable')
                     ->label('Обязателен')
                     ->default(true),
 
@@ -96,29 +97,6 @@ class YachtDocumentTypeResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('key')
-                    ->label('Ключ')
-                    ->searchable()
-                    ->sortable(),
-
-                TextColumn::make('description')
-                    ->label('Описание')
-                    ->limit(40)
-                    ->toggleable(),
-
-                IconColumn::make('is_configurable')
-                    ->label('Настраиваемый')
-                    ->boolean(),
-
-                TextColumn::make('sort_order')
-                    ->label('Порядок')
-                    ->sortable(),
-
-                TextColumn::make('updated_at')
-                    ->label('Обновлён')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(),
             ])
             ->defaultSort('sort_order')
             ->reorderable('sort_order')
