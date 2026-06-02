@@ -148,7 +148,7 @@ class TeamResource extends Resource
                     ->addActionLabel('Добавить участника')
                     ->columns(2)
                     ->columnSpanFull()
-                    ->defaultItems(0)
+                    ->defaultItems(1)
                     ->rules([
                         fn (): \Closure => function (string $attribute, mixed $value, \Closure $fail): void {
                             if (! is_array($value)) {
@@ -167,16 +167,20 @@ class TeamResource extends Resource
                     ->schema([
                         Select::make('user_id')
                             ->label('Пользователь')
-                            ->relationship(name:'user', titleAttribute:'name', modifyQueryUsing: fn (Builder $query) => $query->freeUsers())
+                            ->relationship(name:'user', titleAttribute:'name', modifyQueryUsing: fn (Builder $query) => $query
+                                ->freeUsers()
+                                ->orWhere('id', auth()->id()),
+                            )
                             ->searchable()
                             ->preload()
+                            ->default(auth()->id())
                             ->required(),
                         Select::make('role')
                             ->label('Роль')
                             ->options(collect(TeamMemberRole::cases())->mapWithKeys(
                                 fn (TeamMemberRole $role) => [$role->value => $role->label()],
                             ))
-                            ->default(TeamMemberRole::Member->value)
+                            ->default(TeamMemberRole::Organizer->value)
                             ->required(),
                         Hidden::make('status')
                             ->default('active'),
