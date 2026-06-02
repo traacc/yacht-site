@@ -116,9 +116,16 @@ class TeamResource extends Resource
                     ->label('Яхта по умолчанию')
                     ->placeholder('Выберите яхту')
                     ->options(fn () => Yacht::where('approval_status', 'approved')
-                        //->where('user_id', auth()->id())
+                        ->where('user_id', auth()->id())
                         ->orderBy('name')
                         ->pluck('name', 'id'))
+                    ->default(function (): ?string {
+                        $yachts = Yacht::where('approval_status', 'approved')
+                            ->where('user_id', auth()->id())
+                            ->get();
+
+                        return $yachts->count() === 1 ? $yachts->first()->id : null;
+                    })
                     ->searchable()
                     ->nullable()
                     ->columnSpanFull(),
