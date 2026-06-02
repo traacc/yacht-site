@@ -52,6 +52,17 @@ class YachtResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
+        $maxFiles       = (int) config('documents.max_files_per_type', 10);
+        $acceptedTypes  = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+        ];
         return $schema
             ->components([
                 Placeholder::make('note_form')
@@ -209,7 +220,36 @@ class YachtResource extends Resource
                     ])
                     ->columns(3),
                 */
-                
+                // ── Дополнительные документы (произвольные) ──
+                Repeater::make('extra_documents')
+                    ->label('Дополнительные документы')
+                    ->columnSpanFull()
+                    ->addActionLabel('Добавить документ')
+                    ->collapsible()
+                    ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
+                    ->schema([
+                        Select::make('doc_type')
+                            ->label('Тип')
+                            ->options(fn () => \App\Models\YachtDocumentType::options())
+                            ->default('other')
+                            ->required(),
+                        TextInput::make('title')
+                            ->label('Название')
+                            ->placeholder('Название документа')
+                            ->required(),
+                        FileUpload::make('files')
+                            ->label('Файлы')
+                            ->multiple()
+                            ->reorderable()
+                            ->appendFiles()
+                            ->directory('documents')
+                            ->disk('public')
+                            ->acceptedFileTypes($acceptedTypes)
+                            ->maxSize(20480)
+                            ->maxFiles($maxFiles)
+                            ->downloadable()
+                            ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
+                    ]),
             ]);
     }
 
