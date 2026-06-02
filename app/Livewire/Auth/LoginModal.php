@@ -21,24 +21,12 @@ class LoginModal extends Component
     public string $sports_category = '';
     public string $phone = '';
 
-
     public string $email = '';
     public string $password = '';
     public string $password_confirmation = '';
     public string $loginCaptchaToken = '';
     public string $registerCaptchaToken = '';
     public bool $remember = false;
-
-    public $selectedDate; 
-    public $minDate;
-    public $maxDate;
-
-    public function mount()
-    {
-        // 2. Инициализируем значения, чтобы Flatpickr знал границы
-        $this->minDate = '1926-01-01'; // 2026-01-01
-        $this->maxDate = '2016-12-31';   // 2026-12-31
-    }
 
 
     public function login()
@@ -76,7 +64,7 @@ class LoginModal extends Component
             'password'              => ['required', Password::defaults(), 'same:password_confirmation'],
             'password_confirmation' => ['required'],
             'phone'                 => ['required'],
-            'birthday'              => ['required'],
+            'birthday'              => ['required', 'date', 'before:today', 'after:1925-12-31'],
             'sports_category'       => ['nullable', Rule::enum(SportCategory::class)],
             //'registerCaptchaToken' => ['required', new YandexCaptcha()],
         ], attributes: [

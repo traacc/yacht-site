@@ -103,47 +103,14 @@
                             <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> 
                         @enderror
                     </div>
-                    <div class="">
-                        <div wire:ignore x-data="{ 
-                        value: @entangle('selectedDate'),
-                                min: '{{ $minDate ?? now()->startOfYear()->toDateString() }}',
-                                max: '{{ $maxDate ?? now()->endOfYear()->toDateString() }}',
-                                initFlatpickr() {
-                                    // 1. Проверяем, существует ли сам DOM-элемент в $refs
-                                    if (!$refs.input) {
-                                        setTimeout(() => this.initFlatpickr(), 30);
-                                        return;
-                                    }
+                    <div>
+                        <input
+                            type="date" id="birthday" wire:model="birthday" placeholder="Дата рождения"
+                            max="2016-12-31" min="1926-01-01"
+                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('birthday') border-red-300 @enderror">
 
-                                    // 2. Проверяем, загружена ли библиотека flatpickr
-                                    if (typeof flatpickr !== 'undefined') {
-                                        flatpickr($refs.input, {
-                                            locale: typeof flatpickrRussian !== 'undefined' ? flatpickrRussian : 'ru',
-                                            altInput: true,
-                                            dateFormat: 'Y-m-d',
-                                            minDate: this.min,
-                                            maxDate: this.max,
-                                            disableMobile: 'true',
-                                            altFormat: 'd.m.Y',
-                                            onChange: (selectedDates, dateStr) => {
-                                                this.value = dateStr;
-                                            }
-                                        });
-                                    } else {
-                                        setTimeout(() => this.initFlatpickr(), 30);
-                                    }
-                                }
-                            }"
-                        x-init="initFlatpickr()">
-                            <input
-                            x-ref="input" 
-                            x-model="value" placeholder="Дата рождения"
-                            type="date" id="birthday" wire:model="birthday" placeholder="Дата рождения" max="2016-12-31" min="1926-01-01"
-                                class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('birthday') border-red-300 @enderror">
-                        </div>
-
-                        @error('birthday') 
-                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> 
+                        @error('birthday')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                         @enderror
                     </div>
 
