@@ -29,6 +29,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+use Illuminate\Database\Eloquent\Builder;
+
 class RegattaResultResource extends Resource
 {
     protected static ?string $model = RegattaResult::class;
@@ -52,7 +54,11 @@ class RegattaResultResource extends Resource
             ->components([
                 Select::make('regatta_id')
                     ->label('Регата')
-                    ->relationship('regatta', 'name')
+                    ->relationship(
+                        name: 'regatta',
+                        titleAttribute:'name',
+                        modifyQueryUsing: fn (Builder $query) => $query->orderBy('date_end', 'desc'),
+                    )
                     ->required()
                     ->columnSpanFull(),
 
