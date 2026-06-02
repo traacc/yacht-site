@@ -37,8 +37,9 @@ bgImage="{{ asset('images/bg/competitions.webp') }}"
 
     {{-- Содержимое вкладки «Календарь регат» --}}
     <div x-show="activeTab === 'calendar'" role="tabpanel">
-        @livewire('regattas-calendar')
         <livewire:regattas-list />
+        @livewire('regattas-calendar')
+        
     </div>
 
     {{-- Содержимое вкладки «Результаты» --}}
