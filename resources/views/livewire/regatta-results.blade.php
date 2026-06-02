@@ -118,7 +118,7 @@
                                                 <span class="text-brand-gray">0 участников</span>
                                             @endif
                                         </td>
-                                        <td data-label="Очки" class="py-3">{{ $result->total_points }}</td>
+                                        <td data-label="Очки" class="py-3">{{ number_format($result->total_points, 1, ',', ' ') }}</td>
                                     </tr>
                                 @empty
                                     <tr>
@@ -208,7 +208,7 @@
                                                 <span class="text-brand-gray">0 участников</span>
                                             @endif
                                         </td>
-                                        <td class="py-3">{{ $result->total_points }}</td>
+                                        <td class="py-3">{{ number_format($result->total_points, 1, ',', ' ') }}</td>
                                     </tr>
                                 @empty
                                     <tr>
@@ -311,7 +311,7 @@
                                                         <span class="text-brand-gray">0 участников</span>
                                                     @endif
                                                 </td>
-                                                <td data-label="Очки" class="py-3">{{ $result->total_points }}</td>
+                                                <td data-label="Очки" class="py-3">{{ number_format($result->total_points, 1, ',', ' ') }}</td>
                                             </tr>
                                         @empty
                                             <tr>
