@@ -108,11 +108,12 @@
                                         <td data-label="Яхта" class="py-3">{{ $result->yacht?->name ?? '—' }}</td>
                                         <td data-label="Парус №" class="py-3">{{ $result->yacht?->vfps_number ?? '—' }}</td>
                                         <td data-label="Участники" class="py-3">
-                                            @if($result->team && $result->team->activeMembers?->isNotEmpty())
+                                            @php $crew = $crewMaps[$regatta->id][$result->team_id] ?? []; @endphp
+                                            @if(!empty($crew))
                                                 <button
-                                                    wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($this->buildMembersPayload($result->team)) }})"
+                                                    wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})"
                                                     class="text-[#2D92CE] font-medium underline hover:no-underline cursor-pointer bg-transparent border-0 p-0">
-                                                    {{ $result->team->activeMembers->count() }} участников
+                                                    {{ count($crew) }} участников
                                                 </button>
                                             @else
                                                 <span class="text-brand-gray">0 участников</span>
@@ -198,11 +199,12 @@
                                         <td class="py-3">{{ $result->yacht?->name ?? '—' }}</td>
                                         <td class="py-3">{{ $result->yacht?->vfps_number ?? '—' }}</td>
                                         <td class="py-3">
-                                            @if($result->team && $result->team->activeMembers?->isNotEmpty())
+                                            @php $crew = $crewMap[$result->team_id] ?? []; @endphp
+                                            @if(!empty($crew))
                                                 <button
-                                                    wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($this->buildMembersPayload($result->team)) }})"
+                                                    wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})"
                                                     class="text-[#2D92CE] font-medium underline hover:no-underline cursor-pointer bg-transparent border-0 p-0">
-                                                    {{ $result->team->activeMembers->count() }} участников
+                                                    {{ count($crew) }} участников
                                                 </button>
                                             @else
                                                 <span class="text-brand-gray">0 участников</span>
@@ -301,11 +303,12 @@
                                                 <td data-label="Яхта" class="py-3">{{ $result->yacht?->name ?? '—' }}</td>
                                                 <td data-label="Парус №" class="py-3">{{ $result->yacht?->vfps_number ?? '—' }}</td>
                                                 <td data-label="Участники" class="py-3">
-                                                    @if($result->team && $result->team->activeMembers?->isNotEmpty())
+                                                    @php $crew = $crewMap[$result->team_id] ?? []; @endphp
+                                                    @if(!empty($crew))
                                                         <button
-                                                            wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($this->buildMembersPayload($result->team)) }})"
+                                                            wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})"
                                                             class="text-[#2D92CE] font-medium underline hover:no-underline cursor-pointer bg-transparent border-0 p-0">
-                                                            {{ $result->team->activeMembers->count() }} участников
+                                                            {{ count($crew) }} участников
                                                         </button>
                                                     @else
                                                         <span class="text-brand-gray">0 участников</span>

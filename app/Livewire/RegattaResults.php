@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Regatta;
+use App\Models\RegattaEntry;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\SettingsService;
@@ -162,18 +163,37 @@ class RegattaResults extends Component
     // ──────────────────────────────────────────────
 
     /**
-     * Формирует массив участников команды для передачи в модальное окно.
+     * Строит карту экипажа: team_id → массив участников, заявленных на регату (через RegattaEntryCrew).
      */
-    public function buildMembersPayload(\App\Models\Team $team): array
+    protected function buildCrewMap(Regatta $regatta, Collection $resultItems): array
     {
-        return $team->activeMembers
-            ?->map(fn ($m) => [
-                'name'     => $m->full_name ?? '',
-                'birthday' => $m->birth_date?->format('d.m.Y') ?? '—',
-                'rank'     => $m->sport_category ?? '—',
-            ])
-            ->values()
-            ->toArray() ?? [];
+        $teamIds = $resultItems->pluck('team_id')->filter()->unique()->values()->toArray();
+
+        if (empty($teamIds)) {
+            return [];
+        }
+
+        $entries = RegattaEntry::where('regatta_id', $regatta->id)
+            ->whereIn('team_id', $teamIds)
+            ->with(['crew.teamMember.user'])
+            ->get();
+
+        $crewMap = [];
+        foreach ($entries as $entry) {
+            $crewList = $entry->crew->map(fn ($c) => [
+                'name'     => $c->teamMember->user->full_name ?? '',
+                'birthday' => $c->teamMember->user->birth_date?->format('d.m.Y') ?? '—',
+                'rank'     => $c->teamMember->user->sport_category ?? '—',
+            ])->toArray();
+
+            // Если у команды несколько заявок (разные яхты) — объединяем экипаж
+            $crewMap[$entry->team_id] = array_merge(
+                $crewMap[$entry->team_id] ?? [],
+                $crewList
+            );
+        }
+
+        return $crewMap;
     }
 
     /**
@@ -184,7 +204,6 @@ class RegattaResults extends Component
         return [
             'results.items'                       => fn ($q) => $q->orderBy('final_position'),
             'results.items.team.organizer',
-            'results.items.team.activeMembers',
             'results.items.yacht',
             'season',
         ];
@@ -209,6 +228,8 @@ class RegattaResults extends Component
     {
         $regatta     = $this->resolveRegatta();
         $resultItems = $regatta?->results?->flatMap->items ?? collect();
+
+        $crewMap = $regatta ? $this->buildCrewMap($regatta, $resultItems) : [];
 
         $topTeams        = collect();
         $topParticipants = collect();
@@ -237,19 +258,22 @@ class RegattaResults extends Component
                 ->values();
         }
 
-        return compact('regatta', 'resultItems', 'topTeams', 'topParticipants');
+        return compact('regatta', 'resultItems', 'topTeams', 'topParticipants', 'crewMap');
     }
 
     private function renderList(): array
     {
-        $regattas = $this->resolveRegattas()
-            ->each(fn ($r) => $r->setRelation(
-                'resultItems',
-                $r->results->flatMap->items
-            ));
+        $crewMaps = [];
+        $regattas = $this->resolveRegattas();
+
+        $regattas->each(function ($r) use (&$crewMaps) {
+            $resultItems = $r->results->flatMap->items ?? collect();
+            $r->setRelation('resultItems', $resultItems);
+            $crewMaps[$r->id] = $this->buildCrewMap($r, $resultItems);
+        });
 
         $availableYears = $this->availableYears();
 
-        return compact('regattas', 'availableYears');
+        return compact('regattas', 'availableYears', 'crewMaps');
     }
 }
