@@ -16,7 +16,7 @@ bgImage="{{ asset('images/bg/teams.webp') }}"
                     @guest
                     <button @click="$dispatch('open-login-modal', { tab: 'register' })" class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-4 transition-colors cursor-pointer">Зарегистрировать команду  →</button>
                     @else
-                    <a href="/user/teams" class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-1.5 sm:px-2 md:px-4 transition-colors tracking-tighter md:tracking-normal">Зарегистрировать команду  →</a>
+                    <a href="/user/teams/?action=create" class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-2 px-1.5 sm:px-2 md:px-4 transition-colors tracking-tighter md:tracking-normal">Зарегистрировать команду  →</a>
                     @endguest
                     <div class="flex gap-1 md:gap-2">
                         <button @click="view = 'grid'" :class="view === 'grid' ? 'text-[#2D92CE]' : 'text-[#2E325C]'" class="p-2">
