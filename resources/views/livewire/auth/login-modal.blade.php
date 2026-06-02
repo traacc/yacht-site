@@ -125,7 +125,6 @@
                                             maxDate: this.max,
                                             disableMobile: 'true',
                                             altFormat: 'd.m.Y',
-                                            allowInput: true,
                                             onChange: (selectedDates, dateStr) => {
                                                 this.value = dateStr;
                                             }
