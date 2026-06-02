@@ -47,7 +47,15 @@ class RegattaEntryResource extends Resource
         $user = auth()->user();
 
         return parent::getEloquentQuery()
-            ->whereHas('team', fn (Builder $q) => $q->visibleForUser($user));
+            ->whereHas('team', fn (Builder $q) => $q->visibleForUser($user))
+            ->whereHas('regatta', fn (Builder $q) => $q->whereIn(
+                'regatta_status',
+                [
+                    \App\Enums\RegattaStatus::Closest->value,
+                    \App\Enums\RegattaStatus::Upcoming->value,
+                    \App\Enums\RegattaStatus::Active->value,
+                ],
+            ));
     }
 
     public static function form(Schema $schema): Schema

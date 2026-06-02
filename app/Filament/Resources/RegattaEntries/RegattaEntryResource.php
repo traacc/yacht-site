@@ -25,6 +25,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class RegattaEntryResource extends Resource
 {
@@ -40,6 +41,19 @@ class RegattaEntryResource extends Resource
     public static function getPluralModelLabel(): string
     {
         return 'Заявки на регату';
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->whereHas('regatta', fn (Builder $q) => $q->whereIn(
+                'regatta_status',
+                [
+                    \App\Enums\RegattaStatus::Closest->value,
+                    \App\Enums\RegattaStatus::Upcoming->value,
+                    \App\Enums\RegattaStatus::Active->value,
+                ],
+            ));
     }
 
     public static function form(Schema $schema): Schema
