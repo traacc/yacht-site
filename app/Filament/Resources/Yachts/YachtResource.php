@@ -214,9 +214,9 @@ class YachtResource extends Resource
                     ->collapsible()
                     ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
                     ->schema([
-                        Select::make('doc_type')
+                        Hidden::make('doc_type')
                             ->label('Тип')
-                            ->options(fn () => \App\Models\YachtDocumentType::options())
+                            //->options(fn () => \App\Models\YachtDocumentType::options())
                             ->default('other')
                             ->required(),
                         TextInput::make('title')
