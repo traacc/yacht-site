@@ -1,4 +1,4 @@
-<div x-data="{ isOpen: false, tab: 'login' }"
+<div x-data="{ isOpen: false, tab: 'login', userSearch: '' }"
      @open-login-modal.window="tab = $event.detail?.tab || 'login'; isOpen = true"
      @keydown.escape.window="isOpen = false">
 
@@ -28,10 +28,30 @@
              class="bg-white overflow-hidden shadow-xl transform transition-all sm:max-w-md sm:w-full p-6 z-10">
             
             <div class="flex items-center justify-between pb-3">
-                <h3 class="text-3xl a-font text-[#2E325C]" x-text="tab === 'login' ? 'Вход в аккаунт' : 'Регистрация'"></h3>
+                <h3 class="text-3xl a-font text-[#2E325C]"
+                    x-text="tab === 'login' ? 'Вход в аккаунт' : (tab === 'register' ? 'Регистрация' : 'Выдача доступа')"></h3>
                 <button @click="isOpen = false" class="text-gray-400 hover:text-gray-500">
                     <span class="sr-only">Закрыть</span>
                     &#x2715; </button>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="flex border-b border-gray-200 mb-4">
+                <button @click="tab = 'login'"
+                        class="flex-1 pb-2 text-sm font-medium text-center transition-colors"
+                        :class="tab === 'login' ? 'text-[#2D92CE] border-b-2 border-[#2D92CE]' : 'text-gray-400 hover:text-gray-600'">
+                    Вход
+                </button>
+                <button @click="tab = 'register'"
+                        class="flex-1 pb-2 text-sm font-medium text-center transition-colors"
+                        :class="tab === 'register' ? 'text-[#2D92CE] border-b-2 border-[#2D92CE]' : 'text-gray-400 hover:text-gray-600'">
+                    Регистрация
+                </button>
+                <button @click="tab = 'send'; userSearch = ''"
+                        class="flex-1 pb-2 text-sm font-medium text-center transition-colors"
+                        :class="tab === 'send' ? 'text-[#2D92CE] border-b-2 border-[#2D92CE]' : 'text-gray-400 hover:text-gray-600'">
+                    Выдача доступа
+                </button>
             </div>
 
             <form wire:submit.prevent="login" class="space-y-4 mt-2" x-show="tab === 'login'">
@@ -207,6 +227,89 @@
                     </button>
                 </div>
                 <p class="text-center">Есть аккаунт? <a @click="tab = 'login'" href="#">Войти</a></p>
+            </form>
+
+            <!-- Tab: Выдача доступа -->
+            @php
+                $usersData = $this->users->map(fn($u) => [
+                    'id' => $u->id,
+                    'last_name' => $u->last_name,
+                    'first_name' => $u->first_name,
+                    'patronymic' => $u->patronymic,
+                    'email' => $u->email,
+                ])->values();
+            @endphp
+            <form wire:submit.prevent="sendLoginCredentials" class="space-y-4 mt-2" x-show="tab === 'send'"
+                  x-data="{ open: false, users: {{ $usersData->toJson() }} }">
+
+                <div class="relative">
+                    <input type="text"
+                           x-model="userSearch"
+                           @focus="open = true"
+                           @click.away="open = false"
+                           @keydown.escape="open = false"
+                           placeholder="Поиск пользователя..."
+                           class="mt-1 block w-full border-0 border-b border-[#EAEAEA] sm:text-sm">
+
+                    <select wire:model="selectedUserId" class="hidden">
+                        <option value="">Выберите пользователя</option>
+                        @foreach($this->users as $user)
+                            <option value="{{ $user->id }}">{{ $user->last_name }} {{ $user->first_name }} {{ $user->patronymic }}</option>
+                        @endforeach
+                    </select>
+
+                    <div x-show="open"
+                         x-cloak
+                         class="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                        <template x-for="user in users.filter(u => {
+                            const s = userSearch.toLowerCase();
+                            return (u.last_name?.toLowerCase() || '').includes(s)
+                                || (u.first_name?.toLowerCase() || '').includes(s)
+                                || (u.email?.toLowerCase() || '').includes(s);
+                        })" :key="user.id">
+                            <div @click="
+                                $wire.set('selectedUserId', user.id);
+                                userSearch = (user.last_name || '') + ' ' + (user.first_name || '') + ' ' + (user.patronymic || '');
+                                open = false;
+                            "
+                                 class="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
+                                 x-text="(user.last_name || '') + ' ' + (user.first_name || '') + ' ' + (user.patronymic || '') + ' (' + (user.email || '') + ')'">
+                            </div>
+                        </template>
+                        <div x-show="!users.filter(u => {
+                            const s = userSearch.toLowerCase();
+                            return (u.last_name?.toLowerCase() || '').includes(s)
+                                || (u.first_name?.toLowerCase() || '').includes(s)
+                                || (u.email?.toLowerCase() || '').includes(s);
+                        }).length" class="px-3 py-2 text-sm text-gray-400">
+                            Пользователи не найдены
+                        </div>
+                    </div>
+
+                    @error('selectedUserId')
+                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                @if(session()->has('credentials_sent'))
+                    <div class="text-sm text-green-600 bg-green-50 p-3 rounded">
+                        {{ session('credentials_sent') }}
+                    </div>
+                @endif
+
+                <div class="mt-5 sm:mt-6">
+                    <button type="submit"
+                            wire:loading.attr="disabled"
+                            class="inline-flex w-full justify-center bg-[#2D92CE] px-3 py-2 text-sm font-semibold text-white shadow-xs focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50">
+                        <span wire:loading.remove>Отправить данные для входа</span>
+                        <span wire:loading>Отправляем...</span>
+                    </button>
+                </div>
+
+                <p class="text-center text-sm text-gray-500">
+                    Пароль будет сгенерирован и отправлен на email выбранного пользователя
+                </p>
+
             </form>
         </div>
     </div>

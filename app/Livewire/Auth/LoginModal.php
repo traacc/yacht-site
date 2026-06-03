@@ -3,9 +3,11 @@
 namespace App\Livewire\Auth;
 
 use App\Enums\SportCategory;
+use App\Mail\SendLoginCredentials;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
@@ -28,6 +30,10 @@ class LoginModal extends Component
     public string $loginCaptchaToken = '';
     public string $registerCaptchaToken = '';
     public bool $remember = false;
+
+    // Данные для отправки credentials
+    public string $selectedUserId = '';
+    public string $sendStatus = '';
 
 
     public function login()
@@ -105,6 +111,37 @@ class LoginModal extends Component
 
         // 3. Редирект на главную или в личный кабинет
         return $this->redirect(route('home'), navigate: true);
+    }
+
+    public function sendLoginCredentials()
+    {
+        $this->validate([
+            'selectedUserId' => ['required', 'exists:users,id'],
+        ], attributes: [
+            'selectedUserId' => 'пользователь',
+        ]);
+
+        $user = User::findOrFail($this->selectedUserId);
+
+        $email = $user->email;
+        $password = \Illuminate\Support\Str::random(12);
+
+        $user->password = Hash::make($password);
+        $user->save();
+
+        Mail::to($user)->send(new SendLoginCredentials($user, $email, $password));
+
+        session()->flash('credentials_sent', 'Данные для входа отправлены на почту пользователю ' . $user->full_name);
+        $this->selectedUserId = '';
+    }
+
+    public function getUsersProperty()
+    {
+        return User::query()
+            ->whereNotNull('email')
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get(['id', 'last_name', 'first_name', 'patronymic', 'email']);
     }
 
     public function render()
