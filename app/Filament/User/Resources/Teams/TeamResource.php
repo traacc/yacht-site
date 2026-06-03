@@ -106,7 +106,9 @@ class TeamResource extends Resource
                 TextInput::make('name')
                     ->label('Название')
                     ->placeholder('Введите названия команды')
-                    ->required()->columnSpanFull(),
+                    ->required()
+                    ->unique(table: 'teams', column: 'name', ignorable: fn (?Team $record) => $record)
+                    ->columnSpanFull(),
                 Textarea::make('description')
                     ->label('Описание')
                     ->placeholder('Описание команды')

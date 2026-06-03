@@ -66,7 +66,9 @@ class TeamResource extends Resource
                 TextInput::make('name')
                     ->label('Название')
                     ->placeholder('Введите названия команды')
-                    ->required()->columnSpanFull(),
+                    ->required()
+                    ->unique(table: 'teams', column: 'name', ignorable: fn (?Team $record) => $record)
+                    ->columnSpanFull(),
                 TextInput::make('formatted_external_id')
                     ->label('ID')
                     ->readOnly()
