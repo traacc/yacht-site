@@ -308,4 +308,18 @@
   outline: 2px solid #0056b3;
   outline-offset: 2px;
   }
+
+  /* Style the input to hide the default browser indicators initially */
+  .date-placeholder::before {
+    content: "Select a date";
+    color: #aaa;
+    margin-right: 0.5em;
+  }
+
+  /* Hide the pseudo-element text once a date is chosen or focused */
+  .date-placeholder:focus::before,
+  .date-placeholder:valid::before {
+    content: "";
+    display: none;
+  }
 }
