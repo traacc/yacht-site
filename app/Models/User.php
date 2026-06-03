@@ -111,9 +111,9 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
                 return [
                     'first_name' => $value,
                     'name'       => trim(
+                        ($this->last_name ?? '') . ' ' .
                         ($value ?? '') . ' ' .
-                        ($this->patronymic ?? '') . ' ' .
-                        ($this->last_name ?? '')
+                        ($this->patronymic ?? '')
                     ),
                 ];
             }
@@ -128,9 +128,9 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
                 return [
                     'last_name' => $value,
                     'name'      => trim(
+                        ($value ?? '') . ' ' .
                         ($this->first_name ?? '') . ' ' .
-                        ($this->patronymic ?? '') . ' ' .
-                        ($value ?? '')
+                        ($this->patronymic ?? '')
                     ),
                 ];
             }
@@ -145,9 +145,9 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
                 return [
                     'patronymic' => $value,
                     'name'       => trim(
+                        ($this->last_name ?? '') . ' ' .
                         ($this->first_name ?? '') . ' ' .
-                        ($value ?? '') . ' ' .
-                        ($this->last_name ?? '')
+                        ($value ?? '')
                     ),
                 ];
             }
