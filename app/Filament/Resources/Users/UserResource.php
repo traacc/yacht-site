@@ -175,7 +175,7 @@ class UserResource extends Resource
                     ->searchable(),
                 TextColumn::make('last_name')
                     ->label('Фамилия')
-                    ->searchable(),
+                    ->searchable()->sortable(),
                 TextColumn::make('birth_date')
                     ->label('Дата рождения')
                     ->date()->dateTime('d M Y')
