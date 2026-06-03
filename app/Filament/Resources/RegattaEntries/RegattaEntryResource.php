@@ -44,7 +44,7 @@ class RegattaEntryResource extends Resource
         return 'Заявки на регату';
     }
 
-    /*public static function getEloquentQuery(): Builder
+    public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
             ->whereHas('regatta', fn (Builder $q) => $q->whereIn(
@@ -55,7 +55,7 @@ class RegattaEntryResource extends Resource
                     \App\Enums\RegattaStatus::Active->value,
                 ],
             ));
-    }*/
+    }
 
     public static function form(Schema $schema): Schema
     {
