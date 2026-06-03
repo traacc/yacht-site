@@ -208,6 +208,7 @@ class TeamResource extends Resource
                     ->label('Участники')
                     ->sortable(),
                 // Роль текущего пользователя в команде
+                /*
                 TextColumn::make('current_user_role')
                     ->label('Ваша роль')
                     ->state(function (Team $record): string {
@@ -221,6 +222,7 @@ class TeamResource extends Resource
                         'Участник' => 'gray',
                         default => 'gray',
                     }),
+                */
                 TextColumn::make('approval_status')
                     ->label('Статус')
                     ->badge()->formatStateUsing(fn (string $state): string => match ($state) {
