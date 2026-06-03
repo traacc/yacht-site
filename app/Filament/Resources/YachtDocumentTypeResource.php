@@ -7,9 +7,10 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\YachtDocumentTypes\Pages\ManageDocumentTypes;
 use App\Models\YachtDocumentType;
 use BackedEnum;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Resources\Resource;
@@ -54,8 +55,6 @@ class YachtDocumentTypeResource extends Resource
     {
         return $schema
             ->components([
-
-
                 TextInput::make('label')
                     ->label('Название')
                     ->placeholder('ORC-сертификат')
@@ -69,14 +68,16 @@ class YachtDocumentTypeResource extends Resource
                     ->rows(2)
                     ->maxLength(500),
 
-                Hidden::make('is_configurable')
-                    ->label('Обязателен')
+                Toggle::make('is_configurable')
+                    ->label('Настраиваемый')
+                    ->helperText('Можно ли настроить обязательность этого типа документов')
                     ->default(true),
 
                 TextInput::make('sort_order')
                     ->label('Порядок')
                     ->numeric()
                     ->default(0),
+
                 TextInput::make('key')
                     ->label('Ключ')
                     ->placeholder('orc_certificate')
@@ -84,7 +85,7 @@ class YachtDocumentTypeResource extends Resource
                     ->unique(table: 'yacht_document_types', column: 'key', ignoreRecord: true)
                     ->helperText('Уникальный строковый идентификатор. Только латиница, цифры и подчёркивание.')
                     ->regex('/^[a-z][a-z0-9_]+$/')
-                    ->maxLength(100)
+                    ->maxLength(100),
             ]);
     }
 
@@ -97,11 +98,39 @@ class YachtDocumentTypeResource extends Resource
                     ->searchable()
                     ->sortable(),
 
+                TextColumn::make('sort_order')
+                    ->label('Порядок')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('sort_order')
             ->reorderable('sort_order')
             ->paginated(false)
-            ->emptyStateHeading('Типов документов пока нет');
+            ->emptyStateHeading('Типов документов пока нет')
+            ->recordActions([
+                EditAction::make()
+                    ->modalHeading('Редактировать тип документа')
+                    ->modalSubmitActionLabel('Сохранить')
+                    ->hiddenLabel(),
+
+                DeleteAction::make()
+                    ->modalHeading('Удалить тип документа')
+                    ->modalDescription('Вы уверены, что хотите удалить этот тип документа?')
+                    ->modalSubmitActionLabel('Удалить')
+                    ->hiddenLabel()
+                    ->before(function (DeleteAction $action) {
+                        /** @var YachtDocumentType $record */
+                        $record = $action->getRecord();
+                        if ($record->isUsedInDocuments()) {
+                            \Filament\Notifications\Notification::make()
+                                ->title("Тип «{$record->label}» используется в {$record->usageCount()} документах и не может быть удалён.")
+                                ->danger()
+                                ->send();
+
+                            $action->halt();
+                        }
+                    }),
+            ]);
     }
 
     public static function getPages(): array
