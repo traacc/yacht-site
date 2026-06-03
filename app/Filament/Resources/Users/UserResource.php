@@ -173,6 +173,9 @@ class UserResource extends Resource
                 TextColumn::make('name')
                     ->label('Имя пользователя')
                     ->searchable(),
+                TextColumn::make('last_name')
+                    ->label('Фамилия')
+                    ->searchable(),
                 TextColumn::make('birth_date')
                     ->label('Дата рождения')
                     ->date()->dateTime('d M Y')
