@@ -238,7 +238,19 @@
       white-space: nowrap;
     }
   }
+  /* Style the input to hide the default browser indicators initially */
+  .date-placeholder::before {
+    content: "Дата рождения";
+    color: #aaa;
+    margin-right: 0.5em;
+  }
 
+  /* Hide the pseudo-element text once a date is chosen or focused */
+  .date-placeholder:focus::before,
+  .date-placeholder:valid::before {
+    content: "";
+    display: none;
+  }
   /* Custom checkbox */
     /* Контейнер для всего компонента */
   .custom-checkbox {
@@ -309,17 +321,5 @@
   outline-offset: 2px;
   }
 
-  /* Style the input to hide the default browser indicators initially */
-  .date-placeholder::before {
-    content: "Дата рождения";
-    color: #aaa;
-    margin-right: 0.5em;
-  }
 
-  /* Hide the pseudo-element text once a date is chosen or focused */
-  .date-placeholder:focus::before,
-  .date-placeholder:valid::before {
-    content: "";
-    display: none;
-  }
 }

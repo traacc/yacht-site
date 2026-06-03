@@ -106,7 +106,7 @@
                     <div>
                         <input
                             type="date" id="birthday" wire:model="birthday" placeholder="Дата рождения"
-                            max="2016-12-31" min="1926-01-01"
+                            max="2016-12-31" min="1926-01-01" required
                             class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs placeholder:text-[#acb0b9] focus:border-indigo-500 focus:ring-indigo-500 text-xs date-placeholder md:text-base @error('birthday') border-red-300 @enderror">
 
                         @error('birthday')
