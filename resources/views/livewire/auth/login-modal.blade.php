@@ -104,6 +104,13 @@
                         @enderror
                     </div>
                     <div>
+                        <input type="text" id="patronymic" wire:model="patronymic" placeholder="Отчество"
+                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('last_name') border-red-300 @enderror">
+                        @error('patronymic') 
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> 
+                        @enderror
+                    </div>
+                    <div>
                         <input
                             type="date" id="birthday" wire:model="birthday" placeholder="Дата рождения"
                             max="2016-12-31" min="1926-01-01" required

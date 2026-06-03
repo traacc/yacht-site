@@ -17,6 +17,7 @@ class LoginModal extends Component
     // Поля формы
     public string $first_name = '';
     public string $last_name = '';
+    public string $patronymic = '';
     public string $birthday = '';
     public string $sports_category = '';
     public string $phone = '';
@@ -60,6 +61,7 @@ class LoginModal extends Component
         $this->validate([
             'first_name'            => ['required', 'string', 'max:255'],
             'last_name'             => ['required', 'string', 'max:255'],
+            'patronymic'            => ['required', 'string', 'max:255'],
             'email'                 => ['required', 'email', 'unique:users,email'],
             'password'              => ['required', Password::defaults(), 'same:password_confirmation'],
             'password_confirmation' => ['required'],
@@ -71,6 +73,7 @@ class LoginModal extends Component
             'registerCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
             'first_name'            => 'имя',
             'last_name'             => 'фамилия',
+            'patronymic'            => 'отчество',
             'email'                 => 'email',
             'phone'                 => 'телефон',
             'birthday'              => 'дата рождения',
@@ -85,6 +88,7 @@ class LoginModal extends Component
             'name'           => $this->first_name . ' ' . $this->last_name,
             'first_name'     => $this->first_name,
             'last_name'      => $this->last_name,
+            'patronymic'      => $this->patronymic,
             'email'          => $this->email,
             'phone'          => $this->phone ?: null,
             'birth_date'     => $this->birthday ?: null,

@@ -31,6 +31,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         'name',
         'first_name',
         'last_name',
+        'patronymic',
         'birth_date',
         'sport_category',
         'email',
@@ -99,7 +100,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 
     public function getFullNameAttribute(): string
     {
-        return "{$this->first_name} {$this->last_name}";
+        return trim(" {$this->last_name} {$this->first_name} {$this->patronymic}");
     }
 
     protected function firstName(): Attribute
@@ -109,7 +110,11 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             set: function (?string $value) {
                 return [
                     'first_name' => $value,
-                    'name'       => trim(($value ?? '') . ' ' . ($this->last_name ?? '')),
+                    'name'       => trim(
+                        ($value ?? '') . ' ' .
+                        ($this->patronymic ?? '') . ' ' .
+                        ($this->last_name ?? '')
+                    ),
                 ];
             }
         );
@@ -122,7 +127,28 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             set: function (?string $value) {
                 return [
                     'last_name' => $value,
-                    'name'      => trim(($this->first_name ?? '') . ' ' . ($value ?? '')),
+                    'name'      => trim(
+                        ($this->first_name ?? '') . ' ' .
+                        ($this->patronymic ?? '') . ' ' .
+                        ($value ?? '')
+                    ),
+                ];
+            }
+        );
+    }
+
+    protected function patronymic(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => $value,
+            set: function (?string $value) {
+                return [
+                    'patronymic' => $value,
+                    'name'       => trim(
+                        ($this->first_name ?? '') . ' ' .
+                        ($value ?? '') . ' ' .
+                        ($this->last_name ?? '')
+                    ),
                 ];
             }
         );

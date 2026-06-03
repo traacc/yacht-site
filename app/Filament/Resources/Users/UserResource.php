@@ -80,7 +80,10 @@ class UserResource extends Resource
                 TextInput::make('last_name')
                     ->label('Фамилия')
                     ->placeholder('Фамилия')
-                    ->required(),
+                    ->required(),                        
+                TextInput::make('patronymic')
+                    ->label('Отчество')
+                    ->maxLength(255),
                 DatePicker::make('birth_date')
                     ->minDate(now()->subYears(100)) 
                     ->maxDate(now()->addYears(100))

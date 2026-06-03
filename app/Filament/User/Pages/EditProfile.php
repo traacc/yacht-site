@@ -96,6 +96,9 @@ class EditProfile extends BaseEditProfile
                         TextInput::make('last_name')
                             ->label('Фамилия')
                             ->maxLength(255),
+                        TextInput::make('patronymic')
+                            ->label('Отчество')
+                            ->maxLength(255),
                         DatePicker::make('birth_date')
                             ->label('Дата рождения')
                             ->minDate(now()->subYears(100)) 
