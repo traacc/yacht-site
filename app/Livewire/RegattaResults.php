@@ -183,7 +183,7 @@ class RegattaResults extends Component
             $crewList = $entry->crew->map(fn ($c) => [
                 'name'     => $c->teamMember->user->full_name ?? '',
                 'birthday' => $c->teamMember->user->birth_date?->format('d.m.Y') ?? '—',
-                'rank'     => $c->teamMember->user->sport_category ?? '—',
+                'rank'     => $c->teamMember->user->sport_category?->getLabel() ?? '—',
             ])->toArray();
 
             // Если у команды несколько заявок (разные яхты) — объединяем экипаж
