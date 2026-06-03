@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\RegattaEntries;
 
 use App\Filament\Resources\RegattaEntries\Pages\ManageRegattaEntries;
+use App\Models\Team;
 use App\Models\RegattaEntry;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
@@ -43,7 +44,7 @@ class RegattaEntryResource extends Resource
         return 'Заявки на регату';
     }
 
-    public static function getEloquentQuery(): Builder
+    /*public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
             ->whereHas('regatta', fn (Builder $q) => $q->whereIn(
@@ -54,7 +55,7 @@ class RegattaEntryResource extends Resource
                     \App\Enums\RegattaStatus::Active->value,
                 ],
             ));
-    }
+    }*/
 
     public static function form(Schema $schema): Schema
     {
@@ -124,19 +125,62 @@ class RegattaEntryResource extends Resource
                 Repeater::make('crew')
                     ->label('Экипаж')
                     ->columnSpanFull()
-                    ->addable(false)
-                    ->deletable(false)
+                    ->addable(true)
+                    ->deletable(true)
                     ->reorderable(false)
-                    ->default(fn (Get $get): array => static::buildCrewDefaults($get('team_id')))
+                    ->default([])
                     ->columns(1)
                     ->itemLabel(fn (array $state): string => ($state['member_name'] ?? 'Участник') . ' — ' . match ($state['role'] ?? '') {
-                        'main'            => 'Основной',
-                        'reserve'         => 'Запасной',
+                        'main'              => 'Основной',
+                        'reserve'           => 'Запасной',
                         'not_participating' => 'Не участвует',
-                        default           => '—',
+                        default             => '—',
                     })
                     ->schema([
-                        Hidden::make('team_member_id'),
+                        Select::make('team_member_id')
+                            ->label('Участник')
+                            ->options(function (Get $get): array {
+                                $teamId = $get('../../team_id');
+                                if (! $teamId) {
+                                    return [];
+                                }
+
+                                $team = Team::find($teamId);
+                                if (! $team) {
+                                    return [];
+                                }
+
+                                return $team->members()
+                                    ->wherePivot('status', 'active')
+                                    ->get()
+                                    ->mapWithKeys(fn (\App\Models\User $user): array => [
+                                        $user->pivot->id => $user->name,
+                                    ])
+                                    ->all();
+                            })
+                            ->required()
+                            ->live()
+                            ->searchable()
+                            ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                            ->afterStateUpdated(function (?string $state, Set $set, Get $get): void {
+                                if (! $state) {
+                                    $set('member_name', '');
+                                    return;
+                                }
+
+                                $teamId = $get('../../../team_id');
+                                if (! $teamId) {
+                                    return;
+                                }
+
+                                $team = Team::find($teamId);
+                                $member = $team?->members()
+                                    ->wherePivot('status', 'active')
+                                    ->wherePivot('id', $state)
+                                    ->first();
+
+                                $set('member_name', $member?->name ?? '');
+                            }),
                         Hidden::make('member_name'),
                         Select::make('role')
                             ->label('Роль')
