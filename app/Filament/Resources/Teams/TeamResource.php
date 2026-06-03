@@ -115,7 +115,22 @@ class TeamResource extends Resource
                     ->schema([
                         Select::make('user_id')
                             ->label('Пользователь')
-                            ->relationship('user', 'name')
+                            ->relationship(
+                                name: 'user',
+                                titleAttribute: 'name',
+                                modifyQueryUsing: fn (Builder $query, $component) => $query
+                                    ->where(function (Builder $q) use ($component) {
+                                        $q->freeUsers();
+
+                                        $livewire = $component?->getLivewire();
+                                        if ($livewire && method_exists($livewire, 'getMountedTableActionRecord')) {
+                                            $record = $livewire->getMountedTableActionRecord();
+                                            if ($record) {
+                                                $q->orWhereHas('teamMemberships', fn (Builder $q2) => $q2->where('team_id', $record->getKey()));
+                                            }
+                                        }
+                                    }),
+                            )
                             ->searchable()
                             ->preload()
                             ->required(),
