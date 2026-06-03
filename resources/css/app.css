@@ -311,7 +311,7 @@
 
   /* Style the input to hide the default browser indicators initially */
   .date-placeholder::before {
-    content: "Select a date";
+    content: "Дата рождения";
     color: #aaa;
     margin-right: 0.5em;
   }
