@@ -54,7 +54,12 @@ class RegattaEntryResource extends Resource
                     \App\Enums\RegattaStatus::Upcoming->value,
                     \App\Enums\RegattaStatus::Active->value,
                 ],
-            ));
+            ))
+            ->orderBy(
+                \App\Models\Regatta::select('date_start')
+                    ->whereColumn('regattas.id', 'regatta_entries.regatta_id'),
+                'asc'
+            );
     }
 
     public static function form(Schema $schema): Schema
@@ -308,7 +313,6 @@ class RegattaEntryResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->defaultSort('created_at', 'desc')
             ->stackedOnMobile()
             ->emptyStateHeading('Записей пока нет')
             ->filters([])
