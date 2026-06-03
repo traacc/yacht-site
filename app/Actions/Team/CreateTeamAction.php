@@ -32,15 +32,22 @@ final class CreateTeamAction
             'picture'         => $data['picture'] ?? null,
         ]);
 
-        // Автоматически добавляем создателя как организатора команды
-        TeamMember::create([
-            'team_id'   => $team->id,
-            'user_id'   => $organizer->id,
-            'role'      => 'organizer',
-            'status'    => 'active',
-            'joined_at' => now(),
-        ]);
-
+        /*
+        // Автоматически добавляем создателя как организатора команды.
+        // firstOrCreate — защита от повторного создания при сохранении
+        // relationship-данных из Filament Repeater.
+        TeamMember::firstOrCreate(
+            [
+                'team_id' => $team->id,
+                'user_id' => $organizer->id,
+            ],
+            [
+                'role'      => 'organizer',
+                'status'    => 'active',
+                'joined_at' => now(),
+            ],
+        );
+        */
         // Добавляем начальных участников, если они были выбраны в форме
         $initialMemberIds = $data['initial_member_ids'] ?? [];
 

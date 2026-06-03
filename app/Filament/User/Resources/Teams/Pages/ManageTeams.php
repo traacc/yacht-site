@@ -33,6 +33,10 @@ class ManageTeams extends ManageRecords
                 ->using(function (array $data): Team {
                     $data['approval_status'] = 'approved';
 
+                    // Исключаем teamMembers — участники уже создаются в CreateTeamAction,
+                    // иначе Filament повторно сохранит relationship-данные из Repeater.
+                    unset($data['teamMembers']);
+
                     return app(CreateTeamAction::class)->handle(
                         $data,
                         auth()->user(),
