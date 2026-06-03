@@ -78,7 +78,11 @@ class RegattaEntryResource extends Resource
             ->components([
                 Select::make('regatta_id')
                     ->label('Регата')
-                    ->relationship('regatta', 'name')
+                    ->relationship(
+                        'regatta',
+                        'name',
+                        modifyQueryUsing: fn (Builder $query) => $query->orderBy('date_start'),
+                    )
                     ->required()
                     ->columnSpanFull()
                     ->live()

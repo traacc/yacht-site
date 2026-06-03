@@ -71,7 +71,9 @@ class RegattaEntryResource extends Resource
                     ->relationship(
                         'regatta',
                         'name',
-                        modifyQueryUsing: fn (Builder $query) => $query->where('date_end', '>=', now()->toDateString()),
+                        modifyQueryUsing: fn (Builder $query) => $query
+                            ->where('date_end', '>=', now()->toDateString())
+                            ->orderBy('date_start'),
                     )
                     ->label('Регата')
                     ->required()
