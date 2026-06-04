@@ -32,7 +32,7 @@ class WeatherService
                     'error'  => $e->getMessage(),
                 ]);
 
-                return ['error' => 'Сервис погоды временно недоступен. Попробуйте позже.'];
+                return null;
             }
         });
     }
