@@ -102,7 +102,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     {
         return trim(" {$this->last_name} {$this->first_name} {$this->patronymic}");
     }
-
+    /*
     protected function firstName(): Attribute
     {
         return Attribute::make(
@@ -153,7 +153,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             }
         );
     }
-
+    */
     // ──────────────────────────────────────────────
     // Role helpers
     // ──────────────────────────────────────────────

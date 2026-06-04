@@ -17,6 +17,7 @@ use App\Rules\YandexCaptcha;
 class LoginModal extends Component
 {
     // Поля формы
+    public string $name = '';
     public string $first_name = '';
     public string $last_name = '';
     public string $patronymic = '';
@@ -116,9 +117,10 @@ class LoginModal extends Component
 
         $user = User::create([
             'name'           => $this->name,
+            
+            'first_name'     => '',
+            'last_name'      => '',
             /*
-            'first_name'     => $this->first_name,
-            'last_name'      => $this->last_name,
             'patronymic'     => $this->patronymic,
             */
             'email'          => $this->email,
