@@ -34,10 +34,12 @@
                         </div>
                     </div>
                     <p class="text-brand-gray text-lg">{{ $regatta->short_description }}</p>
+                    @if($documents->isNotEmpty())
                     <a href="{{ route('regatta.documents.download', $regatta) }}"
                         class="text-brand-navy text-l font-semibold hover:underline items-center gap-4 flex mt-6">
                         <x-icon-2 name="download" /> Скачать все документы
                     </a>
+                    @endif
                     @if($userIsEntered)
                         <div class="mt-6 bg-brand-light-bg border border-brand-blue text-brand-blue py-2 px-6 text-lg font-semibold inline-block">
                             Вы уже заявлены

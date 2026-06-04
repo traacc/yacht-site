@@ -14,7 +14,14 @@ final class DownloadRegattaDocumentsAction
      */
     public function execute(Regatta $regatta): BinaryFileResponse
     {
-        $documents = $regatta->documents()->whereNotNull('url')->where('url', '!=', '')->get();
+        $documents = $regatta->documents()
+            ->whereNotNull('url')
+            ->where('url', '!=', '')
+            ->get();
+
+        if ($documents->isEmpty()) {
+            abort(404, 'Нет документов для скачивания');
+        }
 
         $zip = new ZipArchive;
         $zipFilename = tempnam(sys_get_temp_dir(), 'regatta_docs_') . '.zip';
@@ -23,6 +30,8 @@ final class DownloadRegattaDocumentsAction
             abort(500, 'Не удалось создать архив');
         }
 
+        $filesAdded = 0;
+
         foreach ($documents as $doc) {
             $filePath = Storage::disk('public')->path($doc->url);
 
@@ -30,14 +39,19 @@ final class DownloadRegattaDocumentsAction
                 continue;
             }
 
-            // Формируем читаемое имя файла в архиве: тип_документа/название.pdf
             $typeDir = $doc->doc_type ?? 'other';
             $originalName = basename($doc->url);
 
             $zip->addFile($filePath, $typeDir . '/' . $originalName);
+            $filesAdded++;
         }
 
         $zip->close();
+
+        if ($filesAdded === 0) {
+            unlink($zipFilename);
+            abort(404, 'Файлы документов не найдены на сервере');
+        }
 
         $safeName = preg_replace('/[^\w\s\-а-яё]/ui', '', $regatta->name);
         $safeName = trim(preg_replace('/\s+/', '_', $safeName)) ?: 'regatta';
