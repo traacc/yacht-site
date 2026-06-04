@@ -22,11 +22,26 @@
         if (this.lbImages.length === 0) return;
         const newIndex = (this.currentIndex - 1 + this.lbImages.length) % this.lbImages.length;
         this.activeImage = this.lbImages[newIndex];
+        this.$nextTick(() => this.scrollToThumb());
     },
     nextImage() {
         if (this.lbImages.length === 0) return;
         const newIndex = (this.currentIndex + 1) % this.lbImages.length;
         this.activeImage = this.lbImages[newIndex];
+        this.$nextTick(() => this.scrollToThumb());
+    },
+    scrollToThumb() {
+        const container = this.$refs.thumbStrip;
+        if (!container) return;
+        const activeThumb = container.querySelector('.thumb-item[aria-current]');
+        if (activeThumb) {
+            activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    },
+    thumbScroll(dir) {
+        const container = this.$refs.thumbStrip;
+        if (!container) return;
+        container.scrollBy({ left: dir * 200, behavior: 'smooth' });
     },
 }" class="main">
     <section class="md:py-12 py-4 reggata-list px-2 2xl:px-0">
@@ -182,16 +197,36 @@
             </div>
 
             <!-- Превью (миниатюры) -->
-            <div class="flex gap-2 md:gap-4 overflow-x-auto mt-4 justify-start md:justify-center px-1 pb-2">
-                <template x-for="img in lbImages">
-                    <div class="cursor-pointer rounded-lg shadow-hover transition-all shrink-0 max-w-[60px] md:max-w-[100px] aspect-square"
-                        :class="activeImage === img ? 'ring-2 ring-[#2D92CE]' : ''"
-                        @click="activeImage = img">
-                        <img :src="img"
-                            class="object-cover h-full w-full rounded-lg"
-                            alt="Preview">
-                    </div>
-                </template>
+            <div class="relative flex items-center">
+                <!-- Кнопка скролла влево -->
+                <button @click="thumbScroll(-1)"
+                    x-show="lbImages.length > 1"
+                    aria-label="Прокрутить миниатюры влево"
+                    class="absolute -left-4 z-50 p-1.5 text-white bg-[#2D92CE]/80 hover:bg-[#2D92CE] rounded-full transition-all hidden md:block">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+
+                <div x-ref="thumbStrip"
+                    class="flex gap-2 md:gap-4 overflow-x-auto mt-4 justify-start md:justify-center px-1 pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory">
+                    <template x-for="img in lbImages">
+                        <div class="thumb-item cursor-pointer rounded-lg shadow-hover transition-all shrink-0 max-w-[60px] md:max-w-[100px] aspect-square snap-center"
+                            :class="activeImage === img ? 'ring-2 ring-[#2D92CE]' : ''"
+                            :aria-current="activeImage === img ? 'true' : undefined"
+                            @click="activeImage = img; $nextTick(() => scrollToThumb())">
+                            <img :src="img"
+                                class="object-cover h-full w-full rounded-lg"
+                                alt="Preview">
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Кнопка скролла вправо -->
+                <button @click="thumbScroll(1)"
+                    x-show="lbImages.length > 1"
+                    aria-label="Прокрутить миниатюры вправо"
+                    class="absolute -right-4 z-50 p-1.5 text-white bg-[#2D92CE]/80 hover:bg-[#2D92CE] rounded-full transition-all hidden md:block">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
             </div>
         </div>
     </div>

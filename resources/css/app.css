@@ -85,6 +85,14 @@
   }
 }
 
+@utility no-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
 @layer utilities {
   .container {
     @apply px-2 2xl:px-5 max-w-(--breakpoint-2xl) mx-auto;
