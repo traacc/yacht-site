@@ -68,7 +68,7 @@ class Yacht extends Model implements HasMedia
               });
         });
     }
-    public function prunable()
+    public function prunable(): Builder
     {
         return static::onlyTrashed()->where('deleted_at', '<=', now());
     }
