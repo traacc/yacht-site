@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -17,6 +18,7 @@ class WeatherService
             try {
                 $response = Http::timeout(self::TIMEOUT_SECONDS)
                     ->retry(2, 1000)
+                    ->throw(false)
                     ->get('https://api.open-meteo.com/v1/forecast', [
                         'latitude'       => $lat,
                         'longitude'      => $lon,
@@ -36,7 +38,7 @@ class WeatherService
                 }
 
                 return $response->json();
-            } catch (ConnectionException $e) {
+            } catch (ConnectionException | RequestException $e) {
                 Log::warning('Weather API connection failed', [
                     'lat'    => $lat,
                     'lon'    => $lon,
