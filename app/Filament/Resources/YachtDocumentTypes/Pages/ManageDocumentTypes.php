@@ -24,18 +24,5 @@ class ManageDocumentTypes extends ManageRecords
     /**
      * Перед удалением проверяем, не используется ли тип в документах.
      */
-    protected function beforeDelete(): void
-    {
-        /** @var \App\Models\YachtDocumentType $record */
-        foreach ($this->getSelectedTableRecords() as $record) {
-            if ($record->isUsedInDocuments()) {
-                \Filament\Notifications\Notification::make()
-                    ->title("Тип «{$record->label}» используется в {$record->usageCount()} документах и не может быть удалён.")
-                    ->danger()
-                    ->send();
 
-                $this->halt();
-            }
-        }
-    }
 }
