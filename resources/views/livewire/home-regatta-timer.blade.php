@@ -84,6 +84,10 @@
                             <div class="text-brand-gray-light mt-3 pl-1 text-[10px] md:text-base">Секунд</div>
                         </div>
                     </div>
+                    <a href="{{ route('regatta.documents.download', $regatta) }}"
+                        class="text-brand-navy text-l justify-center font-semibold hover:underline items-center gap-4 flex mt-6">
+                        <x-icon-2 name="download" /> Скачать все документы
+                    </a>
                     <a href="{{ route('competition-details', ['regatta' => $regatta]) }}" class="mt-5 bg-[#2D92CE] text-white md:text-lg text-sm font-semibold py-2.5 px-6 transition-colors flex gap-2 items-center justify-center">
                         Подать заявку {!! file_get_contents(public_path('images/icons/l-arrow-right.svg')) !!}
                     </a>

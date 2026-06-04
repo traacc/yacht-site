@@ -45,6 +45,10 @@
 
 
                 </div>
+                <a href="{{ route('regatta.documents.download', $regatta) }}"
+                    class="text-white text-l font-semibold hover:underline items-center gap-4 flex mt-6">
+                    <x-icon-2 name="download" /> Скачать все документы
+                </a>
                 <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"
                         class="block w-full text-center bg-white font-semibold py-2.5 transition-colors cursor-pointer">
                     Заявка →
