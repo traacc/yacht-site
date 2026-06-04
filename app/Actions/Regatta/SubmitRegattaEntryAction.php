@@ -21,7 +21,7 @@ final class SubmitRegattaEntryAction
      * Подать заявку команды на участие в регате.
      * Требует роль Organizer или TeamAdmin у вызывающего пользователя.
      *
-     * @param array<string, 'main'|'reserve'> $crew  team_member_id => role
+     * @param array<string, 'main'|'reserve'|'captain'> $crew  team_member_id => role
      *
      * @throws InsufficientTeamRoleException
      * @throws ValidationException

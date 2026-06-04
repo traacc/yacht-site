@@ -259,7 +259,7 @@ class YachtResource extends Resource
                     ->label('Владелец')
                     ->searchable()->sortable(['name']),
                 TextColumn::make('orc_cert')
-                    ->label('ORC-сертификат')
+                    ->label('ORC')
                     ->state(fn ($record) => $record->documents()
                         ->where('doc_type', 'orc_cert_type')
                         ->exists())

@@ -34,7 +34,7 @@ class JoinRegattaModal extends Component
     public array $documentFiles = [];
 
     /**
-     * Экипаж: team_member_id => роль ('main'|'reserve').
+     * Экипаж: team_member_id => роль ('main'|'reserve'|'captain').
      *
      * @var array<string, string>
      */

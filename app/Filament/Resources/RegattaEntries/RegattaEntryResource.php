@@ -141,6 +141,7 @@ class RegattaEntryResource extends Resource
                         . ' — ' . match ($state['role'] ?? '') {
                         'main'              => 'Основной',
                         'reserve'           => 'Запасной',
+                        'captain'           => 'Капитан',
                         'not_participating' => 'Не участвует',
                         default             => '—',
                     })
@@ -202,6 +203,7 @@ class RegattaEntryResource extends Resource
                             ->options([
                                 'main'              => 'Основной',
                                 'reserve'           => 'Запасной',
+                                'captain'           => 'Капитан',
                                 'not_participating' => 'Не участвует',
                             ])
                             ->required(),
@@ -290,7 +292,7 @@ class RegattaEntryResource extends Resource
                 TextColumn::make('crew')
                     ->label('Экипаж')
                     ->state(fn (RegattaEntry $record): string => (string) $record->crew()
-                        ->whereIn('role', ['main', 'reserve'])
+                        ->whereIn('role', ['main', 'reserve', 'captain'])
                         ->count()
                     ),
                 TextColumn::make('submitted_at')
