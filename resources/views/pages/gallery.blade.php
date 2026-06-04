@@ -183,7 +183,7 @@
                     x-transition:enter="transition ease-out duration-300"
                     x-transition:enter-start="scale-90 opacity-0"
                     x-transition:enter-end="scale-100 opacity-100"
-                    class="w-[90vw] md:w-[75vw] h-[40vh] md:h-[60vh] object-contain rounded-sm shadow-2xl"
+                    class="w-[90vw] md:w-[75vw] h-[40vh] md:h-[60vh] object-contain"
                     alt="Full size">
 
                 <!-- Стрелка вперёд -->
@@ -209,12 +209,12 @@
                 <div x-ref="thumbStrip"
                     class="flex gap-2 md:gap-4 overflow-x-auto mt-4 justify-start md:justify-center px-1 pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory">
                     <template x-for="img in lbImages">
-                        <div class="thumb-item cursor-pointer rounded-lg shadow-hover transition-all shrink-0 max-w-[60px] md:max-w-[100px] aspect-square snap-center"
+                        <div class="thumb-item cursor-pointer shadow-hover transition-all shrink-0 max-w-[60px] md:max-w-[100px] aspect-square snap-center"
                             :class="activeImage === img ? 'ring-2 ring-[#2D92CE]' : ''"
                             :aria-current="activeImage === img ? 'true' : undefined"
                             @click="activeImage = img; $nextTick(() => scrollToThumb())">
                             <img :src="img"
-                                class="object-cover h-full w-full rounded-lg"
+                                class="object-cover h-full w-full"
                                 alt="Preview">
                         </div>
                     </template>
