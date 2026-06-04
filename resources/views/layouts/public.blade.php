@@ -69,6 +69,7 @@
 <x-footer />
 <livewire:auth.login-modal />
 <livewire:join-regatta-modal />
+<livewire:cookie-consent />
 
 </body>
 </html>
