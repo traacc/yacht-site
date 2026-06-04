@@ -161,13 +161,13 @@
         @touchstart.passive="touchStartX = $event.touches[0].clientX"
         @touchend.passive="Math.abs($event.changedTouches[0].clientX - touchStartX) > 50 && ($event.changedTouches[0].clientX > touchStartX ? prevImage() : nextImage())"
         >
-        <div @click.away="lightbox_open = false" class="relative w-full max-w-[1200px] max-h-[90vh] px-2 md:px-0"
+        <div @click.away="lightbox_open = false; gallery_modal_open = true" class="relative w-full max-w-[1200px] max-h-[90vh] px-2 md:px-0"
             x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95"
             x-transition:enter-end="opacity-100 scale-100"
         >
             <!-- Кнопка закрытия -->
-            <button @click="lightbox_open = false" class="absolute -top-10 right-2 md:-top-10 md:-right-4 text-white text-3xl z-50 hover:opacity-70">&times;</button>
+            <button @click="lightbox_open = false; gallery_modal_open = true" class="absolute -top-10 right-2 md:-top-10 md:-right-4 text-white text-3xl z-50 hover:opacity-70">&times;</button>
 
             <!-- Контейнер с изображением и стрелками -->
             <div class="relative flex items-center justify-center">
