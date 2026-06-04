@@ -70,6 +70,114 @@
                 @endif
             </div>
         </section>
+
+        {{-- ===== ДОКУМЕНТЫ РЕГАТЫ ===== --}}
+        @if($documents->isNotEmpty())
+            <section class="py-10">
+                <div class="container mx-auto pdf-list">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="section-title a-font">Документы регаты</h2>
+                        <a href="{{ route('regatta.documents.download', $regatta) }}"
+                           class="text-brand-dark text-lg font-semibold hover:underline items-center gap-4 hidden md:flex">
+                            <x-icon-2 name="download" /> Скачать все документы
+                        </a>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        @foreach($documents as $doc)
+                            <div class="bg-brand-light-bg flex gap-4 hover:shadow-md transition-shadow cursor-pointer p-4">
+                                <div class="max-w-16">
+                                    <img class="w-full" src="{{ asset('images/icons/pdf.png') }}" alt="PDF" />
+                                </div>
+                                <div>
+                                    <div class="text-brand-dark text-lg font-semibold mb-4">{{ $doc->title }}</div>
+                                    <div class="text-brand-gray-light font-medium mb-4">{{ $doc->description }}</div>
+                                    <a href="{{ $doc->file_url }}"
+                                       class="text-brand-dark text-lg font-semibold flex gap-4 items-center">
+                                        <x-icon-2 name="download" /> <span>Скачать PDF</span>
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <a href="{{ route('regatta.documents.download', $regatta) }}"
+                       class="text-brand-dark text-lg justify-center font-semibold hover:underline items-center gap-4 md:hidden flex mt-6">
+                        <x-icon-2 name="download" /> Скачать все документы
+                    </a>
+                </div>
+            </section>
+        @endif
+        {{-- ===== НЕОБХОДИМЫЕ ДОКУМЕНТЫ ДЛЯ УЧАСТИЯ ===== --}}
+        @if(!empty($requiredEntryDocuments))
+            <section class="py-10">
+                <div class="container mx-auto pdf-list">
+                    <h2 class="section-title a-font mb-8">Необходимые документы для участия</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        @foreach($requiredEntryDocuments as $doc)
+                            <div class="bg-brand-light-bg flex gap-4 hover:shadow-md transition-shadow p-4">
+                                <div class="max-w-16">
+                                    <img class="w-full" src="{{ asset('images/icons/pdf.png') }}" alt="Документ" />
+                                </div>
+                                <div>
+                                    <div class="text-brand-dark text-lg font-semibold mb-4">{{ $doc['title'] }}</div>
+                                    <div class="text-brand-gray-light font-medium">{{ $doc['description'] }}</div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </section>
+        @endif
+        {{-- ===== ЗАЯВЛЕННЫЕ КОМАНДЫ ===== --}}
+        @if($regatta->regatta_status !== \App\Enums\RegattaStatus::Finished && $regatta->regatta_status !== \App\Enums\RegattaStatus::Cancelled)
+        <section class="py-10 teams">
+            <div class="container mx-auto lg:p-6 bg-brand-light-bg">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="section-title a-font">Заявленные команды</h2>
+                    <a href="#" class="text-brand-dark text-lg font-semibold hover:underline items-center gap-4 hidden md:flex">
+                        <x-icon-2 name="download" /> Скачать список команд
+                    </a>
+                </div>
+                <div class="overflow-x-auto p-3 md:p-6 bg-white">
+                    <table class="w-full responsive-table">
+                        <thead>
+                            <tr class="text-2xl text-brand-dark border-b border-brand-border">
+                                <th class="pb-2 text-center font-medium w-16 a-font">№</th>
+                                <th class="pb-2 text-center font-medium a-font">Яхта</th>
+                                <th class="pb-2 text-center font-medium a-font">Команда</th>
+                                <th class="pb-2 text-center font-medium a-font">Капитан</th>
+                                <th class="pb-2 text-center font-medium a-font">Состав команды</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y text-center font-medium">
+                            @forelse($entries as $index => $entry)
+                                <tr class="hover:bg-white transition-colors border-b border-brand-border pb-8! md:pb-0!">
+                                    <td data-label="№" class="py-3">{{ $index + 1 }}</td>
+                                    <td data-label="Яхта" class="py-3">{{ $entry->yacht?->name ?? '—' }}</td>
+                                    <td data-label="Команда" class="py-3">{{ $entry->team?->name ?? '—' }}</td>
+                                    <td data-label="Капитан" class="py-3">{{ $entry->team?->organizer?->name ?? '—' }}</td>
+                                    <td data-label="Состав команды" class="py-3">
+                                        <a @click="team_modal_open = true; activeTeamIndex = {{ $index }}"
+                                           href="#"
+                                           class="text-brand-blue font-medium underline hover:no-underline">
+                                            {{ $entry->team?->activeMembers?->count() ?? 0 }} участников
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="py-6 text-brand-gray-light">Нет заявленных команд</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                    <a href="#" class="text-brand-dark text-lg justify-center font-semibold hover:underline items-center gap-4 md:hidden flex">
+                        <x-icon-2 name="download" /> Скачать список команд
+                    </a>
+            </div>
+        </section>
+        @endif
+
         {{-- ===== РАСПИСАНИЕ ===== --}}
         @if($scheduleDays->isNotEmpty())
             <section class="py-10">
@@ -142,56 +250,7 @@
                 </div>
             </div>
         </section>
-        {{-- ===== ЗАЯВЛЕННЫЕ КОМАНДЫ ===== --}}
-        @if($regatta->regatta_status !== \App\Enums\RegattaStatus::Finished && $regatta->regatta_status !== \App\Enums\RegattaStatus::Cancelled)
-        <section class="py-10 teams">
-            <div class="container mx-auto lg:p-6 bg-brand-light-bg">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="section-title a-font">Заявленные команды</h2>
-                    <a href="#" class="text-brand-dark text-lg font-semibold hover:underline items-center gap-4 hidden md:flex">
-                        <x-icon-2 name="download" /> Скачать список команд
-                    </a>
-                </div>
-                <div class="overflow-x-auto p-3 md:p-6 bg-white">
-                    <table class="w-full responsive-table">
-                        <thead>
-                            <tr class="text-2xl text-brand-dark border-b border-brand-border">
-                                <th class="pb-2 text-center font-medium w-16 a-font">№</th>
-                                <th class="pb-2 text-center font-medium a-font">Яхта</th>
-                                <th class="pb-2 text-center font-medium a-font">Команда</th>
-                                <th class="pb-2 text-center font-medium a-font">Капитан</th>
-                                <th class="pb-2 text-center font-medium a-font">Состав команды</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y text-center font-medium">
-                            @forelse($entries as $index => $entry)
-                                <tr class="hover:bg-white transition-colors border-b border-brand-border pb-8! md:pb-0!">
-                                    <td data-label="№" class="py-3">{{ $index + 1 }}</td>
-                                    <td data-label="Яхта" class="py-3">{{ $entry->yacht?->name ?? '—' }}</td>
-                                    <td data-label="Команда" class="py-3">{{ $entry->team?->name ?? '—' }}</td>
-                                    <td data-label="Капитан" class="py-3">{{ $entry->team?->organizer?->name ?? '—' }}</td>
-                                    <td data-label="Состав команды" class="py-3">
-                                        <a @click="team_modal_open = true; activeTeamIndex = {{ $index }}"
-                                           href="#"
-                                           class="text-brand-blue font-medium underline hover:no-underline">
-                                            {{ $entry->team?->activeMembers?->count() ?? 0 }} участников
-                                        </a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="py-6 text-brand-gray-light">Нет заявленных команд</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                    <a href="#" class="text-brand-dark text-lg justify-center font-semibold hover:underline items-center gap-4 md:hidden flex">
-                        <x-icon-2 name="download" /> Скачать список команд
-                    </a>
-            </div>
-        </section>
-        @endif
+
 
         {{-- ===== РЕЗУЛЬТАТЫ ===== --}}
         <livewire:regatta-results mode="show" :regatta-id="$regatta->id" />
@@ -199,63 +258,9 @@
 
 
 
-        {{-- ===== ДОКУМЕНТЫ РЕГАТЫ ===== --}}
-        @if($documents->isNotEmpty())
-            <section class="py-10">
-                <div class="container mx-auto pdf-list">
-                    <div class="flex items-center justify-between mb-8">
-                        <h2 class="section-title a-font">Документы регаты</h2>
-                        <a href="{{ route('regatta.documents.download', $regatta) }}"
-                           class="text-brand-dark text-lg font-semibold hover:underline items-center gap-4 hidden md:flex">
-                            <x-icon-2 name="download" /> Скачать все документы
-                        </a>
-                    </div>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
-                        @foreach($documents as $doc)
-                            <div class="bg-brand-light-bg flex gap-4 hover:shadow-md transition-shadow cursor-pointer p-4">
-                                <div class="max-w-16">
-                                    <img class="w-full" src="{{ asset('images/icons/pdf.png') }}" alt="PDF" />
-                                </div>
-                                <div>
-                                    <div class="text-brand-dark text-lg font-semibold mb-4">{{ $doc->title }}</div>
-                                    <div class="text-brand-gray-light font-medium mb-4">{{ $doc->description }}</div>
-                                    <a href="{{ $doc->file_url }}"
-                                       class="text-brand-dark text-lg font-semibold flex gap-4 items-center">
-                                        <x-icon-2 name="download" /> <span>Скачать PDF</span>
-                                    </a>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                    <a href="{{ route('regatta.documents.download', $regatta) }}"
-                       class="text-brand-dark text-lg justify-center font-semibold hover:underline items-center gap-4 md:hidden flex mt-6">
-                        <x-icon-2 name="download" /> Скачать все документы
-                    </a>
-                </div>
-            </section>
-        @endif
 
-        {{-- ===== НЕОБХОДИМЫЕ ДОКУМЕНТЫ ДЛЯ УЧАСТИЯ ===== --}}
-        @if(!empty($requiredEntryDocuments))
-            <section class="py-10">
-                <div class="container mx-auto pdf-list">
-                    <h2 class="section-title a-font mb-8">Необходимые документы для участия</h2>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
-                        @foreach($requiredEntryDocuments as $doc)
-                            <div class="bg-brand-light-bg flex gap-4 hover:shadow-md transition-shadow p-4">
-                                <div class="max-w-16">
-                                    <img class="w-full" src="{{ asset('images/icons/pdf.png') }}" alt="Документ" />
-                                </div>
-                                <div>
-                                    <div class="text-brand-dark text-lg font-semibold mb-4">{{ $doc['title'] }}</div>
-                                    <div class="text-brand-gray-light font-medium">{{ $doc['description'] }}</div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </section>
-        @endif
+
+
 
         {{-- ===== ЛОКАЦИЯ ===== --}}
         @if(!empty($regatta->coordinates))
