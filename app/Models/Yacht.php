@@ -70,7 +70,7 @@ class Yacht extends Model implements HasMedia
     }
     public function prunable(): Builder
     {
-        return static::onlyTrashed()->where('deleted_at', '<=', now());
+        return static::where('created_at', '<=', now()->minus(months: 1));
     }
     public function pruningScope(): Builder
     {
