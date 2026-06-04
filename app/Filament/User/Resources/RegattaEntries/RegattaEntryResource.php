@@ -12,6 +12,7 @@ use App\Models\User;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Notifications\Notification;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
@@ -322,6 +323,22 @@ class RegattaEntryResource extends Resource
                         $docs = $data['required_documents'] ?? [];
                         $crew = $data['crew'] ?? [];
                         unset($data['required_documents'], $data['crew']);
+
+                        // Проверка дубликата: та же команда уже подала заявку на эту регату?
+                        $exists = RegattaEntry::where('regatta_id', $data['regatta_id'])
+                            ->where('team_id', $data['team_id'])
+                            ->where('id', '!=', $record->id)
+                            ->exists();
+
+                        if ($exists) {
+                            Notification::make()
+                                ->title('Заявка уже существует')
+                                ->body('Эта команда уже подала заявку на выбранную регату.')
+                                ->danger()
+                                ->send();
+
+                            $this->halt();
+                        }
 
                         $record->update($data);
 

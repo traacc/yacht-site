@@ -11,6 +11,7 @@ use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
 
 class ManageRegattaEntries extends ManageRecords
@@ -53,6 +54,22 @@ class ManageRegattaEntries extends ManageRecords
                     $requiredDocs = $data['required_documents'] ?? [];
                     $crew = $data['crew'] ?? [];
                     unset($data['required_documents'], $data['crew']);
+
+                    // Проверка дубликата до записи в БД
+                    /** @var RegattaEntry $model */
+                    $exists = $model::where('regatta_id', $data['regatta_id'])
+                        ->where('team_id', $data['team_id'])
+                        ->exists();
+
+                    if ($exists) {
+                        Notification::make()
+                            ->title('Заявка уже существует')
+                            ->body('Эта команда уже подала заявку на выбранную регату.')
+                            ->danger()
+                            ->send();
+
+                        $this->halt();
+                    }
 
                     /** @var RegattaEntry $record */
                     $record = $model::create($data);

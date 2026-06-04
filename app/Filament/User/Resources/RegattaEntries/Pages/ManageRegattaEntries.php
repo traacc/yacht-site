@@ -52,10 +52,13 @@ class ManageRegattaEntries extends ManageRecords
 
                     $data['status'] = 'pending';
 
-                    try {
-                        /** @var RegattaEntry $record */
-                        $record = $model::create($data);
-                    } catch (UniqueConstraintViolationException) {
+                    // Проверка дубликата до записи в БД
+                    /** @var RegattaEntry $model */
+                    $exists = $model::where('regatta_id', $data['regatta_id'])
+                        ->where('team_id', $data['team_id'])
+                        ->exists();
+
+                    if ($exists) {
                         Notification::make()
                             ->title('Заявка уже существует')
                             ->body('Эта команда уже подала заявку на выбранную регату.')
@@ -64,6 +67,9 @@ class ManageRegattaEntries extends ManageRecords
 
                         $this->halt();
                     }
+
+                    /** @var RegattaEntry $record */
+                    $record = $model::create($data);
 
                     app(SyncDocumentFilesAction::class)->execute($record, $docs);
                     RegattaEntryResource::syncCrew($record, $crew);
