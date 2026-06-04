@@ -129,7 +129,7 @@ class YachtResource extends Resource
                     ->disk('public')
                     ->visibility('public')
                     ->columnSpanFull(),
-
+                /*
                 Repeater::make('required_documents')
                     ->label('Документы')
                     ->columnSpanFull()
@@ -194,6 +194,7 @@ class YachtResource extends Resource
                             ->downloadable()
                             ->helperText(fn () => 'Можно загрузить до ' . config('documents.max_files_per_type', 10) . ' файлов'),
                     ]),
+                */
                 /*
                 Repeater::make('past_regattas')
                     ->label('Прошедшие соревнования')
@@ -222,11 +223,12 @@ class YachtResource extends Resource
                 */
                 // ── Дополнительные документы (произвольные) ──
                 Repeater::make('extra_documents')
-                    ->label('Дополнительные документы')
+                    ->label('Документы')
                     ->columnSpanFull()
                     ->addActionLabel('Добавить документ')
                     ->collapsible()
                     ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
+                    ->defaultItems(0)
                     ->schema([
                         Hidden::make('doc_type')
                             ->label('Тип')

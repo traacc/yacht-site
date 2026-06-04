@@ -149,6 +149,7 @@ class YachtResource extends Resource
                     ->visibility('public')
                     ->columnSpanFull(),
                 // ── Обязательные документы ──────────────────
+                /*
                 Repeater::make('required_documents')
                     ->label('Обязательные документы')
                     ->columnSpanFull()
@@ -206,13 +207,14 @@ class YachtResource extends Resource
                             ->downloadable()
                             ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
                     ]),
-
+                */
                 // ── Дополнительные документы (произвольные) ──
                 Repeater::make('extra_documents')
-                    ->label('Дополнительные документы')
+                    ->label('Документы')
                     ->columnSpanFull()
                     ->addActionLabel('Добавить документ')
                     ->collapsible()
+                    ->defaultItems(0)
                     ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
                     ->schema([
                         Hidden::make('doc_type')
