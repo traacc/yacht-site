@@ -91,7 +91,7 @@
                                 <div>
                                     <div class="text-brand-dark text-lg font-semibold mb-4">{{ $doc->title }}</div>
                                     <div class="text-brand-gray-light font-medium mb-4">{{ $doc->description }}</div>
-                                    <a href="{{ $doc->file_url }}"
+                                    <a href="{{ $doc->file_url }}" download
                                        class="text-brand-dark text-lg font-semibold flex gap-4 items-center">
                                         <x-icon-2 name="download" /> <span>Скачать PDF</span>
                                     </a>
