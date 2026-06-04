@@ -216,11 +216,14 @@ class TeamResource extends Resource
             ->modifyQueryUsing(fn (Builder $query) => $query->withCount('activeMembers'))
             ->columns([
                 TextColumn::make('name')
+                    ->width('150px')
                     ->searchable()->label('Команда'),
                 TextColumn::make('organizer.name')
+                    ->width('50px')
                     ->searchable()->label('Капитан'),
                 TextColumn::make('active_members_count')
                     ->label('Участники')
+                    ->width('50px')
                     ->sortable(),
                 // Роль текущего пользователя в команде
                 /*
