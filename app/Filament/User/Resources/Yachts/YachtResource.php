@@ -302,7 +302,7 @@ class YachtResource extends Resource
                 
             ])
             ->filters([
-                TrashedFilter::make(),
+                //TrashedFilter::make(),
             ])->emptyStateHeading('Записей пока нет')
             ->recordActions([
                 EditAction::make()->hiddenLabel()->modalHeading('Редактировать яхту')
