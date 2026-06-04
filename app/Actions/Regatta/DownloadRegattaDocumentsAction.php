@@ -3,8 +3,8 @@
 namespace App\Actions\Regatta;
 
 use App\Models\Regatta;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use ZipArchive;
 
 final class DownloadRegattaDocumentsAction
@@ -12,7 +12,7 @@ final class DownloadRegattaDocumentsAction
     /**
      * Создать ZIP-архив со всеми документами регаты и вернуть ответ для скачивания.
      */
-    public function execute(Regatta $regatta): Response
+    public function execute(Regatta $regatta): BinaryFileResponse
     {
         $documents = $regatta->documents()->whereNotNull('url')->where('url', '!=', '')->get();
 
