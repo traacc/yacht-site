@@ -20,7 +20,9 @@ class LoginModal extends Component
     public string $first_name = '';
     public string $last_name = '';
     public string $patronymic = '';
-    public string $birthday = '';
+    public string $birth_day = '';
+    public string $birth_month = '';
+    public string $birth_year = '';
     public string $sports_category = '';
     public string $phone = '';
 
@@ -72,7 +74,9 @@ class LoginModal extends Component
             'password'              => ['required', Password::defaults(), 'same:password_confirmation'],
             'password_confirmation' => ['required'],
             'phone'                 => ['required', 'unique:users,phone'],
-            'birthday'              => ['required', 'date', 'before:today', 'after:1925-12-31'],
+            'birth_day'             => ['required', 'integer', 'min:1', 'max:31'],
+            'birth_month'           => ['required', 'integer', 'min:1', 'max:12'],
+            'birth_year'            => ['required', 'integer', 'min:1926', 'max:2016'],
             'sports_category'       => ['nullable', Rule::enum(SportCategory::class)],
             //'registerCaptchaToken' => ['required', new YandexCaptcha()],
         ], attributes: [
@@ -82,7 +86,9 @@ class LoginModal extends Component
             'patronymic'            => 'отчество',
             'email'                 => 'email',
             'phone'                 => 'телефон',
-            'birthday'              => 'дата рождения',
+            'birth_day'             => 'день рождения',
+            'birth_month'           => 'месяц рождения',
+            'birth_year'            => 'год рождения',
             'password'              => 'пароль',
             'password_confirmation' => 'подтверждение пароля',
             'sports_category'       => 'спортивный разряд',
@@ -91,8 +97,16 @@ class LoginModal extends Component
             'phone.unique' => 'Пользователь с таким телефоном уже зарегистрирован',
         ]);
 
+        // Проверка корректности даты (30 февраля и т.п.)
+        if (!checkdate((int) $this->birth_month, (int) $this->birth_day, (int) $this->birth_year)) {
+            $this->addError('birth_day', 'Некорректная дата рождения.');
+            return;
+        }
+
 
         // 1. Создаем пользователя
+        $birthDate = sprintf('%04d-%02d-%02d', $this->birth_year, $this->birth_month, $this->birth_day);
+
         $user = User::create([
             'name'           => $this->first_name . ' ' . $this->last_name,
             'first_name'     => $this->first_name,
@@ -100,7 +114,7 @@ class LoginModal extends Component
             'patronymic'      => $this->patronymic,
             'email'          => $this->email,
             'phone'          => $this->phone ?: null,
-            'birth_date'     => $this->birthday ?: null,
+            'birth_date'     => $birthDate,
             'sport_category' => $this->sports_category ?: null,
             'password'       => Hash::make($this->password),
         ]);

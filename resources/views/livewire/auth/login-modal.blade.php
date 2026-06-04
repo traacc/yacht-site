@@ -131,12 +131,46 @@
                         @enderror
                     </div>
                     <div>
-                        <input
-                            type="date" id="birthday" wire:model="birthday" placeholder="Дата рождения"
-                            max="2016-12-31" min="1926-01-01" required
-                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs placeholder:text-[#acb0b9] focus:border-indigo-500 focus:ring-indigo-500 text-xs date-placeholder md:text-base @error('birthday') border-red-300 @enderror">
+                        <label class="block text-xs text-brand-gray-light mb-1">Дата рождения</label>
+                        <div class="flex space-x-2">
+                            <input
+                                type="number" wire:model="birth_day" placeholder="День"
+                                min="1" max="31" required
+                                class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs placeholder:text-[#acb0b9] focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('birth_day') border-red-300 @enderror">
 
-                        @error('birthday')
+                            <select wire:model="birth_month" required
+                                class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('birth_month') border-red-300 @enderror">
+                                <option value="" disabled selected>Месяц</option>
+                                <option value="1">Январь</option>
+                                <option value="2">Февраль</option>
+                                <option value="3">Март</option>
+                                <option value="4">Апрель</option>
+                                <option value="5">Май</option>
+                                <option value="6">Июнь</option>
+                                <option value="7">Июль</option>
+                                <option value="8">Август</option>
+                                <option value="9">Сентябрь</option>
+                                <option value="10">Октябрь</option>
+                                <option value="11">Ноябрь</option>
+                                <option value="12">Декабрь</option>
+                            </select>
+
+                            <select wire:model="birth_year" required
+                                class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('birth_year') border-red-300 @enderror">
+                                <option value="" disabled selected>Год</option>
+                                @for ($year = 2016; $year >= 1926; $year--)
+                                    <option value="{{ $year }}">{{ $year }}</option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        @error('birth_day')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
+                        @error('birth_month')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
+                        @error('birth_year')
                             <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                         @enderror
                     </div>
