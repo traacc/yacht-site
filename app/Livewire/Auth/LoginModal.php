@@ -127,7 +127,8 @@ class LoginModal extends Component
             'phone'          => $this->phone ?: null,
             'birth_date'     => $birthDate,
             'sport_category' => $this->sports_category ?: null,
-            'password'       => Hash::make($this->password),
+            // Пароль передаём без хеширования — каст 'hashed' в модели сделает это автоматически
+            'password'       => $this->password,
         ]);
 
         // 2. Автоматически входим в систему
@@ -153,24 +154,20 @@ class LoginModal extends Component
 
         $user = User::findOrFail($this->selectedUserId);
 
-        if (!Hash::check($this->senderPassword, $user->password)) {
+        // Проверяем пароль через getAuthPassword() — он возвращает сырое значение из БД
+        if (!Hash::check($this->senderPassword, $user->getAuthPassword())) {
             $this->addError('senderPassword', 'Неверный пароль пользователя.');
             return;
         }
 
-        /*
-        $email = $user->email;
-        $password = \Illuminate\Support\Str::random(12);
+        // Входим под выбранным пользователем
+        Auth::login($user);
+        session()->regenerate();
 
-        $user->password = Hash::make($password);
-        $user->save();
-
-        Mail::to($user)->send(new SendLoginCredentials($user, $email, $password));
-
-        session()->flash('credentials_sent', 'Данные для входа отправлены на почту пользователю ' . $user->name);
-        */
         $this->selectedUserId = '';
         $this->senderPassword = '';
+
+        return $this->redirect(route('home'), navigate: true);
     }
 
     public function getUsersProperty()

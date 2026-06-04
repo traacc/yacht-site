@@ -39,7 +39,7 @@ class DatabaseSeeder extends Seeder
             'external_id' => 1001,
             'name' => 'admin',
             'email' => 'test@example.com',
-            'password' => Hash::make('password123'),
+            'password' => 'password123',
             'system_role' => SystemRole::Admin,
         ]);
         User::factory()->create([
@@ -47,7 +47,7 @@ class DatabaseSeeder extends Seeder
             'external_id' => 1002,
             'name' => 'user',
             'email' => 'a@example.com',
-            'password' => Hash::make('password'),
+            'password' => 'password',
             'system_role' => SystemRole::Admin,
         ]);
 

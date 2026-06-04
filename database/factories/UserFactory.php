@@ -44,7 +44,7 @@ class UserFactory extends Factory
             'phone_verified_at'   => fake()->optional()->dateTimeBetween('-1 year', 'now'),
             'email_verified_at'   => now(),
             'system_role'         => SystemRole::User,
-            'password'            => static::$password ??= Hash::make('password'),
+            'password'            => static::$password ??= 'password',
             'remember_token'      => Str::random(10),
         ];
     }
