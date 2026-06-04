@@ -319,6 +319,9 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'mapUrl'
     ));
 })->name('competition-details');
+Route::get('/regatta/{regatta}/download-documents', function (\App\Models\Regatta $regatta) {
+    return app(\App\Actions\Regatta\DownloadRegattaDocumentsAction::class)->execute($regatta);
+})->name('regatta.documents.download');
 Route::get('/teams', function () {
     $teams = Team::with([
         'organizer',

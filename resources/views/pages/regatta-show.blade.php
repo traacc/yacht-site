@@ -197,7 +197,13 @@
         @if($documents->isNotEmpty())
             <section class="py-10">
                 <div class="container mx-auto pdf-list">
-                    <h2 class="section-title a-font mb-8">Документы регаты</h2>
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="section-title a-font">Документы регаты</h2>
+                        <a href="{{ route('regatta.documents.download', $regatta) }}"
+                           class="text-brand-dark text-lg font-semibold hover:underline items-center gap-4 hidden md:flex">
+                            <x-icon-2 name="download" /> Скачать все документы
+                        </a>
+                    </div>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
                         @foreach($documents as $doc)
                             <div class="bg-brand-light-bg flex gap-4 hover:shadow-md transition-shadow cursor-pointer p-4">
@@ -215,6 +221,10 @@
                             </div>
                         @endforeach
                     </div>
+                    <a href="{{ route('regatta.documents.download', $regatta) }}"
+                       class="text-brand-dark text-lg justify-center font-semibold hover:underline items-center gap-4 md:hidden flex mt-6">
+                        <x-icon-2 name="download" /> Скачать все документы
+                    </a>
                 </div>
             </section>
         @endif
