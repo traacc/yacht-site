@@ -336,15 +336,15 @@
                     <button type="submit"
                             wire:loading.attr="disabled"
                             class="inline-flex w-full justify-center bg-[#2D92CE] px-3 py-2 text-sm font-semibold text-white shadow-xs focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50">
-                        <span wire:loading.remove>Отправить данные для входа</span>
-                        <span wire:loading>Отправляем...</span>
+                        <span wire:loading.remove>Войти</span>
+                        <span wire:loading>Входим...</span>
                     </button>
                 </div>
-
+                <!--
                 <p class="text-center text-sm text-gray-500">
                     Пароль будет сгенерирован и отправлен на email выбранного пользователя
                 </p>
-
+                -->
             </form>
         </div>
     </div>
