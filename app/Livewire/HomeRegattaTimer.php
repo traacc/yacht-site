@@ -47,11 +47,17 @@ class HomeRegattaTimer extends Component
         // Дататаргет для таймера: date_start + time_start (по умолчанию 12:00)
         $startDateTime = $regatta?->startDateTime()?->format('Y-m-d\TH:i:s');
 
+        $hasDocuments = $regatta?->documents()
+            ->whereNotNull('url')
+            ->where('url', '!=', '')
+            ->exists() ?? false;
+
         return view('livewire.home-regatta-timer', [
             'regatta'         => $regatta,
             'currentWeather'  => $temp . ' ℃',
             'mapUrl'          => $mapUrl,
             'startDateTime'   => $startDateTime,
+            'hasDocuments'    => $hasDocuments,
         ]);
     }
 }

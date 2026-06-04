@@ -47,10 +47,16 @@ class HomeClosestRegatta extends Component
             )
             : null;
 
+        $hasDocuments = $regatta?->documents()
+            ->whereNotNull('url')
+            ->where('url', '!=', '')
+            ->exists() ?? false;
+
         return view('livewire.home-closest-regatta', [
             'regatta'        => $regatta,
             'currentWeather' => $temp . '  ℃',
             'mapUrl'         => $mapUrl,
+            'hasDocuments'   => $hasDocuments,
         ]);
     }
 }
