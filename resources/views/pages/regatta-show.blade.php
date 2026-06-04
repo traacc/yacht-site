@@ -40,10 +40,11 @@
                         <x-icon-2 name="download" /> Скачать все документы
                     </a>
                     @endif
-                    @if($userIsEntered)
-                        <div class="mt-6 bg-brand-light-bg border border-brand-blue text-brand-blue py-2 px-6 text-lg font-semibold inline-block">
-                            Вы уже заявлены
-                        </div>
+                    @if($userIsEntered && $userEntry)
+                        <button @click="$dispatch('open-edit-regatta-entry-modal', { entryId: '{{ $userEntry->id }}' })"
+                                class="mt-6 bg-brand-blue text-white py-2 px-6 hover:bg-brand-blue transition-colors text-lg font-semibold cursor-pointer">
+                            Редактировать заявку →
+                        </button>
                     @elseif($regatta->regatta_status === \App\Enums\RegattaStatus::Finished)
                         <button disabled
                                 class="mt-6 bg-gray-300 text-gray-500 py-2 px-6 text-lg font-semibold cursor-not-allowed opacity-60">

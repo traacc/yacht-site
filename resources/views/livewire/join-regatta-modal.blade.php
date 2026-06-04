@@ -27,7 +27,6 @@
          class="bg-white overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full p-6 z-10 relative">
 
 
-        {{ $this->state }}
         @if ($this->state === 'guest')
             <div class="flex items-center justify-between pb-3 mb-4">
                 <h3 class="text-lg font-medium text-[#2E325C] a-font">Войдите в личный кабинет</h3>
@@ -66,9 +65,11 @@
                 </svg>
                 <p class="font-medium text-lg">Ваша заявка успешно подана, ожидайте подтверждения</p>
             </div>
-        @else
+        @elseif ($this->state === 'ready' || $isEditing)
             <div class="flex items-center justify-between pb-3 mb-4">
-                <h3 class="text-lg font-medium text-[#2E325C] a-font">Подать заявку</h3>
+                <h3 class="text-lg font-medium text-[#2E325C] a-font">
+                    @if ($isEditing) Редактировать заявку @else Подать заявку @endif
+                </h3>
                 <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
             </div>
             <p>Выберите команду и яхту, которые будут участвовать в регате.</p>
@@ -84,7 +85,7 @@
                             class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('teamId') border-red-300 @enderror">
                         <option value="">Выберите команду</option>
                         @foreach ($this->organizerTeams as $team)
-                            <option value="{{ $team->id }}">{{ $team->name }}</option>
+                            <option value="{{ $team->id }}" @selected($team->id === $teamId)>{{ $team->name }}</option>
                         @endforeach
                     </select>
                     @error('teamId')
@@ -98,7 +99,7 @@
                             class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm  @error('yachtId') border-red-300 @enderror">
                         <option value="">Выберите яхту</option>
                         @foreach ($this->allFreeYachts as $yacht)
-                            <option value="{{ $yacht->id }}">{{ $yacht->name }} ({{ $yacht->vfps_number ?? 'без номера ВФПС' }})</option>
+                            <option value="{{ $yacht->id }}" @selected($yacht->id === $yachtId)>{{ $yacht->name }} ({{ $yacht->vfps_number ?? 'без номера ВФПС' }})</option>
                         @endforeach
                     </select>
                     @error('yachtId')
@@ -134,8 +135,9 @@
                     <div class="border-t border-gray-200 pt-4">
                         <p class="text-sm font-medium text-[#2E325C] mb-3">Документы</p>
                         @foreach ($this->requiredDocuments() as $doc)
+                            @php $docType = $doc['doc_type']; @endphp
                             <div class="mb-3">
-                                <label for="doc_{{ $doc['doc_type'] }}" class="block text-sm text-brand-gray-light">
+                                <label for="doc_{{ $docType }}" class="block text-sm text-brand-gray-light">
                                     {{ $doc['title'] }}
                                     @if ($doc['is_required'] ?? false)
                                         <span class="text-red-500">*</span>
@@ -143,18 +145,34 @@
                                         <span class="text-gray-400 text-xs">(необязательный)</span>
                                     @endif
                                 </label>
+
+                                {{-- Уже загруженные документы (только при редактировании) --}}
+                                @if ($isEditing && !empty($existingDocuments[$docType]))
+                                    <div class="mb-2 space-y-1">
+                                        @foreach ($existingDocuments[$docType] as $url)
+                                            @php $filename = basename($url); @endphp
+                                            <div class="flex items-center gap-2 text-xs text-gray-600">
+                                                <svg class="w-4 h-4 shrink-0 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                <span class="truncate">{{ $filename }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+
                                 <input type="file"
-                                       id="doc_{{ $doc['doc_type'] }}"
-                                       wire:model="documentFiles.{{ $doc['doc_type'] }}"
+                                       id="doc_{{ $docType }}"
+                                       wire:model="documentFiles.{{ $docType }}"
                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" multiple
                                        class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-[#F8F8F8] file:text-[#2E325C] hover:file:bg-gray-200">
-                                @error('documentFiles.' . $doc['doc_type'])
+                                @error('documentFiles.' . $docType)
                                     <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                                 @enderror
-                                @error('documentFiles.' . $doc['doc_type'] . '.*')
+                                @error('documentFiles.' . $docType . '.*')
                                     <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                                 @enderror
-                                <div wire:loading wire:target="documentFiles.{{ $doc['doc_type'] }}" class="text-xs text-blue-500 mt-1">Загрузка...</div>
+                                <div wire:loading wire:target="documentFiles.{{ $docType }}" class="text-xs text-blue-500 mt-1">Загрузка...</div>
                             </div>
                         @endforeach
                     </div>
@@ -164,7 +182,9 @@
                     <button type="submit"
                             wire:loading.attr="disabled"
                             class="inline-flex w-full justify-center bg-[#2D92CE] px-3 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90 disabled:opacity-50">
-                        <span wire:loading.remove>Подать заявку →</span>
+                        <span wire:loading.remove>
+                            @if ($isEditing) Сохранить изменения → @else Подать заявку → @endif
+                        </span>
                         <span wire:loading>Отправка...</span>
                     </button>
                 </div>
