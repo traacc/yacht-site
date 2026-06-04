@@ -14,6 +14,7 @@
     activeTab: 'video',
     selectedYear: '{{ $years->first() }}',
     selectedWater: '',
+    touchStartX: 0,
     get currentIndex() {
         return this.lbImages.indexOf(this.activeImage);
     },
@@ -141,21 +142,25 @@
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
         @keydown.left.window="prevImage()"
         @keydown.right.window="nextImage()"
+        x-trap.noscroll="lightbox_open"
+        @touchstart.passive="touchStartX = $event.touches[0].clientX"
+        @touchend.passive="Math.abs($event.changedTouches[0].clientX - touchStartX) > 50 && ($event.changedTouches[0].clientX > touchStartX ? prevImage() : nextImage())"
         >
-        <div @click.away="lightbox_open = false" class="relative max-w-[1200px] max-h-[80vh] gap-6"
+        <div @click.away="lightbox_open = false" class="relative w-full max-w-[1200px] max-h-[90vh] px-2 md:px-0"
             x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95"
             x-transition:enter-end="opacity-100 scale-100"
         >
             <!-- Кнопка закрытия -->
-            <button @click="lightbox_open = false" class="md:absolute fixed md:top-5 md:right-5 top-5 right-5 text-white text-3xl z-50 hover:opacity-70">&times;</button>
+            <button @click="lightbox_open = false" class="absolute -top-10 right-2 md:-top-10 md:-right-4 text-white text-3xl z-50 hover:opacity-70">&times;</button>
 
             <!-- Контейнер с изображением и стрелками -->
             <div class="relative flex items-center justify-center">
                 <!-- Стрелка назад -->
                 <button @click="prevImage()"
-                    class="absolute -left-6 z-50 p-3 text-white bg-[#2D92CE] hover:bg-[#2D92CE] rounded-full transition-all hidden md:block">
-<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    aria-label="Предыдущее"
+                    class="absolute left-1 md:-left-6 z-50 p-2 md:p-3 text-white bg-[#2D92CE]/80 hover:bg-[#2D92CE] rounded-full transition-all">
+                    <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 </button>
 
                 <img :src="activeImage"
@@ -163,26 +168,27 @@
                     x-transition:enter="transition ease-out duration-300"
                     x-transition:enter-start="scale-90 opacity-0"
                     x-transition:enter-end="scale-100 opacity-100"
-                    class="w-[75vw] h-[60vh] object-cover rounded-sm shadow-2xl"
+                    class="w-[90vw] md:w-[75vw] h-[40vh] md:h-[60vh] object-contain rounded-sm shadow-2xl"
                     alt="Full size">
 
                 <!-- Стрелка вперёд -->
                 <button @click="nextImage()"
-                    class="absolute -right-6 z-50 p-3 text-white bg-[#2D92CE] hover:bg-[#2D92CE] rounded-full transition-all hidden md:block">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    aria-label="Следующее"
+                    class="absolute right-1 md:-right-6 z-50 p-2 md:p-3 text-white bg-[#2D92CE]/80 hover:bg-[#2D92CE] rounded-full transition-all">
+                    <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                     </svg>
                 </button>
             </div>
 
             <!-- Превью (миниатюры) -->
-            <div class="flex gap-4 overflow-hidden mt-4 justify-center">
+            <div class="flex gap-2 md:gap-4 overflow-x-auto mt-4 justify-start md:justify-center px-1 pb-2">
                 <template x-for="img in lbImages">
-                    <div class="cursor-pointer rounded-lg shadow-hover transition-all max-w-[100px] aspect-square"
-                        
+                    <div class="cursor-pointer rounded-lg shadow-hover transition-all shrink-0 max-w-[60px] md:max-w-[100px] aspect-square"
+                        :class="activeImage === img ? 'ring-2 ring-[#2D92CE]' : ''"
                         @click="activeImage = img">
                         <img :src="img"
-                            class="object-contain h-full w-full"
+                            class="object-cover h-full w-full rounded-lg"
                             alt="Preview">
                     </div>
                 </template>
