@@ -110,9 +110,6 @@ class ArchivedRegattaEntryResource extends Resource
                     ->label('Яхта')
                     ->relationship('yacht', 'name')
                     ->columnSpanFull(),
-                Placeholder::make('team.organizer.name')
-                    ->label('Капитан')
-                    ->columnSpanFull(),
                 DatePicker::make('submitted_at')
                     ->label('Дата рассмотрения')
                     ->displayFormat('d.m.Y')
@@ -138,7 +135,9 @@ class ArchivedRegattaEntryResource extends Resource
                     ->reorderable(false)
                     ->default([])
                     ->columns(1)
-                    ->itemLabel(fn (array $state): string => ($state['member_name'] ?? 'Участник') . ' — ' . match ($state['role'] ?? '') {
+                    ->itemLabel(fn (array $state): string => ($state['member_name'] ?? 'Участник')
+                        . (($state['is_captain'] ?? false) ? ' ⭐ Капитан' : '')
+                        . ' — ' . match ($state['role'] ?? '') {
                         'main'              => 'Основной',
                         'reserve'           => 'Запасной',
                         'not_participating' => 'Не участвует',
@@ -190,6 +189,13 @@ class ArchivedRegattaEntryResource extends Resource
                                 $set('member_name', $member?->name ?? '');
                             }),
                         Hidden::make('member_name'),
+                        Hidden::make('is_captain')
+                            ->default(false),
+                        \Filament\Forms\Components\Placeholder::make('captain_badge')
+                            ->label('Капитан')
+                            ->content(fn (Get $get): string => $get('is_captain') ? ' Капитан команды' : '')
+                            ->columnSpanFull()
+                            ->visible(fn (Get $get): bool => (bool) $get('is_captain')),
                         Select::make('role')
                             ->label('Роль')
                             ->options([
@@ -385,6 +391,7 @@ class ArchivedRegattaEntryResource extends Resource
             ->map(fn (\App\Models\User $user): array => [
                 'team_member_id' => $user->pivot->id,
                 'member_name'    => $user->name,
+                'is_captain'     => $user->pivot->role === 'organizer',
                 'role'           => 'main',
             ])
             ->all();
@@ -398,18 +405,22 @@ class ArchivedRegattaEntryResource extends Resource
      */
     public static function loadCrew(RegattaEntry $record): array
     {
+        $team = \App\Models\Team::find($record->team_id);
+        $organizerId = $team?->organizer_id;
+
         $existing = $record->crew()
             ->with('teamMember.user')
             ->get()
             ->map(fn (\App\Models\RegattaEntryCrew $crew): array => [
                 'team_member_id' => $crew->team_member_id,
                 'member_name'    => $crew->teamMember?->user?->name ?? 'Неизвестный',
+                'is_captain'     => $crew->teamMember?->role === 'organizer',
                 'role'           => $crew->role,
             ]);
 
         $existingMemberIds = $existing->pluck('team_member_id')->all();
 
-        $newMembers = \App\Models\Team::find($record->team_id)
+        $newMembers = $team
             ?->members()
             ->wherePivot('status', 'active')
             ->get()
@@ -417,6 +428,7 @@ class ArchivedRegattaEntryResource extends Resource
             ->map(fn (\App\Models\User $user): array => [
                 'team_member_id' => $user->pivot->id,
                 'member_name'    => $user->name,
+                'is_captain'     => $user->id === $organizerId,
                 'role'           => 'not_participating',
             ])
             ?? collect();

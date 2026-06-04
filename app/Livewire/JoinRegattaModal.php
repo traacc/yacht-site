@@ -202,8 +202,12 @@ class JoinRegattaModal extends Component
 
         return TeamMember::where('team_id', $this->teamId)
             ->where('status', 'active')
-            ->with('user')
-            ->get();
+            ->with(['user', 'team'])
+            ->get()
+            ->map(function (TeamMember $member): TeamMember {
+                $member->is_captain = $member->team->organizer_id === $member->user_id;
+                return $member;
+            });
     }
 
     #[Computed]

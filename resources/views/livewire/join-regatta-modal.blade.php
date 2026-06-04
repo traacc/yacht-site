@@ -113,7 +113,12 @@
                         <p class="text-xs text-gray-500 mb-3">Выберите участников команды и укажите роль: основной или запасной.</p>
                         @foreach ($teamMembers as $member)
                             <div class="flex items-center gap-3 mb-2 py-2 px-3 bg-[#F8F8F8] rounded">
-                                <span class="text-sm flex-1">{{ $member->user?->name ?? 'Неизвестный участник' }}</span>
+                                <span class="text-sm flex-1">
+                                    {{ $member->user?->name ?? 'Неизвестный участник' }}
+                                    @if ($member->is_captain ?? false)
+                                        <span class="text-yellow-500 text-xs font-semibold ml-1">Капитан</span>
+                                    @endif
+                                </span>
                                 <select wire:model.change="crew.{{ $member->id }}"
                                         class="text-sm border-gray-200 bg-white rounded p-1 min-w-[140px]">
                                     <option value="">Не участвует</option>

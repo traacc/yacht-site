@@ -133,7 +133,9 @@ class RegattaEntryResource extends Resource
                     ->reorderable(false)
                     ->default([])
                     ->columns(1)
-                    ->itemLabel(fn (array $state): string => ($state['member_name'] ?? 'Участник') . ' — ' . match ($state['role'] ?? '') {
+                    ->itemLabel(fn (array $state): string => ($state['member_name'] ?? 'Участник')
+                        . (($state['is_captain'] ?? false) ? ' Капитан' : '')
+                        . ' — ' . match ($state['role'] ?? '') {
                         'main'              => 'Основной',
                         'reserve'           => 'Запасной',
                         'not_participating' => 'Не участвует',
@@ -185,6 +187,13 @@ class RegattaEntryResource extends Resource
                                 $set('member_name', $member?->name ?? '');
                             }),
                         Hidden::make('member_name'),
+                        Hidden::make('is_captain')
+                            ->default(false),
+                        \Filament\Forms\Components\Placeholder::make('captain_badge')
+                            ->label('')
+                            ->content(fn (Get $get): string => $get('is_captain') ? ' Капитан команды' : '')
+                            ->columnSpanFull()
+                            ->visible(fn (Get $get): bool => (bool) $get('is_captain')),
                         Select::make('role')
                             ->label('Роль')
                             ->options([
@@ -408,6 +417,7 @@ class RegattaEntryResource extends Resource
             ->map(fn (\App\Models\RegattaEntryCrew $crew): array => [
                 'team_member_id' => $crew->team_member_id,
                 'member_name'    => $crew->teamMember?->user?->name ?? 'Неизвестный',
+                'is_captain'     => $crew->teamMember?->role === 'organizer',
                 'role'           => $crew->role,
             ])
             ->all();
