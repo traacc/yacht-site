@@ -93,7 +93,7 @@
                     <img src="{{ $gallery->cover_path ?: asset('images/news/news_1.png') }}"
                          alt="{{ $gallery->name }}"
                          class="absolute w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105">
-                    <div class="bg-[#2E325C] opacity-90 absolute z-15 w-full h-full transition-transform duration-500 group-hover:scale-105"></div>
+                    <div class="bg-[#2E325C] opacity-30 absolute z-15 w-full h-full transition-transform duration-500 group-hover:scale-105"></div>
                     <div class="info relative z-20 p-6 pt-56 text-white">
                         <h4 class="title a-font text-2xl mb-3">{{ $gallery->name }}</h4>
                         <p class="mb-3 flex gap-3">{!! file_get_contents(public_path('images/icons/calendar.svg')) !!} {{ $gallery->date?->isoFormat('D–D MMMM') }} · {{ $gallery->regatta?->location ?? '' }}</p>
