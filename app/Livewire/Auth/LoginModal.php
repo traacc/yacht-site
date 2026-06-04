@@ -35,6 +35,7 @@ class LoginModal extends Component
 
     // Данные для отправки credentials
     public string $selectedUserId = '';
+    public string $senderPassword = '';
     public string $sendStatus = '';
 
 
@@ -142,12 +143,20 @@ class LoginModal extends Component
     {
         $this->validate([
             'selectedUserId' => ['required', 'exists:users,id'],
+            'senderPassword' => ['required'],
         ], attributes: [
             'selectedUserId' => 'пользователь',
+            'senderPassword' => 'пароль',
         ]);
 
         $user = User::findOrFail($this->selectedUserId);
 
+        if (!Hash::check($this->senderPassword, $user->password)) {
+            $this->addError('senderPassword', 'Неверный пароль пользователя.');
+            return;
+        }
+
+        /*
         $email = $user->email;
         $password = \Illuminate\Support\Str::random(12);
 
@@ -157,7 +166,9 @@ class LoginModal extends Component
         Mail::to($user)->send(new SendLoginCredentials($user, $email, $password));
 
         session()->flash('credentials_sent', 'Данные для входа отправлены на почту пользователю ' . $user->name);
+        */
         $this->selectedUserId = '';
+        $this->senderPassword = '';
     }
 
     public function getUsersProperty()
