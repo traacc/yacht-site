@@ -163,7 +163,7 @@
                                     <td data-label="№" class="py-3">{{ $index + 1 }}</td>
                                     <td data-label="Яхта" class="py-3">{{ $entry->yacht?->name ?? '—' }}</td>
                                     <td data-label="Команда" class="py-3">{{ $entry->team?->name ?? '—' }}</td>
-                                    <td data-label="Капитан" class="py-3">{{ $entry->team?->organizer?->full_name ?? '—' }}</td>
+                                    <td data-label="Капитан" class="py-3">{{ $entry->team?->organizer?->name ?? '—' }}</td>
                                     <td data-label="Состав команды" class="py-3">
                                         <a @click="team_modal_open = true; activeTeamIndex = {{ $index }}"
                                            href="#"

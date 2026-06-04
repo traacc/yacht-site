@@ -67,9 +67,12 @@ class LoginModal extends Component
     public function register()
     {
         $this->validate([
+            'name'                  => ['required', 'string', 'max:255'],
+            /*
             'first_name'            => ['required', 'string', 'max:255'],
             'last_name'             => ['required', 'string', 'max:255'],
             'patronymic'            => ['required', 'string', 'max:255'],
+            */
             'email'                 => ['required', 'email', 'unique:users,email'],
             'password'              => ['required', Password::defaults(), 'same:password_confirmation'],
             'password_confirmation' => ['required'],
@@ -81,9 +84,12 @@ class LoginModal extends Component
             //'registerCaptchaToken' => ['required', new YandexCaptcha()],
         ], attributes: [
             'registerCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
+            'name'                  => 'ФИО',
+            /*
             'first_name'            => 'имя',
             'last_name'             => 'фамилия',
             'patronymic'            => 'отчество',
+            */
             'email'                 => 'email',
             'phone'                 => 'телефон',
             'birth_day'             => 'день рождения',
@@ -108,10 +114,12 @@ class LoginModal extends Component
         $birthDate = sprintf('%04d-%02d-%02d', $this->birth_year, $this->birth_month, $this->birth_day);
 
         $user = User::create([
-            'name'           => $this->first_name . ' ' . $this->last_name,
+            'name'           => $this->name,
+            /*
             'first_name'     => $this->first_name,
             'last_name'      => $this->last_name,
-            'patronymic'      => $this->patronymic,
+            'patronymic'     => $this->patronymic,
+            */
             'email'          => $this->email,
             'phone'          => $this->phone ?: null,
             'birth_date'     => $birthDate,
@@ -148,7 +156,7 @@ class LoginModal extends Component
 
         Mail::to($user)->send(new SendLoginCredentials($user, $email, $password));
 
-        session()->flash('credentials_sent', 'Данные для входа отправлены на почту пользователю ' . $user->full_name);
+        session()->flash('credentials_sent', 'Данные для входа отправлены на почту пользователю ' . $user->name);
         $this->selectedUserId = '';
     }
 
@@ -156,9 +164,12 @@ class LoginModal extends Component
     {
         return User::query()
             ->whereNotNull('email')
+            /*
             ->orderBy('last_name')
             ->orderBy('first_name')
-            ->get(['id', 'last_name', 'first_name', 'patronymic', 'email']);
+            */
+            ->orderBy('name')
+            ->get(['id','name', 'email']);
     }
 
     public function render()

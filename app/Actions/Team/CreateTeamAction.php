@@ -78,7 +78,7 @@ final class CreateTeamAction
 
                 if ($alreadyInTeam) {
                     throw ValidationException::withMessages([
-                        'initial_member_ids' => "Участник «{$user->full_name}» уже состоит в другой команде.",
+                        'initial_member_ids' => "Участник «{$user->name}» уже состоит в другой команде.",
                     ]);
                 }
 

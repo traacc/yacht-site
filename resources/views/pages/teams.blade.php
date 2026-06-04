@@ -54,7 +54,7 @@ bgImage="{{ asset('images/bg/teams.webp') }}"
                                     Капитан:
                                 </span>
                                 <span class="font-medium">
-                                    {{ $team->organizer?->full_name ?? '—' }}
+                                    {{ $team->organizer?->name ?? '—' }}
                                 </span>
                             </div>
                         </div>
@@ -88,7 +88,7 @@ bgImage="{{ asset('images/bg/teams.webp') }}"
                         @foreach($teams as $team)
                         <tr class="border-t text-sm lg:text-2xl">
                             <td data-label="Команда" class="py-2 text-center">{{ $team->name }}</td>
-                            <td data-label="Капитан" class="py-2 text-center">{{ $team->organizer?->full_name ?? '—' }}</td>
+                            <td data-label="Капитан" class="py-2 text-center">{{ $team->organizer?->name ?? '—' }}</td>
                             <!--
                             <td data-label="Статус" class="py-2 text-center">
                                 @if($team->is_archived)

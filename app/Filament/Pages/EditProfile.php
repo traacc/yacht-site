@@ -90,6 +90,11 @@ class EditProfile extends BaseEditProfile
                             ->visibility('public')
                             ->extraFieldWrapperAttributes(['class' => 'photo_wrapper']),
 
+                        TextInput::make('name')
+                            ->label('ФИО')
+                            ->columnSpanFull()
+                            ->maxLength(255),
+                        /*
                         TextInput::make('first_name')
                             ->label('Имя')
                             ->maxLength(255),
@@ -99,6 +104,7 @@ class EditProfile extends BaseEditProfile
                         TextInput::make('patronymic')
                             ->label('Отчество')
                             ->maxLength(255),
+                        */
                         DatePicker::make('birth_date')
                             ->label('Дата рождения')
                             ->minDate(now()->subYears(100)) 

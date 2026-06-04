@@ -56,7 +56,7 @@ final class AddMembersToTeamAction
 
             if ($alreadyInTeam) {
                 throw ValidationException::withMessages([
-                    'user_ids' => "Участник «{$user->full_name}» уже состоит в другой команде.",
+                    'user_ids' => "Участник «{$user->name}» уже состоит в другой команде.",
                 ]);
             }
 
@@ -67,7 +67,7 @@ final class AddMembersToTeamAction
 
             if ($existingMembership) {
                 throw ValidationException::withMessages([
-                    'user_ids' => "Участник «{$user->full_name}» уже добавлен в эту команду.",
+                    'user_ids' => "Участник «{$user->name}» уже добавлен в эту команду.",
                 ]);
             }
 

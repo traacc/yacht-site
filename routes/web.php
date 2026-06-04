@@ -255,7 +255,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
     $entriesJson = $entries->map(fn ($entry) => [
         'team_name' => $entry->team?->name ?? '',
         'crew' => $entry->team?->activeMembers?->map(fn ($member) => [
-            'name' => $member->full_name ?? '',
+            'name' => $member->name ?? '',
             'birthday' => $member->birth_date?->format('d.m.Y') ?? '',
             'rank' => $member->sport_category?->getLabel() ?? '',
         ])->values()->toArray() ?? [],
@@ -343,11 +343,11 @@ Route::get('/teams', function () {
         'created_at' => $team->created_at?->format('d.m.Y') ?? '—',
         'status' => $team->is_archived ? 'Неактивная' : 'Активная',
         'status_class' => $team->is_archived ? 'inactive' : 'active',
-        'captain' => $team->organizer?->full_name ?? '—',
+        'captain' => $team->organizer?->name ?? '—',
         'rating' => $team->ratings->where('rating_type', 'team')->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first()?->rank_position ?? '—',
         'participation_count' => $team->regattaEntries->count(),
         'members' => $team->activeMembers->map(fn ($m) => [
-            'name' => $m->full_name,
+            'name' => $m->name,
             'birthday' => $m->birth_date?->format('d.m.Y') ?? '',
             'category' => $m->sport_category?->getLabel() ?? '',
         ])->values()->toArray(),
@@ -386,7 +386,7 @@ Route::get('/yachts', function () {
         'name' => $yacht->name,
         'vfps_number' => $yacht->vfps_number,
         'owner' => [
-            'name' => $yacht->user?->full_name ?? '—',
+            'name' => $yacht->user?->name ?? '—',
             'phone' => $yacht->user?->phone ?? '—',
             'email' => $yacht->user?->email ?? '—',
             'photo_url' => $yacht->user?->photo_url
@@ -449,7 +449,7 @@ Route::get('/ratings', function () {
             'total_points' => (float) $r->total_points,
             'rank'         => $r->rank_position,
             'members'      => $r->team?->activeMembers?->map(fn ($m) => [
-                'name'     => $m->full_name,
+                'name'     => $m->name,
                 'birthday' => $m->birth_date?->format('d.m.Y') ?? '—',
                 'category' => $m->sport_category ?? '—',
             ])->values()->toArray() ?? [],
@@ -460,7 +460,7 @@ Route::get('/ratings', function () {
         ->ranked()
         ->get()
         ->map(fn ($r) => [
-            'name'         => $r->user?->full_name ?? '—',
+            'name'         => $r->user?->name ?? '—',
             'total_points' => (float) $r->total_points,
             'rank'         => $r->rank_position,
             'birthday'     => $r->user?->birth_date?->format('d.m.Y') ?? '—',

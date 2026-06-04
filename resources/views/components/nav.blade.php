@@ -58,7 +58,7 @@
                         class="flex items-center gap-2 px-2 py-1 rounded-lg transition-colors">
                         <img src="{{ auth()->user()->photo_url ? asset('storage/' . auth()->user()->photo_url) : asset('images/icons/avatar-default.svg') }}"
                             alt="" class="w-8 h-8 rounded-full object-cover border-2 border-gray-200">
-                        <span class="text-sm font-medium text-[#2E325C] hidden md:inline">{{ auth()->user()->first_name }}</span>
+                        <span class="text-sm font-medium text-[#2E325C] hidden md:inline">{{ auth()->user()->name }}</span>
                         <svg class="w-4 h-4 text-gray-400 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                         </svg>
@@ -167,7 +167,7 @@
                     <img src="{{ auth()->user()->photo_url ? asset('storage/' . auth()->user()->photo_url) : asset('images/icons/avatar-default.svg') }}"
                         alt="" class="w-10 h-10 rounded-full object-cover border-2 border-white/30">
                     <div>
-                        <p class="text-sm font-medium">{{ auth()->user()->first_name }}</p>
+                        <p class="text-sm font-medium">{{ auth()->user()->name }}</p>
                         <p class="text-xs text-gray-300">{{ auth()->user()->email }}</p>
                     </div>
                 </div>-->

@@ -73,6 +73,11 @@ class UserResource extends Resource
                     ->readOnly()
                     ->columnSpanFull()
                     ->formatStateUsing(fn (?User $record) => $record?->formatted_external_id ?? '—'),
+                TextInput::make('name')
+                    ->label('ФИО')
+                    ->placeholder('ФИО')
+                    ->required(),
+                /*
                 TextInput::make('first_name')
                     ->label('Имя')
                     ->placeholder('Имя')
@@ -84,6 +89,7 @@ class UserResource extends Resource
                 TextInput::make('patronymic')
                     ->label('Отчество')
                     ->maxLength(255),
+                */
                 DatePicker::make('birth_date')
                     ->minDate(now()->subYears(100)) 
                     ->maxDate(now()->addYears(100))

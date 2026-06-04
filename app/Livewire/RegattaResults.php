@@ -181,7 +181,7 @@ class RegattaResults extends Component
         $crewMap = [];
         foreach ($entries as $entry) {
             $crewList = $entry->crew->map(fn ($c) => [
-                'name'     => $c->teamMember->user->full_name ?? '',
+                'name'     => $c->teamMember->user->name ?? '',
                 'birthday' => $c->teamMember->user->birth_date?->format('d.m.Y') ?? '—',
                 'rank'     => $c->teamMember->user->sport_category?->getLabel() ?? '—',
             ])->toArray();

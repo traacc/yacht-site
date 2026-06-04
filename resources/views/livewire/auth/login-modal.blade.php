@@ -110,23 +110,9 @@
             <form wire:submit.prevent="register" class="mt-2 md:space-y-2" x-show="tab === 'register'">
                 <div class="overflow-x-auto max-h-[49vh] md:max-h-[59vh] space-y-2">
                     <div>
-                        <input type="text" id="first_name" wire:model="first_name" placeholder="Имя"
-                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('first_name') border-red-300 @enderror">
-                        @error('first_name') 
-                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> 
-                        @enderror
-                    </div>
-                    <div>
-                        <input type="text" id="last_name" wire:model="last_name" placeholder="Фамилия"
-                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('last_name') border-red-300 @enderror">
-                        @error('last_name') 
-                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> 
-                        @enderror
-                    </div>
-                    <div>
-                        <input type="text" id="patronymic" wire:model="patronymic" placeholder="Отчество"
-                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('last_name') border-red-300 @enderror">
-                        @error('patronymic') 
+                        <input type="text" id="name" wire:model="name" placeholder="ФИО"
+                            class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('name') border-red-300 @enderror">
+                        @error('name') 
                             <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> 
                         @enderror
                     </div>
@@ -267,9 +253,7 @@
             @php
                 $usersData = $this->users->map(fn($u) => [
                     'id' => $u->id,
-                    'last_name' => $u->last_name,
-                    'first_name' => $u->first_name,
-                    'patronymic' => $u->patronymic,
+                    'name' => $u->name,
                     'email' => $u->email,
                 ])->values();
             @endphp
@@ -288,7 +272,7 @@
                     <select wire:model="selectedUserId" class="hidden">
                         <option value="">Выберите пользователя</option>
                         @foreach($this->users as $user)
-                            <option value="{{ $user->id }}">{{ $user->last_name }} {{ $user->first_name }} {{ $user->patronymic }}</option>
+                            <option value="{{ $user->id }}">{{ $user->name }}</option>
                         @endforeach
                     </select>
 
@@ -297,23 +281,21 @@
                          class="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
                         <template x-for="user in users.filter(u => {
                             const s = userSearch.toLowerCase();
-                            return (u.last_name?.toLowerCase() || '').includes(s)
-                                || (u.first_name?.toLowerCase() || '').includes(s)
+                            return (u.name?.toLowerCase() || '').includes(s)
                                 || (u.email?.toLowerCase() || '').includes(s);
                         })" :key="user.id">
                             <div @click="
                                 $wire.set('selectedUserId', user.id);
-                                userSearch = (user.last_name || '') + ' ' + (user.first_name || '') + ' ' + (user.patronymic || '');
+                                userSearch = (user.name || '');
                                 open = false;
                             "
                                  class="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
-                                 x-text="(user.last_name || '') + ' ' + (user.first_name || '') + ' ' + (user.patronymic || '') + ' (' + (user.email || '') + ')'">
+                                 x-text="(user.name || '')'">
                             </div>
                         </template>
                         <div x-show="!users.filter(u => {
                             const s = userSearch.toLowerCase();
-                            return (u.last_name?.toLowerCase() || '').includes(s)
-                                || (u.first_name?.toLowerCase() || '').includes(s)
+                            return (u.name?.toLowerCase() || '').includes(s)
                                 || (u.email?.toLowerCase() || '').includes(s);
                         }).length" class="px-3 py-2 text-sm text-gray-400">
                             Пользователи не найдены

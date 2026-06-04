@@ -104,7 +104,7 @@
                                             </div>
                                         </td>
                                         <td data-label="Команда" class="py-3">{{ $result->team?->name ?? '—' }}</td>
-                                        <td data-label="Капитан" class="py-3">{{ $result->team?->organizer?->full_name ?? '—' }}</td>
+                                        <td data-label="Капитан" class="py-3">{{ $result->team?->organizer?->name ?? '—' }}</td>
                                         <td data-label="Яхта" class="py-3">{{ $result->yacht?->name ?? '—' }}</td>
                                         <td data-label="Парус №" class="py-3">{{ $result->yacht?->vfps_number ?? '—' }}</td>
                                         <td data-label="Участники" class="py-3">
@@ -195,7 +195,7 @@
                                             </div>
                                         </td>
                                         <td class="py-3">{{ $result->team?->name ?? '—' }}</td>
-                                        <td class="py-3">{{ $result->team?->organizer?->full_name ?? '—' }}</td>
+                                        <td class="py-3">{{ $result->team?->organizer?->name ?? '—' }}</td>
                                         <td class="py-3">{{ $result->yacht?->name ?? '—' }}</td>
                                         <td class="py-3">{{ $result->yacht?->vfps_number ?? '—' }}</td>
                                         <td class="py-3">
@@ -299,7 +299,7 @@
                                                     </div>
                                                 </td>
                                                 <td data-label="Команда" class="py-3">{{ $result->team?->name ?? '—' }}</td>
-                                                <td data-label="Капитан" class="py-3">{{ $result->team?->organizer?->full_name ?? '—' }}</td>
+                                                <td data-label="Капитан" class="py-3">{{ $result->team?->organizer?->name ?? '—' }}</td>
                                                 <td data-label="Яхта" class="py-3">{{ $result->yacht?->name ?? '—' }}</td>
                                                 <td data-label="Парус №" class="py-3">{{ $result->yacht?->vfps_number ?? '—' }}</td>
                                                 <td data-label="Участники" class="py-3">
@@ -414,7 +414,7 @@
                                                     <span>{{ $position + 1 }}</span>
                                                 </div>
                                             </td>
-                                            <td class="py-2" data-label="Участник">{{ $participant->full_name ?: $participant->name }}</td>
+                                            <td class="py-2" data-label="Участник">{{ $participant->name ?: $participant->name }}</td>
                                             <td class="py-2" data-label="Очки">{{ $points }}</td>
                                         </tr>
                                         @endforeach
