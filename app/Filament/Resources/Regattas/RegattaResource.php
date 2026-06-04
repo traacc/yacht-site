@@ -245,6 +245,7 @@ class RegattaResource extends Resource
                     ->relationship('races')
                     ->label('Расписание регаты')
                     ->defaultItems(0)
+                    ->reorderable()
                     ->schema([
                         TextInput::make('name')
                             ->label('Событие')
