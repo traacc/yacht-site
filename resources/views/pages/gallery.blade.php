@@ -77,8 +77,12 @@
                 <div class="cursor-pointer group relative"
                      @click="gallery_modal_open = true; activeGallery = {{ Js::from([
                          'name'       => $gallery->name,
-                         'date'       => $gallery->date?->isoFormat('D MMMM YYYY'),
-                         'date_short' => $gallery->date?->isoFormat('D–D MMMM'),
+                         'date'       => $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM YYYY'),
+                         'date_short' => $gallery->regatta
+                             ? ($gallery->regatta->date_start?->isSameDay($gallery->regatta->date_end ?? $gallery->regatta->date_start)
+                                 ? $gallery->regatta->date_start->isoFormat('D MMMM')
+                                 : $gallery->regatta->date_start->isoFormat('D').'–'.$gallery->regatta->date_end->isoFormat('D MMMM'))
+                             : $gallery->date?->isoFormat('D MMMM'),
                          'water_area' => $gallery->water_area,
                          'location'   => $gallery->regatta?->location,
                          // ★ ИЗМЕНЕНО: аксессор cover_path теперь возвращает готовый URL (см. Gallery::getCoverPathAttribute)
@@ -96,7 +100,7 @@
                     <div class="bg-[#2E325C] opacity-30 absolute z-15 w-full h-full transition-transform duration-500 group-hover:scale-105"></div>
                     <div class="info relative z-20 p-6 pt-56 text-white">
                         <h4 class="title a-font text-2xl mb-3">{{ $gallery->name }}</h4>
-                        <p class="mb-3 flex gap-3">{!! file_get_contents(public_path('images/icons/calendar.svg')) !!} {{ $gallery->date?->isoFormat('D–D MMMM') }} · {{ $gallery->regatta?->location ?? '' }}</p>
+                        <p class="mb-3 flex gap-3">{!! file_get_contents(public_path('images/icons/calendar.svg')) !!} {{ $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM') }} · {{ $gallery->regatta?->location ?? '' }}</p>
                         <p class="flex gap-3">{!! file_get_contents(public_path('images/icons/waves.svg')) !!} {{ $gallery->water_area }}</p>
                     </div>
                 </div>
