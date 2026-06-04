@@ -11,7 +11,7 @@ class WeatherService
 {
     private const TIMEOUT_SECONDS = 2;
 
-    public function getWeather(float $lat, float $lon): array
+    public function getWeather(float $lat, float $lon): array|null
     {
         return Cache::remember("weather:{$lat}:{$lon}", now()->addMinutes(240), function () use ($lat, $lon) {
             try {
@@ -24,9 +24,20 @@ class WeatherService
                         'forecast_days'  => '14',
                     ]);
 
+                if ($response->failed()) {
+                    Log::warning('Weather API responded with error', [
+                        'lat'    => $lat,
+                        'lon'    => $lon,
+                        'status' => $response->status(),
+                        'body'   => $response->body(),
+                    ]);
+
+                    return null;
+                }
+
                 return $response->json();
             } catch (ConnectionException $e) {
-                Log::warning('Weather API request failed', [
+                Log::warning('Weather API connection failed', [
                     'lat'    => $lat,
                     'lon'    => $lon,
                     'error'  => $e->getMessage(),
