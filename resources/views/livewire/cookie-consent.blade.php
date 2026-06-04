@@ -16,7 +16,7 @@
                 <p class="text-sm md:text-base text-gray-800 font-medium">Мы используем cookies</p>
                 <p class="text-xs md:text-sm text-gray-500 mt-0.5">
                     Продолжая использовать сайт, вы соглашаетесь на обработку
-                    <a href="{{ route('policy') }}" class="text-[#2D92CE] hover:underline">персональных данных</a>
+                    <a href="/files/Политика_обработки_персональных_данных_1.docx" class="text-[#2D92CE] hover:underline">персональных данных</a>
                     и использование cookie-файлов.
                 </p>
             </div>
