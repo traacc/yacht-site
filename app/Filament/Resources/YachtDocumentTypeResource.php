@@ -127,7 +127,7 @@ class YachtDocumentTypeResource extends Resource
                                 ->danger()
                                 ->send();
 
-                            //$action->halt();
+                            $action->halt();
                         }
                     }),
             ]);
