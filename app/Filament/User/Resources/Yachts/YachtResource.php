@@ -103,7 +103,7 @@ class YachtResource extends Resource
                 TextInput::make('vfps_number')
                     ->required()
                     ->rules([
-                        fn (callable $get) => \Illuminate\Validation\Rule::unique('yachts', 'vfps_number')->ignore($get('selected_yacht_id')),
+                        fn (callable $get, $record) => \Illuminate\Validation\Rule::unique('yachts', 'vfps_number')->ignore($record?->id ?? $get('selected_yacht_id')),
                     ])
                 ->validationMessages([
                     'unique' => 'Яхта с таким номером ВФПС уже существует в системе.',
