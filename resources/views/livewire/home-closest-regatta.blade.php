@@ -48,7 +48,7 @@
                 @if($hasDocuments)
                 <a href="{{ route('regatta.documents.download', $regatta) }}"
                     class="text-white text-l font-semibold hover:underline items-center gap-4 flex mt-6">
-                    <x-icon-2 name="download" /> Скачать все документы
+                    <x-icon-2 name="download" /> Скачать документы регаты
                 </a>
                 @endif
                 <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"

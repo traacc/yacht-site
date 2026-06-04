@@ -47,6 +47,9 @@ use Kpebedko22\FilamentYandexMap\Enums\YandexMapMode;
 use Kpebedko22\FilamentYandexMap\DTOs\Buttons\{ButtonData, ButtonOptions};
 use Kpebedko22\FilamentYandexMap\Enums\Buttons\{ButtonFloat, ButtonSize};
 
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Str;
+
 class RegattaResource extends Resource
 {
     protected static ?string $model = Regatta::class;
@@ -349,6 +352,12 @@ class RegattaResource extends Resource
                             ->appendFiles()
                             ->directory('documents')
                             ->disk('public')
+                            ->getUploadedFileNameForStorageUsing(
+                                fn (TemporaryUploadedFile $file): string => (string) Str::of($file->getClientOriginalName())
+                                    ->beforeLast('.')
+                                    ->slug() // Превратит "Отчёт 2026" в "otcet-2026"
+                                    ->append('.' . $file->getClientOriginalExtension()),
+                            )
                             ->acceptedFileTypes($acceptedTypes)
                             ->maxSize(20480)
                             ->maxFiles($maxFiles)

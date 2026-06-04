@@ -37,7 +37,7 @@
                     @if($documents->isNotEmpty())
                     <a href="{{ route('regatta.documents.download', $regatta) }}"
                         class="text-brand-navy text-l font-semibold hover:underline items-center gap-4 flex mt-6">
-                        <x-icon-2 name="download" /> Скачать все документы
+                        <x-icon-2 name="download" /> Скачать документы регаты
                     </a>
                     @endif
                     @if($userIsEntered)
@@ -80,7 +80,7 @@
                         <h2 class="section-title a-font">Документы регаты</h2>
                         <a href="{{ route('regatta.documents.download', $regatta) }}"
                            class="text-brand-dark text-lg font-semibold hover:underline items-center gap-4 hidden md:flex">
-                            <x-icon-2 name="download" /> Скачать все документы
+                            <x-icon-2 name="download" /> Скачать документы регаты
                         </a>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
@@ -102,7 +102,7 @@
                     </div>
                     <a href="{{ route('regatta.documents.download', $regatta) }}"
                        class="text-brand-dark text-lg justify-center font-semibold hover:underline items-center gap-4 md:hidden flex mt-6">
-                        <x-icon-2 name="download" /> Скачать все документы
+                        <x-icon-2 name="download" /> Скачать документы регаты
                     </a>
                 </div>
             </section>

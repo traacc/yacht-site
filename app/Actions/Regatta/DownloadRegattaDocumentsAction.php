@@ -42,7 +42,7 @@ final class DownloadRegattaDocumentsAction
             $typeDir = $doc->doc_type ?? 'other';
             $originalName = basename($doc->url);
 
-            $zip->addFile($filePath, $typeDir . '/' . $originalName);
+            $zip->addFile($filePath, '/' . $originalName);
             $filesAdded++;
         }
 
