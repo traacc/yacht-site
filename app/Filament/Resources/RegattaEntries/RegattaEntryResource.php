@@ -290,7 +290,8 @@ class RegattaEntryResource extends Resource
                 TextColumn::make('submitted_at')
                     ->label('Дата рассмотрения')
                     ->dateTime()->dateTime('d M Y')
-                    ->sortable(),
+                    //->sortable()
+                    ,
                 TextColumn::make('status')
                     ->label('Статус')
                     ->badge()
