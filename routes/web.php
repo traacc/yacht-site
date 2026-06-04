@@ -225,7 +225,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         
 
     $temp = '—';
-    if($currentWeather) {
+    if ($currentWeather && isset($currentWeather['hourly'])) {
         $hourly = array_combine(
             $currentWeather['hourly']['time'],
             $currentWeather['hourly']['temperature_2m']

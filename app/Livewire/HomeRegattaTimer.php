@@ -23,7 +23,7 @@ class HomeRegattaTimer extends Component
             : null;
 
         $temp = '—';
-        if($currentWeather) {
+        if ($currentWeather && isset($currentWeather['hourly'])) {
             $hourly = array_combine(
                 $currentWeather['hourly']['time'],
                 $currentWeather['hourly']['temperature_2m']
@@ -34,8 +34,6 @@ class HomeRegattaTimer extends Component
                 ->setTime(12, 0)
                 ->format('Y-m-d\TH:i');
             $temp = $hourly[$datetime] ?? '—';
-
-
         }
         $mapUrl = $regatta?->coordinates
             ? $map->makeUrl(

@@ -25,7 +25,7 @@ class HomeClosestRegatta extends Component
             : null;
 
         $temp = '—';
-        if($currentWeather) {
+        if ($currentWeather && isset($currentWeather['hourly'])) {
             $hourly = array_combine(
                 $currentWeather['hourly']['time'],
                 $currentWeather['hourly']['temperature_2m']
@@ -37,8 +37,6 @@ class HomeClosestRegatta extends Component
                 ->format('Y-m-d\TH:i');
 
             $temp = $hourly[$datetime] ?? '—';
-
-
         }
         $mapUrl = $regatta?->coordinates
             ? $map->makeUrl(
