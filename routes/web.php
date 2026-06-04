@@ -241,7 +241,6 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
     // Проверяем, является ли текущий юзер участником уже заявленной команды
     // Учитываем pending + approved, чтобы кнопка «Подать заявку» скрывалась сразу после подачи
     $userIsEntered = false;
-    $userEntry = null;
     if (auth()->check()) {
         $enteredTeamIds = $regatta->entries()
             ->whereIn('status', ['pending', 'approved'])
@@ -250,14 +249,6 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
             ->where('user_id', auth()->id())
             ->whereIn('team_id', $enteredTeamIds)
             ->exists();
-
-        if ($userIsEntered) {
-            $userEntry = $regatta->entries()
-                ->whereIn('status', ['pending', 'approved'])
-                ->whereIn('team_id', $enteredTeamIds)
-                ->with(['team', 'yacht', 'crew', 'documents'])
-                ->first();
-        }
     }
 
     // Данные для Alpine.js модального окна состава команд
@@ -324,7 +315,6 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'otherRegattas',
         'otherRegattasData',
         'userIsEntered',
-        'userEntry',
         'temp',
         'mapUrl'
     ));

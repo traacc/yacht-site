@@ -3,10 +3,8 @@
 namespace App\Livewire;
 
 use App\Actions\Regatta\SubmitRegattaEntryAction;
-use App\Actions\Regatta\UpdateRegattaEntryAction;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Models\Regatta;
-use App\Models\RegattaEntry;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
@@ -24,15 +22,11 @@ class JoinRegattaModal extends Component
 
     public ?string $regattaId = null;
 
-    public ?string $entryId = null;
-
     public ?string $teamId = null;
 
     public ?string $yachtId = null;
 
     public bool $isOpen = false;
-
-    public bool $isEditing = false;
 
     public bool $submitted = false;
 
@@ -46,50 +40,22 @@ class JoinRegattaModal extends Component
      */
     public array $crew = [];
 
-    /** @var array<string, string[]> Уже загруженные документы: doc_type => [url, ...] */
-    public array $existingDocuments = [];
-
     #[On('open-join-regatta-modal')]
     public function openModal(string $regattaId): void
     {
         $this->regattaId = $regattaId;
-        $this->entryId = null;
         $this->teamId = null;
         $this->yachtId = null;
         $this->documentFiles = [];
         $this->crew = [];
         $this->submitted = false;
-        $this->isEditing = false;
-        $this->isOpen = true;
-    }
-
-    #[On('open-edit-regatta-entry-modal')]
-    public function openEditModal(string $entryId): void
-    {
-        $entry = RegattaEntry::with(['team', 'yacht', 'crew', 'documents'])->findOrFail($entryId);
-
-        $this->regattaId = $entry->regatta_id;
-        $this->entryId = $entry->id;
-        $this->teamId = $entry->team_id;
-        $this->yachtId = $entry->yacht_id;
-        $this->crew = $entry->crew->pluck('role', 'team_member_id')->toArray();
-        $this->documentFiles = [];
-
-        // Загружаем существующие документы, сгруппированные по doc_type
-        $this->existingDocuments = $entry->documents
-            ->groupBy('doc_type')
-            ->map(fn ($docs) => $docs->pluck('url')->toArray())
-            ->toArray();
-
-        $this->submitted = false;
-        $this->isEditing = true;
         $this->isOpen = true;
     }
 
     public function closeModal(): void
     {
         $this->isOpen = false;
-        $this->reset(['regattaId', 'entryId', 'teamId', 'yachtId', 'documentFiles', 'existingDocuments', 'crew', 'submitted', 'isEditing']);
+        $this->reset(['regattaId', 'teamId', 'yachtId', 'documentFiles', 'crew', 'submitted']);
     }
 
     public function updatedTeamId(): void
@@ -99,12 +65,6 @@ class JoinRegattaModal extends Component
 
     public function submit(SubmitRegattaEntryAction $action): void
     {
-        if ($this->isEditing) {
-            $this->updateEntry(app(UpdateRegattaEntryAction::class));
-
-            return;
-        }
-
         $user = Auth::user();
         if (! $user instanceof User) {
             $this->addError('general', 'Требуется авторизация.');
@@ -180,75 +140,6 @@ class JoinRegattaModal extends Component
         $this->submitted = true;
     }
 
-    public function updateEntry(UpdateRegattaEntryAction $action): void
-    {
-        $user = Auth::user();
-        if (! $user instanceof User) {
-            $this->addError('general', 'Требуется авторизация.');
-
-            return;
-        }
-
-        $rules = [
-            'teamId'  => ['required', 'string', 'uuid'],
-            'yachtId' => ['required', 'string', 'uuid'],
-        ];
-
-        $this->validate($rules, [], [
-            'teamId'  => 'команда',
-            'yachtId' => 'яхта',
-        ]);
-
-        $entry = RegattaEntry::findOrFail($this->entryId);
-        $team = Team::findOrFail($this->teamId);
-        $yacht = Yacht::findOrFail($this->yachtId);
-
-        try {
-            $action->handle($entry, $team, $yacht, $user, $this->crew);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            foreach ($e->errors() as $field => $messages) {
-                foreach ($messages as $message) {
-                    $this->addError($field, $message);
-                }
-            }
-
-            return;
-        } catch (\DomainException $e) {
-            $this->addError('yachtId', $e->getMessage());
-
-            return;
-        } catch (\Exception $e) {
-            $this->addError('general', 'Произошла ошибка при редактировании заявки. Попробуйте позже.');
-            report($e);
-
-            return;
-        }
-
-        // Сохраняем загруженные документы
-        foreach ($this->requiredDocuments() as $doc) {
-            $files = $this->documentFiles[$doc['doc_type']] ?? [];
-
-            if (! is_array($files)) {
-                $files = [$files];
-            }
-
-            foreach ($files as $file) {
-                if (! $file) {
-                    continue;
-                }
-                $path = $file->store('documents', 'public');
-                $entry->documents()->create([
-                    'doc_type' => $doc['doc_type'],
-                    'title'    => $doc['title'],
-                    'url'      => $path,
-                ]);
-            }
-        }
-
-        $this->dispatch('regatta-entry-submitted', entryId: $entry->id);
-        $this->submitted = true;
-    }
-
     #[Computed]
     public function organizerTeams(): Collection
     {
@@ -282,10 +173,6 @@ class JoinRegattaModal extends Component
     {
         return Yacht::whereDoesntHave('regattaEntries', function ($q) {
             $q->where('regatta_id', $this->regattaId);
-
-            if ($this->entryId) {
-                $q->where('id', '!=', $this->entryId);
-            }
         })->get();
     }
 
@@ -339,10 +226,10 @@ class JoinRegattaModal extends Component
             ->exists();
 
         if (! $hasOrganizerTeam) {
-            return 'no-team';
+            return $hasOrganizerTeam;
         }
 
-        return 'ready';
+        return $hasOrganizerTeam;
     }
 
     public function render()
