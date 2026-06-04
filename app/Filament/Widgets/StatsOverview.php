@@ -2,6 +2,11 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Resources\Regattas\RegattaResource;
+use App\Filament\Resources\RegattaEntries\RegattaEntryResource;
+use App\Filament\Resources\Users\UserResource;
+use App\Filament\Resources\Yachts\YachtResource;
+use App\Filament\Resources\Teams\TeamResource;
 use App\Models\RegattaEntry;
 use App\Models\Regatta;
 use App\Models\Team;
@@ -28,22 +33,23 @@ class StatsOverview extends BaseWidget
         $newEntriesCount = RegattaEntry::where('status', 'pending')->count();
 
         return [
-            $this->createCustomStat('Регаты', Regatta::count(), 'dashboard_regatta_count', 'text-blue-500/10'),
-            $this->createCustomStat('Новые заявки', $newEntriesCount, 'dashboard_entry', $newEntriesCount > 0 ? 'text-amber-500' : 'text-[#2D92CE]'),
-            $this->createCustomStat('Пользователи', User::count(), 'dashboard_users', 'text-emerald-500/10'),
-            $this->createCustomStat('Яхты', Yacht::count(), 'dashboard_yachts', 'text-cyan-500/10'),
-            $this->createCustomStat('Команды', Team::count(), 'dashboard_teams', 'text-rose-500/10'),
+            $this->createCustomStat('Регаты', Regatta::count(), 'dashboard_regatta_count', 'text-blue-500/10', RegattaResource::getUrl('index')),
+            $this->createCustomStat('Новые заявки', $newEntriesCount, 'dashboard_entry', $newEntriesCount > 0 ? 'text-amber-500' : 'text-[#2D92CE]', RegattaEntryResource::getUrl('index')),
+            $this->createCustomStat('Пользователи', User::count(), 'dashboard_users', 'text-emerald-500/10', UserResource::getUrl('index')),
+            $this->createCustomStat('Яхты', Yacht::count(), 'dashboard_yachts', 'text-cyan-500/10', YachtResource::getUrl('index')),
+            $this->createCustomStat('Команды', Team::count(), 'dashboard_teams', 'text-rose-500/10', TeamResource::getUrl('index')),
         ];
     }
 
-    private function createCustomStat(string $label, int $value, string $icon, string $iconColorClass): Stat
+    private function createCustomStat(string $label, int $value, string $icon, string $iconColorClass, ?string $url = null): Stat
     {
         return Stat::make($label, $value)
             ->view('filament.widgets.custom-stat-card', [
                 'label' => $label,
                 'value' => $value,
                 'icon' => $icon,
-                'iconColor' => $iconColorClass // Передаем цвет для иконки
+                'iconColor' => $iconColorClass,
+                'url' => $url,
             ]);
     }
 }
