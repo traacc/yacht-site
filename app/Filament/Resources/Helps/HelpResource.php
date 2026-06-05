@@ -6,6 +6,7 @@ use App\Filament\Resources\Helps\Pages\ManageHelps;
 use App\Models\Help;
 use App\Models\HelpCategory;
 use BackedEnum;
+use UnitEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -44,6 +45,10 @@ class HelpResource extends Resource
     {
         return 'Помощь';
     }
+
+    protected static ?int $navigationSort = 25;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Сайт';
 
     public static function form(Schema $schema): Schema
     {
