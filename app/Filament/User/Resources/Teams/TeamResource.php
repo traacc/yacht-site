@@ -184,6 +184,26 @@ class TeamResource extends Resource
                                                 $q->orWhereHas('teamMemberships', fn (Builder $q2) => $q2->where('team_id', $record->getKey()));
                                             }
                                         }
+
+                                        // Исключаем пользователей, уже добавленных в других строках Repeater'а
+                                        $statePath = $component->getStatePath();
+                                        $segments = explode('.', $statePath);
+                                        array_pop($segments);              // убираем 'user_id'
+                                        $currentUuid = array_pop($segments); // UUID текущей строки
+                                        $repeaterPath = implode('.', $segments);
+
+                                        $repeaterData = data_get($component->getLivewire(), $repeaterPath, []);
+                                        $currentValue = $component->getState();
+                                        $selectedIds = collect($repeaterData)
+                                            ->except([$currentUuid])
+                                            ->pluck('user_id')
+                                            ->filter()
+                                            ->reject(fn ($id) => $id === $currentValue)
+                                            ->values();
+
+                                        if ($selectedIds->isNotEmpty()) {
+                                            $q->whereNotIn('id', $selectedIds->toArray());
+                                        }
                                     }),
                             )
                             ->searchable()
