@@ -136,9 +136,9 @@
             </div>
             {{-- ★ ИЗМЕНЕНО: таб «Видео» теперь использует video_links из БД с embed-блоками --}}
             <div x-show="activeTab === 'video'">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
                     <template x-for="item in activeGallery?.video_links ?? []">
-                        <div class="bg-[#F8F8F8] rounded-lg overflow-hidden">
+                        <div class="bg-[#F8F8F8] overflow-hidden">
                             <div class="relative pt-[56.25%]">
                                 <iframe
                                     class="absolute inset-0 w-full h-full"
