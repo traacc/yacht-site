@@ -133,6 +133,14 @@ class RegattaEntryResource extends Resource
                     ->reorderable(false)
                     ->default([])
                     ->columns(1)
+                    ->rules([
+                        fn (): \Closure => function (string $attribute, mixed $value, \Closure $fail): void {
+                            $captainCount = collect($value)->filter(fn (array $item): bool => ($item['role'] ?? '') === 'captain')->count();
+                            if ($captainCount > 1) {
+                                $fail('В экипаже может быть только один капитан.');
+                            }
+                        },
+                    ])
                     ->itemLabel(fn (array $state): string => ($state['member_name'] ?? 'Участник')
                         . (($state['is_captain'] ?? false) ? ' Капитан' : '')
                         . ' — ' . match ($state['role'] ?? '') {

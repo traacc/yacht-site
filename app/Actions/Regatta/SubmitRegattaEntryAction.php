@@ -72,6 +72,14 @@ final class SubmitRegattaEntryAction
                 ->pluck('team_members.id')
                 ->toArray();
 
+            // Проверяем, что captain только один
+            $captainCount = count(array_filter($crew, fn (string $role): bool => $role === 'captain'));
+            if ($captainCount > 1) {
+                throw ValidationException::withMessages([
+                    'crew' => 'В экипаже может быть только один капитан.',
+                ]);
+            }
+
             foreach ($crew as $memberId => $role) {
                 // Пропускаем участников без выбранной роли
                 if ($role === '' || $role === null) {
