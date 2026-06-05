@@ -10,6 +10,8 @@ use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
+use Filament\Tables\Table;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -31,6 +33,15 @@ class AppServiceProvider extends ServiceProvider
 
         Notification::configureUsing(function (Notification $notification): void {
             $notification->duration(6000); // 2000 мс = 2 секунды
+        });
+
+        Table::configureUsing(function (Table $table): void {
+        $table
+            // 1. Устанавливаем дефолтное количество записей на страницу
+            ->defaultPaginationPageOption(50)
+            
+            // 2. Настраиваем доступные варианты в выпадающем списке (опционально)
+            ->paginated([10, 25, 50, 100, 'all']);
         });
     }
 }
