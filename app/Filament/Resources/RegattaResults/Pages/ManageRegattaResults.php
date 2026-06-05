@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\RegattaResults\Pages;
 
 use App\Actions\RegattaResult\ImportRegattaResultItemsAction;
+use App\Exports\RegattaResultExport;
 use App\Filament\Resources\RegattaResults\RegattaResultResource;
 use App\Models\RegattaResult;
 use Filament\Actions\Action;
@@ -14,7 +15,6 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ManageRegattaResults extends ManageRecords
 {
@@ -93,69 +93,34 @@ class ManageRegattaResults extends ManageRecords
                         ->send();
                 }),
 
-            Action::make('export_csv_header')
-                ->label('Экспорт в CSV')
+            Action::make('export_xlsx')
+                ->label('Экспорт в Excel')
                 ->icon(Heroicon::ArrowDownTray)
                 ->color('white')
                 ->form([
-                    Select::make('regatta_id')
-                        ->label('Регата')
-                        ->relationship('regatta', 'name')
-                        ->placeholder('Все регаты')
-                        ->model(RegattaResult::class),
-
-                    /*
-                    Select::make('result_type')
-                        ->label('Тип результата')
-                        ->options([
-                            'preliminary' => 'Предварительный',
-                            'final'       => 'Финальный',
-                        ])
-                        ->placeholder('Все типы'),
-                    */
+                    Select::make('regatta_result_id')
+                        ->label('Результат регаты')
+                        ->options(function () {
+                            return RegattaResult::with('regatta')
+                                ->get()
+                                ->mapWithKeys(fn (RegattaResult $r) => [
+                                    $r->id => ($r->regatta?->name ?? '—') . ' • ' . match ($r->result_type) {
+                                        'preliminary' => 'Предварительный',
+                                        'final'       => 'Финальный',
+                                        default       => $r->result_type,
+                                    },
+                                ]);
+                        })
+                        ->searchable()
+                        ->required(),
                 ])
-                ->modalHeading('Экспорт результатов в CSV')
-                ->modalSubmitActionLabel('Скачать CSV')
-                ->action(function (array $data): StreamedResponse {
-                    $query = RegattaResult::with('items.team', 'items.yacht', 'regatta');
+                ->modalHeading('Экспорт результатов в Excel')
+                ->modalSubmitActionLabel('Скачать Excel')
+                ->action(function (array $data) {
+                    $regattaResult = RegattaResult::findOrFail($data['regatta_result_id']);
+                    $filename = sprintf('results_%s_%s.xlsx', $regattaResult->regatta?->name ?? 'regatta', $regattaResult->result_type);
 
-                    if (! empty($data['regatta_id'])) {
-                        $query->where('regatta_id', $data['regatta_id']);
-                    }
-
-                    if (! empty($data['result_type'])) {
-                        $query->where('result_type', $data['result_type']);
-                    }
-
-                    $records  = $query->get();
-                    $filename = sprintf('results_export_%s.csv', now()->format('Y-m-d'));
-
-                    return response()->streamDownload(function () use ($records): void {
-                        $handle = fopen('php://output', 'w');
-                        fputs($handle, "\xEF\xBB\xBF"); // BOM для Excel
-                        fputcsv($handle, ['Регата', 'Тип', 'Место', 'Команда', 'Яхта', 'Очки'], ';');
-
-                        foreach ($records as $result) {
-                            $typeName = match ($result->result_type) {
-                                'preliminary' => 'Предварительный',
-                                'final'       => 'Финальный',
-                                default       => $result->result_type,
-                            };
-
-                            foreach ($result->items as $item) {
-                                fputcsv($handle, [
-                                    $result->regatta?->name ?? '',
-                                    $typeName,
-                                    $item->final_position ?? '',
-                                    $item->team?->name ?? '',
-                                    $item->yacht?->name ?? '',
-                                    $item->total_points,
-                                ], ';');
-                            }
-                        }
-
-                        fclose($handle);
-                    }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+                    return (new RegattaResultExport($regattaResult))->download($filename);
                 }),
         ];
     }

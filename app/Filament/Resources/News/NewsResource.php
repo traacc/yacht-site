@@ -32,6 +32,7 @@ class NewsResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'news';
 
+    protected static ?int $navigationSort = 8;
 
     public static function getModelLabel(): string
     {

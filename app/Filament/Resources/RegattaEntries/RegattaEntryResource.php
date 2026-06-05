@@ -34,6 +34,8 @@ class RegattaEntryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'results';
 
+    protected static ?int $navigationSort = 3;
+
     public static function getModelLabel(): string
     {
         return 'Заявка на регату';

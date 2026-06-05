@@ -27,6 +27,8 @@ class RatingResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static ?int $navigationSort = 9;
+
     public static function getModelLabel(): string
     {
         return 'Рейтинг'; // Название в единственном числе

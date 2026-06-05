@@ -52,6 +52,8 @@ class TeamResource extends Resource
         return 'Команды'; // Название во множественном числе
     }
 
+    protected static ?int $navigationSort = 6;
+
     public static function form(Schema $schema): Schema
     {
         return $schema

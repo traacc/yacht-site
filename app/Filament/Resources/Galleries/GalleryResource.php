@@ -42,6 +42,7 @@ class GalleryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'gallery';
     
+    protected static ?int $navigationSort = 8;
 
     public static function getModelLabel(): string
     {

@@ -37,6 +37,8 @@ class RegattaResultResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'cup';
 
+    protected static ?int $navigationSort = 2;
+
 
     public static function getModelLabel(): string
     {

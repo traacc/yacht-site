@@ -47,6 +47,8 @@ class YachtResource extends Resource
         return 'Яхты';
     }
 
+    protected static ?int $navigationSort = 7;
+
     public static function form(Schema $schema): Schema
     {
         $maxFiles       = (int) config('documents.max_files_per_type', 10);
