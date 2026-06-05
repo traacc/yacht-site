@@ -142,7 +142,7 @@ class RegattaEntryResource extends Resource
                         },
                     ])
                     ->itemLabel(fn (array $state): string => ($state['member_name'] ?? 'Участник')
-                        . (($state['is_captain'] ?? false) ? ' Капитан' : '')
+                        . (($state['is_captain'] ?? false) ? ' ⭐ Капитан' : '')
                         . ' — ' . match ($state['role'] ?? '') {
                         'main'              => 'Основной',
                         'reserve'           => 'Запасной',
