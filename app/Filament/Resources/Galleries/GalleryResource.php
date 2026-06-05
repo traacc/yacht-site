@@ -20,6 +20,7 @@ use Filament\Forms\Components\Select;
 // Было: use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -154,6 +155,24 @@ class GalleryResource extends Resource
 
                 */
 
+                Forms\Components\Repeater::make('videoLinks')
+                    ->label('Ссылки на видео')
+                    ->relationship('videoLinks')
+                    ->schema([
+                        Textarea::make('url')
+                            ->label('Блок с видео')
+                            ->required()
+                            ->maxLength(4096)
+                            ->placeholder('Вставтье блок с видео'),
+                    ])
+                    ->orderColumn('sort_order')
+                    ->reorderable()
+                    ->collapsible()
+                    ->itemLabel(fn (array $state): ?string => $state['title'] ?? $state['url'] ?? null)
+                    ->addActionLabel('Добавить ссылку')
+                    ->columnSpanFull()
+                    ->defaultItems(0),
+
                 /*
                 TextInput::make('sort_order')
                     ->label('Порядок сортировки')
@@ -204,11 +223,12 @@ class GalleryResource extends Resource
 
                 // ★ ДОБАВЛЕНО: количество фото и видео
                 TextColumn::make('media_count')
-                    ->label('Фото/Видео')
+                    ->label('Фото/Видео/Ссылки')
                     ->state(fn (Gallery $record): string => sprintf(
-                        '%d фото / %d видео',
+                        '%d фото / %d видео / %d ссылок',
                         $record->getMedia('images')->count(),
                         $record->getMedia('videos')->count(),
+                        $record->videoLinks()->count(),
                     ))
                     ->toggleable(),
 

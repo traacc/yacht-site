@@ -76,21 +76,25 @@
                 @foreach($items as $gallery)
                 <div class="cursor-pointer group relative"
                      @click="gallery_modal_open = true; activeGallery = {{ Js::from([
-                         'name'       => $gallery->name,
-                         'date'       => $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM YYYY'),
-                         'date_short' => $gallery->regatta
+                         'name'        => $gallery->name,
+                         'date'        => $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM YYYY'),
+                         'date_short'  => $gallery->regatta
                              ? ($gallery->regatta->date_start?->isSameDay($gallery->regatta->date_end ?? $gallery->regatta->date_start)
                                  ? $gallery->regatta->date_start->isoFormat('D MMMM')
                                  : $gallery->regatta->date_start->isoFormat('D').'–'.$gallery->regatta->date_end->isoFormat('D MMMM'))
                              : $gallery->date?->isoFormat('D MMMM'),
-                         'water_area' => $gallery->water_area,
-                         'location'   => $gallery->regatta?->location,
+                         'water_area'  => $gallery->water_area,
+                         'location'    => $gallery->regatta?->location,
                          // ★ ИЗМЕНЕНО: аксессор cover_path теперь возвращает готовый URL (см. Gallery::getCoverPathAttribute)
-                         'cover'      => $gallery->cover_path ?: asset('images/news/news_1.webp'),
+                         'cover'       => $gallery->cover_path ?: asset('images/news/news_1.webp'),
                          // ★ ИЗМЕНЕНО: аксессор images теперь возвращает массив готовых URL (см. Gallery::getImagesAttribute)
-                         'images'     => $gallery->images,
-                         // ★ ДОБАВЛЕНО: аксессор videos — массив готовых URL видеофайлов
-                         'videos'     => $gallery->videos,
+                         'images'      => $gallery->images,
+                         // ★ ДОБАВЛЕНО: video_links из таблицы video_links (embed-блоки)
+                         'video_links' => $gallery->videoLinks->map(fn ($vl) => [
+                             'url'       => $vl->url,
+                             'title'     => $vl->title,
+                             'embed_url' => $vl->embed_url,
+                         ])->values()->toArray(),
                      ]) }}">
 
                     {{-- ★ ИЗМЕНЕНО: аксессор cover_path уже возвращает готовый URL, Storage::disk()->url() не нужен --}}
@@ -130,16 +134,28 @@
                 <button @click="activeTab = 'photo'" :class="activeTab === 'photo' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="p-4 text-center">Фотографии</button>
                 <button @click="activeTab = 'video'" :class="activeTab === 'video' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="p-4 text-center">Видео</button>
             </div>
-            {{-- ★ ИЗМЕНЕНО: таб «Видео» теперь использует activeGallery.videos вместо activeGallery.images --}}
+            {{-- ★ ИЗМЕНЕНО: таб «Видео» теперь использует video_links из БД с embed-блоками --}}
             <div x-show="activeTab === 'video'">
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    <template x-for="item in activeGallery?.videos ?? []">
-                        <div class="card bg-[#F8F8F8]">
-                            <video class="h-full object-cover w-full" :src="item" controls preload="metadata"></video>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <template x-for="item in activeGallery?.video_links ?? []">
+                        <div class="bg-[#F8F8F8] rounded-lg overflow-hidden">
+                            <div class="relative pt-[56.25%]">
+                                <iframe
+                                    class="absolute inset-0 w-full h-full"
+                                    :src="item.embed_url"
+                                    :title="item.title ?? ''"
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowfullscreen
+                                ></iframe>
+                            </div>
+                            <div class="p-3" x-show="item.title">
+                                <p class="text-sm font-medium text-[#2E325C]" x-text="item.title"></p>
+                            </div>
                         </div>
                     </template>
-                    {{-- Если видео нет, показываем сообщение --}}
-                    <div x-show="(activeGallery?.videos ?? []).length === 0" class="col-span-full text-center text-gray-500 py-8">
+                    {{-- Если видео-ссылок нет, показываем сообщение --}}
+                    <div x-show="(activeGallery?.video_links ?? []).length === 0" class="col-span-full text-center text-gray-500 py-8">
                         Видео пока нет
                     </div>
                 </div>

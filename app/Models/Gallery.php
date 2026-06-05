@@ -68,6 +68,11 @@ class Gallery extends Model implements HasMedia
         return $this->belongsTo(Regatta::class);
     }
 
+    public function videoLinks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(VideoLink::class)->orderBy('sort_order');
+    }
+
     // ──────────────────────────────────────────────
     // Scopes
     // ──────────────────────────────────────────────
