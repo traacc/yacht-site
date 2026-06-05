@@ -40,6 +40,13 @@ class RegattaResult extends Model
     {
         return $this->hasMany(RegattaResultItem::class)->orderBy('final_position');
     }
+    public function regattaEntry(): HasOne
+    {
+        return $this->hasOne(RegattaEntry::class, 'regatta_id', 'regatta_id')
+                    ->where('team_id', $this->team_id)    // dynamic – see note below
+                    ->where('yacht_id', $this->yacht_id);
+    }
+
 
     // ──────────────────────────────────────────────
     // Helpers
