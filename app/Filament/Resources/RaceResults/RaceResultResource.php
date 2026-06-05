@@ -24,6 +24,11 @@ class RaceResultResource extends Resource
 
     protected static ?int $navigationSort = 10;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public static function getModelLabel(): string
     {
         return 'Результат гонки'; // Название в единственном числе
