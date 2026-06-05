@@ -322,59 +322,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
 Route::get('/regatta/{regatta}/download-documents', function (\App\Models\Regatta $regatta) {
     return app(\App\Actions\Regatta\DownloadRegattaDocumentsAction::class)->execute($regatta);
 })->name('regatta.documents.download');
-Route::get('/teams', function () {
-    $teams = Team::with([
-        'organizer',
-        'activeMembers',
-        'regattaEntries.regatta',
-        'regattaEntries.yacht',
-        'regattaResultItems.regattaResult',
-        'ratings.season',
-    ])
-        ->orderBy('name')
-        ->paginate(12);
-
-    $teamsJson = $teams->map(fn (Team $team) => [
-        'id' => $team->id,
-        'external_id' => $team->getFormattedExternalIdAttribute(),
-        'name' => $team->name,
-        'description' => $team->description ?? '',
-        'photo' => $team->picture ? Storage::url($team->picture) : asset('images/news/news_1.png'),
-        'created_at' => $team->created_at?->format('d.m.Y') ?? '—',
-        'status' => $team->is_archived ? 'Неактивная' : 'Активная',
-        'status_class' => $team->is_archived ? 'inactive' : 'active',
-        'captain' => $team->organizer?->name ?? '—',
-        'rating' => $team->ratings->where('rating_type', 'team')->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first()?->rank_position ?? '—',
-        'participation_count' => $team->regattaEntries->count(),
-        'members' => $team->activeMembers->map(fn ($m) => [
-            'name' => $m->name,
-            'birthday' => $m->birth_date?->format('d.m.Y') ?? '',
-            'category' => $m->sport_category?->getLabel() ?? '',
-        ])->values()->toArray(),
-        'years' => $team->regattaEntries
-            ->pluck('regatta.date_start')
-            ->filter()
-            ->map->year
-            ->unique()
-            ->sortDesc()
-            ->values()
-            ->toArray(),
-        'participation' => $team->regattaEntries->map(fn ($entry) => [
-            'regatta' => $entry->regatta?->name ?? '—',
-            'yacht' => $entry->yacht?->name ?? '—',
-            'date_event' => $entry->regatta?->dateRange() ?? '—',
-            'date_registration' => $entry->submitted_at?->format('d.m.Y') ?? '—',
-            'year' => $entry->regatta?->date_start?->year,
-            'status' => $entry->status,
-            'place' => $team->regattaResultItems
-                ->firstWhere('regattaResult.regatta_id', $entry->regatta_id)
-                ?->final_position ?? null,
-        ])->values()->toArray(),
-        'gallery' => [],
-    ])->values();
-
-    return view('pages.teams', compact('teams', 'teamsJson'));
-})->name('teams');
+Route::view('/teams', 'pages.teams')->name('teams');
 Route::get('/yachts', function () {
     $yachts = Yacht::with(['user', 'documents', 'regattaEntries.regatta', 'regattaEntries.team'])
         ->where('approval_status', 'approved')
