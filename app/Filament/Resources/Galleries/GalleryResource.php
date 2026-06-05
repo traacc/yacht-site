@@ -134,6 +134,7 @@ class GalleryResource extends Resource
                     ->columnSpanFull(),
 
                 // ★ ДОБАВЛЕНО: новое поле для загрузки видео.
+                /*
                 SpatieMediaLibraryFileUpload::make('videos')
                     ->label('Видео')
                     ->collection('videos')                // коллекция из registerMediaCollections()
@@ -151,11 +152,14 @@ class GalleryResource extends Resource
                     ->maxFiles(50)                        // разумное ограничение на видео
                     ->columnSpanFull(),
 
+                */
+
+                /*
                 TextInput::make('sort_order')
                     ->label('Порядок сортировки')
                     ->numeric()
                     ->default(0),
-
+                */
                 // ★ УДАЛЕНО: is_published всегда true при создании (устанавливается в модели Gallery)
             ]);
     }
