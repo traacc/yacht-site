@@ -74,11 +74,13 @@ class TeamResource extends Resource
                     ->readOnly()
                     ->columnSpanFull()
                     ->formatStateUsing(fn (?Team $record) => $record?->formatted_external_id ?? '—'),
+                /*
                 Select::make('organizer_id')
                     ->label('Капитан')
                     ->relationship('organizer', 'name')
                     ->placeholder('Выберите капитана')
                     ->columnSpanFull(),
+                */
                 Textarea::make('description')
                     ->label('Описание')
                     ->placeholder('Описание команды')
@@ -205,7 +207,8 @@ class TeamResource extends Resource
                     'approved' => 'Одобрена',
                     'rejected' => 'Отклонена',
                     'withdrawn' => 'Отозвана',
-                ])
+                ]),
+                TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать команду'),
