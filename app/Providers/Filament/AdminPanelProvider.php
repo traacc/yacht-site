@@ -44,13 +44,13 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
-            ->navigationItems([
+            /*->navigationItems([
                 NavigationItem::make('Профиль')
                     ->url(fn (): string => \App\Filament\Pages\EditProfile::getUrl(), shouldOpenInNewTab: false)
                     ->icon('profile')
                     ->isActiveWhen(fn () => request()->routeIs('filament.admin.auth.profile'))
                     
-            ])
+            ])*/
             /*
             ->renderHook(
                 name: PanelsRenderHook::TOPBAR_BEFORE,

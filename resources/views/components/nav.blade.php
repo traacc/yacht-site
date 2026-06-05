@@ -71,6 +71,7 @@
                         </div>
                         @if(auth()->user()->isAdmin() || auth()->user()->isJudge() || auth()->user()->isSecretary() || auth()->user()->isAccountant())
                             <a href="{{ url('/admin') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Панель управления</a>
+                            <a href="{{ url('/admin/profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Профиль</a>
                             <div class="border-t border-gray-100 my-1"></div>
                             <a href="{{ url('/admin/regattas') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Регаты</a>
                             <a href="{{ url('/admin/teams') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Команды</a>
@@ -179,6 +180,7 @@
                     <a href="{{ url('/admin/users') }}" class="block py-2 text-sm pl-3 text-white/80">— Пользователи</a>
                     <a href="{{ url('/admin/ratings') }}" class="block py-2 text-sm pl-3 text-white/80">— Рейтинги</a>
                     <a href="{{ url('/admin/news') }}" class="block py-2 text-sm pl-3 text-white/80">— Новости</a>
+                    <a href="{{ url('/admin/profile') }}" class="block py-2 text-sm pl-3 text-white/80">Профиль</a>
                 @else
                     <a href="{{ url('/user') }}" class="block py-2 text-sm">Личный кабинет</a>
                     <a href="{{ url('/user/yachts') }}" class="block py-2 text-sm pl-3 text-white/80">— Мои яхты</a>
