@@ -312,7 +312,7 @@ bgImage="{{ asset('images/bg/teams.webp') }}"
 <script>
 function teamsApp() {
     return {
-        view: 'grid',
+        view: 'list',
         team_modal_open: false,
         activeTeam: null,
         selectedYear: null,
