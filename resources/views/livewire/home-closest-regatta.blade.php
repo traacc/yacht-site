@@ -103,7 +103,7 @@
                         class="text-gray-400 hover:text-gray-600 text-2xl leading-none font-bold">&times;</button>
             </div>
             @if($lat && $lon)
-            <div class="aspect-video w-full">
+            <div class="h-[186px] w-full">
                 <iframe
                     width="100%"
                     height="100%"
