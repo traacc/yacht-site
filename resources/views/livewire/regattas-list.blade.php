@@ -28,7 +28,7 @@
             <div class="bg-[#F8F8F8] overflow-hidden w-full font-sans">
                 <div class="relative">
                     <img
-                        src="{{ asset('images/news/news_1.png') }}"
+                        src="{{ asset('images/news/news_1.webp') }}"
                         alt="{{ $regatta->name }}"
                         class="w-full h-64 object-cover"
                     />

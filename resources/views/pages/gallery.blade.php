@@ -86,7 +86,7 @@
                          'water_area' => $gallery->water_area,
                          'location'   => $gallery->regatta?->location,
                          // ★ ИЗМЕНЕНО: аксессор cover_path теперь возвращает готовый URL (см. Gallery::getCoverPathAttribute)
-                         'cover'      => $gallery->cover_path ?: asset('images/news/news_1.png'),
+                         'cover'      => $gallery->cover_path ?: asset('images/news/news_1.webp'),
                          // ★ ИЗМЕНЕНО: аксессор images теперь возвращает массив готовых URL (см. Gallery::getImagesAttribute)
                          'images'     => $gallery->images,
                          // ★ ДОБАВЛЕНО: аксессор videos — массив готовых URL видеофайлов
@@ -94,7 +94,7 @@
                      ]) }}">
 
                     {{-- ★ ИЗМЕНЕНО: аксессор cover_path уже возвращает готовый URL, Storage::disk()->url() не нужен --}}
-                    <img src="{{ $gallery->cover_path ?: asset('images/news/news_1.png') }}"
+                    <img src="{{ $gallery->cover_path ?: asset('images/news/news_1.webp') }}"
                          alt="{{ $gallery->name }}"
                          class="absolute w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105">
                     <div class="bg-[#2E325C] opacity-30 absolute z-15 w-full h-full transition-transform duration-500 group-hover:scale-105"></div>

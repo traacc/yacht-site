@@ -66,7 +66,7 @@
             @forelse($latestNews as $newsItem)
             <article class="overflow-hidden shadow-xs hover:shadow-md transition-shadow group flex md:flex-col">
                 <div class="overflow-hidden md:h-52 shrink-0">
-                    <img src="{{ $newsItem->cover_image_url ? Storage::url($newsItem->cover_image_url) : asset('images/news/news_1.png') }}"
+                    <img src="{{ $newsItem->cover_image_url ? Storage::url($newsItem->cover_image_url) : asset('images/news/news_1.webp') }}"
                          alt="{{ $newsItem->title }}" class="w-full max-w-[150px] md:max-w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                 </div>
                 <div class="md:p-4 p-2 bg-[#F8F8F8]">

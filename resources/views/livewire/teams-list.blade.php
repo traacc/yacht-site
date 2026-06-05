@@ -41,7 +41,7 @@
             <div class="bg-[#F8F8F8] overflow-hidden w-full font-sans">
                 <div class="relative">
                     <img
-                        src="{{ $team->picture ? Storage::url($team->picture) : asset('images/news/news_1.png') }}"
+                        src="{{ $team->picture ? Storage::url($team->picture) : asset('images/news/news_1.webp') }}"
                         alt="{{ $team->name }}"
                         class="w-full h-64 object-cover"
                     />

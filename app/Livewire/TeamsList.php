@@ -62,7 +62,7 @@ class TeamsList extends Component
             'external_id' => $team->getFormattedExternalIdAttribute(),
             'name' => $team->name,
             'description' => $team->description ?? '',
-            'photo' => $team->picture ? Storage::url($team->picture) : asset('images/news/news_1.png'),
+            'photo' => $team->picture ? Storage::url($team->picture) : asset('images/news/news_1.webp'),
             'created_at' => $team->created_at?->format('d.m.Y') ?? '—',
             'status' => $team->is_archived ? 'Неактивная' : 'Активная',
             'status_class' => $team->is_archived ? 'inactive' : 'active',

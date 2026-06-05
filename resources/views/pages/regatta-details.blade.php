@@ -341,7 +341,7 @@
                             <div class="bg-[#F8F8F8] overflow-hidden  font-sans regatta-card">
                                 <div class="relative">
                                     <img
-                                        src="{{ asset('images/news/news_1.png') }}"
+                                        src="{{ asset('images/news/news_1.webp') }}"
                                         alt="Парусная регата"
                                         class="w-full h-64 object-cover"
                                     />
