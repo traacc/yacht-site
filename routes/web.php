@@ -23,7 +23,10 @@ Route::get('/', function () {
     // Получаем фото для галереи с учётом настроек (рандом / сортировка / количество)
     $galleryPhotos = app(SettingsService::class)->getGalleryPhotos();
 
-    return view('pages.home', compact('latestNews', 'galleryPhotos'));
+    // FAQ для главной страницы
+    $faq = app(SettingsService::class)->get('home.faq', []);
+
+    return view('pages.home', compact('latestNews', 'galleryPhotos', 'faq'));
 })->name('home');
 Route::get('/association/charter', function () {
     $documents = app(SettingsService::class)->get('charter.documents', []);

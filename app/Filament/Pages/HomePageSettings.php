@@ -10,6 +10,8 @@ use App\Services\SettingsService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -58,6 +60,7 @@ class HomePageSettings extends Page
 
         $teams        = $settings->get('home.top_teams', []);
         $participants = $settings->get('home.top_participants', []);
+        $faq          = $settings->get('home.faq', []);
 
         // Нормализуем gallery_photos в индексированный массив строк
         $rawPhotos = $settings->get('home.gallery_photos', []);
@@ -83,6 +86,8 @@ class HomePageSettings extends Page
             'top_participant_2_points' => $participants[1]['points'] ?? null,
             'top_participant_3'        => $participants[2]['id']     ?? null,
             'top_participant_3_points' => $participants[2]['points'] ?? null,
+            // FAQ
+            'faq' => $faq,
             // Галерея
             'gallery_photos' => $galleryPhotos,
             'gallery_count'  => (int) $settings->get('home.gallery_count', 10),
@@ -253,6 +258,33 @@ class HomePageSettings extends Page
                         ]),
                     ]),
 
+                // ── FAQ ──────────────────────────────────────
+                Section::make('FAQ')
+                    ->description('Добавьте вопросы и ответы для блока «Часто задаваемые вопросы» на главной странице. Перетаскивайте записи для изменения порядка отображения.')
+                    ->schema([
+                        Repeater::make('faq')
+                            ->label('Вопросы и ответы')
+                            ->addActionLabel('Добавить вопрос')
+                            ->reorderable()
+                            ->collapsible()
+                            ->defaultItems(0)
+                            ->schema([
+                                TextInput::make('question')
+                                    ->label('Вопрос')
+                                    ->placeholder('Введите вопрос')
+                                    ->required()
+                                    ->maxLength(500)
+                                    ->rules(['required', 'string', 'max:500']),
+
+                                RichEditor::make('answer')
+                                    ->label('Ответ')
+                                    ->placeholder('Введите развёрнутый ответ')
+                                    ->required()
+                                    ->columnSpanFull()
+                                    ->rules(['required']),
+                            ]),
+                    ]),
+
                 // ── Галерея главной страницы ──────────────────
                 Section::make('Галерея главной страницы')
                     ->description('Настройте фотографии, отображаемые в слайдере галереи на главной странице.')
@@ -309,6 +341,7 @@ class HomePageSettings extends Page
                         ]),
                     ]),
             ]);
+            
     }
 
     // ──────────────────────────────────────────────
@@ -363,6 +396,14 @@ class HomePageSettings extends Page
             ['id' => $data['top_participant_2'], 'points' => $data['top_participant_2_points']],
             ['id' => $data['top_participant_3'], 'points' => $data['top_participant_3_points']],
         ], 'home');
+
+        // FAQ: фильтруем пустые записи и сохраняем
+        $faq = collect((array) ($data['faq'] ?? []))
+            ->filter(fn (array $item) => ! empty($item['question']) && ! empty($item['answer']))
+            ->values()
+            ->all();
+
+        $settings->set('home.faq', $faq, 'home');
 
         // Нормализуем пути фото в индексированный массив строк перед сохранением
         $photos = collect((array) ($data['gallery_photos'] ?? []))
