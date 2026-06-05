@@ -1,4 +1,4 @@
-<section class="relative h-[480px] md:h-[788px]">
+<section x-data="{ windyModalOpen: false }" class="relative h-[480px] md:h-[788px]">
     <!--<video autoplay muted playsinline loop src="{{ '/videos/hero_video_2.mp4' }}"  class="absolute inset-0 w-full h-full object-cover"></video>-->
     <img class="absolute inset-0 object-[29%_50%] lg:object-[50%_50%] lg:top-0 w-full h-full object-cover" src="{{ asset('/images/bg/bg_hero.webp') }}" alt="">
 
@@ -34,14 +34,25 @@
                         {{ $regatta->water_area }}
                         @endif
                     </div>
+                    @if($lat && $lon)
                     <div class="">
                         <div class="lg:text-sm text-xs">Погода сейчас</div>
-                        <div class="flex items-center gap-2">
-                            
+                        <div class="flex items-center gap-2 cursor-pointer"
+                             @click="windyModalOpen = true"
+                             title="Смотреть прогноз погоды на Windy">
                             {!!  file_get_contents(public_path('images/icons/weather.svg')) !!}
                             {{ $currentWeather }}
                         </div>
                     </div>
+                    @else
+                    <div class="">
+                        <div class="lg:text-sm text-xs">Погода сейчас</div>
+                        <div class="flex items-center gap-2">
+                            {!!  file_get_contents(public_path('images/icons/weather.svg')) !!}
+                            {{ $currentWeather }}
+                        </div>
+                    </div>
+                    @endif
 
 
                 </div>
@@ -61,4 +72,46 @@
         </div>
     </div>
     @endif
+
+    {{-- Модальное окно Windy --}}
+    <div x-show="windyModalOpen"
+         x-cloak
+         @keydown.escape.window="windyModalOpen = false"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div x-show="windyModalOpen"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @click="windyModalOpen = false"
+             class="fixed inset-0 bg-black/60 transition-opacity">
+        </div>
+        <div x-show="windyModalOpen"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+             @click.away="windyModalOpen = false"
+             class="relative w-full max-w-5xl bg-white shadow-xl z-10 overflow-hidden">
+            <div class="flex items-center justify-between p-3 border-b">
+                <span class="text-sm font-semibold text-[#2E325C]">Прогноз погоды — Windy.com</span>
+                <button @click="windyModalOpen = false"
+                        class="text-gray-400 hover:text-gray-600 text-2xl leading-none font-bold">&times;</button>
+            </div>
+            @if($lat && $lon)
+            <div class="aspect-video w-full">
+                <iframe
+                    width="100%"
+                    height="100%"
+                    src="https://embed.windy.com/embed.html?type=forecast&location=coordinates&detail=true&detailLat={{ $lat }}&detailLon={{ $lon }}&metricTemp=°C&metricRain=mm&metricWind=default"
+                    frameborder="0">
+                </iframe>
+            </div>
+            @endif
+        </div>
+    </div>
 </section>

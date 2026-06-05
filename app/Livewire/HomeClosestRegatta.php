@@ -55,6 +55,8 @@ class HomeClosestRegatta extends Component
             'currentWeather' => $temp . '  ℃',
             'mapUrl'         => $mapUrl,
             'hasDocuments'   => $hasDocuments,
+            'lat'            => $regatta?->coordinates ? (float) $regatta->coordinates[0] : null,
+            'lon'            => $regatta?->coordinates ? (float) $regatta->coordinates[1] : null,
         ]);
     }
 }
