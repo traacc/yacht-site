@@ -258,32 +258,7 @@ class HomePageSettings extends Page
                         ]),
                     ]),
 
-                // ── FAQ ──────────────────────────────────────
-                Section::make('FAQ')
-                    ->description('Добавьте вопросы и ответы для блока «Часто задаваемые вопросы» на главной странице. Перетаскивайте записи для изменения порядка отображения.')
-                    ->schema([
-                        Repeater::make('faq')
-                            ->label('Вопросы и ответы')
-                            ->addActionLabel('Добавить вопрос')
-                            ->reorderable()
-                            ->collapsible()
-                            ->defaultItems(0)
-                            ->schema([
-                                TextInput::make('question')
-                                    ->label('Вопрос')
-                                    ->placeholder('Введите вопрос')
-                                    ->required()
-                                    ->maxLength(500)
-                                    ->rules(['required', 'string', 'max:500']),
 
-                                RichEditor::make('answer')
-                                    ->label('Ответ')
-                                    ->placeholder('Введите развёрнутый ответ')
-                                    ->required()
-                                    ->columnSpanFull()
-                                    ->rules(['required']),
-                            ]),
-                    ]),
 
                 // ── Галерея главной страницы ──────────────────
                 Section::make('Галерея главной страницы')
@@ -339,6 +314,33 @@ class HomePageSettings extends Page
                                 ->visible(fn ($get) => ! $get('gallery_random'))
                                 ->rules(['required', 'in:manual,newest,oldest']),
                         ]),
+                    ]),
+
+                                // ── FAQ ──────────────────────────────────────
+                Section::make('FAQ')
+                    ->description('Добавьте вопросы и ответы для блока «Часто задаваемые вопросы» на главной странице. Перетаскивайте записи для изменения порядка отображения.')
+                    ->schema([
+                        Repeater::make('faq')
+                            ->label('Вопросы и ответы')
+                            ->addActionLabel('Добавить вопрос')
+                            ->reorderable()
+                            ->collapsible()
+                            ->defaultItems(0)
+                            ->schema([
+                                TextInput::make('question')
+                                    ->label('Вопрос')
+                                    ->placeholder('Введите вопрос')
+                                    ->required()
+                                    ->maxLength(500)
+                                    ->rules(['required', 'string', 'max:500']),
+
+                                RichEditor::make('answer')
+                                    ->label('Ответ')
+                                    ->placeholder('Введите развёрнутый ответ')
+                                    ->required()
+                                    ->columnSpanFull()
+                                    ->rules(['required']),
+                            ]),
                     ]),
             ]);
             

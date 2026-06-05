@@ -278,6 +278,32 @@ function gallerySlider() {
 
 @endif
 
+
+
+{{-- ===== СПОНСОРЫ ===== --}}
+<section class="py-10 bg-white">
+    <div class="container mx-auto">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="section-title a-font">Наши спонсоры</h2>
+            <div class="flex gap-2">
+                <button class="bg-[#2D92CE] hover:bg-[#0074CC] rounded-full w-8 h-8 flex items-center justify-center text-white transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <button class="bg-[#2D92CE] hover:bg-[#0074CC] rounded-full w-8 h-8 flex items-center justify-center text-white transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+            </div>
+        </div>
+        <div class="grid grid-cols-4 gap-4">
+            <template x-data="{sponsors: [1,2,3,4]}" x-for="s in sponsors" :key="s">
+                <div class="bg-[#E2E2E2] h-20 flex items-center justify-center hover:shadow-md transition-shadow cursor-pointer">
+                    <span class="text-gray-300 font-display text-lg font-bold uppercase tracking-wider"></span>
+                </div>
+            </template>
+        </div>
+    </div>
+</section>
+
 {{-- ===== FAQ ===== --}}
 @if(!empty($faq))
 <section class="py-12 bg-white">
@@ -315,29 +341,5 @@ function gallerySlider() {
     </div>
 </section>
 @endif
-
-{{-- ===== СПОНСОРЫ ===== --}}
-<section class="py-10 bg-white">
-    <div class="container mx-auto">
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="section-title a-font">Наши спонсоры</h2>
-            <div class="flex gap-2">
-                <button class="bg-[#2D92CE] hover:bg-[#0074CC] rounded-full w-8 h-8 flex items-center justify-center text-white transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                </button>
-                <button class="bg-[#2D92CE] hover:bg-[#0074CC] rounded-full w-8 h-8 flex items-center justify-center text-white transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                </button>
-            </div>
-        </div>
-        <div class="grid grid-cols-4 gap-4">
-            <template x-data="{sponsors: [1,2,3,4]}" x-for="s in sponsors" :key="s">
-                <div class="bg-[#E2E2E2] h-20 flex items-center justify-center hover:shadow-md transition-shadow cursor-pointer">
-                    <span class="text-gray-300 font-display text-lg font-bold uppercase tracking-wider"></span>
-                </div>
-            </template>
-        </div>
-    </div>
-</section>
 
 </x-public-layout>
