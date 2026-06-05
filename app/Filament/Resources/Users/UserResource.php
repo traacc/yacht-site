@@ -180,11 +180,11 @@ class UserResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->label('Имя пользователя')
+                    ->label('ФИО')
                     ->searchable()->sortable(),
                 TextColumn::make('birth_date')
-                    ->label('Дата рождения')
-                    ->date()->dateTime('d M Y')
+                    ->label('ДР')
+                    ->date('d.m.Y')
                     ->sortable(),
                 TextColumn::make('sport_category')
                     ->label('Разряд')
@@ -194,8 +194,15 @@ class UserResource extends Resource
                     ->label('Роль')
                     ->badge()
                     ->formatStateUsing(fn (\App\Enums\SystemRole $state): string => $state->label()),
-
-            ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
+                TextColumn::make('created_at')
+                    ->label('Рег.')
+                    ->dateTime('d.m.Y H:i')
+                    ->sortable(),
+                TextColumn::make('updated_at')
+                    ->label('Изм.')
+                    ->dateTime('d.m.Y H:i')
+                    ->sortable(),
+            ])->defaultSort('name', 'asc')->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
                 SelectFilter::make('system_role')
                     ->label('Роль')
