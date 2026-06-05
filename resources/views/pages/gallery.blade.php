@@ -118,7 +118,7 @@
         x-cloak
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 team-modal">
         <!-- Модальное окно для подробной информации о галерее -->
-        <div @click.away="gallery_modal_open = false"  class="relative p-6 max-w-[1200px] max-h-[80vh] overflow-y-auto bg-white gap-6"
+        <div @click.away="gallery_modal_open = false"  class="relative p-6 max-w-[1200px] w-full max-h-[80vh] overflow-y-auto bg-white gap-6"
             x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95"
             x-transition:enter-end="opacity-100 scale-100"
