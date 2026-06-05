@@ -11,7 +11,7 @@
     activeImage: '',
     lbImages: [],
     activeGallery: null,
-    activeTab: 'video',
+    activeTab: 'photo',
     selectedYear: '{{ $years->first() }}',
     selectedWater: '',
     touchStartX: 0,
@@ -127,8 +127,8 @@
             </div>
             <p class="text-lg mb-6" x-text="(activeGallery?.date_short ?? '') + ' · ' + (activeGallery?.water_area ?? '')"></p>
             <div class="flex gap-4 font-medium text-lg mb-6">
-                <button @click="activeTab = 'video'" :class="activeTab === 'video' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="p-4 text-center">Видео</button>
                 <button @click="activeTab = 'photo'" :class="activeTab === 'photo' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="p-4 text-center">Фотографии</button>
+                <button @click="activeTab = 'video'" :class="activeTab === 'video' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="p-4 text-center">Видео</button>
             </div>
             {{-- ★ ИЗМЕНЕНО: таб «Видео» теперь использует activeGallery.videos вместо activeGallery.images --}}
             <div x-show="activeTab === 'video'">
