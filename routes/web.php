@@ -474,7 +474,7 @@ Route::get('/news', function () {
 Route::get('/news/{news}', function (News $news) {
     abort_unless($news->isPublished(), 404);
 
-    $news->load('author');
+    $news->load(['author', 'media']);
 
     $otherNews = News::published()
         ->where('id', '!=', $news->id)

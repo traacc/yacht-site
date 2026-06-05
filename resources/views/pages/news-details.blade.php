@@ -17,6 +17,98 @@
                 <div class="text space-y-4 text-lg">
                     {!! nl2br(e($news->content)) !!}
                 </div>
+
+                {{-- Галерея новости — изображения из медиа-коллекции 'gallery' --}}
+                @php
+                    $galleryImages = $news->getMedia('gallery');
+                @endphp
+
+                @if($galleryImages->isNotEmpty())
+                    <div class="mt-10" x-data="{
+                        lightboxOpen: false,
+                        activeImage: '',
+                        imagesList: [],
+                        get currentIndex() {
+                            return this.imagesList.indexOf(this.activeImage);
+                        },
+                        prevImage() {
+                            if (this.imagesList.length === 0) return;
+                            const newIndex = (this.currentIndex - 1 + this.imagesList.length) % this.imagesList.length;
+                            this.activeImage = this.imagesList[newIndex];
+                        },
+                        nextImage() {
+                            if (this.imagesList.length === 0) return;
+                            const newIndex = (this.currentIndex + 1) % this.imagesList.length;
+                            this.activeImage = this.imagesList[newIndex];
+                        },
+                        open(img) {
+                            this.imagesList = {{ Js::from($galleryImages->map(fn($m) => $m->getUrl())->values()->toArray()) }};
+                            this.activeImage = img;
+                            this.lightboxOpen = true;
+                        }
+                    }">
+                        <h3 class="section-title a-font text-3xl mb-6">Фотогалерея</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            @foreach($galleryImages as $media)
+                                <div class="overflow-hidden cursor-pointer group"
+                                     @click="open('{{ $media->getUrl() }}')">
+                                    <img src="{{ $media->getUrl() }}"
+                                         alt="{{ $media->name }}"
+                                         class="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105">
+                                </div>
+                            @endforeach
+                        </div>
+
+                        {{-- Лайтбокс --}}
+                        <div x-show="lightboxOpen"
+                             x-cloak
+                             class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+                             @keydown.left.window="prevImage()"
+                             @keydown.right.window="nextImage()"
+                             x-trap.noscroll="lightboxOpen">
+                            <div @click.away="lightboxOpen = false"
+                                 class="relative w-full max-w-[1000px] max-h-[90vh] mx-4">
+                                <button @click="lightboxOpen = false"
+                                        class="absolute -top-10 right-0 text-white text-3xl z-50 hover:opacity-70">&times;</button>
+
+                                <div class="relative flex items-center justify-center">
+                                    <button @click="prevImage()"
+                                            aria-label="Предыдущее"
+                                            class="absolute left-2 z-50 p-2 text-white bg-[#2D92CE]/80 hover:bg-[#2D92CE] rounded-full transition-all">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                    </button>
+
+                                    <img :src="activeImage"
+                                         x-transition:enter="transition ease-out duration-300"
+                                         x-transition:enter-start="scale-90 opacity-0"
+                                         x-transition:enter-end="scale-100 opacity-100"
+                                         class="w-full max-h-[80vh] object-contain"
+                                         alt="Full size">
+
+                                    <button @click="nextImage()"
+                                            aria-label="Следующее"
+                                            class="absolute right-2 z-50 p-2 text-white bg-[#2D92CE]/80 hover:bg-[#2D92CE] rounded-full transition-all">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                    </button>
+                                </div>
+
+                                {{-- Миниатюры --}}
+                                <div class="flex gap-2 overflow-x-auto mt-4 justify-center pb-2">
+                                    <template x-for="(img, idx) in imagesList" :key="idx">
+                                        <div class="cursor-pointer shrink-0 max-w-[60px] aspect-square snap-center"
+                                             :class="activeImage === img ? 'ring-2 ring-[#2D92CE]' : ''"
+                                             @click="activeImage = img">
+                                            <img :src="img"
+                                                 class="object-cover h-full w-full"
+                                                 alt="Preview">
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+                
             </div>
 
             {{-- Другие новости (сайдбар) --}}
