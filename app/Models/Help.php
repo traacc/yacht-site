@@ -26,6 +26,7 @@ class Help extends Model
         'specialist_phone',
         'specialist_sphere',
         'specialist_city',
+        'specialist_site',
         'status',
     ];
 

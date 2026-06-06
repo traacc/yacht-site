@@ -163,6 +163,11 @@ class HelpResource extends Resource
                     ->label('Город')
                     ->placeholder('Москва'),
 
+                TextInput::make('specialist_site')
+                    ->label('Сайт')
+                    ->url()
+                    ->placeholder('https://example.com'),
+
                 Select::make('status')
                     ->label('Статус')
                     ->options([

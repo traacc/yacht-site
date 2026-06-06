@@ -48,9 +48,9 @@
                                         <span x-text="p"></span>
                                     </li>
                                 </template>
-                                <li class="flex items-center gap-2">
+                                <li x-show="item.email" class="flex items-center gap-2">
                                     {!! file_get_contents(public_path('images/icons/mail.svg')) !!}
-                                    <span x-text="item.email || 'contact@mail.ru'"></span>
+                                    <span x-text="item.email"></span>
                                 </li>
                             </ul>
                             <button @click="activeItem = item; help_modal_open = true" class="mt-6 bg-[#2D92CE] w-full text-white py-2 px-6 hover:bg-[#0074CC] transition-colors text-lg font-semibold">
@@ -109,7 +109,7 @@
                             <a :href="'tel:' + p" x-text="p"></a>
                         </li>
                     </template>
-                    <li class="flex items-center gap-2">
+                    <li x-show="activeItem?.email" class="flex items-center gap-2">
                         {!! file_get_contents(public_path('images/icons/mail.svg')) !!}
                         <a :href="'mailto:' + activeItem?.email" x-text="activeItem?.email"></a>
                     </li>
