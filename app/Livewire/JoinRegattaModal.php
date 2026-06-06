@@ -95,7 +95,7 @@ class JoinRegattaModal extends Component
         $yacht = Yacht::findOrFail($this->yachtId);
 
         try {
-            $entry = $action->handle($regatta, $team, $yacht, $user, $this->crew);
+            $entry = $action->handle($regatta, $team, $yacht, $user, array_filter($this->crew, fn ($role) => $role !== '' && $role !== null));
         } catch (\Illuminate\Validation\ValidationException $e) {
             foreach ($e->errors() as $field => $messages) {
                 foreach ($messages as $message) {

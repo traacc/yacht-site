@@ -150,7 +150,7 @@ class ArchivedRegattaEntryResource extends Resource
                         'main'              => 'Основной',
                         'reserve'           => 'Запасной',
                         'captain'           => 'Капитан',
-                        'not_participating' => 'Не участвует',
+                        //'not_participating' => 'Не участвует',
                         default             => '—',
                     })
                     ->schema([
@@ -212,7 +212,7 @@ class ArchivedRegattaEntryResource extends Resource
                                 'main'              => 'Основной',
                                 'reserve'           => 'Запасной',
                                 'captain'           => 'Капитан',
-                                'not_participating' => 'Не участвует',
+                                //'not_participating' => 'Не участвует',
                             ])
                             ->required(),
                     ]),

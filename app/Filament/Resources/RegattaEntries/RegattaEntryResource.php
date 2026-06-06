@@ -152,7 +152,7 @@ class RegattaEntryResource extends Resource
                         'main'              => 'Основной',
                         'reserve'           => 'Запасной',
                         'captain'           => 'Капитан',
-                        'not_participating' => 'Не участвует',
+                        //'not_participating' => 'Не участвует',
                         default             => '—',
                     })
                     ->schema([
@@ -214,7 +214,7 @@ class RegattaEntryResource extends Resource
                                 'main'              => 'Основной',
                                 'reserve'           => 'Запасной',
                                 'captain'           => 'Капитан',
-                                'not_participating' => 'Не участвует',
+                                //'not_participating' => 'Не участвует',
                             ])
                             ->required(),
                     ]),
@@ -407,7 +407,7 @@ class RegattaEntryResource extends Resource
      * @return array<int, array{team_member_id: string, member_name: string, role: string}>
      */
     public static function buildCrewDefaults(?string $teamId): array
-    {
+    {   /*
         if ($teamId === null) {
             return [];
         }
@@ -429,6 +429,8 @@ class RegattaEntryResource extends Resource
                 'role'           => 'main',
             ])
             ->all();
+        */
+        return [];
     }
 
     /**
@@ -454,6 +456,7 @@ class RegattaEntryResource extends Resource
 
         $existingMemberIds = $existing->pluck('team_member_id')->all();
 
+        /*
         $newMembers = $team
             ?->members()
             ->wherePivot('status', 'active')
@@ -466,8 +469,9 @@ class RegattaEntryResource extends Resource
                 'role'           => 'not_participating',
             ])
             ?? collect();
-
-        return $existing->concat($newMembers)->all();
+        */
+        //return $existing->concat($newMembers)->all();
+        return $existing->all();
     }
 
     /**
