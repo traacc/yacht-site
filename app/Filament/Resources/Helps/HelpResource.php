@@ -194,7 +194,7 @@ class HelpResource extends Resource
                     ->limit(50),
 
                 TextColumn::make('contact_type')
-                    ->label('Тип контакта')
+                    ->label('Контакт')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'specialist' => 'Специалист',
@@ -206,14 +206,6 @@ class HelpResource extends Resource
                         'manager'    => 'warning',
                         default      => 'gray',
                     }),
-
-                TextColumn::make('specialist_name')
-                    ->label('Специалист')
-                    ->searchable(),
-
-                TextColumn::make('specialist_city')
-                    ->label('Город')
-                    ->searchable(),
 
                 TextColumn::make('status')
                     ->label('Статус')
