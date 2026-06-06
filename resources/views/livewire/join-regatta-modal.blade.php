@@ -117,7 +117,7 @@
                         @foreach ($teamMembers as $member)
                             <div class="flex items-center gap-3 mb-2 py-2 px-3 bg-[#F8F8F8] rounded">
                                 <span class="text-sm flex-1">
-                                    {{ $member->user?->name ?? 'Неизвестный участник' }}
+                                    {{ $member->user?->full_name ?? $member->user?->name ?? 'Неизвестный участник' }}
                                     @if ($member->is_captain ?? false)
                                         <span class="text-yellow-500 text-xs font-semibold ml-1">Капитан</span>
                                     @endif
@@ -131,6 +131,65 @@
                                 </select>
                             </div>
                         @endforeach
+                    </div>
+                @endif
+
+                {{-- Поиск и добавление участников, не состоящих в команде --}}
+                @if ($teamId)
+                    <div class="border-t border-gray-200 pt-4" x-data="{
+                        query: @entangle('searchQuery'),
+                        results: @entangle('searchResults'),
+                        isOpen: false,
+                        selectedIndex: -1,
+                        init() {
+                            this.$watch('results', v => { this.isOpen = v.length > 0; this.selectedIndex = -1; });
+                        },
+                        selectItem(userId) {
+                            $wire.searchQuery = '';
+                            this.isOpen = false;
+                            $wire.addExternalMember(userId);
+                        },
+                        onKeydown(e) {
+                            if (!this.isOpen || this.results.length === 0) return;
+                            if (e.key === 'ArrowDown') { e.preventDefault(); this.selectedIndex = Math.min(this.selectedIndex + 1, this.results.length - 1); }
+                            else if (e.key === 'ArrowUp') { e.preventDefault(); this.selectedIndex = Math.max(this.selectedIndex - 1, -1); }
+                            else if (e.key === 'Enter' && this.selectedIndex >= 0) { e.preventDefault(); this.selectItem(this.results[this.selectedIndex].id); }
+                            else if (e.key === 'Escape') { this.isOpen = false; $wire.searchQuery = ''; }
+                        }
+                    }" x-on:click.away="isOpen = false">
+                        <p class="text-sm font-medium text-[#2E325C] mb-2">Добавить участника</p>
+                        <p class="text-xs text-gray-500 mb-3">Найдите пользователя, который ещё не состоит в команде, чтобы добавить его в экипаж.</p>
+
+                        <div class="relative">
+                            <input type="text"
+                                   wire:model.live.debounce.350ms="searchQuery"
+                                   x-on:keydown="onKeydown($event)"
+                                   placeholder="Поиск по имени, фамилии или email..."
+                                   class="w-full border border-gray-200 bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
+
+                            {{-- Спиннер загрузки --}}
+                            <div wire:loading wire:target="searchQuery" class="absolute right-3 top-2.5 text-gray-400 text-xs">
+                                Поиск...
+                            </div>
+
+                            {{-- Выпадающий список результатов --}}
+                            <div x-show="isOpen" x-cloak
+                                 class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">
+                                <template x-for="(user, index) in results" :key="user.id">
+                                    <div x-on:click="selectItem(user.id)"
+                                         x-on:mouseenter="selectedIndex = index"
+                                         :class="{ 'bg-[#2D92CE]/10': selectedIndex === index }"
+                                         class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm border-b border-gray-100 last:border-b-0">
+                                        <span class="font-medium" x-text="user.first_name + ' ' + user.last_name"></span>
+                                        <span x-show="user.patronymic" x-text="' ' + user.patronymic" class="text-gray-500"></span>
+                                        <span class="text-gray-400 text-xs ml-2" x-text="user.email"></span>
+                                    </div>
+                                </template>
+                                <div x-show="results.length === 0 && query.length > 0" class="px-3 py-2 text-sm text-gray-400">
+                                    Ничего не найдено
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 @endif
 

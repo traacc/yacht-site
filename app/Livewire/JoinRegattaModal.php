@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Actions\Regatta\SubmitRegattaEntryAction;
+use App\Enums\TeamMemberRole;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Models\Regatta;
 use App\Models\Team;
@@ -40,6 +41,15 @@ class JoinRegattaModal extends Component
      */
     public array $crew = [];
 
+    /** Поисковый запрос для добавления участников не из команды */
+    public string $searchQuery = '';
+
+    /** Результаты поиска пользователей, не состоящих в выбранной команде */
+    public array $searchResults = [];
+
+    /** ID только что добавленных team_member (для мгновенного отображения в crew) */
+    public array $newMemberIds = [];
+
     #[On('open-join-regatta-modal')]
     public function openModal(string $regattaId): void
     {
@@ -50,17 +60,23 @@ class JoinRegattaModal extends Component
         $this->crew = [];
         $this->submitted = false;
         $this->isOpen = true;
+        $this->searchQuery = '';
+        $this->searchResults = [];
+        $this->newMemberIds = [];
     }
 
     public function closeModal(): void
     {
         $this->isOpen = false;
-        $this->reset(['regattaId', 'teamId', 'yachtId', 'documentFiles', 'crew', 'submitted']);
+        $this->reset(['regattaId', 'teamId', 'yachtId', 'documentFiles', 'crew', 'submitted', 'searchQuery', 'searchResults', 'newMemberIds']);
     }
 
     public function updatedTeamId(): void
     {
         $this->crew = [];
+        $this->searchQuery = '';
+        $this->searchResults = [];
+        $this->newMemberIds = [];
     }
 
     /**
@@ -75,9 +91,81 @@ class JoinRegattaModal extends Component
 
         foreach ($this->crew as $id => $role) {
             if ($id !== $memberId && $role === 'captain') {
-                $this->crew[$id] = '';
+                $this->crew[$id] = 'main';
             }
         }
+    }
+
+    /**
+     * Поиск пользователей по имени/фамилии/email,
+     * исключая уже состоящих в выбранной команде.
+     */
+    public function updatedSearchQuery(): void
+    {
+        $query = trim($this->searchQuery);
+
+        if ($query === '' || ! $this->teamId) {
+            $this->searchResults = [];
+
+            return;
+        }
+
+        // ID пользователей, уже состоящих в команде
+        $existingUserIds = TeamMember::where('team_id', $this->teamId)
+            ->pluck('user_id')
+            ->toArray();
+
+        $this->searchResults = User::where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('email', 'like', "%{$query}%");
+            })
+            ->when($existingUserIds !== [], fn ($q) => $q->whereNotIn('id', $existingUserIds))
+            ->limit(10)
+            ->get()
+            ->toArray();
+    }
+
+    /**
+     * Добавить пользователя в команду и сразу в экипаж.
+     */
+    public function addExternalMember(string $userId): void
+    {
+        if (! $this->teamId) {
+            return;
+        }
+
+        $user = User::find($userId);
+        if (! $user) {
+            return;
+        }
+
+        // Проверяем, не состоит ли уже в команде
+        $exists = TeamMember::where('team_id', $this->teamId)
+            ->where('user_id', $userId)
+            ->exists();
+
+        if ($exists) {
+            $this->searchQuery = '';
+            $this->searchResults = [];
+
+            return;
+        }
+
+        $teamMember = TeamMember::create([
+            'team_id'   => $this->teamId,
+            'user_id'   => $userId,
+            'role'      => TeamMemberRole::Member->value,
+            'status'    => 'active',
+            'joined_at' => now(),
+        ]);
+
+        // Добавляем в экипаж (по умолчанию «Основной»)
+        $this->crew[(string) $teamMember->id] = 'main';
+        $this->newMemberIds[] = (string) $teamMember->id;
+
+        // Сбрасываем поиск
+        $this->searchQuery = '';
+        $this->searchResults = [];
     }
 
     public function submit(SubmitRegattaEntryAction $action): void
@@ -215,7 +303,7 @@ class JoinRegattaModal extends Component
     }
 
     /**
-     * Активные участники выбранной команды.
+     * Активные участники выбранной команды + только что добавленные.
      *
      * @return Collection<int, TeamMember>
      */
@@ -225,14 +313,36 @@ class JoinRegattaModal extends Component
             return collect();
         }
 
-        return TeamMember::where('team_id', $this->teamId)
+        $members = TeamMember::where('team_id', $this->teamId)
             ->where('status', 'active')
             ->with(['user', 'team'])
+            ->orderBy('joined_at', 'asc')
+            ->orderBy('id', 'asc')
             ->get()
             ->map(function (TeamMember $member): TeamMember {
                 $member->is_captain = $member->team->organizer_id === $member->user_id;
                 return $member;
             });
+
+        // Подгружаем только что добавленных участников, если они ещё не в коллекции
+        if ($this->newMemberIds !== []) {
+            $existingIds = $members->pluck('id')->map(fn ($id) => (string) $id)->toArray();
+            $missingIds = array_diff($this->newMemberIds, $existingIds);
+
+            if ($missingIds !== []) {
+                $newMembers = TeamMember::whereIn('id', $missingIds)
+                    ->with(['user', 'team'])
+                    ->get()
+                    ->map(function (TeamMember $member): TeamMember {
+                        $member->is_captain = $member->team->organizer_id === $member->user_id;
+                        return $member;
+                    });
+
+                $members = $members->merge($newMembers);
+            }
+        }
+
+        return $members->values();
     }
 
     #[Computed]
