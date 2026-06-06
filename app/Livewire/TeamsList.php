@@ -95,6 +95,8 @@ class TeamsList extends Component
                     ?->final_position ?? null,
             ])->values()->toArray(),
             'gallery' => $team->getMedia('gallery')->map(fn ($media) => $media->getUrl())->values()->toArray(),
+            'can_edit' => auth()->check() && auth()->user()->can('editTeam', $team),
+            'edit_url' => auth()->check() && auth()->user()->isAdmin() ? '/admin/teams' : '/user/teams',
         ])->values();
 
         return view('livewire.teams-list', [

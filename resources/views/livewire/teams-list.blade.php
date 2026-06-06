@@ -150,6 +150,11 @@
                             <td x-text="activeTeam?.participation_count + ' регат' + (activeTeam?.participation_count === 1 ? 'а' : (activeTeam?.participation_count >= 2 && activeTeam?.participation_count <= 4 ? 'ы' : ''))"></td>
                         </tr>
                     </table>
+                    <template x-if="activeTeam?.can_edit">
+                        <a :href="activeTeam?.edit_url" class="inline-flex items-center gap-2 mt-4 text-[#2D92CE] font-semibold hover:underline text-sm md:text-base">
+                            Редактировать команду →
+                        </a>
+                    </template>
                 </div>
             </div>
             <div class="photo shrink-0 md:hidden">
