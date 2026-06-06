@@ -10,6 +10,7 @@ use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
+use Filament\Actions\Action;
 use Filament\Tables\Table;
 
 class AppServiceProvider extends ServiceProvider
@@ -43,5 +44,11 @@ class AppServiceProvider extends ServiceProvider
             // 2. Настраиваем доступные варианты в выпадающем списке (опционально)
             ->paginated([10, 25, 50, 100, 'all']);
         });
+
+        Action::configureUsing(function (Action $action) {
+            $action->closeModalByClickingAway(false);
+            $action->closeModalByEscaping(false);
+        });
+
     }
 }
