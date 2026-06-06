@@ -155,18 +155,16 @@ class HelpResource extends Resource
                     ->addActionLabel('Добавить телефон')
                     ->defaultItems(0),
 
-                TextInput::make('specialist_sphere')
-                    ->label('Сфера деятельности')
-                    ->placeholder('Юридические услуги'),
+                TextInput::make('specialist_site')
+                    ->label('Сайт')
+                    ->url()
+                    ->placeholder('https://example.com'),
 
                 TextInput::make('specialist_city')
                     ->label('Город')
                     ->placeholder('Москва'),
 
-                TextInput::make('specialist_site')
-                    ->label('Сайт')
-                    ->url()
-                    ->placeholder('https://example.com'),
+
 
                 Select::make('status')
                     ->label('Статус')
