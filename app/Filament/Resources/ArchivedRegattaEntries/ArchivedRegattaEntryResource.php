@@ -298,9 +298,20 @@ class ArchivedRegattaEntryResource extends Resource
                     ->label('Статус регаты')
                     ->badge()
                     ->sortable(),
-                TextColumn::make('team.organizer.name')
+                TextColumn::make('captain')
                     ->label('Капитан')
-                    ->searchable(),
+                    ->state(fn (\App\Models\RegattaEntry $record): string => $record->crew()
+                        ->where('role', 'captain')
+                        ->first()?->teamMember?->user?->name ?? '—'
+                    )
+                    ->searchable(query: function (\Illuminate\Database\Eloquent\Builder $query, string $search): \Illuminate\Database\Eloquent\Builder {
+                        return $query->whereHas('crew', function (\Illuminate\Database\Eloquent\Builder $q) use ($search): void {
+                            $q->where('role', 'captain')
+                                ->whereHas('teamMember.user', function (\Illuminate\Database\Eloquent\Builder $q) use ($search): void {
+                                    $q->where('name', 'like', "%{$search}%");
+                                });
+                        });
+                    }),
                 TextColumn::make('crew')
                     ->label('Экипаж')
                     ->state(fn (RegattaEntry $record): string => (string) $record->crew()
@@ -402,7 +413,7 @@ class ArchivedRegattaEntryResource extends Resource
             ->map(fn (\App\Models\User $user): array => [
                 'team_member_id' => $user->pivot->id,
                 'member_name'    => $user->name,
-                'is_captain'     => $user->pivot->role === 'organizer',
+                'is_captain'     => false,
                 'role'           => 'main',
             ])
             ->all();
@@ -425,12 +436,12 @@ class ArchivedRegattaEntryResource extends Resource
             ->map(fn (\App\Models\RegattaEntryCrew $crew): array => [
                 'team_member_id' => $crew->team_member_id,
                 'member_name'    => $crew->teamMember?->user?->name ?? 'Неизвестный',
-                'is_captain'     => $crew->teamMember?->role === 'organizer',
+                'is_captain'     => $crew->role === 'captain',
                 'role'           => $crew->role,
             ]);
 
         $existingMemberIds = $existing->pluck('team_member_id')->all();
-
+        /*
         $newMembers = $team
             ?->members()
             ->wherePivot('status', 'active')
@@ -439,12 +450,14 @@ class ArchivedRegattaEntryResource extends Resource
             ->map(fn (\App\Models\User $user): array => [
                 'team_member_id' => $user->pivot->id,
                 'member_name'    => $user->name,
-                'is_captain'     => $user->id === $organizerId,
+                'is_captain'     => false,
                 'role'           => 'not_participating',
             ])
             ?? collect();
+        */
+        //return $existing->concat($newMembers)->all();
 
-        return $existing->concat($newMembers)->all();
+        return $existing->all();
     }
 
     /**

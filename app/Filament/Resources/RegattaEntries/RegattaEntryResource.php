@@ -296,9 +296,20 @@ class RegattaEntryResource extends Resource
                 TextColumn::make('regatta.name')
                     ->label('Регата')
                     ->searchable(),
-                TextColumn::make('team.organizer.name')
+                TextColumn::make('captain')
                     ->label('Капитан')
-                    ->searchable(),
+                    ->state(fn (RegattaEntry $record): string => $record->crew()
+                        ->where('role', 'captain')
+                        ->first()?->teamMember?->user?->name ?? '—'
+                    )
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('crew', function (Builder $q) use ($search): void {
+                            $q->where('role', 'captain')
+                                ->whereHas('teamMember.user', function (Builder $q) use ($search): void {
+                                    $q->where('name', 'like', "%{$search}%");
+                                });
+                        });
+                    }),
                 TextColumn::make('crew')
                     ->label('Экипаж')
                     ->state(fn (RegattaEntry $record): string => (string) $record->crew()
@@ -450,7 +461,7 @@ class RegattaEntryResource extends Resource
             ->map(fn (\App\Models\RegattaEntryCrew $crew): array => [
                 'team_member_id' => $crew->team_member_id,
                 'member_name'    => $crew->teamMember?->user?->name ?? 'Неизвестный',
-                'is_captain'     => $crew->teamMember?->role === 'organizer',
+                'is_captain'     => $crew->role === 'captain',
                 'role'           => $crew->role,
             ]);
 

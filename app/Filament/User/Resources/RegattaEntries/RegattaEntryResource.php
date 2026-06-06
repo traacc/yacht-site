@@ -427,7 +427,7 @@ class RegattaEntryResource extends Resource
             ->map(fn (\App\Models\RegattaEntryCrew $crew): array => [
                 'team_member_id' => $crew->team_member_id,
                 'member_name'    => $crew->teamMember?->user?->name ?? 'Неизвестный',
-                'is_captain'     => $crew->teamMember?->role === 'organizer',
+                'is_captain'     => $crew->role === 'captain',
                 'role'           => $crew->role,
             ])
             ->all();
