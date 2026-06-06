@@ -210,7 +210,7 @@ class ArchivedRegattaEntryResource extends Resource
                                 //'not_participating' => 'Не участвует',
                             ])
                             ->required(),
-                    ]),
+                    ])->columns(2),
 
                 // ── Документы заявки ──────────────────
                 Repeater::make('required_documents')
