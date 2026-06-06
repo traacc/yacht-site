@@ -111,6 +111,9 @@
                     <div class="border-t border-gray-200 pt-4">
                         <p class="text-sm font-medium text-[#2E325C] mb-3">Экипаж</p>
                         <p class="text-xs text-gray-500 mb-3">Выберите участников команды и укажите роль: основной или запасной.</p>
+                        @error('crew')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
                         @foreach ($teamMembers as $member)
                             <div class="flex items-center gap-3 mb-2 py-2 px-3 bg-[#F8F8F8] rounded">
                                 <span class="text-sm flex-1">
@@ -124,6 +127,7 @@
                                     <option value="">Не участвует</option>
                                     <option value="main">Основной</option>
                                     <option value="reserve">Запасной</option>
+                                    <option value="captain">Капитан</option>
                                 </select>
                             </div>
                         @endforeach

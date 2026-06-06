@@ -63,6 +63,23 @@ class JoinRegattaModal extends Component
         $this->crew = [];
     }
 
+    /**
+     * При изменении роли участника: если выбрали «Капитан»,
+     * сбрасываем предыдущего капитана.
+     */
+    public function updatedCrew(string $value, string $memberId): void
+    {
+        if ($value !== 'captain') {
+            return;
+        }
+
+        foreach ($this->crew as $id => $role) {
+            if ($id !== $memberId && $role === 'captain') {
+                $this->crew[$id] = '';
+            }
+        }
+    }
+
     public function submit(SubmitRegattaEntryAction $action): void
     {
         $user = Auth::user();
@@ -89,6 +106,14 @@ class JoinRegattaModal extends Component
             'teamId'  => 'команда',
             'yachtId' => 'яхта',
         ]);
+
+        // Только один капитан в экипаже
+        $captainCount = count(array_filter($this->crew, fn ($role) => $role === 'captain'));
+        if ($captainCount > 1) {
+            $this->addError('crew', 'Можно выбрать только одного капитана.');
+
+            return;
+        }
 
         $regatta = Regatta::findOrFail($this->regattaId);
         $team = Team::findOrFail($this->teamId);
