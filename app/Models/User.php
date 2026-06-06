@@ -42,6 +42,11 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         'external_id',
     ];
 
+    protected $attributes = [
+        'first_name' => '',
+        'last_name'  => '',
+    ];
+
     protected $hidden = [
         'password',
         'remember_token',
