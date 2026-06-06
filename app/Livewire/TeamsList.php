@@ -68,7 +68,7 @@ class TeamsList extends Component
             'status_class' => $team->is_archived ? 'inactive' : 'active',
             'captain' => $team->organizer?->name ?? '—',
             'rating' => $team->ratings->where('rating_type', 'team')->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first()?->rank_position ?? '—',
-            'participation_count' => $team->regattaEntries->count(),
+            'participation_count' => $team->regattaEntries->filter(fn ($e) => $e->regatta?->date_start?->isPast())->count(),
             'members' => $team->activeMembers->map(fn ($m) => [
                 'name' => $m->name,
                 'birthday' => $m->birth_date?->format('d.m.Y') ?? '',
