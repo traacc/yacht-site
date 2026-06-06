@@ -58,9 +58,6 @@ class UserResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema
-            ->validationMessages([
-                'phone.unique' => 'Пользователь с таким телефоном уже зарегистрирован',
-            ])
             ->components([
                 FileUpload::make('photo_url')
                     ->label('Изменить фотографию')
@@ -121,7 +118,12 @@ class UserResource extends Resource
                     ->placeholder('+7 (___) ___-__-__')
                     ->required()
                     ->telRegex('/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/')
-                    ->unique(table: 'users', column: 'phone', ignorable: fn ($record) => $record),
+                    ->rules([
+                        fn ($record) => \Illuminate\Validation\Rule::unique('users', 'phone')->ignore($record?->id),
+                    ])
+                    ->validationMessages([
+                        'unique' => 'Пользователь с таким телефоном уже зарегистрирован',
+                    ]),
                 Select::make('sport_category')
                     ->label('Спортивный разряд')
                     ->placeholder('Спортивный разряд')
