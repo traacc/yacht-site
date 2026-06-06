@@ -204,11 +204,6 @@ class RegattaEntryResource extends Resource
                         Hidden::make('member_name'),
                         Hidden::make('is_captain')
                             ->default(false),
-                        \Filament\Forms\Components\Placeholder::make('captain_badge')
-                            ->label('')
-                            ->content(fn (Get $get): string => $get('is_captain') ? ' Капитан команды' : '')
-                            ->columnSpanFull()
-                            ->visible(fn (Get $get): bool => (bool) $get('is_captain')),
                         Select::make('role')
                             ->label('Роль')
                             ->options([
@@ -218,7 +213,7 @@ class RegattaEntryResource extends Resource
                                 //'not_participating' => 'Не участвует',
                             ])
                             ->required(),
-                    ]),
+                    ])->columns(2),
 
                 // ── Документы заявки ──────────────────
                 Repeater::make('required_documents')
