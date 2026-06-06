@@ -32,7 +32,7 @@ class ArchivedRegattaEntryResource extends Resource
 
     protected static ?string $navigationLabel = 'Архивные заявки';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 5;
     
 
     public static function getModelLabel(): string
