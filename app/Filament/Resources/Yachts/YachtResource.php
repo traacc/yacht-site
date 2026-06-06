@@ -251,11 +251,8 @@ class YachtResource extends Resource
                 TextColumn::make('name')
                     ->label('Яхта')
                     ->searchable()->sortable(),
-                TextColumn::make('gims_number')
-                    ->label('Номер ГИМС')
-                    ->searchable()->sortable(),
                 TextColumn::make('vfps_number')
-                    ->label('Парус №')
+                    ->label('№')
                     ->searchable()->sortable(),
                 TextColumn::make('user.name')
                     ->label('Владелец')
