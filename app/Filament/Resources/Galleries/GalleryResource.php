@@ -131,6 +131,7 @@ class GalleryResource extends Resource
                     ->panelLayout('grid')
                     ->multiple()
                     ->reorderable()
+                    ->deletable(true)
                     ->disk('public')
                     ->visibility('public')
                     ->maxFiles(200)
