@@ -128,6 +128,7 @@ class GalleryResource extends Resource
                     ->collection('images')                // коллекция из registerMediaCollections()
                     ->image()
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->panelLayout('grid')
                     ->multiple()
                     ->reorderable()
                     ->disk('public')
