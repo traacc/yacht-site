@@ -213,7 +213,7 @@ class RegattaEntryResource extends Resource
                                 //'not_participating' => 'Не участвует',
                             ])
                             ->required(),
-                    ])->columns(2),
+                    ])->columns(2)->inset(),
 
                 // ── Документы заявки ──────────────────
                 Repeater::make('required_documents')
