@@ -197,7 +197,7 @@
                 <div class="participation-header flex items-center justify-between mb-6">
                     <h5 class="a-font text-lg md:text-3xl">Участие в регатах</h5>
                     <div class="calendar-icon">
-                        <select x-model="selectedYear" class="border-[#C6C6C6] focus:outline-hidden focus:ring-2 text-[#2E325C] pl-5 w-[100px]" name="year" id="">
+                        <select x-model="selectedYear" class="border-[#C6C6C6] w-[140px] focus:outline-hidden focus:ring-2 text-[#2E325C] pl-5 w-[100px]" name="year" id="">
                             <template x-for="year in activeTeam?.years || []" :key="year">
                                 <option :value="year" x-text="year"></option>
                             </template>
