@@ -32,7 +32,8 @@ class Help extends Model
     protected function casts(): array
     {
         return [
-            'includes' => 'array',
+            'includes'         => 'array',
+            'specialist_phone' => 'array',
         ];
     }
 

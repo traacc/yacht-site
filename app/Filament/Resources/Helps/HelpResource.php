@@ -142,11 +142,18 @@ class HelpResource extends Resource
                     ->email()
                     ->placeholder('example@mail.ru'),
 
-                TextInput::make('specialist_phone')
-                    ->label('Телефон специалиста')
-                    ->telRegex('/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/')
-                    ->mask('+7 (999) 999-99-99')
-                    ->placeholder('+7 (999) 000-00-00'),
+                Repeater::make('specialist_phone')
+                    ->label('Телефоны специалиста')
+                    ->simple(
+                        TextInput::make('phone')
+                            ->label('Телефон')
+                            ->telRegex('/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/')
+                            ->mask('+7 (999) 999-99-99')
+                            ->placeholder('+7 (999) 000-00-00')
+                            ->required(),
+                    )
+                    ->addActionLabel('Добавить телефон')
+                    ->defaultItems(0),
 
                 TextInput::make('specialist_sphere')
                     ->label('Сфера деятельности')

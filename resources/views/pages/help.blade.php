@@ -42,10 +42,12 @@
                         <div class="pl-6 pr-6 border-l border-l-[#EAEAEA]">
                             <h3 class="text-lg font-semibold mb-4" x-text="item.name"></h3>
                             <ul class="space-y-2 text-sm">
-                                <li class="flex items-center gap-2">
-                                    {!! file_get_contents(public_path('images/icons/phone.svg')) !!}
-                                    <span x-text="item.phone || '+7 (000) 000-00-00'"></span>
-                                </li>
+                                <template x-for="p in (item.phone && item.phone.length ? item.phone : ['+7 (000) 000-00-00'])" :key="p">
+                                    <li class="flex items-center gap-2">
+                                        {!! file_get_contents(public_path('images/icons/phone.svg')) !!}
+                                        <span x-text="p"></span>
+                                    </li>
+                                </template>
                                 <li class="flex items-center gap-2">
                                     {!! file_get_contents(public_path('images/icons/mail.svg')) !!}
                                     <span x-text="item.email || 'contact@mail.ru'"></span>
@@ -101,10 +103,12 @@
                 <p class="font-semibold text-lg mb-4" x-text="activeItem?.name"></p>
                 <p class="font-medium mb-4" x-text="activeItem?.sphere"></p>
                 <ul class="space-y-5">
-                    <li class="flex items-center gap-2">
-                        {!! file_get_contents(public_path('images/icons/phone.svg')) !!}
-                        <a :href="'tel:' + activeItem?.phone" x-text="activeItem?.phone"></a>
-                    </li>
+                    <template x-for="p in (activeItem?.phone ?? [])" :key="p">
+                        <li class="flex items-center gap-2">
+                            {!! file_get_contents(public_path('images/icons/phone.svg')) !!}
+                            <a :href="'tel:' + p" x-text="p"></a>
+                        </li>
+                    </template>
                     <li class="flex items-center gap-2">
                         {!! file_get_contents(public_path('images/icons/mail.svg')) !!}
                         <a :href="'mailto:' + activeItem?.email" x-text="activeItem?.email"></a>
