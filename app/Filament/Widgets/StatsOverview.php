@@ -30,7 +30,9 @@ class StatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        $newEntriesCount = RegattaEntry::where('status', 'pending')->count();
+        $newEntriesCount = RegattaEntry::where('status', 'pending')
+            ->whereHas('regatta', fn ($q) => $q->where('date_end', '>=', now()->toDateString()))
+            ->count();
 
         return [
             $this->createCustomStat('Регаты', Regatta::count(), 'dashboard_regatta_count', 'text-blue-500/10', RegattaResource::getUrl('index')),
