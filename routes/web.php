@@ -440,7 +440,8 @@ Route::get('/help', function () {
 
     $categories = $helpCategories->mapWithKeys(fn (\App\Models\HelpCategory $cat) => [
         $cat->slug => [
-            'title' => $cat->title,
+            'title'       => $cat->title,
+            'description' => $cat->description,
             'items' => $cat->helps->map(fn (\App\Models\Help $help) => [
                 'id'          => $help->id,
                 'title'       => $help->title,

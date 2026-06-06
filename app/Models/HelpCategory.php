@@ -17,6 +17,7 @@ class HelpCategory extends Model
     protected $fillable = [
         'title',
         'slug',
+        'description',
     ];
 
     // ──────────────────────────────────────────────

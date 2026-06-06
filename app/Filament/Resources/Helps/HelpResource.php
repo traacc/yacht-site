@@ -74,6 +74,10 @@ class HelpResource extends Resource
                             ->placeholder('avtomaticheski-zapolnyaetsya')
                             ->required()
                             ->unique('help_category', 'slug'),
+                        Textarea::make('description')
+                            ->label('Описание категории')
+                            ->placeholder('Краткое описание')
+                            ->rows(3),
                     ])
                     ->createOptionModalHeading('Новая категория')
                     ->editOptionForm([
@@ -90,6 +94,10 @@ class HelpResource extends Resource
                             ->placeholder('avtomaticheski-zapolnyaetsya')
                             ->required()
                             ->unique('help_category', 'slug', ignoreRecord: true),
+                        Textarea::make('description')
+                            ->label('Описание категории')
+                            ->placeholder('Краткое описание')
+                            ->rows(3),
                     ])
                     ->editOptionModalHeading('Редактировать категорию'),
 

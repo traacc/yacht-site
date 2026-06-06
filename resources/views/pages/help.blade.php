@@ -27,7 +27,8 @@
             </template>
         </div>
         <div class="mb-8 w-full">
-            <h3 class="section-title a-font text-5xl mb-8" x-text="categories[activeCategory]?.title"></h3>
+            <h3 class="section-title a-font text-5xl mb-4" x-text="categories[activeCategory]?.title"></h3>
+            <p x-show="categories[activeCategory]?.description" x-text="categories[activeCategory]?.description" class="text-[#2E325C] mb-8"></p>
             <div class="searchbar flex flex-col md:flex-row gap-4 mb-6">
                 <input class="w-full border-0 py-4 pl-12 bg-[#F8F8F8] focus:outline-hidden " type="text" placeholder="Поиск по объявлению">
             </div>
