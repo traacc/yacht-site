@@ -102,7 +102,13 @@ class UserResource extends Resource
                     ->label('Email')
                     ->placeholder('email@example.com')
                     ->email()
-                    ->required(),
+                    ->required()
+                    ->rules([
+                        fn ($record) => \Illuminate\Validation\Rule::unique('users', 'email')->ignore($record?->id),
+                    ])
+                    ->validationMessages([
+                        'unique' => 'Пользователь с таким email уже зарегистрирован',
+                    ]),
                 TextInput::make('password')
                     ->label('Пароль')
                     ->placeholder('Новый пароль')
