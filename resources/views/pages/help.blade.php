@@ -12,6 +12,11 @@
             <h2 class="section-title a-font text-5xl">Помощь</h2>
         </div>
     </section>
+    @if($beforeNote)
+    <section class="container mx-auto pb-4">
+        <div class="prose max-w-none">{!! $beforeNote !!}</div>
+    </section>
+    @endif
     <section class="flex md:flex-row flex-col gap-8 container mx-auto">
         <div class="p-4 bg-[#F8F8F8] max-w-[340px] w-full">
             <template x-for="(cat, key) in categories" :key="key">

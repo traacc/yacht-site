@@ -463,7 +463,9 @@ Route::get('/help', function () {
     // Определяем первый slug для активной категории по умолчанию
     $defaultCategory = $helpCategories->first()?->slug ?? '';
 
-    return view('pages.help', compact('categories', 'defaultCategory'));
+    $beforeNote = app(\App\Services\SettingsService::class)->get('help.before_note', '');
+
+    return view('pages.help', compact('categories', 'defaultCategory', 'beforeNote'));
 })->name('help');
 Route::get('/news', function () {
     $news = News::published()
