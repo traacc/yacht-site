@@ -75,7 +75,23 @@ class HelpResource extends Resource
                             ->required()
                             ->unique('help_category', 'slug'),
                     ])
-                    ->createOptionModalHeading('Новая категория'),
+                    ->createOptionModalHeading('Новая категория')
+                    ->editOptionForm([
+                        TextInput::make('title')
+                            ->label('Название категории')
+                            ->placeholder('Введите название')
+                            ->required()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(fn (?string $state, callable $set) =>
+                                $set('slug', $state ? Str::slug($state) : '')
+                            ),
+                        TextInput::make('slug')
+                            ->label('Slug')
+                            ->placeholder('avtomaticheski-zapolnyaetsya')
+                            ->required()
+                            ->unique('help_category', 'slug', ignoreRecord: true),
+                    ])
+                    ->editOptionModalHeading('Редактировать категорию'),
 
                 TextInput::make('title')
                     ->label('Заголовок')
