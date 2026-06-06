@@ -75,6 +75,7 @@ class TeamsList extends Component
                 'category' => $m->sport_category?->getLabel() ?? '',
             ])->values()->toArray(),
             'years' => $team->regattaEntries
+                ->filter(fn ($e) => $e->regatta?->isFinished())
                 ->pluck('regatta.date_start')
                 ->filter()
                 ->map->year
@@ -82,7 +83,7 @@ class TeamsList extends Component
                 ->sortDesc()
                 ->values()
                 ->toArray(),
-            'participation' => $team->regattaEntries->map(fn ($entry) => [
+            'participation' => $team->regattaEntries->filter(fn ($e) => $e->regatta?->isFinished())->map(fn ($entry) => [
                 'regatta' => $entry->regatta?->name ?? '—',
                 'yacht' => $entry->yacht?->name ?? '—',
                 'date_event' => $entry->regatta?->dateRange() ?? '—',
