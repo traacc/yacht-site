@@ -170,7 +170,7 @@ class HelpResource extends Resource
                     ]),
 
                 TextInput::make('specialist_city')
-                    ->label('Город')
+                    ->label('Адрес')
                     ->placeholder('Москва'),
 
 
