@@ -157,8 +157,17 @@ class HelpResource extends Resource
 
                 TextInput::make('specialist_site')
                     ->label('Сайт')
-                    ->url()
-                    ->placeholder('https://example.com'),
+                    ->placeholder('example.com')
+                    ->dehydrateStateUsing(function ($state) {
+                        if ($state && !preg_match('~^https?://~i', $state)) {
+                            return 'https://' . $state;
+                        }
+                        return $state;
+                    })
+                    ->rules([
+                        'nullable',
+                        'regex:/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/',
+                    ]),
 
                 TextInput::make('specialist_city')
                     ->label('Город')
