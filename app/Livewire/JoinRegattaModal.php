@@ -6,6 +6,7 @@ use App\Actions\Regatta\SubmitRegattaEntryAction;
 use App\Enums\TeamMemberRole;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Models\Regatta;
+use App\Models\RegattaEntryCrew;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
@@ -30,6 +31,8 @@ class JoinRegattaModal extends Component
     public bool $isOpen = false;
 
     public bool $submitted = false;
+
+    public bool $leftCrew = false;
 
     /** @var array<string, \Livewire\TemporaryUploadedFile[]> */
     public array $documentFiles = [];
@@ -59,6 +62,7 @@ class JoinRegattaModal extends Component
         $this->documentFiles = [];
         $this->crew = [];
         $this->submitted = false;
+        $this->leftCrew = false;
         $this->isOpen = true;
         $this->searchQuery = '';
         $this->searchResults = [];
@@ -68,7 +72,7 @@ class JoinRegattaModal extends Component
     public function closeModal(): void
     {
         $this->isOpen = false;
-        $this->reset(['regattaId', 'teamId', 'yachtId', 'documentFiles', 'crew', 'submitted', 'searchQuery', 'searchResults', 'newMemberIds']);
+        $this->reset(['regattaId', 'teamId', 'yachtId', 'documentFiles', 'crew', 'submitted', 'leftCrew', 'searchQuery', 'searchResults', 'newMemberIds']);
     }
 
     public function updatedTeamId(): void
@@ -346,6 +350,22 @@ class JoinRegattaModal extends Component
     }
 
     #[Computed]
+    public function userCrewEntry(): ?RegattaEntryCrew
+    {
+        if (! $this->regattaId || ! Auth::check()) {
+            return null;
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+
+        return RegattaEntryCrew::whereHas('teamMember', fn ($q) => $q->where('user_id', $user->id))
+            ->whereHas('regattaEntry', fn ($q) => $q->where('regatta_id', $this->regattaId)
+                ->whereNotIn('status', ['withdrawn', 'rejected']))
+            ->first();
+    }
+
+    #[Computed]
     public function state(): string
     {
         if (! Auth::check()) {
@@ -355,16 +375,33 @@ class JoinRegattaModal extends Component
         /** @var User $user */
         $user = Auth::user();
 
+        $crewEntry = $this->userCrewEntry;
+        if ($crewEntry) {
+            return $crewEntry->role === 'captain' ? 'in-crew-captain' : 'in-crew';
+        }
+
         $hasOrganizerTeam = $user->teamMemberships()
             ->whereIn('role', ['organizer', 'team_admin'])
             ->where('status', 'active')
             ->exists();
 
         if (! $hasOrganizerTeam) {
-            return $hasOrganizerTeam;
+            return 'no-team';
         }
 
-        return $hasOrganizerTeam;
+        return 'form';
+    }
+
+    public function leaveCrew(): void
+    {
+        $crewEntry = $this->userCrewEntry;
+        if (! $crewEntry || $crewEntry->role === 'captain') {
+            return;
+        }
+
+        $crewEntry->delete();
+        $this->dispatch('regatta-crew-left');
+        $this->leftCrew = true;
     }
 
     public function render()

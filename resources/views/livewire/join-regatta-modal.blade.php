@@ -27,7 +27,6 @@
          class="bg-white overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full p-6 z-10 relative">
 
 
-        {{ $this->state }}
         @if ($this->state === 'guest')
             <div class="flex items-center justify-between pb-3 mb-4">
                 <h3 class="text-lg font-medium text-[#2E325C] a-font">Войдите в личный кабинет</h3>
@@ -54,6 +53,59 @@
                    class="inline-flex justify-center bg-[#2D92CE] px-4 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90">
                     Перейти в личный кабинет
                 </a>
+            </div>
+        @elseif ($this->state === 'in-crew')
+            <div class="flex items-center justify-between pb-3 mb-4">
+                <h3 class="text-lg font-medium text-[#2E325C] a-font">Участие в регате</h3>
+                <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
+            </div>
+            <div class="py-4">
+                <p class="text-gray-600 mb-2">Вы зарегистрированы в экипаже для участия в данной регате.</p>
+                <p class="text-gray-600 mb-6">Вы уверены, что хотите отказаться от участия?</p>
+                <div class="flex gap-3">
+                    <button wire:click="leaveCrew"
+                            wire:loading.attr="disabled"
+                            class="inline-flex justify-center bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-red-700 disabled:opacity-50">
+                        <span wire:loading.remove wire:target="leaveCrew">Отказаться от участия</span>
+                        <span wire:loading wire:target="leaveCrew">Обработка...</span>
+                    </button>
+                    <button type="button" @click="$wire.closeModal()"
+                            class="inline-flex justify-center border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow hover:bg-gray-50">
+                        Отмена
+                    </button>
+                </div>
+            </div>
+        @elseif ($this->state === 'in-crew-captain')
+            <div class="flex items-center justify-between pb-3 mb-4">
+                <h3 class="text-lg font-medium text-[#2E325C] a-font">Участие в регате</h3>
+                <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
+            </div>
+            <div class="py-4">
+                <div class="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 mb-5">
+                    <svg class="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    <div>
+                        <p class="text-sm font-medium text-yellow-800">Вы являетесь капитаном экипажа</p>
+                        <p class="text-sm text-yellow-700 mt-1">Для отказа от участия необходимо сначала назначить другого капитана в составе экипажа.</p>
+                    </div>
+                </div>
+                <button type="button" @click="$wire.closeModal()"
+                        class="inline-flex w-full justify-center border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow hover:bg-gray-50">
+                    Закрыть
+                </button>
+            </div>
+        @elseif ($leftCrew)
+            <div class="flex items-center justify-between pb-3 mb-4">
+                <h3 class="text-lg font-medium text-[#2E325C] a-font">Участие отменено</h3>
+                <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
+            </div>
+            <div class="p-6 text-center">
+                <p class="font-medium text-lg">Вы успешно отказались от участия в регате</p>
+                <button type="button" @click="$wire.closeModal()"
+                        class="mt-4 inline-flex justify-center bg-[#2D92CE] px-4 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90">
+                    Закрыть
+                </button>
             </div>
         @elseif ($submitted)
             <div class="flex items-center justify-between pb-3 mb-4">

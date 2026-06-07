@@ -254,6 +254,15 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
             ->exists();
     }
 
+    // Проверяем, состоит ли текущий юзер в экипаже (RegattaEntryCrew) для этой регаты
+    $userIsInCrew = false;
+    if (auth()->check()) {
+        $userIsInCrew = \App\Models\RegattaEntryCrew::whereHas('teamMember', fn ($q) => $q->where('user_id', auth()->id()))
+            ->whereHas('regattaEntry', fn ($q) => $q->where('regatta_id', $regatta->id)
+                ->whereNotIn('status', ['withdrawn', 'rejected']))
+            ->exists();
+    }
+
     // Данные для Alpine.js модального окна состава команд
     $entriesJson = $entries->map(fn ($entry) => [
         'team_name' => $entry->team?->name ?? '',
@@ -318,6 +327,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'otherRegattas',
         'otherRegattasData',
         'userIsEntered',
+        'userIsInCrew',
         'temp',
         'mapUrl'
     ));
