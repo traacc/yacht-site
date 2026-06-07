@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Helps\Pages;
 
 use App\Filament\Pages\HelpPageSettings;
+use App\Filament\Resources\Helps\HelpCategoryResource;
 use App\Filament\Resources\Helps\HelpResource;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -15,6 +16,11 @@ class ManageHelps extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('categories')
+                ->label('Категории')
+                ->icon('heroicon-o-tag')
+                ->color('white')
+                ->url(fn () => HelpCategoryResource::getUrl()),
             Action::make('pageSettings')
                 ->label('Настройки страницы')
                 ->icon('heroicon-o-cog-6-tooth')

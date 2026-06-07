@@ -18,6 +18,7 @@ class HelpCategory extends Model
         'title',
         'slug',
         'description',
+        'sort_order',
     ];
 
     // ──────────────────────────────────────────────
