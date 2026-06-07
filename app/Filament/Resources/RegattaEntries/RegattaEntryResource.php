@@ -56,12 +56,14 @@ class RegattaEntryResource extends Resource
                     \App\Enums\RegattaStatus::Upcoming->value,
                     \App\Enums\RegattaStatus::Active->value,
                 ],
-            ))
+            ));
+            /*
             ->orderBy(
                 \App\Models\Regatta::select('date_start')
                     ->whereColumn('regattas.id', 'regatta_entries.regatta_id'),
                 'asc'
             );
+            */
     }
 
     public static function form(Schema $schema): Schema
@@ -288,10 +290,12 @@ class RegattaEntryResource extends Resource
             ->columns([
                 TextColumn::make('team.name')
                     ->label('Команда')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('regatta.name')
                     ->label('Регата')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('captain')
                     ->label('Капитан')
                     ->state(fn (RegattaEntry $record): string => $record->crew()
@@ -305,20 +309,38 @@ class RegattaEntryResource extends Resource
                                     $q->where('name', 'like', "%{$search}%");
                                 });
                         });
+                    })
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query->orderBy(
+                            \App\Models\User::select('name')
+                                ->join('team_members', 'team_members.user_id', '=', 'users.id')
+                                ->join('regatta_entry_crew', function ($join): void {
+                                    $join->on('regatta_entry_crew.team_member_id', '=', 'team_members.id')
+                                        ->where('regatta_entry_crew.role', '=', 'captain');
+                                })
+                                ->whereColumn('regatta_entry_crew.regatta_entry_id', 'regatta_entries.id')
+                                ->limit(1),
+                            $direction
+                        );
                     }),
                 TextColumn::make('crew')
                     ->label('Экипаж')
                     ->state(fn (RegattaEntry $record): string => (string) $record->crew()
                         ->whereIn('role', ['main', 'reserve', 'captain'])
                         ->count()
-                    ),
+                    )
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query->withCount([
+                            'crew as crew_count' => fn (Builder $q) => $q->whereIn('role', ['main', 'reserve', 'captain']),
+                        ])->orderBy('crew_count', $direction);
+                    }),
                 TextColumn::make('submitted_at')
                     ->label('Дата рассмотрения')
                     ->dateTime()->dateTime('d M Y')
-                    //->sortable()
-                    ,
+                    ->sortable(),
                 TextColumn::make('status')
                     ->label('Статус')
+                    ->sortable()
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'pending'   => 'На рассмотрении',
