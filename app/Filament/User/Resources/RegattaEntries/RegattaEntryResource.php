@@ -8,11 +8,14 @@ use App\Enums\SystemRole;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Models\RegattaEntry;
 use App\Models\Team;
+use App\Models\TeamMember;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
+use Filament\Actions\Action;
+use Filament\Schemas\Components\Actions;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
@@ -129,10 +132,9 @@ class RegattaEntryResource extends Resource
                     ->label('Экипаж')
                     ->columnSpanFull()
                     ->addable(true)
-                    ->deletable(true)
+                    //->deletable(false)
                     ->reorderable(false)
                     ->default([])
-                    ->columns(1)
                     ->rules([
                         fn (): \Closure => function (string $attribute, mixed $value, \Closure $fail): void {
                             $captainCount = collect($value)->filter(fn (array $item): bool => ($item['role'] ?? '') === 'captain')->count();
@@ -153,22 +155,13 @@ class RegattaEntryResource extends Resource
                     ->schema([
                         Select::make('team_member_id')
                             ->label('Участник')
-                            ->options(function (Get $get): array {
-                                $teamId = $get('../../team_id');
-                                if (! $teamId) {
-                                    return [];
-                                }
-
-                                $team = Team::find($teamId);
-                                if (! $team) {
-                                    return [];
-                                }
-
-                                return $team->members()
-                                    ->wherePivot('status', 'active')
+                            ->options(function (): array {
+                                return TeamMember::query()
+                                    ->where('status', 'active')
+                                    ->with('user')
                                     ->get()
-                                    ->mapWithKeys(fn (\App\Models\User $user): array => [
-                                        $user->pivot->id => $user->name,
+                                    ->mapWithKeys(fn (TeamMember $member): array => [
+                                        $member->id => $member->user?->name ?? 'Неизвестный',
                                     ])
                                     ->all();
                             })
@@ -176,24 +169,14 @@ class RegattaEntryResource extends Resource
                             ->live()
                             ->searchable()
                             ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                            ->afterStateUpdated(function (?string $state, Set $set, Get $get): void {
+                            ->afterStateUpdated(function (?string $state, Set $set): void {
                                 if (! $state) {
                                     $set('member_name', '');
                                     return;
                                 }
 
-                                $teamId = $get('../../../team_id');
-                                if (! $teamId) {
-                                    return;
-                                }
-
-                                $team = Team::find($teamId);
-                                $member = $team?->members()
-                                    ->wherePivot('status', 'active')
-                                    ->wherePivot('id', $state)
-                                    ->first();
-
-                                $set('member_name', $member?->name ?? '');
+                                $member = TeamMember::with('user')->find($state);
+                                $set('member_name', $member?->user?->name ?? '');
                             }),
                         Hidden::make('member_name'),
                         Hidden::make('is_captain')
@@ -207,7 +190,14 @@ class RegattaEntryResource extends Resource
                                 //'not_participating' => 'Не участвует',
                             ])
                             ->required(),
-                    ])->columns(2)->inset(),
+                    ])->columns(3)
+                    ->itemLabel(null)
+                    ->deleteAction(
+                        fn (Action $action) => $action
+                            ->icon('heroicon-m-x-mark')
+                            ->color('danger')
+                            ->iconButton()
+                    )->extraAttributes(['class' => 'hide-repeater-header-label']),
 
                 Repeater::make('required_documents')
                     ->label('Документы')
