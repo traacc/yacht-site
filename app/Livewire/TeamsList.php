@@ -83,6 +83,12 @@ class TeamsList extends Component
                 ->sortDesc()
                 ->values()
                 ->toArray(),
+            'upcoming_entries' => $team->regattaEntries->filter(fn ($e) => $e->regatta && ! $e->regatta->isFinished())->map(fn ($entry) => [
+                'regatta' => $entry->regatta?->name ?? '—',
+                'yacht' => $entry->yacht?->name ?? '—',
+                'date_event' => $entry->regatta?->dateRange() ?? '—',
+                'status' => $entry->status,
+            ])->values()->toArray(),
             'participation' => $team->regattaEntries->filter(fn ($e) => $e->regatta?->isFinished())->map(fn ($entry) => [
                 'regatta' => $entry->regatta?->name ?? '—',
                 'yacht' => $entry->yacht?->name ?? '—',

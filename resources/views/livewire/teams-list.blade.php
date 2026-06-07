@@ -238,6 +238,37 @@
                 </div>
             </div>
 
+            <div class="upcoming mb-8">
+                <h5 class="a-font text-lg md:text-3xl mb-6">Заявлена на регаты</h5>
+                <div class="overflow-y-auto max-h-[180px] relative custom-scroll">
+                    <table class="w-full border-collapse bg-[#F8F8F8] responsive-table">
+                        <thead>
+                            <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
+                                <th class="pt-2 pb-2 text-center font-medium a-font">Регата</th>
+                                <th class="pt-2 pb-2 text-center font-medium a-font">Дата регаты</th>
+                                <th class="pt-2 pb-2 text-center font-medium a-font">Яхта</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y text-center font-medium">
+                            <template x-if="activeTeam?.upcoming_entries?.length">
+                                <template x-for="(e, i) in activeTeam.upcoming_entries" :key="i">
+                                    <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
+                                        <td data-label="Регата" class="py-3" x-text="e.regatta"></td>
+                                        <td data-label="Дата регаты" class="py-3" x-text="e.date_event"></td>
+                                        <td data-label="Яхта" class="py-3" x-text="e.yacht"></td>
+                                    </tr>
+                                </template>
+                            </template>
+                            <template x-if="!activeTeam?.upcoming_entries?.length">
+                                <tr>
+                                    <td class="pl-0! text-left!" colspan="4">Нет данных</td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
             <div class="gallery">
                 <h5 class="a-font text-lg md:text-3xl mb-6">Галерея</h5>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
