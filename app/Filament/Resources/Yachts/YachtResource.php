@@ -68,7 +68,8 @@ class YachtResource extends Resource
                 TextInput::make('name')
                     ->label('Название')
                     ->placeholder('Введите название яхты')
-                    ->required(),
+                    ->required()
+                    ->unique(ignoreRecord: true),
                 TextInput::make('gims_number')
                     ->label('Номер ГИМС')
                     ->placeholder('Введите номер ГИМС'),

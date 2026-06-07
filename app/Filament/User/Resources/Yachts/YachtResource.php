@@ -98,6 +98,7 @@ class YachtResource extends Resource
                 }),
                 TextInput::make('name')
                     ->required()->label('Название яхты')->placeholder('Введите название яхты')
+                    ->unique(ignoreRecord: true)
                     ->disabled(fn (callable $get) => filled($get('selected_yacht_id'))),
                 TextInput::make('gims_number')->label('Номер ГИМС')->placeholder('Введите номер ГИМС'),
                 TextInput::make('vfps_number')
