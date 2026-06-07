@@ -92,16 +92,18 @@
                     </ul>
                 </div>
             </template>
-            <div class="gallery mb-6">
-                <h5 class=" a-font text-lg md:text-3xl mb-6">Примеры работ</h5>
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    @foreach(range(1, 4) as $item)
-                    <div class="card bg-[#F8F8F8]">
-                        <img src="{{ asset('images/job.png') }}" alt="">
+            <template x-if="activeItem?.gallery?.length">
+                <div class="gallery mb-6">
+                    <h5 class="a-font text-lg md:text-3xl mb-6">Примеры работ</h5>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <template x-for="(img, idx) in activeItem.gallery" :key="idx">
+                            <div class="card bg-[#F8F8F8]">
+                                <img :src="img" :alt="'Пример работы ' + (idx + 1)" class="w-full h-full object-cover">
+                            </div>
+                        </template>
                     </div>
-                    @endforeach
                 </div>
-            </div>
+            </template>
             <div class="bg-[#F8F8F8] p-3 md:p-4">
                 <h4 class="font-semibold text-lg mb-4">Информация о специалисте</h4>
                 <p class="font-semibold text-lg mb-4" x-text="activeItem?.name"></p>

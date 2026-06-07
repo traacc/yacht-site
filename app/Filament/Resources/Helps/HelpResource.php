@@ -17,6 +17,7 @@ use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Support\Str;
@@ -183,6 +184,18 @@ class HelpResource extends Resource
                     ])
                     ->default('active')
                     ->required(),
+
+                SpatieMediaLibraryFileUpload::make('gallery')
+                    ->label('Галерея (примеры работ)')
+                    ->collection('gallery')
+                    ->multiple()
+                    ->reorderable()
+                    ->image()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->imageEditor()
+                    ->disk('public')
+                    ->visibility('public')
+                    ->columnSpanFull(),
             ]);
     }
 

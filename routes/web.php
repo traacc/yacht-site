@@ -442,7 +442,7 @@ Route::get('/gallery', function () {
 })->name('gallery');
 Route::get('/help', function () {
     $helpCategories = \App\Models\HelpCategory::with(['helps' => fn ($q) =>
-        $q->active()->orderBy('title')
+        $q->active()->orderBy('title')->with('media')
     ])
         ->whereHas('helps', fn ($q) => $q->active())
         ->orderBy('title')
@@ -468,6 +468,7 @@ Route::get('/help', function () {
                 'city'        => $help->specialist_city,
                 'site'        => $help->specialist_site,
                 'contactType' => $help->contact_type,
+                'gallery'     => $help->getMedia('gallery')->map(fn ($m) => $m->getUrl())->values()->toArray(),
             ])->values()->toArray(),
         ],
     ])->toArray();

@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Help extends Model
+class Help extends Model implements HasMedia
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, HasUuids, SoftDeletes, InteractsWithMedia;
 
     protected $table = 'help';
 
@@ -41,6 +43,12 @@ class Help extends Model
     // ──────────────────────────────────────────────
     // Relationships
     // ──────────────────────────────────────────────
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('gallery')
+             ->useDisk('public');
+    }
 
     public function category(): BelongsTo
     {
