@@ -313,9 +313,11 @@ class ArchivedRegattaEntryResource extends Resource
                         ->whereIn('role', ['main', 'reserve', 'captain'])
                         ->count()
                     ),
+                /*
                 TextColumn::make('submitted_at')
                     ->label('Дата рассмотрения')
                     ->dateTime()->dateTime('d M Y'),
+                */
                 TextColumn::make('status')
                     ->label('Статус')
                     ->badge()

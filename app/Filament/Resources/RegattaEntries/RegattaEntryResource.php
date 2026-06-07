@@ -334,10 +334,12 @@ class RegattaEntryResource extends Resource
                             'crew as crew_count' => fn (Builder $q) => $q->whereIn('role', ['main', 'reserve', 'captain']),
                         ])->orderBy('crew_count', $direction);
                     }),
+                /*
                 TextColumn::make('submitted_at')
                     ->label('Дата рассмотрения')
                     ->dateTime()->dateTime('d M Y')
                     ->sortable(),
+                */
                 TextColumn::make('status')
                     ->label('Статус')
                     ->sortable()
