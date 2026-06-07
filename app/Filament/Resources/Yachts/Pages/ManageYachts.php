@@ -35,11 +35,13 @@ class ManageYachts extends ManageRecords
                 ->icon('heroicon-o-document-text')
                 ->color('white')
                 ->url(fn () => \App\Filament\Resources\YachtDocumentTypeResource::getUrl()),
+            /*
             Action::make('documentSettings')
                 ->label('Обязательные документы')
                 ->icon('heroicon-o-document-check')
                 ->color('white')
                 ->url(fn () => \App\Filament\Pages\YachtDocumentSettings::getUrl()),
+            */
             CreateAction::make()
                 ->createAnother(false)
                 ->modalHeading('Новая яхта')
