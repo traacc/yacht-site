@@ -117,7 +117,7 @@
                         {!! file_get_contents(public_path('images/icons/mail.svg')) !!}
                         <a :href="'mailto:' + activeItem?.email" x-text="activeItem?.email"></a>
                     </li>
-                    <li class="flex items-center gap-2">
+                    <li x-show="activeItem?.city" class="flex items-center gap-2">
                         {!! file_get_contents(public_path('images/icons/marker.svg')) !!}
                         <span x-text="activeItem?.city"></span>
                     </li>
