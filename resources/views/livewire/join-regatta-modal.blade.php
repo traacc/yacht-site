@@ -232,7 +232,7 @@
                                          x-on:mouseenter="selectedIndex = index"
                                          :class="{ 'bg-[#2D92CE]/10': selectedIndex === index }"
                                          class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm border-b border-gray-100 last:border-b-0">
-                                        <span class="font-medium" x-text="user.first_name + ' ' + user.last_name"></span>
+                                        <span class="font-medium" x-text="user.name"></span>
                                         <span x-show="user.patronymic" x-text="' ' + user.patronymic" class="text-gray-500"></span>
                                         <span class="text-gray-400 text-xs ml-2" x-text="user.email"></span>
                                     </div>
