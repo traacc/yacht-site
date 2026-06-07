@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources;
 
 use App\Enums\DocumentOwner;
-use App\Filament\Resources\YachtDocumentTypes\Pages\ManageDocumentTypes;
+use App\Filament\Resources\RegattaEntryDocumentTypes\Pages\ManageRegattaEntryDocumentTypes;
 use App\Models\YachtDocumentType;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
@@ -24,17 +24,17 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use UnitEnum;
 
-class YachtDocumentTypeResource extends Resource
+class RegattaEntryDocumentTypeResource extends Resource
 {
     protected static ?string $model = YachtDocumentType::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
 
-    protected static ?string $navigationLabel = 'Типы документов яхты';
+    protected static ?string $navigationLabel = 'Типы документов заявок';
 
-    protected static ?string $title = 'Типы документов яхты';
+    protected static ?string $title = 'Типы документов заявок';
 
-    protected static ?int $navigationSort = 51;
+    protected static ?int $navigationSort = 52;
 
     protected static string|UnitEnum|null $navigationGroup = 'Сайт';
 
@@ -45,28 +45,28 @@ class YachtDocumentTypeResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('owner', DocumentOwner::Yacht->value);
+        return parent::getEloquentQuery()->where('owner', DocumentOwner::RegattaEntry->value);
     }
 
     public static function getModelLabel(): string
     {
-        return 'Тип документов яхты';
+        return 'Тип документов заявки';
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'Типы документов яхты';
+        return 'Типы документов заявок';
     }
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                Hidden::make('owner')->default(DocumentOwner::Yacht->value),
+                Hidden::make('owner')->default(DocumentOwner::RegattaEntry->value),
 
                 TextInput::make('label')
                     ->label('Название')
-                    ->placeholder('ORC-сертификат')
+                    ->placeholder('Паспорт')
                     ->required()
                     ->maxLength(255)
                     ->live(onBlur: true)
@@ -89,7 +89,7 @@ class YachtDocumentTypeResource extends Resource
 
                 TextInput::make('key')
                     ->label('Ключ')
-                    ->placeholder('orc_certificate')
+                    ->placeholder('passport')
                     ->required()
                     ->unique(table: 'yacht_document_types', column: 'key', ignoreRecord: true)
                     ->helperText('Уникальный строковый идентификатор. Только латиница, цифры и подчёркивание.')
@@ -115,7 +115,7 @@ class YachtDocumentTypeResource extends Resource
             ->defaultSort('sort_order')
             ->reorderable('sort_order')
             ->paginated(false)
-            ->emptyStateHeading('Типов документов яхты пока нет')
+            ->emptyStateHeading('Типов документов заявок пока нет')
             ->recordActions([
                 EditAction::make()
                     ->modalHeading('Редактировать тип документа')
@@ -145,7 +145,7 @@ class YachtDocumentTypeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ManageDocumentTypes::route('/'),
+            'index' => ManageRegattaEntryDocumentTypes::route('/'),
         ];
     }
 }

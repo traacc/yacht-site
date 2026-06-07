@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\DocumentOwner;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +30,7 @@ class YachtDocumentType extends Model
         'label',
         'description',
         'is_configurable',
+        'owner',
         'sort_order',
     ];
 
@@ -36,6 +38,7 @@ class YachtDocumentType extends Model
     {
         return [
             'is_configurable' => 'boolean',
+            'owner'           => DocumentOwner::class,
             'sort_order'      => 'integer',
         ];
     }
@@ -48,6 +51,11 @@ class YachtDocumentType extends Model
     private const CACHE_KEY_CONFIGURABLE = 'yacht_document_types:configurable';
     private const CACHE_TTL = 3600;
 
+    private static function cacheKeyForOwner(DocumentOwner $owner): string
+    {
+        return "yacht_document_types:owner:{$owner->value}";
+    }
+
     protected static function booted(): void
     {
         static::saved(fn () => static::flushCache());
@@ -58,6 +66,9 @@ class YachtDocumentType extends Model
     {
         Cache::forget(self::CACHE_KEY_ALL);
         Cache::forget(self::CACHE_KEY_CONFIGURABLE);
+        foreach (DocumentOwner::cases() as $owner) {
+            Cache::forget(self::cacheKeyForOwner($owner));
+        }
     }
 
     // ──────────────────────────────────────────────
@@ -96,6 +107,36 @@ class YachtDocumentType extends Model
         return (new static())->newCollection(
             array_map(fn (array $item) => (new static())->newFromBuilder($item), $data),
         );
+    }
+
+    /**
+     * Типы, привязанные к конкретному владельцу (owner = $owner или owner IS NULL).
+     *
+     * @return Collection<int, static>
+     */
+    public static function cachedForOwner(DocumentOwner $owner): Collection
+    {
+        $data = Cache::remember(self::cacheKeyForOwner($owner), self::CACHE_TTL, fn () =>
+            static::where(fn ($q) => $q->where('owner', $owner->value)->orWhereNull('owner'))
+                ->orderBy('sort_order')
+                ->orderBy('label')
+                ->get()
+                ->toArray()
+        );
+
+        return (new static())->newCollection(
+            array_map(fn (array $item) => (new static())->newFromBuilder($item), $data),
+        );
+    }
+
+    /**
+     * Настраиваемые типы для конкретного владельца (owner = $owner или owner IS NULL).
+     *
+     * @return Collection<int, static>
+     */
+    public static function cachedConfigurableForOwner(DocumentOwner $owner): Collection
+    {
+        return static::cachedForOwner($owner)->filter(fn (self $t) => $t->is_configurable)->values();
     }
 
     /**

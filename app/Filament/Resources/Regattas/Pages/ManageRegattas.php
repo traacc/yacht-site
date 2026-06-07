@@ -33,7 +33,7 @@ class ManageRegattas extends ManageRecords
                 ->label('Документы')
                 ->icon('heroicon-o-document-text')
                 ->color('white')
-                ->url(fn () => \App\Filament\Resources\YachtDocumentTypeResource::getUrl()),
+                ->url(fn () => \App\Filament\Resources\RegattaEntryDocumentTypeResource::getUrl()),
             CreateAction::make()->modalHeading('Новая регата')
                 ->createAnother(false)
                 ->using(function (array $data, string $model): Regatta {

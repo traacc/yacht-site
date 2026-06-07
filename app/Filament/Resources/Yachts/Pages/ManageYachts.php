@@ -7,6 +7,7 @@ namespace App\Filament\Resources\Yachts\Pages;
 use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\Yacht\UpdateYachtRequiredDocumentsAction;
 use App\Filament\Resources\Yachts\YachtResource;
+use App\Filament\Resources\RegattaEntries\YachtDocumentTypeResource;
 use App\Models\Yacht;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -29,6 +30,11 @@ class ManageYachts extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('documentSettings')
+                ->label('Документы')
+                ->icon('heroicon-o-document-text')
+                ->color('white')
+                ->url(fn () => \App\Filament\Resources\YachtDocumentTypeResource::getUrl()),
             Action::make('documentSettings')
                 ->label('Обязательные документы')
                 ->icon('heroicon-o-document-check')

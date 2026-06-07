@@ -46,7 +46,7 @@ class ManageRegattaEntries extends ManageRecords
                 ->label('Документы')
                 ->icon('heroicon-o-document-text')
                 ->color('white')
-                ->url(fn () => \App\Filament\Resources\YachtDocumentTypeResource::getUrl()),
+                ->url(fn () => \App\Filament\Resources\RegattaEntryDocumentTypeResource::getUrl()),
             CreateAction::make()
             ->modalHeading('Новая заявка на регату')
                 ->createAnother(false)
