@@ -203,7 +203,7 @@ class TeamResource extends Resource
                     ->searchable(),
                 TextColumn::make('organizer.name')
                     ->label('Организатор')
-                    ->searchable(),
+                    ->searchable()->toggleable(),
                 TextColumn::make('approval_status')
                     ->label('Статус')
                     ->badge()->formatStateUsing(fn (string $state): string => match ($state) {
@@ -212,14 +212,14 @@ class TeamResource extends Resource
                     'rejected' => 'Отклонена',
                     'withdrawn' => 'Отозвана',
                     default => $state,
-                })
+                })->toggleable()
                 ->color(fn (string $state): string => match ($state) {
                     'pending' => 'warning',
                     'approved' => 'success',
                     'rejected' => 'danger',
                     'withdrawn' => 'gray',
                     default => 'gray',
-                }),
+                })->toggleable(),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
                 SelectFilter::make('approval_status')

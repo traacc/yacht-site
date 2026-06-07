@@ -204,23 +204,23 @@ class UserResource extends Resource
                 TextColumn::make('birth_date')
                     ->label('ДР')
                     ->date('d.m.Y')
-                    ->sortable(),
+                    ->sortable()->toggleable(),
                 TextColumn::make('sport_category')
                     ->label('Разряд')
                     ->formatStateUsing(fn ($state) => $state instanceof \App\Enums\SportCategory ? $state->getLabel() : '—')
-                    ->badge(),
+                    ->badge()->toggleable(),
                 TextColumn::make('system_role')
                     ->label('Роль')
                     ->badge()
-                    ->formatStateUsing(fn (\App\Enums\SystemRole $state): string => $state->label()),
+                    ->formatStateUsing(fn (\App\Enums\SystemRole $state): string => $state->label())->toggleable(),
                 TextColumn::make('created_at')
                     ->label('Рег.')
                     ->dateTime('d.m.Y H:i')
-                    ->sortable(),
+                    ->sortable()->toggleable(),
                 TextColumn::make('updated_at')
                     ->label('Изм.')
                     ->dateTime('d.m.Y H:i')
-                    ->sortable(),
+                    ->sortable()->toggleable(),
             ])->defaultSort('name', 'asc')->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
                 SelectFilter::make('system_role')

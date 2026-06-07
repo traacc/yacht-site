@@ -292,7 +292,7 @@ class ArchivedRegattaEntryResource extends Resource
                 TextColumn::make('regatta.regatta_status')
                     ->label('Статус регаты')
                     ->badge()
-                    ->sortable(),
+                    ->sortable()->toggleable(),
                 TextColumn::make('captain')
                     ->label('Капитан')
                     ->state(fn (\App\Models\RegattaEntry $record): string => $record->crew()
@@ -306,13 +306,13 @@ class ArchivedRegattaEntryResource extends Resource
                                     $q->where('name', 'like', "%{$search}%");
                                 });
                         });
-                    }),
+                    })->toggleable(),
                 TextColumn::make('crew')
                     ->label('Экипаж')
                     ->state(fn (RegattaEntry $record): string => (string) $record->crew()
                         ->whereIn('role', ['main', 'reserve', 'captain'])
                         ->count()
-                    ),
+                    )->toggleable(),
                 /*
                 TextColumn::make('submitted_at')
                     ->label('Дата рассмотрения')
@@ -334,7 +334,7 @@ class ArchivedRegattaEntryResource extends Resource
                         'rejected'  => 'danger',
                         'withdrawn' => 'gray',
                         default     => 'gray',
-                    }),
+                    })->toggleable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

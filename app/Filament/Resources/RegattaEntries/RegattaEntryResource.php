@@ -322,7 +322,7 @@ class RegattaEntryResource extends Resource
                                 ->limit(1),
                             $direction
                         );
-                    }),
+                    })->toggleable(),
                 TextColumn::make('crew')
                     ->label('Экипаж')
                     ->state(fn (RegattaEntry $record): string => (string) $record->crew()
@@ -333,7 +333,7 @@ class RegattaEntryResource extends Resource
                         return $query->withCount([
                             'crew as crew_count' => fn (Builder $q) => $q->whereIn('role', ['main', 'reserve', 'captain']),
                         ])->orderBy('crew_count', $direction);
-                    }),
+                    })->toggleable(),
                 /*
                 TextColumn::make('submitted_at')
                     ->label('Дата рассмотрения')
@@ -357,14 +357,16 @@ class RegattaEntryResource extends Resource
                         'rejected'  => 'danger',
                         'withdrawn' => 'gray',
                         default     => 'gray',
-                    }),
+                    })->toggleable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
+                    ->label('Зарегистрирован')
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
+                    ->label('Обновлен')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->stackedOnMobile()

@@ -68,8 +68,7 @@ class YachtResource extends Resource
                 TextInput::make('name')
                     ->label('Название')
                     ->placeholder('Введите название яхты')
-                    ->required()
-                    ->unique(ignoreRecord: true),
+                    ->required(),
                 TextInput::make('gims_number')
                     ->label('Номер ГИМС')
                     ->placeholder('Введите номер ГИМС'),
@@ -254,17 +253,17 @@ class YachtResource extends Resource
                     ->searchable()->sortable(),
                 TextColumn::make('vfps_number')
                     ->label('№')
-                    ->searchable()->sortable(),
+                    ->searchable()->sortable()->toggleable(),
                 TextColumn::make('user.name')
                     ->label('Владелец')
-                    ->searchable()->sortable(['name']),
+                    ->searchable()->sortable(['name'])->toggleable(),
                 TextColumn::make('orc_cert')
                     ->label('ORC')
                     ->state(fn ($record) => $record->documents()
                         ->where('doc_type', 'orc_cert_type')
                         ->exists())
                     ->formatStateUsing(fn ($state) => $state ? 'Есть' : 'Нет')
-                    ->color(fn ($state) => $state ? 'success' : 'danger'),
+                    ->color(fn ($state) => $state ? 'success' : 'danger')->toggleable(),
 
                 TextColumn::make('approval_status')
                     ->label('Статус')
@@ -282,7 +281,7 @@ class YachtResource extends Resource
                         'rejected'  => 'danger',
                         'withdrawn' => 'gray',
                         default     => 'gray',
-                    }),
+                    })->toggleable(),
             ])
             ->stackedOnMobile()
             ->emptyStateHeading('Записей пока нет')
