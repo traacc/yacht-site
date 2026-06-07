@@ -466,6 +466,7 @@ Route::get('/help', function () {
                 'email'       => $help->specialist_email,
                 'sphere'      => $help->specialist_sphere,
                 'city'        => $help->specialist_city,
+                'site'        => $help->specialist_site,
                 'contactType' => $help->contact_type,
             ])->values()->toArray(),
         ],

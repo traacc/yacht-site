@@ -52,6 +52,10 @@
                                     {!! file_get_contents(public_path('images/icons/mail.svg')) !!}
                                     <span x-text="item.email"></span>
                                 </li>
+                                <li x-show="item.site" class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                                    <a :href="item.site" target="_blank" rel="noopener noreferrer" x-text="item.site" class="text-[#2D92CE] hover:underline break-all"></a>
+                                </li>
                             </ul>
                             <button @click="activeItem = item; help_modal_open = true" class="mt-6 bg-[#2D92CE] w-full text-white py-2 px-6 hover:bg-[#0074CC] transition-colors text-lg font-semibold">
                                 Связаться
@@ -116,6 +120,10 @@
                     <li class="flex items-center gap-2">
                         {!! file_get_contents(public_path('images/icons/marker.svg')) !!}
                         <span x-text="activeItem?.city"></span>
+                    </li>
+                    <li x-show="activeItem?.site" class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        <a :href="activeItem?.site" target="_blank" rel="noopener noreferrer" x-text="activeItem?.site" class="text-[#2D92CE] hover:underline break-all"></a>
                     </li>
                 </ul>
                 <button class="mt-6 bg-[#2D92CE] w-full text-white py-2 px-6 hover:bg-[#0074CC] transition-colors text-lg font-semibold">
