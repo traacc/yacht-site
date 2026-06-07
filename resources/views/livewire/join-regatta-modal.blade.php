@@ -33,7 +33,7 @@
                 <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
             </div>
             <div class="text-center py-6">
-                <p class="text-gray-600 mb-6">Чтобы подать заявку на участие в регате, необходимо войти в аккаунт участника Ассоциации.</p>
+                <p class="text-gray-600 mb-6">Чтобы подать заявку на участие в регате, необходимо войти в Личный кабинет.</p>
                 <button @click="$dispatch('open-login-modal'); $wire.closeModal()"
                         class="inline-flex justify-center bg-[#2D92CE] px-4 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90">
                     Войти или зарегистрироваться
