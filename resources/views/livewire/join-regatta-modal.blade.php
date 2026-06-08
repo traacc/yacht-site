@@ -27,7 +27,30 @@
          class="bg-white overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full p-6 z-10 relative">
 
 
-        @if ($this->state === 'guest')
+        @if ($submitted)
+            <div class="flex items-center justify-between pb-3 mb-4">
+                <h3 class="text-lg font-medium text-[#2E325C] a-font">Заявка подана</h3>
+                <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
+            </div>
+            <div class=" p-6 text-center">
+                <svg class="mx-auto h-12 w-12 text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <p class="font-medium text-lg">Ваша заявка успешно подана, ожидайте подтверждения</p>
+            </div>
+        @elseif ($leftCrew)
+            <div class="flex items-center justify-between pb-3 mb-4">
+                <h3 class="text-lg font-medium text-[#2E325C] a-font">Участие отменено</h3>
+                <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
+            </div>
+            <div class="p-6 text-center">
+                <p class="font-medium text-lg">Вы успешно отказались от участия в регате</p>
+                <button type="button" @click="$wire.closeModal()"
+                        class="mt-4 inline-flex justify-center bg-[#2D92CE] px-4 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90">
+                    Закрыть
+                </button>
+            </div>
+        @elseif ($this->state === 'guest')
             <div class="flex items-center justify-between pb-3 mb-4">
                 <h3 class="text-lg font-medium text-[#2E325C] a-font">Войдите в личный кабинет</h3>
                 <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
@@ -94,29 +117,6 @@
                         class="inline-flex w-full justify-center border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow hover:bg-gray-50">
                     Закрыть
                 </button>
-            </div>
-        @elseif ($leftCrew)
-            <div class="flex items-center justify-between pb-3 mb-4">
-                <h3 class="text-lg font-medium text-[#2E325C] a-font">Участие отменено</h3>
-                <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
-            </div>
-            <div class="p-6 text-center">
-                <p class="font-medium text-lg">Вы успешно отказались от участия в регате</p>
-                <button type="button" @click="$wire.closeModal()"
-                        class="mt-4 inline-flex justify-center bg-[#2D92CE] px-4 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90">
-                    Закрыть
-                </button>
-            </div>
-        @elseif ($submitted)
-            <div class="flex items-center justify-between pb-3 mb-4">
-                <h3 class="text-lg font-medium text-[#2E325C] a-font">Заявка подана</h3>
-                <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
-            </div>
-            <div class=" p-6 text-center">
-                <svg class="mx-auto h-12 w-12 text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <p class="font-medium text-lg">Ваша заявка успешно подана, ожидайте подтверждения</p>
             </div>
         @else
             <div class="flex items-center justify-between pb-3 mb-4">
