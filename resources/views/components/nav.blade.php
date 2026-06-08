@@ -74,11 +74,13 @@
                             <a href="{{ url('/admin/profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Профиль</a>
                             <div class="border-t border-gray-100 my-1"></div>
                             <a href="{{ url('/admin/regattas') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Регаты</a>
+                            <a href="{{ url('/admin/regatta-entries') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Заявки на регаты</a>
                             <a href="{{ url('/admin/teams') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Команды</a>
                             <a href="{{ url('/admin/yachts') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Яхты</a>
                             <a href="{{ url('/admin/users') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Пользователи</a>
                             <a href="{{ url('/admin/ratings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Рейтинги</a>
                             <a href="{{ url('/admin/news') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Новости</a>
+                            <a href="{{ url('/admin/gallery') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Галерея</a>
                         @else
                             <a href="{{ url('/user') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Личный кабинет</a>
                             <div class="border-t border-gray-100 my-1"></div>
@@ -175,11 +177,13 @@
                 @if(auth()->user()->isAdmin() || auth()->user()->isJudge() || auth()->user()->isSecretary() || auth()->user()->isAccountant())
                     <a href="{{ url('/admin') }}" class="block py-2 text-sm">Панель управления</a>
                     <a href="{{ url('/admin/regattas') }}" class="block py-2 text-sm pl-3 text-white/80">— Регаты</a>
+                    <a href="{{ url('/admin/regatta-entries') }}" class="block py-2 text-sm pl-3 text-white/80">— Заявки на регаты</a>
                     <a href="{{ url('/admin/teams') }}" class="block py-2 text-sm pl-3 text-white/80">— Команды</a>
                     <a href="{{ url('/admin/yachts') }}" class="block py-2 text-sm pl-3 text-white/80">— Яхты</a>
                     <a href="{{ url('/admin/users') }}" class="block py-2 text-sm pl-3 text-white/80">— Пользователи</a>
                     <a href="{{ url('/admin/ratings') }}" class="block py-2 text-sm pl-3 text-white/80">— Рейтинги</a>
                     <a href="{{ url('/admin/news') }}" class="block py-2 text-sm pl-3 text-white/80">— Новости</a>
+                    <a href="{{ url('/admin/gallery') }}" class="block py-2 text-sm pl-3 text-white/80">— Галерея</a>
                     <a href="{{ url('/admin/profile') }}" class="block py-2 text-sm pl-3 text-white/80">Профиль</a>
                 @else
                     <a href="{{ url('/user') }}" class="block py-2 text-sm">Личный кабинет</a>

@@ -65,12 +65,13 @@
                             <a href="{{ url('/admin') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Панель управления</a>
                             <a href="{{ url('/admin/profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Профиль</a>
                             <div class="border-t border-gray-100 my-1"></div>
-                            <a href="{{ url('/admin/regattas') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Регаты</a>
+                            <a href="{{ url('/admin/regatta-entries') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Заявки на регаты</a>
                             <a href="{{ url('/admin/teams') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Команды</a>
                             <a href="{{ url('/admin/yachts') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Яхты</a>
                             <a href="{{ url('/admin/users') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Пользователи</a>
                             <a href="{{ url('/admin/ratings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Рейтинги</a>
                             <a href="{{ url('/admin/news') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Новости</a>
+                            <a href="{{ url('/admin/gallery') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Галерея</a>
                         @else
                             <a href="{{ url('/user') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Личный кабинет</a>
                             <div class="border-t border-gray-100 my-1"></div>
