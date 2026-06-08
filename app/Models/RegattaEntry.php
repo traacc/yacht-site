@@ -56,7 +56,7 @@ class RegattaEntry extends Model
     /** Результаты этой заявки по отдельным гонкам */
     public function raceResults(): HasMany
     {
-        return $this->hasMany(RaceResult::class)->orderBy('race_id');
+        return $this->hasMany(RaceResult::class)->orderBy('event_id');
     }
 
     /** Документы заявки (ORC-сертификаты, страховка и т.д.) */

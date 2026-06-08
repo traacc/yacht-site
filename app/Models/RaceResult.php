@@ -19,8 +19,8 @@ class RaceResult extends Model
     public const PENALTY_CODES = ['DNF', 'DNS', 'DSQ', 'OCS', 'RET', 'BFD', 'UFD'];
 
     protected $fillable = [
-        'race_id',
-        //'regatta_result_items_id',
+        'event_id',
+        'regatta_entry_id',
         'position',
         'points',
         'penalty_code',
@@ -40,7 +40,7 @@ class RaceResult extends Model
 
     public function race(): BelongsTo
     {
-        return $this->belongsTo(RegattaEvents::class);
+        return $this->belongsTo(RegattaEvents::class, 'event_id');
     }
     /*
     public function regattaResultItem(): BelongsTo

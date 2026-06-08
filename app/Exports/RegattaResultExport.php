@@ -3,7 +3,8 @@
 namespace App\Exports;
 
 use App\Models\RegattaResult;
-use App\Models\RaceResults;
+use App\Models\RegattaEntry;
+use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -49,24 +50,54 @@ class RegattaResultExport
         return $response;
     }
 
+    /**
+     * RegattaEntry индексированы по team_id (нужны экипаж и результаты гонок).
+     * @var Collection<string, RegattaEntry>
+     */
+    protected Collection $entriesByTeam;
+
+    /**
+     * Карта: event_id гонки => её порядковый номер (1..N).
+     * @var array<string, int>
+     */
+    protected array $raceNumberByEvent = [];
+
     protected function build(): Spreadsheet
     {
         $regatta = $this->regattaResult->regatta;
 
-        // Load all result items with relations, sorted by final position
+        // Load all result items, sorted by final position
         $resultItems = $this->regattaResult->items()
-            ->with([
-                'team',
-                'yacht',
-                //'raceResults',
-                'regattaEntry.crew.teamMember.user',
-            ])
+            ->with(['team', 'yacht'])
             ->orderBy('final_position')
             ->get();
 
-        // Determine the number of races dynamically
-        $raceCount = $resultItems->flatMap->raceResults->pluck('event_id')->unique()->count();
-        $raceCount = max(1, min($raceCount, 6)); // Clamp to 1–6 races (template supports 6)
+        // ── Гонки регаты (event_type = race), упорядоченные по дате ──────────
+        // Результаты отдельных гонок (race_results) привязаны к RegattaEntry,
+        // а не к RegattaResultItem, поэтому номера колонок выводим из событий
+        // регаты, а данные подтягиваем через заявку команды.
+        $raceEvents = $regatta
+            ? $regatta->races()->where('event_type', 'race')->get()
+            : collect();
+
+        $this->raceNumberByEvent = [];
+        foreach ($raceEvents->values() as $i => $event) {
+            $this->raceNumberByEvent[$event->id] = $i + 1;
+        }
+
+        // ── Заявки регаты, индексированные по команде ───────────────────────
+        // Item ↔ Entry связываются по team_id (yacht_id у заявок может быть пуст).
+        // Приоритет у одобренной заявки.
+        // approved сортируем последними: keyBy оставляет последний элемент с ключом.
+        $this->entriesByTeam = RegattaEntry::query()
+            ->where('regatta_id', $this->regattaResult->regatta_id)
+            ->with(['crew.teamMember.user', 'raceResults'])
+            ->orderByRaw("status = 'approved' ASC")
+            ->get()
+            ->keyBy('team_id');
+
+        // Determine the number of races dynamically (template supports 1–6)
+        $raceCount = max(1, min(count($this->raceNumberByEvent), 6));
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -191,11 +222,18 @@ class RegattaResultExport
 
     protected function writeResultItem($sheet, $item, int $startRow, int $raceCount): int
     {
-        // Collect crew members via RegattaEntry
+        // Заявка команды на эту регату (источник экипажа и результатов гонок)
+        $entry = $this->entriesByTeam->get($item->team_id);
+
+        // Collect crew members via RegattaEntry (капитан → основной состав → запас)
         $crewMembers = collect();
-        $entry = $item->regattaEntry;
         if ($entry) {
-            $crewMembers = $entry->crew->map(fn ($crew) => $crew->teamMember->user ?? null)->filter();
+            $roleOrder = ['captain' => 0, 'main' => 1, 'reserve' => 2];
+            $crewMembers = $entry->crew
+                ->sortBy(fn ($crew) => $roleOrder[$crew->role] ?? 9)
+                ->map(fn ($crew) => $crew->teamMember->user ?? null)
+                ->filter()
+                ->values();
         }
 
         $crewCount  = max(1, $crewMembers->count());
@@ -258,8 +296,10 @@ class RegattaResultExport
         $sheet->getStyle("D{$startRow}")->applyFromArray($centerBold);
 
         // ── Race results ─────────────────────────────────────────────────────
-        // Index race results by event_id (race number)
-        $raceResultsByEvent = $item->raceResults->keyBy('event_id');
+        // Результаты гонок берём из заявки и индексируем по event_id.
+        $raceResultsByEvent = $entry ? $entry->raceResults->keyBy('event_id') : collect();
+        // Обратная карта: номер гонки (1..N) => event_id
+        $eventByRaceNumber = array_flip($this->raceNumberByEvent);
 
         // Collect points columns that are NOT discarded (the two worst are discarded)
         // The template formula sums only non-parenthesised columns — we replicate that logic.
@@ -272,12 +312,22 @@ class RegattaResultExport
             $posCol = $cols['pos'];
             $ptsCol = $cols['pts'];
 
-            $raceResult = $raceResultsByEvent->get($raceNum);
-            $position   = $raceResult ? $raceResult->position : null;
-            $points     = $raceResult ? $raceResult->points   : null;
+            $eventId    = $eventByRaceNumber[$raceNum] ?? null;
+            $raceResult = $eventId ? $raceResultsByEvent->get($eventId) : null;
 
-            $posValue = $position ?? 'dns';
-            $ptsValue = $points   ?? ($raceCount + 1); // dns/dnf = N+1
+            // Место: код пенальти (dns/dnf/dsq…) в нижнем регистре либо число
+            if ($raceResult && $raceResult->penalty_code) {
+                $posValue = mb_strtolower($raceResult->penalty_code);
+            } else {
+                $posValue = $raceResult && $raceResult->position !== null
+                    ? $raceResult->position
+                    : 'dns';
+            }
+
+            // Очки: при отсутствии результата начисляем N+1 (как DNS/DNF по правилам)
+            $ptsValue = $raceResult && $raceResult->points !== null
+                ? (float) $raceResult->points
+                : ($raceCount + 1);
 
             $sheet->setCellValue("{$posCol}{$startRow}", $posValue);
             $sheet->getStyle("{$posCol}{$startRow}")->applyFromArray($centerNormal);
@@ -322,8 +372,8 @@ class RegattaResultExport
             $sheet->getStyle("E{$crewRow}")->applyFromArray($nameStyle);
 
             // Birthday
-            if ($user && $user->birthday) {
-                $sheet->setCellValue("F{$crewRow}", \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(strtotime($user->birthday)));
+            if ($user && $user->birth_date) {
+                $sheet->setCellValue("F{$crewRow}", \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($user->birth_date));
                 $sheet->getStyle("F{$crewRow}")->getNumberFormat()->setFormatCode('DD.MM.YYYY');
             }
             $sheet->getStyle("F{$crewRow}")->applyFromArray([
@@ -332,8 +382,8 @@ class RegattaResultExport
                 'borders'   => ['top' => ['borderStyle' => Border::BORDER_THIN]],
             ]);
 
-            // Sport category
-            $sheet->setCellValue("G{$crewRow}", $user ? ($user->sport_category ?? '') : '');
+            // Sport category (enum SportCategory → читаемая метка: КМС, МС, …)
+            $sheet->setCellValue("G{$crewRow}", $user?->sport_category?->getLabel() ?? '');
             $sheet->getStyle("G{$crewRow}")->applyFromArray([
                 'font'      => ['size' => 6],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
