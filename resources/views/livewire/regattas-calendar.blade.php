@@ -91,6 +91,23 @@
                                             <p class="text-[#2E325C] text-sm">{{ $event['date'] }}</p>
                                             <p class="text-[#2E325C] font-bold mt-0.5"><a class="hover:underline" href="{{ $event['url'] }}">{{ $event['title'] }}</a></p>
                                             <!--<p class="text-brand-gray-light text-sm">{{ $event['city'] }}</p>-->
+                                            <div class="controls text-xs font-semibold flex gap-2">
+                                                @if ($event['has_documents'])
+                                                    <a href="{{ $event['documents_url'] }}"
+                                                       class="downloadsDocuments p-2 bg-white text-[#2E325C] cursor-pointer">Документы</a>
+                                                @else
+                                                    <button type="button" disabled
+                                                            class="downloadsDocuments p-2 bg-white text-[#2E325C] opacity-50 cursor-not-allowed">Документы</button>
+                                                @endif
+                                                @if ($event['can_join'])
+                                                    <button type="button"
+                                                            @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $event['id'] }}' })"
+                                                            class="join p-2 bg-[#2D92CE] text-white cursor-pointer">Заявка</button>
+                                                @else
+                                                    <button type="button" disabled
+                                                            class="join p-2 bg-[#2D92CE] text-white opacity-50 cursor-not-allowed">Заявка</button>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
                                 @endforeach

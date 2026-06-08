@@ -51,6 +51,7 @@ class RegattasCalendar extends Component
 
         $regattas = Regatta::query()
             ->when($this->year, fn ($q) => $q->whereHas('season', fn ($sq) => $sq->where('year', $this->year)))
+            ->withCount(['documents' => fn ($q) => $q->whereNotNull('url')->where('url', '!=', '')])
             ->orderBy('date_start')
             ->get();
 
@@ -66,11 +67,18 @@ class RegattasCalendar extends Component
                 'is_current' => $num === $currentMonth,
                 'events' => $grouped->has($num)
                     ? $grouped->get($num)->map(fn (Regatta $r) => [
+                        'id' => $r->id,
                         'date' => $r->dateRange(),
                         'title' => $r->name,
                         'city' => $r->location,
                         'status' => $r->regatta_status->value,
                         'url' => route('competition-details', $r),
+                        'has_documents' => $r->documents_count > 0,
+                        'documents_url' => route('regatta.documents.download', $r),
+                        'can_join' => ! in_array($r->regatta_status, [
+                            \App\Enums\RegattaStatus::Finished,
+                            \App\Enums\RegattaStatus::Cancelled,
+                        ], true),
                     ])->values()->toArray()
                     : [],
             ];
