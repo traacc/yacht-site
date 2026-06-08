@@ -14,7 +14,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Yacht extends Model implements HasMedia
 {
-    use HasFactory, HasUuids, InteractsWithMedia;
+    use HasFactory, HasUuids, InteractsWithMedia, SoftDeletes;
 
     protected $fillable = [
         'name',
