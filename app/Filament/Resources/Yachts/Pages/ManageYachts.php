@@ -6,6 +6,7 @@ namespace App\Filament\Resources\Yachts\Pages;
 
 use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\Yacht\UpdateYachtRequiredDocumentsAction;
+use App\Exports\YachtExport;
 use App\Filament\Resources\YachtDocumentTypeResource;
 use App\Filament\Resources\Yachts\YachtResource;
 use App\Imports\YachtImport;
@@ -40,6 +41,13 @@ class ManageYachts extends ManageRecords
                 ->icon('heroicon-o-document-text')
                 ->color('white')
                 ->url(fn () => YachtDocumentTypeResource::getUrl()),
+            Action::make('export')
+                ->label('Экспорт в Excel')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('white')
+                ->action(fn () => (new YachtExport)->download(
+                    'yachts_'.now()->format('Y-m-d').'.xlsx'
+                )),
             Action::make('import')
                 ->label('Импорт из Excel')
                 ->icon('heroicon-o-arrow-up-tray')
