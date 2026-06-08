@@ -27,6 +27,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -294,6 +295,7 @@ class YachtResource extends Resource
                         'rejected'  => 'Отклонена',
                         'withdrawn' => 'Отозвана',
                     ]),
+                TrashedFilter::make()
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
             ->deferFilters(false)
