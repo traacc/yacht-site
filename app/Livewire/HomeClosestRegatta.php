@@ -45,6 +45,8 @@ class HomeClosestRegatta extends Component
             )
             : null;
 
+        $startDateTime = $regatta?->startDateTime()?->format('Y-m-d\TH:i:s');
+
         $hasDocuments = $regatta?->documents()
             ->whereNotNull('url')
             ->where('url', '!=', '')
@@ -55,6 +57,7 @@ class HomeClosestRegatta extends Component
             'currentWeather' => $temp . '  ℃',
             'mapUrl'         => $mapUrl,
             'hasDocuments'   => $hasDocuments,
+            'startDateTime'  => $startDateTime,
             'lat'            => $regatta?->coordinates ? (float) $regatta->coordinates[0] : null,
             'lon'            => $regatta?->coordinates ? (float) $regatta->coordinates[1] : null,
         ]);
