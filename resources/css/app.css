@@ -98,8 +98,8 @@
     @apply px-2 2xl:px-5 max-w-(--breakpoint-2xl) mx-auto;
   }
   @font-face {
-    font-family: 'Bank Gothic';
-    src: url('../fonts/BankGothic-Medium.woff2') format('woff2');
+    font-family: 'Furore';
+    src: url('../fonts/Furore.woff2') format('woff2');
     font-weight: 500;
     font-style: normal;
     font-display: swap;
@@ -146,7 +146,7 @@
   }
 
   .a-font {
-    font-family: 'Bank Gothic', sans-serif;
+    font-family: 'Furore', sans-serif;
     font-weight: 500;
   }
 
@@ -240,7 +240,7 @@
       text-align: left;
       color: #2E325C;
 
-      font-family: 'Bank Gothic', sans;
+      font-family: 'Furore', sans;
       font-weight: 500;
 
       white-space: nowrap;

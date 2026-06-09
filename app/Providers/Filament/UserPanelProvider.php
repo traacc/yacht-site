@@ -68,7 +68,7 @@ class UserPanelProvider extends PanelProvider
             ])
             /*
             ->font(
-                'Bank Gothic',
+                'Furore',
                 url: asset('css/app.css'), 
                 provider: LocalFontProvider::class
             )

@@ -8,8 +8,8 @@
 
 
   @font-face {
-    font-family: 'Bank Gothic';
-    src: url('../../../fonts/BankGothic-Medium.woff2') format('woff2');
+    font-family: 'Furore';
+    src: url('../../../fonts/Furore.woff2') format('woff2');
     font-weight: 500;
     font-style: normal;
     font-display: swap;
@@ -118,7 +118,7 @@
 }
 .fi-ta-table thead .fi-ta-header-cell, .fi-ta-table thead .fi-ta-actions-header-cell{
   @apply bg-white text-2xl font-medium;
-  font-family: 'Bank Gothic', sans-serif;
+  font-family: 'Furore', sans-serif;
 }
 
 @media (max-width: 768px) {
@@ -130,7 +130,7 @@
 }
 
 .fi-header {
-  font-family: 'Bank Gothic', sans-serif;
+  font-family: 'Furore', sans-serif;
   @apply text-3xl;
 }
 
