@@ -69,7 +69,7 @@ class LoginModal extends Component
     public function register()
     {
         $this->validate([
-            'name'                  => ['required', 'string', 'max:255'],
+            'name'                  => ['required', 'string', 'max:255', 'unique:users,name'],
             /*
             'first_name'            => ['required', 'string', 'max:255'],
             'last_name'             => ['required', 'string', 'max:255'],
@@ -101,6 +101,7 @@ class LoginModal extends Component
             'password_confirmation' => 'подтверждение пароля',
             'sports_category'       => 'спортивный разряд',
         ], messages: [
+            'name.unique'  => 'Пользователь с таким ФИО уже зарегистрирован',
             'email.unique' => 'Пользователь с таким email уже зарегистрирован',
             'phone.unique' => 'Пользователь с таким телефоном уже зарегистрирован',
         ]);
