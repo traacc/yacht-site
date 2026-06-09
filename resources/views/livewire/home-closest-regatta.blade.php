@@ -90,7 +90,7 @@
                 </div>
             </div>
             <div class="hidden md:block">
-                <div x-data="countdown('{{ $startDateTime }}')" class="shrink-0 text-center bg-[#00000080] p-6 h-full">
+                <div x-data="countdown('{{ $startDateTime }}')" class="shrink-0 flex flex-col justify-center text-center bg-[#00000080] p-6 h-full">
                     <p class="text-sm md:text-lg mb-4 text-white">До начала регаты осталось</p>
                     <div class="flex items-start gap-3 bg-[#F8F8F80D] p-2">
                         <div class="text-center border-r border-[#EAEAEA80] pr-3">
