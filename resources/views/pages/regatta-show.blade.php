@@ -139,9 +139,11 @@
             <div class="container mx-auto lg:p-6 bg-brand-light-bg">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="section-title a-font">Заявленные команды</h2>
-                    <a href="#" class="text-brand-dark text-lg font-semibold hover:underline items-center gap-4 hidden md:flex">
+                    @if($entries->isNotEmpty())
+                    <a href="{{ route('regatta.teams.download', $regatta) }}" class="text-brand-dark text-lg font-semibold hover:underline items-center gap-4 hidden md:flex">
                         <x-icon-2 name="download" /> Скачать список команд
                     </a>
+                    @endif
                 </div>
                 <div class="overflow-x-auto p-3 md:p-6 bg-white">
                     <table class="w-full responsive-table">
@@ -177,9 +179,11 @@
                         </tbody>
                     </table>
                 </div>
-                    <a href="#" class="text-brand-dark text-lg justify-center font-semibold hover:underline items-center gap-4 md:hidden flex">
+                    @if($entries->isNotEmpty())
+                    <a href="{{ route('regatta.teams.download', $regatta) }}" class="text-brand-dark text-lg justify-center font-semibold hover:underline items-center gap-4 md:hidden flex">
                         <x-icon-2 name="download" /> Скачать список команд
                     </a>
+                    @endif
             </div>
         </section>
         @endif
