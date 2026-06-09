@@ -321,7 +321,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'location' => $r->water_area,
         'img' => $r->background_image
             ? '/storage/' . $r->background_image
-            : asset('images/regatas/reg_preview.png'),
+            : asset('images/news/news_1.webp'),
         'url' => route('competition-details', $r),
         'statusLabel' => $r->regatta_status->getLabel(),
     ])->values()->toArray();
