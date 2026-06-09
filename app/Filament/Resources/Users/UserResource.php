@@ -79,12 +79,11 @@ class UserResource extends Resource
                     ->label('ФИО')
                     ->placeholder('ФИО')
                     ->required()
-                    ->rules([
-                        fn ($record) => \Illuminate\Validation\Rule::unique('users', 'name')->ignore($record?->id),
-                    ])
-                    ->validationMessages([
-                        'unique' => 'Пользователь с таким ФИО уже зарегистрирован',
-                    ]),
+                    ->rule(function ($attribute, $value, $fail) {
+                        if (User::whereRaw('LOWER(name) = LOWER(?)', [$value])->where('id', '!=', auth()->id())->exists()) {
+                            $fail('Пользователь с таким ФИО уже зарегистрирован');
+                        }
+                    }),
                 /*
                 TextInput::make('first_name')
                     ->label('Имя')

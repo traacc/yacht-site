@@ -14,6 +14,7 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use App\Models\User;
 use Illuminate\Validation\Rule;
 
 use BackedEnum;
@@ -95,7 +96,11 @@ class EditProfile extends BaseEditProfile
                             ->label('ФИО')
                             ->columnSpanFull()
                             ->maxLength(255)
-                            ->rule(fn () => Rule::unique('users', 'name')->ignore(auth()->id())),
+                            ->rule(function ($attribute, $value, $fail) {
+                                if (User::whereRaw('LOWER(name) = LOWER(?)', [$value])->where('id', '!=', auth()->id())->exists()) {
+                                    $fail('Пользователь с таким ФИО уже зарегистрирован');
+                                }
+                            }),
                         /*
                         TextInput::make('first_name')
                             ->label('Имя')
