@@ -209,6 +209,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
     $regatta->loadMissing([
         'approvedEntries.team.organizer',
         'approvedEntries.team.activeMembers',
+        'approvedEntries.crew.teamMember.user',
         'approvedEntries.yacht',
         'results.items.team.organizer',
         'results.items.team.activeMembers',
@@ -275,11 +276,11 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
     // Данные для Alpine.js модального окна состава команд
     $entriesJson = $entries->map(fn ($entry) => [
         'team_name' => $entry->team?->name ?? '',
-        'crew' => $entry->team?->activeMembers?->map(fn ($member) => [
-            'name' => $member->name ?? '',
-            'birthday' => $member->birth_date?->format('d.m.Y') ?? '',
-            'rank' => $member->sport_category?->getLabel() ?? '',
-        ])->values()->toArray() ?? [],
+        'crew' => $entry->crew->map(fn ($crewMember) => [
+            'name' => $crewMember->teamMember?->user?->name ?? '',
+            'birthday' => $crewMember->teamMember?->user?->birth_date?->format('d.m.Y') ?? '',
+            'rank' => $crewMember->teamMember?->user?->sport_category?->getLabel() ?? '',
+        ])->values()->toArray(),
     ])->values()->toArray();
 
     // Расписание: группируем события (races) по дням

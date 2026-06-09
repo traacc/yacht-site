@@ -167,7 +167,7 @@
                                         <a @click="team_modal_open = true; activeTeamIndex = {{ $index }}"
                                            href="#"
                                            class="text-brand-blue font-medium underline hover:no-underline">
-                                            {{ $entry->team?->activeMembers?->count() ?? 0 }} участников
+                                            {{ $entry->crew->count() }} участников
                                         </a>
                                     </td>
                                 </tr>
