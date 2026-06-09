@@ -450,12 +450,16 @@ class RegattaEntryResource extends Resource
             ->where('status', 'active')
             ->with('user')
             ->get()
-            ->map(fn (TeamMember $member): array => [
-                'team_member_id' => $member->id,
-                'member_name'    => $member->user?->name ?? 'Неизвестный',
-                'is_captain'     => false,
-                'role'           => 'main',
-            ])
+            ->map(function (TeamMember $member): array {
+                $isCaptain = $member->role === \App\Enums\TeamMemberRole::Organizer->value;
+
+                return [
+                    'team_member_id' => $member->id,
+                    'member_name'    => $member->user?->name ?? 'Неизвестный',
+                    'is_captain'     => $isCaptain,
+                    'role'           => $isCaptain ? 'captain' : 'main',
+                ];
+            })
             ->all();
     }
 
