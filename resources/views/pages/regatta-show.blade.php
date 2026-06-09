@@ -187,12 +187,14 @@
                     </table>
                 </div>
                     @if($entries->isNotEmpty())
-                    <div class="md:hidden flex flex-col items-center gap-3 mt-4">
+                    <div class="md:hidden flex flex-col items-center gap-3 mt-4 pb-4">
+                        <!--
                         <a href="{{ route('regatta.teams.download', $regatta) }}" class="text-brand-dark text-lg justify-center font-semibold hover:underline flex items-center gap-4">
                             <x-icon-2 name="download" /> Скачать список команд
                         </a>
+                        -->
                         <a href="{{ route('regatta.teams.pdf', $regatta) }}" class="text-brand-dark text-lg justify-center font-semibold hover:underline flex items-center gap-4">
-                            <x-icon-2 name="download" /> Скачать PDF
+                            <x-icon-2 name="download" /> Скачать список команд
                         </a>
                     </div>
                     @endif
