@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Resources\Regattas\RegattaResource;
+use App\Filament\Resources\PendingRegattaEntries\PendingRegattaEntryResource;
 use App\Filament\Resources\RegattaEntries\RegattaEntryResource;
 use App\Filament\Resources\Users\UserResource;
 use App\Filament\Resources\Yachts\YachtResource;
@@ -36,7 +37,7 @@ class StatsOverview extends BaseWidget
 
         return [
             $this->createCustomStat('Регаты', Regatta::count(), 'dashboard_regatta_count', 'text-blue-500/10', RegattaResource::getUrl('index')),
-            $this->createCustomStat('Новые заявки', $newEntriesCount, 'dashboard_entry', $newEntriesCount > 0 ? 'text-amber-500' : 'text-[#2D92CE]', RegattaEntryResource::getUrl('index')),
+            $this->createCustomStat('Новые заявки', $newEntriesCount, 'dashboard_entry', $newEntriesCount > 0 ? 'text-amber-500' : 'text-[#2D92CE]', PendingRegattaEntryResource::getUrl('index')),
             $this->createCustomStat('Пользователи', User::count(), 'dashboard_users', 'text-emerald-500/10', UserResource::getUrl('index')),
             $this->createCustomStat('Яхты', Yacht::count(), 'dashboard_yachts', 'text-cyan-500/10', YachtResource::getUrl('index')),
             $this->createCustomStat('Команды', Team::count(), 'dashboard_teams', 'text-rose-500/10', TeamResource::getUrl('index')),
