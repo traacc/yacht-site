@@ -100,8 +100,11 @@ class YachtImport
                 $attributes['user_id'] = $userId;
             }
 
-            // Уникальный индекс vfps_number действует и на мягко удалённые записи.
-            $yacht = Yacht::withTrashed()->firstWhere('vfps_number', $vfpsNumber);
+            // Уникальный индекс vfps_number действует и на мягко удалённые записи,
+            // а также на яхты без владельца (их скрывает OwnedScope).
+            $yacht = Yacht::withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
+                ->withTrashed()
+                ->firstWhere('vfps_number', $vfpsNumber);
 
             if ($yacht !== null) {
                 $yacht->fill($attributes)->save();

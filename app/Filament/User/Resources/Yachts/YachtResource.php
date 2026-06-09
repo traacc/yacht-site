@@ -72,18 +72,27 @@ class YachtResource extends Resource
                 Hidden::make('selected_yacht_id'),
                 Select::make('yacht_search')->placeholder('Номер ВФПС или название яхты')->columnSpanFull()->label('Найти яхту в базе')->searchable()
                 ->getSearchResultsUsing(fn (string $search): array => \App\Models\Yacht::query()
+                    ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
                     ->whereNull('user_id')
                     ->where(function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%")
                           ->orWhere('vfps_number', 'like', "%{$search}%");
                     })
                     ->limit(50)
-                    ->pluck('name', 'id')
+                    ->get()
+                    ->mapWithKeys(fn ($yacht) => [$yacht->id => trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : ''))])
                     ->toArray())
-                ->getOptionLabelUsing(fn ($value): ?string => \App\Models\Yacht::find($value)?->name)
+                ->getOptionLabelUsing(function ($value): ?string {
+                    $yacht = \App\Models\Yacht::query()
+                        ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
+                        ->find($value);
+                    return $yacht ? trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : '')) : null;
+                })
                 ->live()
                 ->afterStateUpdated(function ($state, $set) {
-                    $yacht = \App\Models\Yacht::find($state);
+                    $yacht = \App\Models\Yacht::query()
+                        ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
+                        ->find($state);
                     if ($yacht) {
                         $set('selected_yacht_id', $yacht->id);
                         $set('name', $yacht->name);
