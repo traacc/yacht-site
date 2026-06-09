@@ -16,8 +16,10 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -76,13 +78,14 @@ class TeamResource extends Resource
                     ->readOnly()
                     ->columnSpanFull()
                     ->formatStateUsing(fn (?Team $record) => $record?->formatted_external_id ?? '—'),
-                /*
-                Select::make('organizer_id')
-                    ->label('Капитан')
-                    ->relationship('organizer', 'name')
-                    ->placeholder('Выберите капитана')
-                    ->columnSpanFull(),
-                */
+                Hidden::make('organizer_id')
+                    ->dehydrateStateUsing(function (Get $get) {
+                        $organizer = collect($get('teamMembers'))->first(
+                            fn ($member) => ($member['role'] ?? null) === TeamMemberRole::Organizer->value,
+                        );
+
+                        return $organizer['user_id'] ?? null;
+                    }),
                 Textarea::make('description')
                     ->label('Описание')
                     ->placeholder('Описание команды')
@@ -110,6 +113,10 @@ class TeamResource extends Resource
                             $organizerCount = collect($value)
                                 ->filter(fn (array $member): bool => ($member['role'] ?? null) === TeamMemberRole::Organizer->value)
                                 ->count();
+
+                            if ($organizerCount === 0) {
+                                $fail('Необходимо назначить капитана команды.');
+                            }
 
                             if ($organizerCount > 1) {
                                 $fail('В команде может быть только один капитан.');
