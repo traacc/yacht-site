@@ -348,6 +348,9 @@ Route::get('/regatta/{regatta}/download-documents', function (\App\Models\Regatt
 Route::get('/regatta/{regatta}/download-teams', function (\App\Models\Regatta $regatta) {
     return app(\App\Actions\Regatta\DownloadRegattaTeamsAction::class)->execute($regatta);
 })->name('regatta.teams.download');
+Route::get('/regatta/{regatta}/download-teams-pdf', function (\App\Models\Regatta $regatta) {
+    return app(\App\Actions\Regatta\GenerateRegattaTeamsPdfAction::class)->execute($regatta);
+})->name('regatta.teams.pdf');
 Route::view('/teams', 'pages.teams')->name('teams');
 Route::get('/yachts', function () {
     $yachts = Yacht::with(['user', 'documents', 'regattaEntries.regatta', 'regattaEntries.team'])

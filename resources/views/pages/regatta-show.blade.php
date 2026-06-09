@@ -140,9 +140,16 @@
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="section-title a-font">Заявленные команды</h2>
                     @if($entries->isNotEmpty())
-                    <a href="{{ route('regatta.teams.download', $regatta) }}" class="text-brand-dark text-lg font-semibold hover:underline items-center gap-4 hidden md:flex">
-                        <x-icon-2 name="download" /> Скачать список команд
-                    </a>
+                    <div class="hidden md:flex items-center gap-6">
+                        <!--
+                        <a href="{{ route('regatta.teams.download', $regatta) }}" class="text-brand-dark text-lg font-semibold hover:underline flex items-center gap-4">
+                            <x-icon-2 name="download" /> Скачать список команд
+                        </a>
+                        -->
+                        <a href="{{ route('regatta.teams.pdf', $regatta) }}" class="text-brand-dark text-lg font-semibold hover:underline flex items-center gap-4">
+                            <x-icon-2 name="download" /> Скачать список команд
+                        </a>
+                    </div>
                     @endif
                 </div>
                 <div class="overflow-x-auto p-3 md:p-6 bg-white">
@@ -180,9 +187,14 @@
                     </table>
                 </div>
                     @if($entries->isNotEmpty())
-                    <a href="{{ route('regatta.teams.download', $regatta) }}" class="text-brand-dark text-lg justify-center font-semibold hover:underline items-center gap-4 md:hidden flex">
-                        <x-icon-2 name="download" /> Скачать список команд
-                    </a>
+                    <div class="md:hidden flex flex-col items-center gap-3 mt-4">
+                        <a href="{{ route('regatta.teams.download', $regatta) }}" class="text-brand-dark text-lg justify-center font-semibold hover:underline flex items-center gap-4">
+                            <x-icon-2 name="download" /> Скачать список команд
+                        </a>
+                        <a href="{{ route('regatta.teams.pdf', $regatta) }}" class="text-brand-dark text-lg justify-center font-semibold hover:underline flex items-center gap-4">
+                            <x-icon-2 name="download" /> Скачать PDF
+                        </a>
+                    </div>
                     @endif
             </div>
         </section>
