@@ -53,6 +53,38 @@
 {{-- ===== РЕЗУЛЬТАТЫ РЕГАТ ===== --}}
 <livewire:regatta-results mode="home" />
 
+{{-- ===== БЛИЖАЙШИЕ ДНИ РОЖДЕНИЯ ===== --}}
+@if($birthdays->isNotEmpty())
+<section class="py-12 bg-white">
+    <div class="container mx-auto">
+        <h2 class="section-title a-font mb-6">Ближайшие дни рождения</h2>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            @foreach($birthdays as $person)
+            <div class="flex items-center justify-between gap-4 bg-[#F8F8F8] p-4 shadow-xs hover:shadow-md transition-shadow">
+                <div>
+                    <div class="font-semibold text-[#2E325C] text-lg">{{ $person->name }}</div>
+                    <div class="text-brand-gray text-sm">
+                        {{ $person->nextBirthday?->locale('ru')->translatedFormat('d F') ?? '—' }}
+                        @if($person->birth_date && $person->nextBirthday)
+                            · {{ $person->nextBirthday->year - $person->birth_date->year }} лет
+                        @endif
+                    </div>
+                </div>
+                <div class="shrink-0">
+                    @if($person->daysUntilBirthday === 0)
+                        <span class="inline-block bg-[#2D92CE] text-white text-sm font-semibold px-3 py-1 rounded-full">Сегодня!</span>
+                    @else
+                        <span class="inline-block text-[#2E325C] text-sm font-medium">через {{ $person->daysUntilBirthday }} дн.</span>
+                    @endif
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
+
 {{-- ===== НОВОСТИ ===== --}}
 {{-- @livewire('news.list') --}}
 <section class="py-12 bg-brand-light">
@@ -87,6 +119,8 @@
         <a href="{{ route('news') }}"  class="text-[#2E325C] text-center block mt-8 text-sm font-semibold hover:underline md:hidden">Все новости →</a>
     </div>
 </section>
+
+
 
 {{-- ===== ПРОМО-БЛОКИ: КОМАНДЫ И ЯХТЫ ===== --}}
 <section class="md:py-8 py-4">

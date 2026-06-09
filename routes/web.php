@@ -26,7 +26,16 @@ Route::get('/', function () {
     // FAQ для главной страницы
     $faq = app(SettingsService::class)->get('home.faq', []);
 
-    return view('pages.home', compact('latestNews', 'galleryPhotos', 'faq'));
+    // Ближайшие дни рождения (как в админ-виджете)
+    $birthdays = \App\Models\User::whereNotNull('birth_date')
+        ->whereRaw("DATE_FORMAT(birth_date, '%m-%d') BETWEEN
+            DATE_FORMAT(NOW(), '%m-%d') AND
+            DATE_FORMAT(DATE_ADD(NOW(), INTERVAL 3 DAY), '%m-%d')"
+        )
+        ->orderByUpcomingBirthday()
+        ->get();
+
+    return view('pages.home', compact('latestNews', 'galleryPhotos', 'faq', 'birthdays'));
 })->name('home');
 Route::get('/association/charter', function () {
     $documents = app(SettingsService::class)->get('charter.documents', []);
