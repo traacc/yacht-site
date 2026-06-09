@@ -167,7 +167,7 @@
         </thead>
         <tbody>
             @foreach($entries as $index => $entry)
-                @php($members = $entry->team?->activeMembers ?? collect())
+                @php($crew = $entry->crew ?? collect())
                 <tr class="team-row">
                     <td class="center team-num">{{ $index + 1 }}</td>
                     <td>
@@ -178,13 +178,14 @@
                         Капитан: <strong>{{ $entry->team?->organizer?->name ?? '—' }}</strong>
                     </td>
                 </tr>
-                @forelse($members as $member)
+                @forelse($crew as $crewMember)
+                    @php($user = $crewMember->teamMember?->user)
                     <tr class="member-row">
                         <td></td>
                         <td></td>
-                        <td class="member-name">{{ $member->name ?? '—' }}</td>
-                        <td>{{ $member->birth_date?->format('d.m.Y') ?? '—' }}</td>
-                        <td class="center">{{ $member->sport_category?->getLabel() ?? '—' }}</td>
+                        <td class="member-name">{{ $user?->name ?? '—' }}</td>
+                        <td>{{ $user?->birth_date?->format('d.m.Y') ?? '—' }}</td>
+                        <td class="center">{{ $user?->sport_category?->getLabel() ?? '—' }}</td>
                     </tr>
                 @empty
                     <tr class="member-row">

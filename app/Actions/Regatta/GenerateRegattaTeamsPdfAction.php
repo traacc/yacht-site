@@ -14,7 +14,7 @@ final class GenerateRegattaTeamsPdfAction
     public function execute(Regatta $regatta): Response
     {
         $entries = $regatta->approvedEntries()
-            ->with(['team.organizer', 'team.activeMembers', 'yacht'])
+            ->with(['team.organizer', 'crew.teamMember.user', 'yacht'])
             ->get();
 
         if ($entries->isEmpty()) {
