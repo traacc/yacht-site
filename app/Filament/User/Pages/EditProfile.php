@@ -96,11 +96,7 @@ class EditProfile extends BaseEditProfile
                             ->label('ФИО')
                             ->columnSpanFull()
                             ->maxLength(255)
-                            ->rule(function ($attribute, $value, $fail) {
-                                if (User::whereRaw('LOWER(name) = LOWER(?)', [$value])->where('id', '!=', auth()->id())->exists()) {
-                                    $fail('Пользователь с таким ФИО уже зарегистрирован');
-                                }
-                            }),
+                            ->rule(fn () => Rule::unique('users', 'name')->ignore(auth()->id())),
                         /*
                         TextInput::make('first_name')
                             ->label('Имя')
