@@ -14,6 +14,7 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Rule;
 
 use BackedEnum;
 use Filament\Support\Icons\Heroicon;
@@ -93,7 +94,8 @@ class EditProfile extends BaseEditProfile
                         TextInput::make('name')
                             ->label('ФИО')
                             ->columnSpanFull()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->rule(fn () => Rule::unique('users', 'name')->ignore(auth()->id())),
                         /*
                         TextInput::make('first_name')
                             ->label('Имя')
