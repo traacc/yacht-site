@@ -64,6 +64,16 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         ];
     }
 
+    /**
+     * Отправить пользователю письмо для восстановления пароля
+     * (брендированное письмо на русском вместо стандартного уведомления Laravel).
+     */
+    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
+    {
+        \Illuminate\Support\Facades\Mail::to($this->email)
+            ->send(new \App\Mail\ResetPasswordMail($this, $token));
+    }
+
     // ──────────────────────────────────────────────
     // Boot
     // ──────────────────────────────────────────────

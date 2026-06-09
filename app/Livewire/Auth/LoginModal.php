@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password as PasswordBroker;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
@@ -39,6 +40,9 @@ class LoginModal extends Component
     public string $senderPassword = '';
     public string $sendStatus = '';
 
+    // Восстановление пароля
+    public bool $resetLinkSent = false;
+
 
     public function login()
     {
@@ -63,6 +67,26 @@ class LoginModal extends Component
 
         // Если пароль не подошел, возвращаем ошибку в форму
         $this->addError('email', 'Неверный email или пароль.');
+    }
+
+
+    public function sendResetLink()
+    {
+        $this->validate([
+            'email' => ['required', 'email'],
+        ], attributes: [
+            'email' => 'email',
+        ]);
+
+        $status = PasswordBroker::sendResetLink(['email' => $this->email]);
+
+        if ($status === PasswordBroker::RESET_LINK_SENT) {
+            $this->resetLinkSent = true;
+
+            return;
+        }
+
+        $this->addError('email', __($status));
     }
 
 

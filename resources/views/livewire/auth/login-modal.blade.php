@@ -29,7 +29,7 @@
             
             <div class="flex items-center justify-between pb-3">
                 <h3 class="text-3xl a-font text-[#2E325C]"
-                    x-text="tab === 'login' ? 'Вход в аккаунт' : (tab === 'register' ? 'Регистрация' : 'Выдача доступа')"></h3>
+                    x-text="tab === 'login' ? 'Вход в аккаунт' : (tab === 'register' ? 'Регистрация' : (tab === 'send' ? 'Выдача доступа' : 'Восстановление пароля'))"></h3>
                 <button @click="isOpen = false" class="text-gray-400 hover:text-gray-500">
                     <span class="sr-only">Закрыть</span>
                     &#x2715; </button>
@@ -91,7 +91,7 @@
                 @enderror
 
                 <div class="text-right text-brand-gray-light text-sm">
-                    <a href="#">Забыли пароль?</a>
+                    <a href="#" @click.prevent="tab = 'forgot'">Забыли пароль?</a>
                 </div>
                 
                 <div class="mt-5 sm:mt-6">
@@ -104,9 +104,43 @@
                 </div>
                 
                 <p class="text-center">Нет аккаунта? <a class="text-[#2D92CE]" @click="tab = 'register'" href="#">Зарегистрироваться</a></p>
-                
+
             </form>
-            
+
+            <!-- Tab: Восстановление пароля -->
+            <form wire:submit.prevent="sendResetLink" class="space-y-4 mt-2" x-show="tab === 'forgot'">
+
+                @if($resetLinkSent)
+                    <div class="text-sm text-green-600 bg-green-50 p-3 rounded">
+                        Ссылка для восстановления пароля отправлена на ваш email.
+                        Перейдите по ней, чтобы задать новый пароль.
+                    </div>
+                @else
+                    <p class="text-sm text-brand-gray-light">
+                        Укажите email, на который зарегистрирован аккаунт — мы вышлем ссылку для создания нового пароля.
+                    </p>
+
+                    <div>
+                        <input type="email" wire:model="email" placeholder="Адрес электронной почты"
+                               class="mt-1 block w-full border-0 border-b border-[#EAEAEA] sm:text-sm @error('email') border-red-300 @enderror">
+                        @error('email')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="mt-5 sm:mt-6">
+                        <button type="submit"
+                                wire:loading.attr="disabled"
+                                class="inline-flex w-full justify-center bg-[#2D92CE] px-3 py-2 text-sm font-semibold text-white shadow-xs focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50">
+                            <span wire:loading.remove wire:target="sendResetLink">Отправить ссылку</span>
+                            <span wire:loading wire:target="sendResetLink">Отправляем...</span>
+                        </button>
+                    </div>
+                @endif
+
+                <p class="text-center">Вспомнили пароль? <a class="text-[#2D92CE]" @click="tab = 'login'" href="#">Войти</a></p>
+            </form>
+
             <form wire:submit.prevent="register" class="mt-2 md:space-y-2" x-show="tab === 'register'">
                 <div class="overflow-x-auto max-h-[49vh] md:max-h-[59vh] space-y-2">
                     <div>

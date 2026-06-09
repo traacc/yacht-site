@@ -37,8 +37,10 @@ $sendPasswordResetLink = function () {
 ?>
 
 <div>
+    <h1 class="text-2xl a-font text-[#2E325C] mb-4">Восстановление пароля</h1>
+
     <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+        Укажите email, на который зарегистрирован аккаунт — мы вышлем ссылку для создания нового пароля.
     </div>
 
     <!-- Session Status -->
@@ -47,14 +49,14 @@ $sendPasswordResetLink = function () {
     <form wire:submit="sendPasswordResetLink">
         <!-- Email Address -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
+            <x-input-label for="email" value="Email" />
             <x-text-input wire:model="email" id="email" class="block mt-1 w-full" type="email" name="email" required autofocus />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
         <div class="flex items-center justify-end mt-4">
             <x-primary-button>
-                {{ __('Email Password Reset Link') }}
+                Отправить ссылку
             </x-primary-button>
         </div>
     </form>
