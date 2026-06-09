@@ -343,6 +343,12 @@ class YachtResource extends Resource
             ]);
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->whereNotNull('user_id');
+    }
+
     public static function getPages(): array
     {
         return [
