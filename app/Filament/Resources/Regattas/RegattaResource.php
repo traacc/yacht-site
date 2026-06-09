@@ -103,9 +103,11 @@ class RegattaResource extends Resource
                             ->maxValue(2099),
                         Forms\Components\DatePicker::make('start_date')
                             ->label('Дата начала сезона')
+                            ->displayFormat('d.m.Y')
                             ->required(),
                         Forms\Components\DatePicker::make('end_date')
                             ->label('Дата окончания сезона')
+                            ->displayFormat('d.m.Y')
                             ->required(),
                     ])
                     ->createOptionUsing(fn (array $data): string => \App\Models\Season::create($data)->id)
