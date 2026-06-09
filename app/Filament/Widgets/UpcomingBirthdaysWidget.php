@@ -34,7 +34,7 @@ class UpcomingBirthdaysWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('age')
                     ->label('Исполнится')
                     ->getStateUsing(fn (User $r) => $r->birth_date && $r->nextBirthday
-                        ? ($r->nextBirthday->year - $r->birth_date->year) . ' лет'
+                        ? ($r->nextBirthday->year - $r->birth_date->year)
                         : '—'),
                 Tables\Columns\TextColumn::make('days_until_birthday')
                     ->label('Через')
