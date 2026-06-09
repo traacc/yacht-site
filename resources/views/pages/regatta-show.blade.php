@@ -117,7 +117,7 @@
             <section class="py-10">
                 <div class="container mx-auto pdf-list">
                     <h2 class="section-title a-font mb-8">Необходимые документы для участия</h2>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         @foreach($requiredEntryDocuments as $doc)
                             <div class="bg-brand-light-bg flex gap-4 hover:shadow-md transition-shadow p-4">
                                 <div class="max-w-16">
