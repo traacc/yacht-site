@@ -164,8 +164,15 @@ class RegattaEntryResource extends Resource
                     ->schema([
                         Select::make('team_member_id')
                             ->label('Участник')
-                            ->options(function (): array {
+                            ->options(function (Get $get): array {
+                                $teamId = $get('../../team_id');
+
+                                if (! $teamId) {
+                                    return [];
+                                }
+
                                 return TeamMember::query()
+                                    ->where('team_id', $teamId)
                                     ->where('status', 'active')
                                     ->with('user')
                                     ->get()
@@ -433,30 +440,23 @@ class RegattaEntryResource extends Resource
      * @return array<int, array{team_member_id: string, member_name: string, role: string}>
      */
     public static function buildCrewDefaults(?string $teamId): array
-    {   /*
-        if ($teamId === null) {
+    {
+        if (! $teamId) {
             return [];
         }
 
-        $team = \App\Models\Team::find($teamId);
-        if (! $team) {
-            return [];
-        }
-
-        $organizerId = $team->organizer_id;
-
-        return $team->members()
-            ->wherePivot('status', 'active')
+        return TeamMember::query()
+            ->where('team_id', $teamId)
+            ->where('status', 'active')
+            ->with('user')
             ->get()
-            ->map(fn (\App\Models\User $user): array => [
-                'team_member_id' => $user->pivot->id,
-                'member_name'    => $user->name,
-                'is_captain'     => $user->pivot->role === 'organizer',
+            ->map(fn (TeamMember $member): array => [
+                'team_member_id' => $member->id,
+                'member_name'    => $member->user?->name ?? 'Неизвестный',
+                'is_captain'     => false,
                 'role'           => 'main',
             ])
             ->all();
-        */
-        return [];
     }
 
     /**

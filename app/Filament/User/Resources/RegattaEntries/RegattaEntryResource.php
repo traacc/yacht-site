@@ -110,7 +110,10 @@ class RegattaEntryResource extends Resource
                     })
                     ->label('Команда')
                     ->required()
-                    ->live(),
+                    ->live()
+                    ->afterStateUpdated(function (?string $state, Set $set): void {
+                        $set('crew', static::buildCrewDefaults($state));
+                    }),
                 Select::make('yacht_id')
                     ->label('Яхта')
                     ->options(fn (Get $get, ?\App\Models\RegattaEntry $record = null) => \App\Models\Yacht::query()
@@ -155,8 +158,15 @@ class RegattaEntryResource extends Resource
                     ->schema([
                         Select::make('team_member_id')
                             ->label('Участник')
-                            ->options(function (): array {
+                            ->options(function (Get $get): array {
+                                $teamId = $get('../../team_id');
+
+                                if (! $teamId) {
+                                    return [];
+                                }
+
                                 return TeamMember::query()
+                                    ->where('team_id', $teamId)
                                     ->where('status', 'active')
                                     ->with('user')
                                     ->get()
@@ -396,7 +406,22 @@ class RegattaEntryResource extends Resource
      */
     public static function buildCrewDefaults(?string $teamId): array
     {
-        return [];
+        if (! $teamId) {
+            return [];
+        }
+
+        return TeamMember::query()
+            ->where('team_id', $teamId)
+            ->where('status', 'active')
+            ->with('user')
+            ->get()
+            ->map(fn (TeamMember $member): array => [
+                'team_member_id' => $member->id,
+                'member_name'    => $member->user?->name ?? 'Неизвестный',
+                'is_captain'     => false,
+                'role'           => 'main',
+            ])
+            ->all();
     }
 
     /**
