@@ -71,6 +71,13 @@ class YachtResource extends Resource
                 ->columnSpanFull(),
                 Hidden::make('selected_yacht_id'),
                 Select::make('yacht_search')->placeholder('Номер ВФПС или название яхты')->columnSpanFull()->label('Найти яхту в базе')->searchable()
+                ->options(fn (): array => \App\Models\Yacht::query()
+                    ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
+                    ->whereNull('user_id')
+                    ->orderBy('name')
+                    ->get()
+                    ->mapWithKeys(fn ($yacht) => [$yacht->id => trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : ''))])
+                    ->toArray())
                 ->getSearchResultsUsing(fn (string $search): array => \App\Models\Yacht::query()
                     ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
                     ->whereNull('user_id')
