@@ -468,7 +468,7 @@
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full bg-brand-light-bg responsive-table max-h-[90dvh] overflow-auto">
+                    <table class="w-full bg-brand-light-bg responsive-table overflow-auto">
                         <thead>
                             <tr class="text-2xl text-brand-dark border-b border-brand-border">
                                 <th class="pb-2 text-center font-medium a-font">Участник</th>

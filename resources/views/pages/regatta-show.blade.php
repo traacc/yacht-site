@@ -412,7 +412,7 @@
                             <th class="pb-2 text-center font-medium a-font">Разряд</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y text-center font-medium">
+                    <tbody class="divide-y text-center font-medium  max-h-[80dvh] overflow-auto block md:table">
                         <template x-for="(member, i) in (activeTeamIndex !== null ? (entriesJson[activeTeamIndex]?.crew || []) : [])" :key="i">
                             <tr class="hover:bg-white transition-colors border-b border-brand-border pb-8! md:pb-0!">
                                 <td data-label="Участник" class="py-3" x-text="member.name"></td>
