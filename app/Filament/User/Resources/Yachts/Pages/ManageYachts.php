@@ -40,7 +40,9 @@ class ManageYachts extends ManageRecords
 
                     if ($selectedYachtId) {
                         /** @var Yacht $record */
-                        $record = Yacht::findOrFail($selectedYachtId);
+                        $record = Yacht::query()
+                            ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
+                            ->findOrFail($selectedYachtId);
                         $record->update([
                             ...$data,
                             'user_id'         => auth()->id(),

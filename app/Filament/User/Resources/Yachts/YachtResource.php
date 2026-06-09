@@ -107,7 +107,12 @@ class YachtResource extends Resource
                 }),
                 TextInput::make('name')
                     ->required()->label('Название яхты')->placeholder('Введите название яхты')
-                    ->unique(ignoreRecord: true)
+                    ->rules([
+                        fn (callable $get, $record) => \Illuminate\Validation\Rule::unique('yachts', 'name')->ignore($record?->id ?? $get('selected_yacht_id')),
+                    ])
+                    ->validationMessages([
+                        'unique' => 'Яхта с таким именем уже существует в системе.',
+                    ])
                     ->disabled(fn (callable $get) => filled($get('selected_yacht_id'))),
                 TextInput::make('gims_number')->label('Номер ГИМС')->placeholder('Введите номер ГИМС'),
                 TextInput::make('vfps_number')

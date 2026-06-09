@@ -27,6 +27,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -295,6 +296,19 @@ class YachtResource extends Resource
                         'rejected'  => 'Отклонена',
                         'withdrawn' => 'Отозвана',
                     ]),
+                TernaryFilter::make('user_id')
+                    ->label('Владелец')
+                    ->placeholder('Все')
+                    ->trueLabel('Без владельца')
+                    ->falseLabel('С владельцем')
+                    ->default(false)
+                    ->queries(
+                        true: fn (Builder $query) => $query
+                            ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
+                            ->whereNull('user_id'),
+                        false: fn (Builder $query) => $query->whereNotNull('user_id'),
+                        blank: fn (Builder $query) => $query,
+                    ),
                 TrashedFilter::make()
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
