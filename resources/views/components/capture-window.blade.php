@@ -62,10 +62,10 @@
                         }
                     </style>
                     <div class="social mt-2 flex gap-2 justify-center md:justify-start">
-                        <a href="https://t.me/a_carterpro" class="text-[#2D92CE]">
+                        <a href="https://t.me/a_carterpro" class="text-[#2D92CE]" target="_blank">
                             {!! file_get_contents(public_path('images/social_icons/tl.svg')) !!}
                         </a>
-                        <a href="https://vk.com/carter_pro" class="text-[#2D92CE]">
+                        <a href="https://vk.com/carter_pro" class="text-[#2D92CE]" target="_blank">
                             {!! file_get_contents(public_path('images/social_icons/vk.svg')) !!}
                         </a>
                     </div>

@@ -43,10 +43,10 @@
                     </style>
             <div class="hidden nav-social lg:flex items-center gap-2">
                 <div class="hidden nav-social lg:flex items-center gap-2">
-                    <a href="https://t.me/a_carterpro" class="text-[#2D92CE]">
+                    <a href="https://t.me/a_carterpro" class="text-[#2D92CE]" target="_blank">
                         {!! file_get_contents(public_path('images/social_icons/tl.svg')) !!}
                     </a>
-                    <a href="https://vk.com/carter_pro" class="text-[#2D92CE]">
+                    <a href="https://vk.com/carter_pro" class="text-[#2D92CE]" target="_blank">
                         {!! file_get_contents(public_path('images/social_icons/vk.svg')) !!}
                     </a>
                 </div>
