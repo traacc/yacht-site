@@ -296,6 +296,7 @@ class YachtResource extends Resource
                         'rejected'  => 'Отклонена',
                         'withdrawn' => 'Отозвана',
                     ]),
+                /*
                 TernaryFilter::make('user_id')
                     ->label('Владелец')
                     ->placeholder('Все')
@@ -309,6 +310,7 @@ class YachtResource extends Resource
                         false: fn (Builder $query) => $query->whereNotNull('user_id'),
                         blank: fn (Builder $query) => $query,
                     ),
+                */
                 TrashedFilter::make()
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
