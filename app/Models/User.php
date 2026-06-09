@@ -201,7 +201,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
                     $next->addYear();
                 }
 
-                return $today->diffInDays($next);
+                return (int) $today->diffInDays($next);
             }
         );
     }

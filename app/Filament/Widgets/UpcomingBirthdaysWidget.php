@@ -30,7 +30,12 @@ class UpcomingBirthdaysWidget extends BaseWidget
                 ])),
                 Tables\Columns\TextColumn::make('next_birthday')
                     ->label('Дата рождения')
-                    ->getStateUsing(fn (User $r) => $r->nextBirthday?->format('d.m.Y') ?? '—'),
+                    ->getStateUsing(fn (User $r) => $r->nextBirthday?->locale('ru')->translatedFormat('d F') ?? '—'),
+                Tables\Columns\TextColumn::make('age')
+                    ->label('Исполнится')
+                    ->getStateUsing(fn (User $r) => $r->birth_date && $r->nextBirthday
+                        ? ($r->nextBirthday->year - $r->birth_date->year) . ' лет'
+                        : '—'),
                 Tables\Columns\TextColumn::make('days_until_birthday')
                     ->label('Через')
                     ->getStateUsing(fn (User $r) => $r->daysUntilBirthday === 0
