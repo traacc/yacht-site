@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регаты CarterPro</title>
     @vite(['resources/css/app.css'])
-    <link rel="preload" href="{{ Vite::asset('resources/fonts/Furore-Medium.woff2') }}" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="{{ Vite::asset('resources/fonts/Montserrat-Regular.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ Vite::asset('fonts/Furore-Medium.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ Vite::asset('fonts/Montserrat-Regular.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="shortcut icon" href="{{ asset('favicon.jpg?v=4') }}?v=2" type="image/svg+xml">
 </head>
 <body class="font-sans bg-white text-[#2E325C] antialiased">
