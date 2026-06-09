@@ -93,6 +93,9 @@ class HomePageSettings extends Page
             'gallery_count'  => (int) $settings->get('home.gallery_count', 10),
             'gallery_random' => (bool) $settings->get('home.gallery_random', false),
             'gallery_sort'   => $settings->get('home.gallery_sort', 'manual') ?? 'manual',
+            // Режим обновления сайта
+            'maintenance_mode'    => (bool) $settings->get('home.maintenance_mode', false),
+            'maintenance_message' => $settings->get('home.maintenance_message', 'Сайт в процессе обновления'),
         ]);
     }
 
@@ -118,6 +121,25 @@ class HomePageSettings extends Page
         return $schema
             ->statePath('data')
             ->components([
+
+                // ── Режим обновления сайта ────────────────────
+                Section::make('Режим обновления')
+                    ->description('Если включено — посетители видят заглушку вместо содержимого сайта. Панель администратора остаётся доступной.')
+                    ->schema([
+                        Toggle::make('maintenance_mode')
+                            ->label('Скрыть содержимое сайта')
+                            ->helperText('Включите, чтобы временно закрыть публичный сайт для посетителей.')
+                            ->default(false)
+                            ->live(),
+
+                        TextInput::make('maintenance_message')
+                            ->label('Текст заглушки')
+                            ->placeholder('Сайт в процессе обновления')
+                            ->default('Сайт в процессе обновления')
+                            ->maxLength(255)
+                            ->visible(fn ($get) => (bool) $get('maintenance_mode'))
+                            ->rules(['nullable', 'string', 'max:255']),
+                    ]),
 
                 // ── TOP-3 команд ──────────────────────────────
                 Section::make('TOP-3 команд')
@@ -382,6 +404,8 @@ class HomePageSettings extends Page
             'data.gallery_count'            => ['required', 'integer', 'min:1', 'max:50'],
             'data.gallery_random'           => ['boolean'],
             'data.gallery_sort'             => ['required', 'in:manual,newest,oldest'],
+            'data.maintenance_mode'         => ['boolean'],
+            'data.maintenance_message'      => ['nullable', 'string', 'max:255'],
         ]);
 
         /** @var SettingsService $settings */
@@ -418,6 +442,14 @@ class HomePageSettings extends Page
         $settings->set('home.gallery_count',  (int) $data['gallery_count'], 'home');
         $settings->set('home.gallery_random', (bool) $data['gallery_random'], 'home');
         $settings->set('home.gallery_sort',   $data['gallery_sort'] ?? 'manual', 'home');
+
+        // Режим обновления сайта
+        $settings->set('home.maintenance_mode', (bool) ($data['maintenance_mode'] ?? false), 'home');
+        $settings->set(
+            'home.maintenance_message',
+            trim((string) ($data['maintenance_message'] ?? '')) ?: 'Сайт в процессе обновления',
+            'home',
+        );
 
         $settings->forgetGroup('home');
 
