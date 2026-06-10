@@ -120,6 +120,10 @@ class GalleryResource extends Resource
                     ->image()
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                     ->imageEditor()
+                    ->maxSize(10240)                      // 10 МБ на файл
+                    ->validationMessages([
+                        'max' => 'Файл слишком большой. Максимальный размер — 10 МБ.',
+                    ])
                     ->disk('public')
                     ->visibility('public')
                     ->columnSpanFull(),
@@ -135,6 +139,10 @@ class GalleryResource extends Resource
                     ->multiple()
                     ->reorderable()
                     ->deletable(true)
+                    ->maxSize(10240)                      // 10 МБ на файл
+                    ->validationMessages([
+                        'max' => 'Файл слишком большой. Максимальный размер — 10 МБ.',
+                    ])
                     ->disk('public')
                     ->visibility('public')
                     ->maxFiles(200)
