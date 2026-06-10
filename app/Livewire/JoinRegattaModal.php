@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Actions\Regatta\SubmitRegattaEntryAction;
 use App\Enums\TeamMemberRole;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
+use App\Mail\SendLoginCredentials;
 use App\Models\Regatta;
 use App\Models\RegattaEntryCrew;
 use App\Models\Team;
@@ -13,6 +14,9 @@ use App\Models\User;
 use App\Models\Yacht;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -53,6 +57,40 @@ class JoinRegattaModal extends Component
     /** ID только что добавленных team_member (для мгновенного отображения в crew) */
     public array $newMemberIds = [];
 
+    // ──────────────────────────────────────────────
+    // Гостевой поток: регистрация + создание команды/яхты при подаче заявки
+    // ──────────────────────────────────────────────
+
+    /** Признак того, что заявку оформил гость (для текста на экране успеха) */
+    public bool $guestRegistered = false;
+
+    /** ФИО гостя */
+    public string $guestName = '';
+
+    /** Email гостя */
+    public string $guestEmail = '';
+
+    /** Телефон гостя */
+    public string $guestPhone = '';
+
+    /** Название создаваемой командой гостя */
+    public string $teamName = '';
+
+    /** Способ указания яхты гостем: 'select' (свободная) | 'create' (новая) */
+    public string $yachtMode = 'select';
+
+    /** Поля новой яхты гостя */
+    public string $newYachtName = '';
+
+    public string $newYachtVfps = '';
+
+    /**
+     * Добавленные гостем участники экипажа (создаются при подаче заявки).
+     *
+     * @var array<int, array{user_id: string, name: string, email: string, role: string}>
+     */
+    public array $guestMembers = [];
+
     #[On('open-join-regatta-modal')]
     public function openModal(string $regattaId): void
     {
@@ -67,12 +105,26 @@ class JoinRegattaModal extends Component
         $this->searchQuery = '';
         $this->searchResults = [];
         $this->newMemberIds = [];
+        $this->guestRegistered = false;
+        $this->guestName = '';
+        $this->guestEmail = '';
+        $this->guestPhone = '';
+        $this->teamName = '';
+        $this->yachtMode = 'select';
+        $this->newYachtName = '';
+        $this->newYachtVfps = '';
+        $this->guestMembers = [];
     }
 
     public function closeModal(): void
     {
         $this->isOpen = false;
-        $this->reset(['regattaId', 'teamId', 'yachtId', 'documentFiles', 'crew', 'submitted', 'leftCrew', 'searchQuery', 'searchResults', 'newMemberIds']);
+        $this->reset([
+            'regattaId', 'teamId', 'yachtId', 'documentFiles', 'crew', 'submitted', 'leftCrew',
+            'searchQuery', 'searchResults', 'newMemberIds',
+            'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'teamName',
+            'yachtMode', 'newYachtName', 'newYachtVfps', 'guestMembers',
+        ]);
     }
 
     public function updatedTeamId(): void
@@ -108,6 +160,28 @@ class JoinRegattaModal extends Component
     {
         $query = trim($this->searchQuery);
 
+        // Гость: команды ещё нет, исключаем уже добавленных в экипаж пользователей
+        if (! Auth::check()) {
+            if ($query === '') {
+                $this->searchResults = [];
+
+                return;
+            }
+
+            $excludeIds = array_column($this->guestMembers, 'user_id');
+
+            $this->searchResults = User::where(function ($q) use ($query) {
+                    $q->where('name', 'like', "%{$query}%")
+                      ->orWhere('email', 'like', "%{$query}%");
+                })
+                ->when($excludeIds !== [], fn ($q) => $q->whereNotIn('id', $excludeIds))
+                ->limit(10)
+                ->get()
+                ->toArray();
+
+            return;
+        }
+
         if ($query === '' || ! $this->teamId) {
             $this->searchResults = [];
 
@@ -127,6 +201,43 @@ class JoinRegattaModal extends Component
             ->limit(10)
             ->get()
             ->toArray();
+    }
+
+    /**
+     * Гость: добавить найденного пользователя в экипаж (в transient-список).
+     * Реальные TeamMember создаются при подаче заявки.
+     */
+    public function addGuestMember(string $userId): void
+    {
+        if (in_array($userId, array_column($this->guestMembers, 'user_id'), true)) {
+            $this->searchQuery = '';
+            $this->searchResults = [];
+
+            return;
+        }
+
+        $user = User::find($userId);
+        if (! $user) {
+            return;
+        }
+
+        $this->guestMembers[] = [
+            'user_id' => (string) $user->id,
+            'name'    => $user->name,
+            'email'   => (string) $user->email,
+            'role'    => 'main',
+        ];
+
+        $this->searchQuery = '';
+        $this->searchResults = [];
+    }
+
+    public function removeGuestMember(string $userId): void
+    {
+        $this->guestMembers = array_values(array_filter(
+            $this->guestMembers,
+            fn (array $m): bool => $m['user_id'] !== $userId,
+        ));
     }
 
     /**
@@ -254,6 +365,168 @@ class JoinRegattaModal extends Component
         }
 
         $this->dispatch('regatta-entry-submitted', entryId: $entry->id);
+        $this->submitted = true;
+    }
+
+    /**
+     * Подача заявки гостем: регистрирует пользователя, создаёт команду и яхту,
+     * подаёт заявку и отправляет учётные данные на email.
+     */
+    public function submitGuest(SubmitRegattaEntryAction $action): void
+    {
+        $rules = [
+            'guestName'  => ['required', 'string', 'max:255', function ($attribute, $value, $fail) {
+                if (User::whereRaw('LOWER(name) = LOWER(?)', [$value])->exists()) {
+                    $fail('Пользователь с таким ФИО уже зарегистрирован');
+                }
+            }],
+            'guestEmail' => ['required', 'email', 'unique:users,email'],
+            'guestPhone' => ['required', 'unique:users,phone'],
+            'teamName'   => ['required', 'string', 'max:255'],
+        ];
+
+        if ($this->yachtMode === 'create') {
+            $rules['newYachtName'] = ['required', 'string', 'max:255'];
+            $rules['newYachtVfps'] = ['nullable', 'string', 'max:255'];
+        } else {
+            $rules['yachtId'] = ['required', 'string', 'uuid'];
+        }
+
+        foreach ($this->requiredDocuments() as $doc) {
+            $key = 'documentFiles.' . $doc['doc_type'];
+            $isRequired = $doc['is_required'] ?? false;
+            $rules[$key] = [$isRequired ? 'required' : 'nullable', 'array'];
+            $rules[$key . '.*'] = ['file', 'mimes:pdf,doc,docx,jpg,jpeg,png,webp', 'max:20480'];
+        }
+
+        $this->validate($rules, [
+            'guestEmail.unique' => 'Пользователь с таким email уже зарегистрирован',
+            'guestPhone.unique' => 'Пользователь с таким телефоном уже зарегистрирован',
+        ], [
+            'guestName'    => 'ФИО',
+            'guestEmail'   => 'email',
+            'guestPhone'   => 'телефон',
+            'teamName'     => 'название команды',
+            'yachtId'      => 'яхта',
+            'newYachtName' => 'название яхты',
+        ]);
+
+        $regatta = Regatta::findOrFail($this->regattaId);
+        $password = Str::password(12);
+
+        try {
+            [$entry, $user] = DB::transaction(function () use ($action, $regatta, $password) {
+                // 1. Регистрируем пользователя (пароль захешируется кастом 'hashed')
+                $user = User::create([
+                    'name'     => $this->guestName,
+                    'email'    => $this->guestEmail,
+                    'phone'    => $this->guestPhone,
+                    'password' => $password,
+                ]);
+
+                // 2. Создаём команду, пользователь — организатор
+                $team = Team::create([
+                    'name'            => $this->teamName,
+                    'organizer_id'    => $user->id,
+                    'approval_status' => 'pending',
+                ]);
+
+                $organizerMember = TeamMember::create([
+                    'team_id'   => $team->id,
+                    'user_id'   => $user->id,
+                    'role'      => TeamMemberRole::Organizer->value,
+                    'status'    => 'active',
+                    'joined_at' => now(),
+                ]);
+
+                // 3. Экипаж: организатор — капитан, добавленные участники — со своими ролями
+                $crew = [(string) $organizerMember->id => 'captain'];
+
+                foreach ($this->guestMembers as $m) {
+                    $member = TeamMember::create([
+                        'team_id'   => $team->id,
+                        'user_id'   => $m['user_id'],
+                        'role'      => TeamMemberRole::Member->value,
+                        'status'    => 'active',
+                        'joined_at' => now(),
+                    ]);
+                    $crew[(string) $member->id] = in_array($m['role'], ['main', 'reserve'], true) ? $m['role'] : 'main';
+                }
+
+                // 4. Яхта: новая или выбранная свободная
+                if ($this->yachtMode === 'create') {
+                    $yacht = Yacht::create([
+                        'name'            => $this->newYachtName,
+                        'vfps_number'     => $this->newYachtVfps ?: null,
+                        'user_id'         => $user->id,
+                        'approval_status' => 'pending',
+                    ]);
+                } else {
+                    $yacht = Yacht::findOrFail($this->yachtId);
+                }
+
+                // 5. Подаём заявку
+                $entry = $action->handle($regatta, $team, $yacht, $user, $crew);
+
+                return [$entry, $user];
+            });
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            foreach ($e->errors() as $field => $messages) {
+                if ($field === 'teamId') {
+                    $field = 'teamName';
+                } elseif ($field === 'yachtId' && $this->yachtMode === 'create') {
+                    $field = 'newYachtName';
+                }
+                foreach ($messages as $message) {
+                    $this->addError($field, $message);
+                }
+            }
+
+            return;
+        } catch (\DomainException $e) {
+            $this->addError($this->yachtMode === 'create' ? 'newYachtName' : 'yachtId', $e->getMessage());
+
+            return;
+        } catch (\Exception $e) {
+            $this->addError('general', 'Произошла ошибка при подаче заявки. Попробуйте позже.');
+            report($e);
+
+            return;
+        }
+
+        // Сохраняем загруженные документы
+        foreach ($this->requiredDocuments() as $doc) {
+            $files = $this->documentFiles[$doc['doc_type']] ?? [];
+
+            if (! is_array($files)) {
+                $files = [$files];
+            }
+
+            foreach ($files as $file) {
+                if (! $file) {
+                    continue;
+                }
+                $path = $file->store('documents', 'public');
+                $entry->documents()->create([
+                    'doc_type' => $doc['doc_type'],
+                    'title'    => $doc['title'],
+                    'url'      => $path,
+                ]);
+            }
+        }
+
+        // Входим под новым пользователем и отправляем учётные данные
+        Auth::login($user);
+        session()->regenerate();
+
+        try {
+            Mail::to($user->email)->send(new SendLoginCredentials($user, $user->email, $password));
+        } catch (\Exception $e) {
+            report($e);
+        }
+
+        $this->dispatch('regatta-entry-submitted', entryId: $entry->id);
+        $this->guestRegistered = true;
         $this->submitted = true;
     }
 

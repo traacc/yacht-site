@@ -37,6 +37,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
                 <p class="font-medium text-lg">Ваша заявка успешно подана, ожидайте подтверждения</p>
+                @if ($guestRegistered)
+                    <p class="text-gray-600 mt-3">Мы создали для вас личный кабинет. Данные для входа отправлены на указанный email.</p>
+                @endif
             </div>
         @elseif ($leftCrew)
             <div class="flex items-center justify-between pb-3 mb-4">
@@ -52,16 +55,208 @@
             </div>
         @elseif ($this->state === 'guest')
             <div class="flex items-center justify-between pb-3 mb-4">
-                <h3 class="text-lg font-medium text-[#2E325C] a-font">Войдите в личный кабинет</h3>
+                <h3 class="text-lg font-medium text-[#2E325C] a-font">Подать заявку</h3>
                 <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
             </div>
-            <div class="text-center py-6">
-                <p class="text-gray-600 mb-6">Чтобы подать заявку на участие в регате, необходимо войти в Личный кабинет.</p>
-                <button @click="$dispatch('open-login-modal'); $wire.closeModal()"
-                        class="inline-flex justify-center bg-[#2D92CE] px-4 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90">
-                    Войти или зарегистрироваться
-                </button>
-            </div>
+            <p class="text-gray-600 mb-1">Заполните форму, чтобы подать заявку на участие в регате.</p>
+            <p class="text-sm text-gray-500 mb-4">
+                После отправки мы автоматически создадим для вас личный кабинет, а данные для входа отправим на email.
+                Уже есть аккаунт?
+                <button type="button" @click="$dispatch('open-login-modal'); $wire.closeModal()"
+                        class="text-[#2D92CE] font-medium hover:underline">Войти</button>
+            </p>
+
+            <form wire:submit.prevent="submitGuest" class="space-y-4">
+                @error('general')
+                    <div class="text-sm text-red-600 bg-red-50 p-3 rounded">{{ $message }}</div>
+                @enderror
+
+                {{-- Данные участника --}}
+                <div>
+                    <label for="guestName" class="block text-sm text-brand-gray-light">ФИО</label>
+                    <input type="text" id="guestName" wire:model="guestName"
+                           class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('guestName') border-red-300 @enderror">
+                    @error('guestName')
+                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label for="guestEmail" class="block text-sm text-brand-gray-light">Email</label>
+                        <input type="email" id="guestEmail" wire:model="guestEmail"
+                               class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('guestEmail') border-red-300 @enderror">
+                        @error('guestEmail')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div>
+                        <label for="guestPhone" class="block text-sm text-brand-gray-light">Телефон</label>
+                        <input type="text" id="guestPhone" wire:model="guestPhone"
+                               class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('guestPhone') border-red-300 @enderror">
+                        @error('guestPhone')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
+                    </div>
+                </div>
+
+                {{-- Команда --}}
+                <div>
+                    <label for="teamName" class="block text-sm text-brand-gray-light">Название команды</label>
+                    <input type="text" id="teamName" wire:model="teamName"
+                           class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('teamName') border-red-300 @enderror">
+                    @error('teamName')
+                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                {{-- Яхта: выбор свободной или создание новой --}}
+                <div>
+                    <label class="block text-sm text-brand-gray-light mb-1">Яхта</label>
+                    <div class="flex gap-4 mb-2 text-sm">
+                        <label class="inline-flex items-center gap-1.5">
+                            <input type="radio" wire:model.live="yachtMode" value="select" class="text-[#2D92CE]">
+                            <span>Выбрать свободную</span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5">
+                            <input type="radio" wire:model.live="yachtMode" value="create" class="text-[#2D92CE]">
+                            <span>Добавить свою</span>
+                        </label>
+                    </div>
+
+                    @if ($yachtMode === 'create')
+                        <input type="text" wire:model="newYachtName" placeholder="Название яхты"
+                               class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('newYachtName') border-red-300 @enderror">
+                        @error('newYachtName')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
+                        <input type="text" wire:model="newYachtVfps" placeholder="Номер ВФПС (необязательно)"
+                               class="mt-2 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm">
+                    @else
+                        <select wire:model="yachtId"
+                                class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('yachtId') border-red-300 @enderror">
+                            <option value="">Выберите яхту</option>
+                            @foreach ($this->allFreeYachts as $yacht)
+                                <option value="{{ $yacht->id }}">{{ $yacht->name }} ({{ $yacht->vfps_number ?? 'без номера ВФПС' }})</option>
+                            @endforeach
+                        </select>
+                        @error('yachtId')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
+                    @endif
+                </div>
+
+                {{-- Экипаж: добавление зарегистрированных пользователей --}}
+                <div class="border-t border-gray-200 pt-4" x-data="{
+                    query: @entangle('searchQuery'),
+                    results: @entangle('searchResults'),
+                    isOpen: false,
+                    selectedIndex: -1,
+                    init() {
+                        this.$watch('results', v => { this.isOpen = v.length > 0; this.selectedIndex = -1; });
+                    },
+                    selectItem(userId) {
+                        $wire.searchQuery = '';
+                        this.isOpen = false;
+                        $wire.addGuestMember(userId);
+                    },
+                    onKeydown(e) {
+                        if (!this.isOpen || this.results.length === 0) return;
+                        if (e.key === 'ArrowDown') { e.preventDefault(); this.selectedIndex = Math.min(this.selectedIndex + 1, this.results.length - 1); }
+                        else if (e.key === 'ArrowUp') { e.preventDefault(); this.selectedIndex = Math.max(this.selectedIndex - 1, -1); }
+                        else if (e.key === 'Enter' && this.selectedIndex >= 0) { e.preventDefault(); this.selectItem(this.results[this.selectedIndex].id); }
+                        else if (e.key === 'Escape') { this.isOpen = false; $wire.searchQuery = ''; }
+                    }
+                }" x-on:click.away="isOpen = false">
+                    <p class="text-sm font-medium text-[#2E325C] mb-2">Экипаж</p>
+                    <p class="text-xs text-gray-500 mb-3">Вы будете капитаном команды. При необходимости добавьте зарегистрированных участников.</p>
+
+                    @if (!empty($guestMembers))
+                        <div class="mb-3 space-y-2">
+                            @foreach ($guestMembers as $i => $member)
+                                <div class="flex items-center gap-3 py-2 px-3 bg-[#F8F8F8] rounded">
+                                    <span class="text-sm flex-1">{{ $member['name'] }}</span>
+                                    <select wire:model="guestMembers.{{ $i }}.role"
+                                            class="text-sm border-gray-200 bg-white rounded p-1 min-w-[120px]">
+                                        <option value="main">Основной</option>
+                                        <option value="reserve">Запасной</option>
+                                    </select>
+                                    <button type="button" wire:click="removeGuestMember('{{ $member['user_id'] }}')"
+                                            class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    <div class="relative">
+                        <input type="text"
+                               wire:model.live.debounce.350ms="searchQuery"
+                               x-on:keydown="onKeydown($event)"
+                               placeholder="Поиск по имени или email..."
+                               class="w-full border border-gray-200 bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
+
+                        <div wire:loading wire:target="searchQuery" class="absolute right-3 top-2.5 text-gray-400 text-xs">
+                            Поиск...
+                        </div>
+
+                        <div x-show="isOpen" x-cloak
+                             class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">
+                            <template x-for="(user, index) in results" :key="user.id">
+                                <div x-on:click="selectItem(user.id)"
+                                     x-on:mouseenter="selectedIndex = index"
+                                     :class="{ 'bg-[#2D92CE]/10': selectedIndex === index }"
+                                     class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm border-b border-gray-100 last:border-b-0">
+                                    <span class="font-medium" x-text="user.name"></span>
+                                    <span class="text-gray-400 text-xs ml-2" x-text="user.email"></span>
+                                </div>
+                            </template>
+                            <div x-show="results.length === 0 && query.length > 0" class="px-3 py-2 text-sm text-gray-400">
+                                Ничего не найдено
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Документы --}}
+                @if ($this->requiredDocuments())
+                    <div class="border-t border-gray-200 pt-4">
+                        <p class="text-sm font-medium text-[#2E325C] mb-3">Документы</p>
+                        @foreach ($this->requiredDocuments() as $doc)
+                            <div class="mb-3">
+                                <label for="guest_doc_{{ $doc['doc_type'] }}" class="block text-sm text-brand-gray-light">
+                                    {{ $doc['title'] }}
+                                    @if ($doc['is_required'] ?? false)
+                                        <span class="text-red-500">*</span>
+                                    @else
+                                        <span class="text-gray-400 text-xs">(необязательный)</span>
+                                    @endif
+                                </label>
+                                <input type="file"
+                                       id="guest_doc_{{ $doc['doc_type'] }}"
+                                       wire:model="documentFiles.{{ $doc['doc_type'] }}"
+                                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" multiple
+                                       class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-[#F8F8F8] file:text-[#2E325C] hover:file:bg-gray-200">
+                                @error('documentFiles.' . $doc['doc_type'])
+                                    <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                @enderror
+                                @error('documentFiles.' . $doc['doc_type'] . '.*')
+                                    <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                @enderror
+                                <div wire:loading wire:target="documentFiles.{{ $doc['doc_type'] }}" class="text-xs text-blue-500 mt-1">Загрузка...</div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+                <div class="mt-5 sm:mt-6">
+                    <button type="submit"
+                            wire:loading.attr="disabled"
+                            class="inline-flex w-full justify-center bg-[#2D92CE] px-3 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90 disabled:opacity-50">
+                        <span wire:loading.remove wire:target="submitGuest">Подать заявку →</span>
+                        <span wire:loading wire:target="submitGuest">Отправка...</span>
+                    </button>
+                </div>
+            </form>
         @elseif ($this->state === 'no-team')
             <div class="flex items-center justify-end pb-3 mb-4">
                 <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
