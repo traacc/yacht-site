@@ -133,10 +133,10 @@ class RegattaResultResource extends Resource
             ->label('Результаты участников')
             ->relationship('items')
             ->table([
-                TableColumn::make('Место')->markAsRequired(false),
                 TableColumn::make('Команда'),
                 TableColumn::make('Яхта')->markAsRequired(false),
                 TableColumn::make('Очки'),
+                TableColumn::make('Место')->markAsRequired(false),
             ])
             ->schema([
 
