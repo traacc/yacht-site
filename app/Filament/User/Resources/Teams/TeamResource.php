@@ -161,6 +161,10 @@ class TeamResource extends Resource
                                 ->filter(fn (array $member): bool => ($member['role'] ?? null) === TeamMemberRole::Organizer->value)
                                 ->count();
 
+                            if ($organizerCount === 0) {
+                                $fail('Необходимо назначить капитана команды');
+                            }
+
                             if ($organizerCount > 1) {
                                 $fail('В команде может быть только один капитан');
                             }
@@ -172,8 +176,8 @@ class TeamResource extends Resource
                             ->relationship(
                                 name: 'user',
                                 titleAttribute: 'name',
-                                modifyQueryUsing: fn (Builder $query, $component) => $query
-                                    ->where(function (Builder $q) use ($component) {
+                                modifyQueryUsing: function (Builder $query, $component) {
+                                    $query->where(function (Builder $q) use ($component) {
                                         $q->freeUsers()
                                             ->orWhere('id', auth()->id());
 
@@ -184,38 +188,41 @@ class TeamResource extends Resource
                                                 $q->orWhereHas('teamMemberships', fn (Builder $q2) => $q2->where('team_id', $record->getKey()));
                                             }
                                         }
+                                    });
 
-                                        // Исключаем пользователей, уже добавленных в других строках Repeater'а
-                                        $statePath = $component->getStatePath();
-                                        $segments = explode('.', $statePath);
-                                        array_pop($segments);              // убираем 'user_id'
-                                        $currentUuid = array_pop($segments); // UUID текущей строки
-                                        $repeaterPath = implode('.', $segments);
+                                    // Исключаем пользователей, уже добавленных в других строках Repeater'а.
+                                    // Важно: применяем как отдельный AND на верхнем уровне запроса,
+                                    // иначе из-за приоритета AND над OR исключение затронет только
+                                    // последнюю ветку OR-группы выше.
+                                    $statePath = $component->getStatePath();
+                                    $segments = explode('.', $statePath);
+                                    array_pop($segments);              // убираем 'user_id'
+                                    $currentUuid = array_pop($segments); // UUID текущей строки
+                                    $repeaterPath = implode('.', $segments);
 
-                                        $repeaterData = data_get($component->getLivewire(), $repeaterPath, []);
-                                        $currentValue = $component->getState();
-                                        $selectedIds = collect($repeaterData)
-                                            ->except([$currentUuid])
-                                            ->pluck('user_id')
-                                            ->filter()
-                                            ->reject(fn ($id) => $id === $currentValue)
-                                            ->values();
+                                    $repeaterData = data_get($component->getLivewire(), $repeaterPath, []);
+                                    $currentValue = $component->getState();
+                                    $selectedIds = collect($repeaterData)
+                                        ->except([$currentUuid])
+                                        ->pluck('user_id')
+                                        ->filter()
+                                        ->reject(fn ($id) => $id === $currentValue)
+                                        ->values();
 
-                                        if ($selectedIds->isNotEmpty()) {
-                                            $q->whereNotIn('id', $selectedIds->toArray());
-                                        }
-                                    }),
+                                    if ($selectedIds->isNotEmpty()) {
+                                        $query->whereNotIn('id', $selectedIds->toArray());
+                                    }
+                                },
                             )
                             ->searchable()
                             ->preload()
-                            ->default(auth()->id())
                             ->required(),
                         Select::make('role')
                             ->label('Роль')
                             ->options(collect(TeamMemberRole::cases())->mapWithKeys(
                                 fn (TeamMemberRole $role) => [$role->value => $role->label()],
                             ))
-                            ->default(TeamMemberRole::Organizer->value)
+                            ->default(TeamMemberRole::Member->value)
                             ->required(),
                         Hidden::make('status')
                             ->default('active'),
@@ -376,6 +383,12 @@ class TeamResource extends Resource
         $organizerCount = collect($data['teamMembers'])
             ->filter(fn (array $member): bool => ($member['role'] ?? null) === TeamMemberRole::Organizer->value)
             ->count();
+
+        if ($organizerCount === 0) {
+            throw ValidationException::withMessages([
+                'teamMembers' => 'Необходимо назначить капитана команды',
+            ]);
+        }
 
         if ($organizerCount > 1) {
             throw ValidationException::withMessages([
