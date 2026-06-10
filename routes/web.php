@@ -277,10 +277,8 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
     $entriesJson = $entries->map(fn ($entry) => [
         'team_name' => $entry->team?->name ?? '',
         'crew' => $entry->crew
-            ->sortBy([
-                fn ($crewMember) => $crewMember->role === 'captain' ? 0 : 1,
-                fn ($crewMember) => mb_strtolower((string) ($crewMember->teamMember?->user?->name ?? '')),
-            ])
+            ->sortBy(fn ($crewMember) => ($crewMember->role === 'captain' ? '0' : '1')
+                . mb_strtolower((string) ($crewMember->teamMember?->user?->name ?? '')))
             ->map(fn ($crewMember) => [
                 'name' => $crewMember->teamMember?->user?->name ?? '',
                 'birthday' => $crewMember->teamMember?->user?->birth_date?->format('d.m.Y') ?? '',
