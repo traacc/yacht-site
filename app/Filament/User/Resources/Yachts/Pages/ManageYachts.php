@@ -38,11 +38,32 @@ class ManageYachts extends ManageRecords
                     $selectedYachtId = $data['selected_yacht_id'] ?? null;
                     unset($data['required_documents'], $data['yacht_search'], $data['selected_yacht_id']);
 
+                    // Если яхта выбрана из базы — присваиваем её.
+                    // Иначе ищем свободную яхту (без user_id) по номеру ВФПС
+                    // и перезаписываем её; при отсутствии — создаём новую.
+                    $existing = null;
+
                     if ($selectedYachtId) {
-                        /** @var Yacht $record */
-                        $record = Yacht::query()
+                        $existing = Yacht::query()
                             ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
                             ->findOrFail($selectedYachtId);
+                    } elseif (! empty($data['vfps_number'])) {
+                        $existing = Yacht::query()
+                            ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
+                            ->withTrashed()
+                            ->whereNull('user_id')
+                            ->where('vfps_number', $data['vfps_number'])
+                            ->first();
+                    }
+
+                    if ($existing) {
+                        /** @var Yacht $record */
+                        $record = $existing;
+
+                        if ($record->trashed()) {
+                            $record->restore();
+                        }
+
                         $record->update([
                             ...$data,
                             'user_id'         => auth()->id(),

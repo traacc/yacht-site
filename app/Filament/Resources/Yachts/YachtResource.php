@@ -68,7 +68,7 @@ class YachtResource extends Resource
 
         return $schema
             ->components([
-                /*
+                
                 Placeholder::make('note_form')
                 ->hiddenLabel()
                 ->content(new HtmlString('Выберите яхту из базы Ассоциации или заполните данные вручную. Номер ВФПС будет использован как уникальный ID яхты в системе.'))
@@ -116,7 +116,7 @@ class YachtResource extends Resource
                         $set('current_mass_kg', $yacht->current_mass_kg);
                     }
                 }),
-                */
+                
                 TextInput::make('name')
                     ->label('Название')
                     ->placeholder('Введите название яхты')

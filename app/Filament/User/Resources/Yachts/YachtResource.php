@@ -113,7 +113,8 @@ class YachtResource extends Resource
                     }
                 }),
                 TextInput::make('name')
-                    ->required()->label('Название яхты')->placeholder('Введите название яхты')
+                    ->required()->label('Название яхты')->placeholder('Введите название яхты'),
+                    /*
                     ->rules([
                         fn (callable $get, $record) => \Illuminate\Validation\Rule::unique('yachts', 'name')->ignore($record?->id ?? $get('selected_yacht_id')),
                     ])
@@ -121,11 +122,16 @@ class YachtResource extends Resource
                         'unique' => 'Яхта с таким именем уже существует в системе.',
                     ])
                     ->disabled(fn (callable $get) => filled($get('selected_yacht_id'))),
+                    */
                 TextInput::make('gims_number')->label('Номер ГИМС')->placeholder('Введите номер ГИМС'),
                 TextInput::make('vfps_number')
                     ->required()
                     ->rules([
-                        fn (callable $get, $record) => \Illuminate\Validation\Rule::unique('yachts', 'vfps_number')->ignore($record?->id ?? $get('selected_yacht_id')),
+                        // Блокируем только дубликаты яхт, уже принадлежащих кому-то.
+                        // Свободные яхты (без user_id) будут перезаписаны (присвоены).
+                        fn (callable $get, $record) => \Illuminate\Validation\Rule::unique('yachts', 'vfps_number')
+                            ->ignore($record?->id ?? $get('selected_yacht_id'))
+                            ->whereNotNull('user_id'),
                     ])
                 ->validationMessages([
                     'unique' => 'Яхта с таким номером ВФПС уже существует в системе.',
