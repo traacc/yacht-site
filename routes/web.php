@@ -279,7 +279,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'crew' => $entry->crew
             ->sortBy([
                 fn ($crewMember) => $crewMember->role === 'captain' ? 0 : 1,
-                fn ($crewMember) => mb_strtolower((string) ($crewMember->teamMember?->user?->last_name ?? '')),
+                fn ($crewMember) => mb_strtolower((string) ($crewMember->teamMember?->user?->name ?? '')),
             ])
             ->map(fn ($crewMember) => [
                 'name' => $crewMember->teamMember?->user?->name ?? '',
