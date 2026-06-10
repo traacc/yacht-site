@@ -11,8 +11,6 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DatePicker;
@@ -402,14 +400,18 @@ class YachtResource extends Resource
 
                         return $record;
                     }),
-                DeleteAction::make(),
-                ForceDeleteAction::make(),
+                DeleteAction::make()
+                    ->label('Удалить')
+                    ->modalHeading('Удалить яхту')
+                    ->hidden(false) // показывать и для уже удалённых записей
+                    ->using(fn (Yacht $record): bool => (bool) $record->forceDelete()),
                 RestoreAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->label('Удалить')
+                        ->using(fn (\Illuminate\Support\Collection $records) => $records->each->forceDelete()),
                     RestoreBulkAction::make(),
                 ]),
             ]);
