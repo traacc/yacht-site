@@ -4,11 +4,13 @@ namespace App\Filament\Resources\RaceResults;
 
 use App\Filament\Resources\RaceResults\Pages\ManageRaceResults;
 use App\Models\RaceResult;
+use App\Models\RegattaEntry;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -24,10 +26,12 @@ class RaceResultResource extends Resource
 
     protected static ?int $navigationSort = 10;
 
+    /*
     public static function shouldRegisterNavigation(): bool
     {
         return false;
     }
+    */
 
     public static function getModelLabel(): string
     {
@@ -43,7 +47,22 @@ class RaceResultResource extends Resource
     {
         return $schema
             ->components([
-                TextInput::make('regatta_result_items_id')
+                Select::make('regatta_entry_id')
+                    ->label('Заявка')
+                    ->relationship('regattaEntry')
+                    ->getOptionLabelFromRecordUsing(
+                        fn (RegattaEntry $record): string => trim(
+                            ($record->team?->name ?? '—').' / '.($record->yacht?->name ?? '—')
+                        )
+                    )
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+                Select::make('event_id')
+                    ->label('Гонка')
+                    ->relationship('race', 'name')
+                    ->searchable()
+                    ->preload()
                     ->required(),
                 TextInput::make('position')
                     ->numeric(),
@@ -62,10 +81,18 @@ class RaceResultResource extends Resource
                 TextColumn::make('id')
                     ->label('ID')
                     ->searchable(),
-                TextColumn::make('regatta_result_items_id')
-                    ->searchable(),
-                TextColumn::make('regatta_entry_id')
-                    ->searchable(),
+                TextColumn::make('race.name')
+                    ->label('Гонка')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('regattaEntry.team.name')
+                    ->label('Команда')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('regattaEntry.yacht.name')
+                    ->label('Яхта')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('position')
                     ->numeric()
                     ->sortable(),

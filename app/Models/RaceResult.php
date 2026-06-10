@@ -42,6 +42,11 @@ class RaceResult extends Model
     {
         return $this->belongsTo(RegattaEvents::class, 'event_id');
     }
+
+    public function regattaEntry(): BelongsTo
+    {
+        return $this->belongsTo(RegattaEntry::class, 'regatta_entry_id');
+    }
     /*
     public function regattaResultItem(): BelongsTo
     {
