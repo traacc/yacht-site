@@ -146,8 +146,17 @@ class RegattaEntryResource extends Resource
                     ->default([])
                     ->rules([
                         fn (): \Closure => function (string $attribute, mixed $value, \Closure $fail): void {
-                            $captainCount = collect($value)->filter(fn (array $item): bool => ($item['role'] ?? '') === 'captain')->count();
-                            if ($captainCount > 1) {
+                            $crew = collect($value);
+
+                            if ($crew->isEmpty()) {
+                                return;
+                            }
+
+                            $captainCount = $crew->filter(fn (array $item): bool => ($item['role'] ?? '') === 'captain')->count();
+
+                            if ($captainCount === 0) {
+                                $fail('В экипаже должен быть капитан.');
+                            } elseif ($captainCount > 1) {
                                 $fail('В экипаже может быть только один капитан.');
                             }
                         },
