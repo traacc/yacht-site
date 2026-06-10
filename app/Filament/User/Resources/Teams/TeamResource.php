@@ -168,6 +168,15 @@ class TeamResource extends Resource
                             if ($organizerCount > 1) {
                                 $fail('В команде может быть только один капитан');
                             }
+
+                            // Создатель команды обязан быть в составе участников.
+                            $organizerId = auth()->id();
+                            $organizerIncluded = collect($value)
+                                ->contains(fn (array $member): bool => (string) ($member['user_id'] ?? '') === (string) $organizerId);
+
+                            if (! $organizerIncluded) {
+                                $fail('Вы должны добавить себя в состав команды');
+                            }
                         },
                     ])
                     ->schema([
