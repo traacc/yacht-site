@@ -257,6 +257,14 @@ class RegattaResource extends Resource
                         TextInput::make('name')
                             ->label('Событие')
                             ->required(),
+                        Select::make('event_type')
+                            ->label('Тип')
+                            ->options([
+                                'schedule' => 'Расписание',
+                                'race'     => 'Гонка',
+                            ])
+                            ->default('schedule')
+                            ->required(),
                         DateTimePicker::make('event_datetime')
                             ->label('Время')
                             ->displayFormat('d.m.Y H:i')
