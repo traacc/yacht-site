@@ -52,7 +52,9 @@ class RaceResultResource extends Resource
                     ->relationship('regattaEntry')
                     ->getOptionLabelFromRecordUsing(
                         fn (RegattaEntry $record): string => trim(
-                            ($record->team?->name ?? '—').' / '.($record->yacht?->name ?? '—')
+                            ($record->regatta?->name ?? '—')
+                            .' — '.($record->team?->name ?? '—')
+                            .' / '.($record->yacht?->name ?? '—')
                         )
                     )
                     ->searchable()
