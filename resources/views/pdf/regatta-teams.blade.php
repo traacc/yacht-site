@@ -175,7 +175,7 @@
                         <span class="muted">{{ $entry->yacht?->name ?? '—' }}</span>
                     </td>
                     <td colspan="3">
-                        Капитан: <strong>{{ $entry->team?->organizer?->name ?? '—' }}</strong>
+                        Капитан: <strong>{{ $entry->crew->firstWhere('role', 'captain')?->teamMember?->user?->name ?? '—' }}</strong>
                     </td>
                 </tr>
                 @forelse($crew as $crewMember)
