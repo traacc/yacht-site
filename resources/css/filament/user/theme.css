@@ -229,6 +229,15 @@
     box-shadow: 0 10px 25px rgb(0 0 0 / 0.1);
 }
 
+/* Горизонтальный скролл для табличного репитера (много колонок гонок) */
+.fi-scrollable-table-repeater {
+    overflow-x: auto;
+}
+.fi-scrollable-table-repeater > table {
+    width: max-content;
+    min-width: 100%;
+}
+
 .hide-repeater-header-label .fi-fo-repeater-item {
     position: relative;
 }

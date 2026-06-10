@@ -221,6 +221,8 @@ class RegattaResultResource extends Resource
         return Repeater::make('items')
             ->label('Результаты участников')
             ->relationship('items')
+            // Горизонтальный скролл — при многих гонках таблица шире экрана (см. theme.css).
+            ->extraAttributes(['class' => 'fi-scrollable-table-repeater'])
             ->table($columns)
             ->schema($fields)
             // ->relationship() ставит dehydrated(false); возвращаем true, чтобы строки
