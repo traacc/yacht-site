@@ -127,7 +127,7 @@
     <div class="container mx-auto">
         <div class="grid md:grid-cols-2 gap-5">
             {{-- Команды --}}
-            <div class="relative overflow-hidden min-h-[220px] group cursor-pointer">
+            <a href="{{ route('teams') }}" class="relative overflow-hidden min-h-[220px] group cursor-pointer">
                 <img src="{{ asset('images/main/main-l.webp') }}"
                      alt="Команды" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                 <div class="absolute inset-0 bg-linear-to-r from-brand-navy/90 to-brand-navy/40"></div>
@@ -136,14 +136,14 @@
                     <p class="md:text-lg text-sm max-w-xs leading-[1.3] mb-5">
                         Зарегистрированные экипажи Carter 30, состав команд и участие в регатах сезона.
                     </p>
-                    <a href="{{ route('teams') }}"  class="md:text-lg text-sm font-semibold justify-start text-white">
+                    <div  class="md:text-lg text-sm font-semibold justify-start text-white">
                         Смотреть команды  →
-                    </a>
+                    </div>
                 </div>
-            </div>
+            </a>
 
             {{-- Яхты --}}
-            <div class="relative overflow-hidden md:min-h-[440px] group cursor-pointer">
+            <a href="{{ route('yachts') }}" class="relative overflow-hidden md:min-h-[440px] group cursor-pointer">
                 <img src="{{ asset('images/main/main-r.webp') }}"
                      alt="Яхты Carter Pro" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                 <div class="absolute inset-0 bg-linear-to-r from-[#F8F8F8]/100 to-[#F8F8F8]/40"></div>
@@ -152,11 +152,11 @@
                     <p class="md:text-lg text-sm leading-[1.3] mb-5">
                         Список яхт ассоциации, технические параметры, владельцы и история участия в регатах.
                     </p>
-                    <a href="{{ route('yachts') }}"  class="md:text-lg text-sm  font-semibold justify-start text-[#2E325C]">
+                    <div class="md:text-lg text-sm  font-semibold justify-start text-[#2E325C]">
                         Смотреть яхты  →
-                    </a>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
     </div>
 </section>
