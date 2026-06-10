@@ -68,6 +68,7 @@ class YachtResource extends Resource
 
         return $schema
             ->components([
+                /*
                 Placeholder::make('note_form')
                 ->hiddenLabel()
                 ->content(new HtmlString('Выберите яхту из базы Ассоциации или заполните данные вручную. Номер ВФПС будет использован как уникальный ID яхты в системе.'))
@@ -115,6 +116,7 @@ class YachtResource extends Resource
                         $set('current_mass_kg', $yacht->current_mass_kg);
                     }
                 }),
+                */
                 TextInput::make('name')
                     ->label('Название')
                     ->placeholder('Введите название яхты')
@@ -125,13 +127,7 @@ class YachtResource extends Resource
                 TextInput::make('vfps_number')
                     ->label('Номер на парусе')
                     ->placeholder('Введите номер на парусе')
-                    ->required()
-                    ->rules([
-                        fn (callable $get, $record) => \Illuminate\Validation\Rule::unique('yachts', 'vfps_number')->ignore($record?->id ?? $get('selected_yacht_id')),
-                    ])
-                    ->validationMessages([
-                        'unique' => 'Яхта с таким номером ВФПС уже существует в системе.',
-                    ]),
+                    ->required(),
                 Select::make('user_id')
                     ->label('Пользователь')
                     ->relationship('user', 'name')
