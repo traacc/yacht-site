@@ -33,6 +33,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
+use Filament\Forms\Components\Placeholder;
+use Illuminate\Support\HtmlString;
+
 class YachtResource extends Resource
 {
     protected static ?string $model = Yacht::class;
@@ -67,6 +70,53 @@ class YachtResource extends Resource
 
         return $schema
             ->components([
+                Placeholder::make('note_form')
+                ->hiddenLabel()
+                ->content(new HtmlString('Выберите яхту из базы Ассоциации или заполните данные вручную. Номер ВФПС будет использован как уникальный ID яхты в системе.'))
+                ->columnSpanFull(),
+                Hidden::make('selected_yacht_id'),
+                Select::make('yacht_search')->placeholder('Номер ВФПС или название яхты')->columnSpanFull()->label('Найти яхту в базе')->searchable()
+                ->options(fn (): array => \App\Models\Yacht::query()
+                    ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
+                    ->whereNull('user_id')
+                    ->orderBy('name')
+                    ->get()
+                    ->mapWithKeys(fn ($yacht) => [$yacht->id => trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : ''))])
+                    ->toArray())
+                ->getSearchResultsUsing(fn (string $search): array => \App\Models\Yacht::query()
+                    ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
+                    ->whereNull('user_id')
+                    ->where(function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                          ->orWhere('vfps_number', 'like', "%{$search}%");
+                    })
+                    ->limit(50)
+                    ->get()
+                    ->mapWithKeys(fn ($yacht) => [$yacht->id => trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : ''))])
+                    ->toArray())
+                ->getOptionLabelUsing(function ($value): ?string {
+                    $yacht = \App\Models\Yacht::query()
+                        ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
+                        ->find($value);
+                    return $yacht ? trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : '')) : null;
+                })
+                ->live()
+                ->afterStateUpdated(function ($state, $set) {
+                    $yacht = \App\Models\Yacht::query()
+                        ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
+                        ->find($state);
+                    if ($yacht) {
+                        $set('selected_yacht_id', $yacht->id);
+                        $set('name', $yacht->name);
+                        $set('vfps_number', $yacht->vfps_number);
+                        $set('gims_number', $yacht->gims_number);
+                        $set('class', $yacht->class);
+                        $set('project', $yacht->project);
+                        $set('year', $yacht->year);
+                        $set('reg_place', $yacht->reg_place);
+                        $set('current_mass_kg', $yacht->current_mass_kg);
+                    }
+                }),
                 TextInput::make('name')
                     ->label('Название')
                     ->placeholder('Введите название яхты')
@@ -78,10 +128,16 @@ class YachtResource extends Resource
                     ->label('Номер на парусе')
                     ->placeholder('Введите номер на парусе')
                     ->required()
-                    ->unique(ignoreRecord: true),
+                    ->rules([
+                        fn (callable $get, $record) => \Illuminate\Validation\Rule::unique('yachts', 'vfps_number')->ignore($record?->id ?? $get('selected_yacht_id')),
+                    ])
+                    ->validationMessages([
+                        'unique' => 'Яхта с таким номером ВФПС уже существует в системе.',
+                    ]),
                 Select::make('user_id')
                     ->label('Пользователь')
                     ->relationship('user', 'name')
+                    ->required()
                     ->placeholder('Пользователь зарегистрировавший яхту'),
 
                 TextInput::make('project')
