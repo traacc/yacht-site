@@ -185,43 +185,6 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                     </div>
                 </div>
 
-                <div class="owner mb-8">
-                    <h3 class="text-3xl a-font mb-6">Владелец яхты</h3>
-                    <div class="flex flex-col md:flex-row gap-4 items-center bg-[#F8F8F8]">
-                        <div class="owner__pic">
-                            <img :src="selectedYacht.owner?.photo_url" alt="">
-                        </div>
-                        <div class="owner__info">
-                            <h3 class="text-2xl a-font mb-4" x-text="selectedYacht.owner?.name"></h3>
-                            <p class="mb-6" x-text="'Владелец яхты «' + selectedYacht.name + '»'"></p>
-                            <ul class="space-y-3">
-                                <li class="flex items-center gap-2">
-                                    {!! file_get_contents(public_path('images/icons/user.svg')) !!}
-                                    <span class="font-semibold">ID:</span>
-                                    <span x-text="selectedYacht.owner?.external_id"></span>
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    {!! file_get_contents(public_path('images/icons/phone.svg')) !!}
-                                    <span x-text="selectedYacht.owner?.phone"></span>
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    {!! file_get_contents(public_path('images/icons/mail.svg')) !!}
-                                    <span x-text="selectedYacht.owner?.email"></span>
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    {!! file_get_contents(public_path('images/icons/marker.svg')) !!}
-                                    <span x-text="selectedYacht.owner?.city"></span>
-                                </li>
-                                <li class="flex items-center gap-2">
-                                    <span class="font-semibold">Пользователь зарегистрирован:</span>
-                                    <span x-text="selectedYacht.owner?.registered_at"></span>
-                                </li>
-                            </ul>
-                            <div class="mt-6"><span class="font-semibold">Яхта зарегистрирована:</span> <span x-text="selectedYacht.registered_at"></span></div>
-                        </div>
-                    </div>
-                </div>
-
                 <h3 class="text-3xl a-font mb-6">Параметры яхты</h3>
                 <div class="overflow-y-auto relative custom-scroll mb-8">
                     <table class="w-full border-collapse bg-[#F8F8F8]">
