@@ -21,7 +21,7 @@ class TeamsList extends Component
 
     public string $view = 'list';
 
-    public int $perPage = 12;
+    public int $perPage = 250;
 
     public function updatingSearch(): void
     {
