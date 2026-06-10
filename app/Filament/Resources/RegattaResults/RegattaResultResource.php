@@ -4,6 +4,7 @@ namespace App\Filament\Resources\RegattaResults;
 
 use App\Actions\RegattaResult\ImportRegattaResultItemsAction;
 use App\Filament\Resources\RegattaResults\Pages\ManageRegattaResults;
+use App\Models\RegattaEntry;
 use App\Models\RegattaResult;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
@@ -14,12 +15,14 @@ use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Actions\Action;
@@ -121,6 +124,71 @@ class RegattaResultResource extends Resource
             ]);
     }
 
+    /**
+     * Альтернативный вариант редактирования участников — компактная таблица.
+     */
+    public static function itemsTableSchema(): Repeater
+    {
+        return Repeater::make('items')
+            ->label('Результаты участников')
+            ->relationship('items')
+            ->table([
+                TableColumn::make('Место')->markAsRequired(false),
+                TableColumn::make('Команда'),
+                TableColumn::make('Яхта')->markAsRequired(false),
+                TableColumn::make('Очки'),
+            ])
+            ->schema([
+
+                Select::make('team_id')
+                    ->label('Команда')
+                    ->relationship('team', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->live()
+                    ->afterStateUpdated(function ($state, Set $set, Select $component): void {
+                        if (blank($state)) {
+                            return;
+                        }
+
+                        $regattaId = $component->getParentRepeater()?->getRecord()?->regatta_id;
+
+                        if (blank($regattaId)) {
+                            return;
+                        }
+
+                        $yachtId = RegattaEntry::query()
+                            ->where('regatta_id', $regattaId)
+                            ->where('team_id', $state)
+                            ->value('yacht_id');
+
+                        if (filled($yachtId)) {
+                            $set('yacht_id', $yachtId);
+                        }
+                    }),
+
+                Select::make('yacht_id')
+                    ->label('Яхта')
+                    ->relationship('yacht', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->nullable(),
+                TextInput::make('total_points')
+                    ->label('Очки')
+                    ->numeric()
+                    ->required()
+                    ->default(0.0),
+                TextInput::make('final_position')
+                    ->label('Место')
+                    ->numeric()
+                    ->nullable(),
+            ])
+            ->defaultItems(0)
+            ->addActionLabel('Добавить участника')
+            ->columnSpanFull();
+    }
+
     public static function infolist(Schema $schema): Schema
     {
         return $schema
@@ -215,6 +283,14 @@ class RegattaResultResource extends Resource
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make()->modalHeading('Редактировать результат регаты'),
+                EditAction::make('edit_table')
+                    ->label('Редактировать таблицей')
+                    ->icon(Heroicon::TableCells)
+                    ->modalHeading('Редактировать результат регаты (таблица)')
+                    ->modalWidth('7xl')
+                    ->schema([
+                        self::itemsTableSchema(),
+                    ]),
                 Action::make('import_csv')
                     ->label('Импорт CSV')
                     ->icon(Heroicon::ArrowUpTray)
