@@ -4,8 +4,10 @@ namespace App\Filament\Resources\RegattaResults;
 
 use App\Actions\RegattaResult\ImportRegattaResultItemsAction;
 use App\Filament\Resources\RegattaResults\Pages\ManageRegattaResults;
+use App\Models\RaceResult;
 use App\Models\RegattaEntry;
 use App\Models\RegattaResult;
+use App\Models\Team;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -125,68 +127,191 @@ class RegattaResultResource extends Resource
     }
 
     /**
-     * Альтернативный вариант редактирования участников — компактная таблица.
+     * Гонки (события типа race) регаты по порядку.
+     *
+     * @return \Illuminate\Support\Collection<int, \App\Models\RegattaEvents>
      */
-    public static function itemsTableSchema(): Repeater
+    protected static function raceEventsFor(?RegattaResult $record): Collection
     {
+        if (! $record?->regatta) {
+            return collect();
+        }
+
+        return $record->regatta->races()
+            ->where('event_type', 'race')
+            ->orderBy('event_datetime')
+            ->orderBy('name')
+            ->get()
+            ->values();
+    }
+
+    /**
+     * Альтернативный вариант редактирования участников — компактная таблица.
+     * Для каждой гонки регаты добавляются колонки «место» и «очки» — они
+     * сохраняются в race_results через заявку команды (RegattaEntry).
+     */
+    public static function itemsTableSchema(RegattaResult $record): Repeater
+    {
+        $regattaId  = $record->regatta_id;
+        $raceEvents = self::raceEventsFor($record);
+
+        $columns = [
+            TableColumn::make('Команда'),
+            TableColumn::make('Яхта')->markAsRequired(false),
+            TableColumn::make('Очки'),
+            TableColumn::make('Место')->markAsRequired(false),
+        ];
+        foreach ($raceEvents as $race) {
+            $columns[] = TableColumn::make($race->name . ' · место')->markAsRequired(false);
+            $columns[] = TableColumn::make($race->name . ' · очки')->markAsRequired(false);
+        }
+
+        $fields = [
+            Select::make('team_id')
+                ->label('Команда')
+                ->relationship('team', 'name')
+                ->searchable()
+                ->preload()
+                ->required()
+                ->live()
+                ->afterStateUpdated(function ($state, Set $set) use ($regattaId): void {
+                    if (blank($state) || blank($regattaId)) {
+                        return;
+                    }
+
+                    $yachtId = RegattaEntry::query()
+                        ->where('regatta_id', $regattaId)
+                        ->where('team_id', $state)
+                        ->value('yacht_id');
+
+                    if (filled($yachtId)) {
+                        $set('yacht_id', $yachtId);
+                    }
+                }),
+
+            Select::make('yacht_id')
+                ->label('Яхта')
+                ->relationship('yacht', 'name')
+                ->searchable()
+                ->preload()
+                ->nullable(),
+
+            TextInput::make('total_points')
+                ->label('Очки')
+                ->numeric()
+                ->required()
+                ->default(0.0),
+
+            TextInput::make('final_position')
+                ->label('Место')
+                ->numeric()
+                ->nullable(),
+        ];
+        foreach ($raceEvents as $i => $race) {
+            $fields[] = TextInput::make("race_{$i}_position")
+                ->label($race->name . ' · место')
+                ->numeric()
+                ->nullable();
+            $fields[] = TextInput::make("race_{$i}_points")
+                ->label($race->name . ' · очки')
+                ->numeric()
+                ->nullable();
+        }
+
         return Repeater::make('items')
             ->label('Результаты участников')
             ->relationship('items')
-            ->table([
-                TableColumn::make('Команда'),
-                TableColumn::make('Яхта')->markAsRequired(false),
-                TableColumn::make('Очки'),
-                TableColumn::make('Место')->markAsRequired(false),
-            ])
-            ->schema([
+            ->table($columns)
+            ->schema($fields)
+            // ->relationship() ставит dehydrated(false); возвращаем true, чтобы строки
+            // (включая виртуальные поля race_*) попали в $data хука ->after() для сохранения
+            // результатов гонок. Ключ items не входит в $fillable RegattaResult — игнорируется.
+            ->dehydrated(true)
+            // Подгружаем существующие результаты гонок в виртуальные поля строки.
+            ->mutateRelationshipDataBeforeFillUsing(function (array $data) use ($regattaId, $raceEvents): array {
+                $entryId = RegattaEntry::query()
+                    ->where('regatta_id', $regattaId)
+                    ->where('team_id', $data['team_id'] ?? null)
+                    ->when(filled($data['yacht_id'] ?? null), fn ($q) => $q->where('yacht_id', $data['yacht_id']))
+                    ->value('id');
 
-                Select::make('team_id')
-                    ->label('Команда')
-                    ->relationship('team', 'name')
-                    ->searchable()
-                    ->preload()
-                    ->required()
-                    ->live()
-                    ->afterStateUpdated(function ($state, Set $set, Select $component): void {
-                        if (blank($state)) {
-                            return;
-                        }
+                $results = $entryId
+                    ? RaceResult::query()->where('regatta_entry_id', $entryId)->get()->keyBy('event_id')
+                    : collect();
 
-                        $regattaId = $component->getParentRepeater()?->getRecord()?->regatta_id;
+                foreach ($raceEvents as $i => $race) {
+                    $result = $results->get($race->id);
+                    $data["race_{$i}_position"] = $result?->position;
+                    $data["race_{$i}_points"]   = $result?->points;
+                }
 
-                        if (blank($regattaId)) {
-                            return;
-                        }
-
-                        $yachtId = RegattaEntry::query()
-                            ->where('regatta_id', $regattaId)
-                            ->where('team_id', $state)
-                            ->value('yacht_id');
-
-                        if (filled($yachtId)) {
-                            $set('yacht_id', $yachtId);
-                        }
-                    }),
-
-                Select::make('yacht_id')
-                    ->label('Яхта')
-                    ->relationship('yacht', 'name')
-                    ->searchable()
-                    ->preload()
-                    ->nullable(),
-                TextInput::make('total_points')
-                    ->label('Очки')
-                    ->numeric()
-                    ->required()
-                    ->default(0.0),
-                TextInput::make('final_position')
-                    ->label('Место')
-                    ->numeric()
-                    ->nullable(),
-            ])
+                return $data;
+            })
             ->defaultItems(0)
             ->addActionLabel('Добавить участника')
             ->columnSpanFull();
+    }
+
+    /**
+     * Сохраняет виртуальные поля результатов гонок из таблицы в race_results.
+     * Команды без заявки (RegattaEntry) пропускаются — выводится уведомление.
+     *
+     * @param  array<string, mixed>  $data  Данные формы edit_table
+     */
+    public static function saveRaceResults(RegattaResult $record, array $data): void
+    {
+        $raceEvents = self::raceEventsFor($record);
+
+        if ($raceEvents->isEmpty()) {
+            return;
+        }
+
+        $skipped = [];
+
+        foreach (($data['items'] ?? []) as $row) {
+            $teamId  = $row['team_id'] ?? null;
+            $yachtId = $row['yacht_id'] ?? null;
+
+            if (blank($teamId)) {
+                continue;
+            }
+
+            $entry = RegattaEntry::query()
+                ->where('regatta_id', $record->regatta_id)
+                ->where('team_id', $teamId)
+                ->when(filled($yachtId), fn ($q) => $q->where('yacht_id', $yachtId))
+                ->first();
+
+            if (! $entry) {
+                $skipped[] = Team::whereKey($teamId)->value('name') ?? $teamId;
+                continue;
+            }
+
+            foreach ($raceEvents as $i => $race) {
+                $position = $row["race_{$i}_position"] ?? null;
+                $points   = $row["race_{$i}_points"] ?? null;
+
+                if (blank($position) && blank($points)) {
+                    continue;
+                }
+
+                RaceResult::updateOrCreate(
+                    ['event_id' => $race->id, 'regatta_entry_id' => $entry->id],
+                    [
+                        'position' => filled($position) ? $position : null,
+                        'points'   => filled($points) ? $points : 0,
+                    ],
+                );
+            }
+        }
+
+        if ($skipped !== []) {
+            Notification::make()
+                ->title('Часть результатов гонок не сохранена')
+                ->body('Нет заявки на регату для команд: ' . implode(', ', array_unique($skipped)))
+                ->warning()
+                ->send();
+        }
     }
 
     public static function infolist(Schema $schema): Schema
@@ -287,10 +412,11 @@ class RegattaResultResource extends Resource
                     ->label('Редактировать таблицей')
                     ->icon(Heroicon::TableCells)
                     ->modalHeading('Редактировать результат регаты (таблица)')
-                    ->modalWidth('7xl')
-                    ->schema([
-                        self::itemsTableSchema(),
-                    ]),
+                    ->modalWidth('screen')
+                    ->schema(fn (RegattaResult $record): array => [
+                        self::itemsTableSchema($record),
+                    ])
+                    ->after(fn (RegattaResult $record, array $data) => self::saveRaceResults($record, $data)),
                 Action::make('import_csv')
                     ->label('Импорт CSV')
                     ->icon(Heroicon::ArrowUpTray)
