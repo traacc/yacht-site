@@ -8,8 +8,8 @@
 
 
   @font-face {
-    font-family: 'Furore';
-    src: url('../../../fonts/Furore.woff2') format('woff2');
+    font-family: 'TTLakesCondensed-DemiBold';
+    src: url('../../../fonts/TTLakesCondensed-DemiBold.woff2') format('woff2');
     font-weight: 500;
     font-style: normal;
     font-display: swap;
@@ -118,7 +118,7 @@
 }
 .fi-ta-table thead .fi-ta-header-cell, .fi-ta-table thead .fi-ta-actions-header-cell{
   @apply bg-white text-2xl font-medium;
-  font-family: 'Furore', sans-serif;
+  font-family: 'TTLakesCondensed-DemiBold', sans-serif;
 }
 
 @media (max-width: 768px) {
@@ -130,7 +130,7 @@
 }
 
 .fi-header {
-  font-family: 'Furore', sans-serif;
+  font-family: 'TTLakesCondensed-DemiBold', sans-serif;
   @apply text-3xl;
 }
 

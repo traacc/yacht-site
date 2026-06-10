@@ -68,7 +68,7 @@ class UserPanelProvider extends PanelProvider
             ])
             /*
             ->font(
-                'Furore',
+                'TTLakesCondensed-DemiBold',
                 url: asset('css/app.css'), 
                 provider: LocalFontProvider::class
             )
