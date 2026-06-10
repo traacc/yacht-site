@@ -126,6 +126,7 @@ class RegattaEntryResource extends Resource
                                     ->when($record, fn (Builder $q) => $q->where('id', '!=', $record->id)),
                             ),
                         )
+                        ->required()
                         ->pluck('name', 'id'),
                     )
                     ->live()

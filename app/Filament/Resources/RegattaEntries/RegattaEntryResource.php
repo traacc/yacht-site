@@ -117,6 +117,7 @@ class RegattaEntryResource extends Resource
                 Select::make('yacht_id')
                     ->label('Яхта')
                     ->relationship('yacht', 'name')
+                    ->required()
                     ->columnSpanFull(),
                 DatePicker::make('submitted_at')
                     ->label('Дата рассмотрения')
