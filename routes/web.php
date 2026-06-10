@@ -356,7 +356,7 @@ Route::get('/yachts', function () {
     $yachts = Yacht::with(['user', 'documents', 'regattaEntries.regatta', 'regattaEntries.team'])
         ->where('approval_status', 'approved')
         ->orderBy('name')
-        ->paginate(12);
+        ->paginate(250);
 
     $yachtsJson = $yachts->map(fn (Yacht $yacht) => [
         'id' => $yacht->id,
