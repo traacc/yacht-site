@@ -282,8 +282,8 @@ class RegattaResultExport
         $sheet->setCellValue("A{$startRow}", $item->final_position);
         $sheet->getStyle("A{$startRow}")->applyFromArray($centerBold);
 
-        // ── Sail number (yacht name used as sail № placeholder) ──────────────
-        $sailNumber = optional($item->yacht)->name ?? '';
+        // ── Sail number (номер ВФПС — он же парусный номер яхты) ─────────────
+        $sailNumber = optional($item->yacht)->vfps_number ?? '';
         $sheet->setCellValue("B{$startRow}", $sailNumber);
         $sheet->getStyle("B{$startRow}")->applyFromArray($centerNormal);
 
@@ -321,13 +321,16 @@ class RegattaResultExport
             } else {
                 $posValue = $raceResult && $raceResult->position !== null
                     ? $raceResult->position
-                    : 'dns';
+                    //: 'dns';
+                    : '-';
             }
 
             // Очки: при отсутствии результата начисляем N+1 (как DNS/DNF по правилам)
             $ptsValue = $raceResult && $raceResult->points !== null
                 ? (float) $raceResult->points
                 : ($raceCount + 1);
+
+            $ptsValue = 0;
 
             $sheet->setCellValue("{$posCol}{$startRow}", $posValue);
             $sheet->getStyle("{$posCol}{$startRow}")->applyFromArray($centerNormal);
@@ -351,12 +354,14 @@ class RegattaResultExport
             }
         }
 
+        /*
         if (!empty($sumCols)) {
             $formula = '=' . implode('+', $sumCols);
         } else {
             $formula = $item->total_points ?? 0;
         }
-
+        */
+        $formula = $item->total_points ?? 0;
         $sheet->setCellValue("T{$startRow}", $formula);
         $sheet->getStyle("T{$startRow}")->applyFromArray($centerBold);
 
