@@ -100,7 +100,7 @@
   @font-face {
     font-family: 'TTLakesCondensed-DemiBold';
     src: url('../fonts/TTLakesCondensed-DemiBold.woff2') format('woff2');
-    font-weight: 500;
+    font-weight: 600;
     font-style: normal;
     font-display: swap;
   }
@@ -147,7 +147,7 @@
 
   .a-font {
     font-family: 'TTLakesCondensed-DemiBold', sans-serif;
-    font-weight: 500;
+    font-weight: 600;
   }
 
   .section-title {
@@ -241,7 +241,7 @@
       color: #2E325C;
 
       font-family: 'TTLakesCondensed-DemiBold', sans;
-      font-weight: 500;
+      font-weight: 600;
 
       white-space: nowrap;
     }
