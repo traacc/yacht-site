@@ -49,7 +49,7 @@
                 <ul class="space-y-4">
                     <li class="flex items-center gap-2">
                         {!! file_get_contents(public_path('images/icons/phone.svg')) !!}
-                        <a href="tel:+79636101113">+7 (963) 610-11-13</a>
+                        <a href="tel:+79366101113">+7 (936) 610-11-13 </a>
                     </li>
                     <li class="flex items-center gap-2">
                         {!! file_get_contents(public_path('images/icons/mail.svg')) !!}
