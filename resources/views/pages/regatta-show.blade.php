@@ -428,7 +428,7 @@
                     </thead>
                     <tbody class="divide-y text-center font-medium  max-h-[80dvh] overflow-auto block md:table-row-group">
                         <template x-for="(member, i) in (activeTeamIndex !== null ? (entriesJson[activeTeamIndex]?.crew || []) : [])" :key="i">
-                            <tr class="hover:bg-white transition-colors border-b border-brand-border pb-8! md:pb-0!">
+                            <tr class="hover:bg-white transition-colors border-b border-brand-border pb-8! md:pb-0!" :class="{ 'font-bold': member.is_captain }">
                                 <td data-label="Участник" class="py-3" x-text="member.name"></td>
                                 <td data-label="Дата рождения" class="py-3" x-text="member.birthday"></td>
                                 <td data-label="Разряд" class="py-3" x-text="member.rank"></td>
