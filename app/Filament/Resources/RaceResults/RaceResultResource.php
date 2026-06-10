@@ -13,7 +13,10 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -59,12 +62,25 @@ class RaceResultResource extends Resource
                     )
                     ->searchable()
                     ->preload()
+                    ->live()
+                    ->afterStateUpdated(fn (Set $set) => $set('event_id', null))
                     ->required(),
                 Select::make('event_id')
                     ->label('Гонка')
-                    ->relationship('race', 'name')
+                    ->relationship(
+                        name: 'race',
+                        titleAttribute: 'name',
+                        modifyQueryUsing: function (Builder $query, Get $get): void {
+                            $regattaId = ($entryId = $get('regatta_entry_id'))
+                                ? RegattaEntry::whereKey($entryId)->value('regatta_id')
+                                : null;
+
+                            $query->where('regatta_id', $regattaId);
+                        },
+                    )
                     ->searchable()
                     ->preload()
+                    ->disabled(fn (Get $get): bool => ! $get('regatta_entry_id'))
                     ->required(),
                 TextInput::make('position')
                     ->numeric(),
