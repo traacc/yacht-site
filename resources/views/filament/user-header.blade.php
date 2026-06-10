@@ -71,7 +71,7 @@
                             <a href="{{ url('/admin/users') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Пользователи</a>
                             <a href="{{ url('/admin/ratings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Рейтинги</a>
                             <a href="{{ url('/admin/news') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Новости</a>
-                            <a href="{{ url('/admin/gallery') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Галерея</a>
+                            <a href="{{ url('/admin/galleries') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Галерея</a>
                         @else
                             <a href="{{ url('/user') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-brand-light hover:text-brand-red">Личный кабинет</a>
                             <div class="border-t border-gray-100 my-1"></div>
