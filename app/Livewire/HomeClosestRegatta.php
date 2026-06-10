@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Regatta;
+use App\Services\SettingsService;
 use App\Services\WeatherService;
 use App\Services\YandexMapService;
 use Livewire\Component;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 
 class HomeClosestRegatta extends Component
 {
-    public function render(WeatherService $weather, YandexMapService $map): \Illuminate\View\View
+    public function render(WeatherService $weather, YandexMapService $map, SettingsService $settings): \Illuminate\View\View
     {
         $regatta = Regatta::closestUpcomingAndActive();
 
@@ -60,6 +61,7 @@ class HomeClosestRegatta extends Component
             'startDateTime'  => $startDateTime,
             'lat'            => $regatta?->coordinates ? (float) $regatta->coordinates[0] : null,
             'lon'            => $regatta?->coordinates ? (float) $regatta->coordinates[1] : null,
+            'heroMedia'      => $settings->getHeroMedia(),
         ]);
     }
 }

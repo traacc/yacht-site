@@ -114,4 +114,34 @@ class SettingsService
             ->map(fn (string $path) => Storage::disk('public')->url($path))
             ->values();
     }
+
+    // ──────────────────────────────────────────────
+    // Hero-фон главной страницы
+    // ──────────────────────────────────────────────
+
+    /**
+     * Возвращает данные о фоновом медиа для hero-блока главной страницы.
+     *
+     * @return array{url: string, type: 'video'|'image'}|null
+     *         Публичный URL и тип медиа, либо null если файл не загружен.
+     */
+    public function getHeroMedia(): ?array
+    {
+        $path = collect((array) $this->get('home.hero_media', []))
+            ->flatten()
+            ->filter(fn ($v) => is_string($v) && $v !== '')
+            ->first();
+
+        if (! $path) {
+            return null;
+        }
+
+        $videoExtensions = ['mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v'];
+        $extension = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+
+        return [
+            'url'  => Storage::disk('public')->url($path),
+            'type' => in_array($extension, $videoExtensions, true) ? 'video' : 'image',
+        ];
+    }
 }

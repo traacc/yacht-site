@@ -19,7 +19,13 @@
         }));
     });
 </script>   
-<video autoplay muted playsinline loop src="{{ '/videos/hero_video_3.mp4' }}"  class="scale-[2.5] object-center absolute inset-0 w-full h-full object-cover"></video>
+@if(($heroMedia ?? null) && $heroMedia['type'] === 'video')
+    <video autoplay muted playsinline loop src="{{ $heroMedia['url'] }}" class="scale-[2.5] object-center absolute inset-0 w-full h-full object-cover"></video>
+@elseif(($heroMedia ?? null) && $heroMedia['type'] === 'image')
+    <img class="absolute inset-0 object-center w-full h-full object-cover" src="{{ $heroMedia['url'] }}" alt="">
+@else
+    <video autoplay muted playsinline loop src="{{ '/videos/hero_video_3.mp4' }}"  class="scale-[2.5] object-center absolute inset-0 w-full h-full object-cover"></video>
+@endif
     <!--<img class="absolute inset-0 object-[29%_50%] lg:object-[50%_50%] lg:top-0 w-full h-full object-cover" src="{{ asset('/images/bg/bg_hero.webp') }}" alt="">-->
 
     <div class="hero-overlay absolute inset-0"></div>

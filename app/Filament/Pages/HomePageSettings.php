@@ -70,6 +70,12 @@ class HomePageSettings extends Page
             ->values()
             ->all();
 
+        // Hero-фон: одиночный файл (изображение или видео)
+        $heroMedia = collect((array) $settings->get('home.hero_media', []))
+            ->flatten()
+            ->filter(fn ($v) => is_string($v) && $v !== '')
+            ->first();
+
         // Заполняем форму через fill() — это запускает afterStateHydrated на FileUpload
         $this->form->fill([
             // TOP-3 команд
@@ -93,6 +99,8 @@ class HomePageSettings extends Page
             'gallery_count'  => (int) $settings->get('home.gallery_count', 10),
             'gallery_random' => (bool) $settings->get('home.gallery_random', false),
             'gallery_sort'   => $settings->get('home.gallery_sort', 'manual') ?? 'manual',
+            // Hero-фон главной страницы
+            'hero_media' => $heroMedia,
             // Режим обновления сайта
             'maintenance_mode'    => (bool) $settings->get('home.maintenance_mode', false),
             'maintenance_message' => $settings->get('home.maintenance_message', 'Сайт в процессе обновления'),
@@ -139,6 +147,21 @@ class HomePageSettings extends Page
                             ->maxLength(255)
                             ->visible(fn ($get) => (bool) $get('maintenance_mode'))
                             ->rules(['nullable', 'string', 'max:255']),
+                    ]),
+
+                // ── Hero-фон главной страницы ─────────────────
+                Section::make('Фон главной страницы (Hero)')
+                    ->description('Загрузите изображение или видео для фона верхнего блока главной страницы. Если ничего не загружено — используется видео по умолчанию.')
+                    ->schema([
+                        FileUpload::make('hero_media')
+                            ->label('Фон (изображение или видео)')
+                            ->helperText('Поддерживаются изображения (JPG, PNG, WebP) и видео (MP4, WebM).')
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'])
+                            ->disk('public')
+                            ->directory('home/hero')
+                            ->visibility('public')
+                            ->maxSize(51200)
+                            ->columnSpanFull(),
                     ]),
 
                 // ── TOP-3 команд ──────────────────────────────
@@ -442,6 +465,14 @@ class HomePageSettings extends Page
         $settings->set('home.gallery_count',  (int) $data['gallery_count'], 'home');
         $settings->set('home.gallery_random', (bool) $data['gallery_random'], 'home');
         $settings->set('home.gallery_sort',   $data['gallery_sort'] ?? 'manual', 'home');
+
+        // Hero-фон: нормализуем к одиночному пути (строка) либо null
+        $heroMedia = collect((array) ($data['hero_media'] ?? []))
+            ->flatten()
+            ->filter(fn ($v) => is_string($v) && $v !== '')
+            ->first();
+
+        $settings->set('home.hero_media', $heroMedia, 'home');
 
         // Режим обновления сайта
         $settings->set('home.maintenance_mode', (bool) ($data['maintenance_mode'] ?? false), 'home');
