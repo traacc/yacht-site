@@ -223,6 +223,7 @@ class UserResource extends Resource
                 SelectFilter::make('sport_category')
                     ->label('Спортивный разряд')
                     ->options(SportCategory::class),
+                TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать пользователя'),
