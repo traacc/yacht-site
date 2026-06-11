@@ -219,6 +219,7 @@ class RegattaEntryResource extends Resource
                     ])
                     ->columns(3)
                     ->itemLabel(null)
+                    ->addActionLabel('Добавить члена экипажа')
                     ->deleteAction(
                         fn (Action $action) => $action
                             ->icon('heroicon-m-x-mark')

@@ -210,7 +210,7 @@ class ArchivedRegattaEntryResource extends Resource
                                 //'not_participating' => 'Не участвует',
                             ])
                             ->required(),
-                    ])->columns(2)->inset(),
+                    ])->columns(2)->inset()->addActionLabel('Добавить члена экипажа'),
 
                 // ── Документы заявки ──────────────────
                 Repeater::make('required_documents')
