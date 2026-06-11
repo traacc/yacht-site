@@ -53,24 +53,29 @@
                     Закрыть
                 </button>
             </div>
-        @elseif ($this->state === 'guest')
+        @elseif ($this->state === 'guest' || $this->state === 'form')
             <div class="flex items-center justify-between pb-3 mb-4">
                 <h3 class="text-lg font-medium text-[#2E325C] a-font">Подать заявку</h3>
                 <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
             </div>
             <p class="text-gray-600 mb-1">Заполните форму, чтобы подать заявку на участие в регате.</p>
-            <p class="text-sm text-gray-500 mb-4">
-                После отправки мы автоматически создадим для вас личный кабинет, а данные для входа отправим на email.
-                Уже есть аккаунт?
-                <button type="button" @click="$dispatch('open-login-modal'); $wire.closeModal()"
-                        class="text-[#2D92CE] font-medium hover:underline">Войти</button>
-            </p>
+            @guest
+                <p class="text-sm text-gray-500 mb-4">
+                    После отправки мы автоматически создадим для вас личный кабинет, а данные для входа отправим на email.
+                    Уже есть аккаунт?
+                    <button type="button" @click="$dispatch('open-login-modal'); $wire.closeModal()"
+                            class="text-[#2D92CE] font-medium hover:underline">Войти</button>
+                </p>
+            @else
+                <p class="text-sm text-gray-500 mb-4">Выберите команду, где вы капитан, или создайте новую — вы будете капитаном экипажа.</p>
+            @endguest
 
             <form wire:submit.prevent="submitGuest" class="space-y-4">
                 @error('general')
                     <div class="text-sm text-red-600 bg-red-50 p-3 rounded">{{ $message }}</div>
                 @enderror
 
+                @guest
                 {{-- Данные участника --}}
                 <div>
                     <label for="guestName" class="block text-sm text-brand-gray-light">ФИО</label>
@@ -100,15 +105,45 @@
                         @enderror
                     </div>
                 </div>
+                @endguest
 
-                {{-- Команда --}}
+                {{-- Команда: своя (где капитан) или новая --}}
                 <div>
-                    <label for="teamName" class="block text-sm text-brand-gray-light">Название команды</label>
-                    <input type="text" id="teamName" wire:model="teamName"
-                           class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('teamName') border-red-300 @enderror">
-                    @error('teamName')
-                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                    @enderror
+                    @auth
+                        @if ($this->captainTeams->isNotEmpty())
+                            <label class="block text-sm text-brand-gray-light mb-1">Команда</label>
+                            <div class="flex gap-4 mb-2 text-sm">
+                                <label class="inline-flex items-center gap-1.5">
+                                    <input type="radio" wire:model.live="teamMode" value="select" class="text-[#2D92CE]">
+                                    <span>Выбрать свою</span>
+                                </label>
+                                <label class="inline-flex items-center gap-1.5">
+                                    <input type="radio" wire:model.live="teamMode" value="create" class="text-[#2D92CE]">
+                                    <span>Создать новую</span>
+                                </label>
+                            </div>
+                        @endif
+                    @endauth
+
+                    @if (auth()->check() && $teamMode === 'select' && $this->captainTeams->isNotEmpty())
+                        <select wire:model.live="teamId"
+                                class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('teamId') border-red-300 @enderror">
+                            <option value="">Выберите команду</option>
+                            @foreach ($this->captainTeams as $team)
+                                <option value="{{ $team->id }}">{{ $team->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('teamId')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
+                    @else
+                        <label for="teamName" class="block text-sm text-brand-gray-light">Название команды</label>
+                        <input type="text" id="teamName" wire:model="teamName"
+                               class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('teamName') border-red-300 @enderror">
+                        @error('teamName')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
+                    @endif
                 </div>
 
                 {{-- Яхта: выбор свободной или создание новой --}}
@@ -327,21 +362,6 @@
                     </button>
                 </div>
             </form>
-        @elseif ($this->state === 'no-team')
-            <div class="flex items-center justify-end pb-3 mb-4">
-                <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
-            </div>
-            <div class="text-center py-6">
-                <p class="text-gray-600 mb-2">Для участия в регате нужно:</p>
-                <ul class="list-disc list-inside pl-4 mb-3">
-                    <li class="text-gray-600 mb-1">зарегистрировать команду</li>
-                    <li class="text-gray-600 mb-1">зарегистрировать и подтвердить яхту</li>
-                </ul>
-                <a href="{{ url('/user/team') }}"
-                   class="inline-flex justify-center bg-[#2D92CE] px-4 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90">
-                    Перейти в личный кабинет
-                </a>
-            </div>
         @elseif ($this->state === 'in-crew')
             <div class="flex items-center justify-between pb-3 mb-4">
                 <h3 class="text-lg font-medium text-[#2E325C] a-font">Участие в регате</h3>
@@ -383,176 +403,6 @@
                     Закрыть
                 </button>
             </div>
-        @else
-            <div class="flex items-center justify-between pb-3 mb-4">
-                <h3 class="text-lg font-medium text-[#2E325C] a-font">Подать заявку</h3>
-                <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
-            </div>
-            <p>Выберите команду и яхту, которые будут участвовать в регате.</p>
-            <p class="mb-3">Подать заявку может только организатор команды.</p>
-            <form wire:submit.prevent="submit" class="space-y-4">
-                @error('general')
-                    <div class="text-sm text-red-600 bg-red-50 p-3 rounded">{{ $message }}</div>
-                @enderror
-
-                <div>
-                    <label for="team" class="block text-sm text-brand-gray-light">Команда</label>
-                    <select id="team" wire:model.live="teamId"
-                            class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('teamId') border-red-300 @enderror">
-                        <option value="">Выберите команду</option>
-                        @foreach ($this->organizerTeams as $team)
-                            <option value="{{ $team->id }}">{{ $team->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('teamId')
-                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                    @enderror
-                </div>
-
-                <div>
-                    <label for="yacht" class="block text-sm text-brand-gray-light">Яхта</label>
-                    <select id="yacht" wire:model="yachtId"
-                            class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm  @error('yachtId') border-red-300 @enderror">
-                        <option value="">Выберите яхту</option>
-                        @foreach ($this->allFreeYachts as $yacht)
-                            <option value="{{ $yacht->id }}">{{ $yacht->name }} ({{ $yacht->vfps_number ?? 'без номера ВФПС' }})</option>
-                        @endforeach
-                    </select>
-                    @error('yachtId')
-                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                    @enderror
-                </div>
-
-                @php $teamMembers = $this->teamMembers(); @endphp
-                @if ($teamId && $teamMembers->isNotEmpty())
-                    <div class="border-t border-gray-200 pt-4">
-                        <p class="text-sm font-medium text-[#2E325C] mb-3">Экипаж</p>
-                        <p class="text-xs text-gray-500 mb-3">Выберите участников команды и укажите роль: основной или запасной.</p>
-                        @error('crew')
-                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                        @enderror
-                        @foreach ($teamMembers as $member)
-                            <div class="flex items-center gap-3 mb-2 py-2 px-3 bg-[#F8F8F8] rounded">
-                                <span class="text-sm flex-1">
-                                    {{ $member->user?->name ?? 'Неизвестный участник' }}
-                                    @if ($member->is_captain ?? false)
-                                        <span class="text-yellow-500 text-xs font-semibold ml-1">Капитан</span>
-                                    @endif
-                                </span>
-                                <select wire:model.change="crew.{{ $member->id }}"
-                                        class="text-sm border-gray-200 bg-white rounded p-1 min-w-[140px]">
-                                    <option value="">Не участвует</option>
-                                    <option value="main">Основной</option>
-                                    <option value="reserve">Запасной</option>
-                                    <option value="captain">Капитан</option>
-                                </select>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-
-                {{-- Поиск и добавление участников, не состоящих в команде --}}
-                @if ($teamId)
-                    <div class="border-t border-gray-200 pt-4" x-data="{
-                        query: @entangle('searchQuery'),
-                        results: @entangle('searchResults'),
-                        isOpen: false,
-                        selectedIndex: -1,
-                        init() {
-                            this.$watch('results', v => { this.isOpen = v.length > 0; this.selectedIndex = -1; });
-                        },
-                        selectItem(userId) {
-                            $wire.searchQuery = '';
-                            this.isOpen = false;
-                            $wire.addExternalMember(userId);
-                        },
-                        onKeydown(e) {
-                            if (!this.isOpen || this.results.length === 0) return;
-                            if (e.key === 'ArrowDown') { e.preventDefault(); this.selectedIndex = Math.min(this.selectedIndex + 1, this.results.length - 1); }
-                            else if (e.key === 'ArrowUp') { e.preventDefault(); this.selectedIndex = Math.max(this.selectedIndex - 1, -1); }
-                            else if (e.key === 'Enter' && this.selectedIndex >= 0) { e.preventDefault(); this.selectItem(this.results[this.selectedIndex].id); }
-                            else if (e.key === 'Escape') { this.isOpen = false; $wire.searchQuery = ''; }
-                        }
-                    }" x-on:click.away="isOpen = false">
-                        <p class="text-sm font-medium text-[#2E325C] mb-2">Добавить участника</p>
-                        <p class="text-xs text-gray-500 mb-3">Найдите пользователя, который ещё не состоит в команде, чтобы добавить его в экипаж. Можно добавить не более {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} участников.</p>
-
-                        @if (count($newMemberIds) >= \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS)
-                            <p class="text-xs text-amber-600">Достигнут лимит участников ({{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }}).</p>
-                        @else
-                        <div class="relative">
-                            <input type="text"
-                                   wire:model.live.debounce.350ms="searchQuery"
-                                   x-on:keydown="onKeydown($event)"
-                                   placeholder="Поиск по имени, фамилии или email..."
-                                   class="w-full border border-gray-200 bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
-
-                            {{-- Спиннер загрузки --}}
-                            <div wire:loading wire:target="searchQuery" class="absolute right-3 top-2.5 text-gray-400 text-xs">
-                                Поиск...
-                            </div>
-
-                            {{-- Выпадающий список результатов --}}
-                            <div x-show="isOpen" x-cloak
-                                 class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">
-                                <template x-for="(user, index) in results" :key="user.id">
-                                    <div x-on:click="selectItem(user.id)"
-                                         x-on:mouseenter="selectedIndex = index"
-                                         :class="{ 'bg-[#2D92CE]/10': selectedIndex === index }"
-                                         class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm border-b border-gray-100 last:border-b-0">
-                                        <span class="font-medium" x-text="user.name"></span>
-                                        <span x-show="user.patronymic" x-text="' ' + user.patronymic" class="text-gray-500"></span>
-                                        <span class="text-gray-400 text-xs ml-2" x-text="user.email"></span>
-                                    </div>
-                                </template>
-                                <div x-show="results.length === 0 && query.length > 0" class="px-3 py-2 text-sm text-gray-400">
-                                    Ничего не найдено
-                                </div>
-                            </div>
-                        </div>
-                        @endif
-                    </div>
-                @endif
-
-                @if ($this->requiredDocuments())
-                    <div class="border-t border-gray-200 pt-4">
-                        <p class="text-sm font-medium text-[#2E325C] mb-3">Документы</p>
-                        @foreach ($this->requiredDocuments() as $doc)
-                            <div class="mb-3">
-                                <label for="doc_{{ $doc['doc_type'] }}" class="block text-sm text-brand-gray-light">
-                                    {{ $doc['title'] }}
-                                    @if ($doc['is_required'] ?? false)
-                                        <span class="text-red-500">*</span>
-                                    @else
-                                        <span class="text-gray-400 text-xs">(необязательный)</span>
-                                    @endif
-                                </label>
-                                <input type="file"
-                                       id="doc_{{ $doc['doc_type'] }}"
-                                       wire:model="documentFiles.{{ $doc['doc_type'] }}"
-                                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" multiple
-                                       class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-[#F8F8F8] file:text-[#2E325C] hover:file:bg-gray-200">
-                                @error('documentFiles.' . $doc['doc_type'])
-                                    <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                                @enderror
-                                @error('documentFiles.' . $doc['doc_type'] . '.*')
-                                    <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                                @enderror
-                                <div wire:loading wire:target="documentFiles.{{ $doc['doc_type'] }}" class="text-xs text-blue-500 mt-1">Загрузка...</div>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-
-                <div class="mt-5 sm:mt-6">
-                    <button type="submit"
-                            wire:loading.attr="disabled"
-                            class="inline-flex w-full justify-center bg-[#2D92CE] px-3 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90 disabled:opacity-50">
-                        <span wire:loading.remove>Подать заявку →</span>
-                        <span wire:loading>Отправка...</span>
-                    </button>
-                </div>
-            </form>
         @endif
     </div>
 </div>
