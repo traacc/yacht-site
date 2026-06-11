@@ -256,7 +256,10 @@ class RegattaResultResource extends Resource
         return Yacht::query()
             ->whereIn('id', $yachtIds)
             ->orderBy('name')
-            ->pluck('name', 'id')
+            ->get()
+            ->mapWithKeys(fn (Yacht $yacht): array => [
+                $yacht->id => trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : '')),
+            ])
             ->all();
     }
 
