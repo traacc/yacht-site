@@ -9,8 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('regattas:update-statuses')->everyMinute();
-Schedule::command('model:prune')->everyMinute();
-
-Schedule::call(function () {
-    Yacht::onlyTrashed()->forceDelete();
-})->everyMinute();
+Schedule::command('model:prune')->daily();
