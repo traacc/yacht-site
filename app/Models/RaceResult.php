@@ -26,6 +26,7 @@ class RaceResult extends Model
         'penalty_code',
     ];
 
+    /*
     protected function casts(): array
     {
         return [
@@ -33,7 +34,8 @@ class RaceResult extends Model
             'points'   => 'decimal:3',
         ];
     }
-
+    */
+    
     // ──────────────────────────────────────────────
     // Relationships
     // ──────────────────────────────────────────────
