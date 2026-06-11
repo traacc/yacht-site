@@ -93,6 +93,7 @@
                     <div>
                         <label for="guestPhone" class="block text-sm text-brand-gray-light">Телефон</label>
                         <input type="text" id="guestPhone" wire:model="guestPhone"
+                               x-mask="+7 (999) 999-99-99" x-ref="phone"
                                class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('guestPhone') border-red-300 @enderror">
                         @error('guestPhone')
                             <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
