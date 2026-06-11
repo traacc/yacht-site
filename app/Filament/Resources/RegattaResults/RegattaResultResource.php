@@ -172,12 +172,11 @@ class RegattaResultResource extends Resource
             ->get()
             ->map(function ($crew): string {
                 $user = $crew->teamMember?->user;
-                $name = $user?->name
-                    ?: trim(($user?->first_name ?? '') . ' ' . ($user?->last_name ?? ''));
+                $name = $user?->name;
                 $name = $name !== '' ? $name : '—';
 
                 $role = match ($crew->role) {
-                    'captain' => ' (кэп)',
+                    'captain' => ' (кап)',
                     'reserve' => ' (зап)',
                     default   => '',
                 };
