@@ -131,7 +131,7 @@
                         @error('newYachtName')
                             <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                         @enderror
-                        <input type="text" wire:model="newYachtVfps" placeholder="Номер ВФПС (необязательно)"
+                        <input type="text" wire:model="newYachtVfps" placeholder="Номер паруса"
                                class="mt-2 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm">
                     @else
                         <select wire:model="yachtId"
