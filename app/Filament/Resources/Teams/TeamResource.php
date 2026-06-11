@@ -239,6 +239,7 @@ class TeamResource extends Resource
                 ]),
                 TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
+            ->defaultSort('name')
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать команду'),
                 DeleteAction::make()
