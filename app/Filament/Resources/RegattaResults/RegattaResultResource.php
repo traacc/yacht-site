@@ -16,6 +16,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
@@ -24,6 +25,7 @@ use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -32,6 +34,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Collection;
+use Illuminate\Support\HtmlString;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -146,6 +149,47 @@ class RegattaResultResource extends Resource
     }
 
     /**
+     * Список участников (экипаж заявки) команды для отображения в таблице.
+     */
+    protected static function crewListFor(?string $regattaId, ?string $teamId, ?string $yachtId): HtmlString | string
+    {
+        if (blank($regattaId) || blank($teamId)) {
+            return '—';
+        }
+
+        $entry = RegattaEntry::query()
+            ->where('regatta_id', $regattaId)
+            ->where('team_id', $teamId)
+            ->when(filled($yachtId), fn ($q) => $q->where('yacht_id', $yachtId))
+            ->first();
+
+        if (! $entry) {
+            return '—';
+        }
+
+        $rows = $entry->crew()
+            ->with('teamMember.user')
+            ->get()
+            ->map(function ($crew): string {
+                $user = $crew->teamMember?->user;
+                $name = $user?->name
+                    ?: trim(($user?->first_name ?? '') . ' ' . ($user?->last_name ?? ''));
+                $name = $name !== '' ? $name : '—';
+
+                $role = match ($crew->role) {
+                    'captain' => ' (кэп)',
+                    'reserve' => ' (зап)',
+                    default   => '',
+                };
+
+                return e($name) . $role;
+            })
+            ->implode('<br>');
+
+        return $rows !== '' ? new HtmlString($rows) : '—';
+    }
+
+    /**
      * Альтернативный вариант редактирования участников — компактная таблица.
      * Для каждой гонки регаты добавляются колонки «место» и «очки» — они
      * сохраняются в race_results через заявку команды (RegattaEntry).
@@ -158,6 +202,7 @@ class RegattaResultResource extends Resource
         $columns = [
             TableColumn::make('Команда'),
             TableColumn::make('Яхта')->markAsRequired(false),
+            TableColumn::make('Участники')->markAsRequired(false),
             TableColumn::make('Очки'),
             TableColumn::make('Место')->markAsRequired(false),
         ];
@@ -195,6 +240,14 @@ class RegattaResultResource extends Resource
                 ->searchable()
                 ->preload()
                 ->nullable(),
+
+            Placeholder::make('crew_list')
+                ->label('Участники')
+                ->content(fn (Get $get): HtmlString | string => self::crewListFor(
+                    $regattaId,
+                    $get('team_id'),
+                    $get('yacht_id'),
+                )),
 
             TextInput::make('total_points')
                 ->label('Очки')
