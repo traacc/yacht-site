@@ -15,7 +15,9 @@ final class GenerateRegattaTeamsPdfAction
     {
         $entries = $regatta->approvedEntries()
             ->with(['team.organizer', 'crew.teamMember.user', 'yacht'])
-            ->get();
+            ->get()
+            ->sortBy(fn ($entry) => $entry->team?->name, SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
 
         if ($entries->isEmpty()) {
             abort(404, 'Нет заявленных команд для скачивания');

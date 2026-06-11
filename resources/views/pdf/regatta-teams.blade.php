@@ -170,7 +170,7 @@
                 @php($crew = $entry->crew ?? collect())
                 @php($captain = $crew->firstWhere('role', 'captain'))
                 @php($captainUser = $captain?->teamMember?->user)
-                @php($members = $crew->reject(fn ($c) => $c->role === 'captain'))
+                @php($members = $crew->reject(fn ($c) => $c->role === 'captain')->sortBy(fn ($c) => $c->teamMember?->user?->name, SORT_NATURAL | SORT_FLAG_CASE)->values())
                 <tr class="team-row">
                     <td class="center team-num">{{ $index + 1 }}</td>
                     <td>
