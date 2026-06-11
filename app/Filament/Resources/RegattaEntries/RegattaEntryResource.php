@@ -400,16 +400,33 @@ class RegattaEntryResource extends Resource
                         unset($data['required_documents'], $data['crew']);
 
                         // Проверка дубликата: та же команда уже подала заявку на эту регату?
-                        $exists = RegattaEntry::where('regatta_id', $data['regatta_id'])
+                        $conflict = RegattaEntry::where('regatta_id', $data['regatta_id'])
                             ->where('team_id', $data['team_id'])
                             ->where('id', '!=', $record->id)
-                            ->exists();
+                            ->first();
 
-                        if ($exists) {
+                        if ($conflict) {
+                            // Сохраняем данные формы, чтобы кнопка «Перезаписать» могла их применить.
+                            session()->put("regatta_entry_overwrite:{$record->id}", [
+                                'data'        => $data,
+                                'docs'        => $requiredDocs,
+                                'crew'        => $crew,
+                                'conflict_id' => $conflict->id,
+                            ]);
+
                             \Filament\Notifications\Notification::make()
                                 ->title('Заявка уже существует')
-                                ->body('Эта команда уже подала заявку на выбранную регату.')
+                                ->body('Эта команда уже подала заявку на эту регату. Можно перезаписать существующую заявку данными из формы.')
                                 ->danger()
+                                ->persistent()
+                                ->actions([
+                                    Action::make('overwrite')
+                                        ->label('Перезаписать')
+                                        ->color('danger')
+                                        ->button()
+                                        ->close()
+                                        ->dispatch('overwriteRegattaEntry', ['recordId' => $record->id]),
+                                ])
                                 ->send();
 
                             $action->halt();
