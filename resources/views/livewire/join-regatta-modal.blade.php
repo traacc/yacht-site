@@ -267,7 +267,7 @@
                     <li class="text-gray-600 mb-1">зарегистрировать команду</li>
                     <li class="text-gray-600 mb-1">зарегистрировать и подтвердить яхту</li>
                 </ul>
-                <a href="{{ url('/user') }}"
+                <a href="{{ url('/user/team') }}"
                    class="inline-flex justify-center bg-[#2D92CE] px-4 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90">
                     Перейти в личный кабинет
                 </a>
