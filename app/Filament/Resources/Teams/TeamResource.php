@@ -245,7 +245,7 @@ class TeamResource extends Resource
                     ->label('Удалить')
                     ->modalHeading('Удалить команду')
                     ->hidden(false) // показывать и для уже удалённых записей
-                    ->using(fn (Team $record): bool => (bool) $record->forceDelete()),
+                    ->using(fn (Team $record, DeleteAction $action) => \App\Support\SafeDelete::single($record, $action, 'команду')),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
             ])
@@ -253,7 +253,7 @@ class TeamResource extends Resource
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
                         ->label('Удалить')
-                        ->using(fn (\Illuminate\Support\Collection $records) => $records->each->forceDelete()),
+                        ->using(fn (\Illuminate\Support\Collection $records, DeleteBulkAction $action) => \App\Support\SafeDelete::bulk($records, $action, 'команды')),
                     ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),
                 ]),

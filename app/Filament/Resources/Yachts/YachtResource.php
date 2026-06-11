@@ -400,14 +400,14 @@ class YachtResource extends Resource
                     ->label('Удалить')
                     ->modalHeading('Удалить яхту')
                     ->hidden(false) // показывать и для уже удалённых записей
-                    ->using(fn (Yacht $record): bool => (bool) $record->forceDelete()),
+                    ->using(fn (Yacht $record, DeleteAction $action) => \App\Support\SafeDelete::single($record, $action, 'яхту')),
                 RestoreAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
                         ->label('Удалить')
-                        ->using(fn (\Illuminate\Support\Collection $records) => $records->each->forceDelete()),
+                        ->using(fn (\Illuminate\Support\Collection $records, DeleteBulkAction $action) => \App\Support\SafeDelete::bulk($records, $action, 'яхты')),
                     RestoreBulkAction::make(),
                 ]),
             ]);

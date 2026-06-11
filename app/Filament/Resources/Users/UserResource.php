@@ -229,14 +229,14 @@ class UserResource extends Resource
                 DeleteAction::make()->label('Удалить')
                     ->modalHeading('Удалить пользователя')
                     ->hidden(false) // показывать и для уже удалённых записей
-                    ->using(fn (User $record): bool => (bool) $record->forceDelete()),
+                    ->using(fn (User $record, DeleteAction $action) => \App\Support\SafeDelete::single($record, $action, 'пользователя')),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()->label('Удалить')
-                        ->using(fn (\Illuminate\Support\Collection $records) => $records->each->forceDelete()),
+                        ->using(fn (\Illuminate\Support\Collection $records, DeleteBulkAction $action) => \App\Support\SafeDelete::bulk($records, $action, 'пользователи')),
                     ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),
                 ]),
