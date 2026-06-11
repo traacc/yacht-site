@@ -6,6 +6,7 @@ use App\Actions\RegattaResult\ImportRegattaResultItemsAction;
 use App\Filament\Resources\RegattaResults\Pages\ManageRegattaResults;
 use App\Models\RaceResult;
 use App\Models\RegattaEntry;
+use App\Models\RegattaEvents;
 use App\Models\RegattaResult;
 use App\Models\Team;
 use BackedEnum;
@@ -15,7 +16,9 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Repeater\TableColumn;
@@ -25,6 +28,7 @@ use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
@@ -146,6 +150,47 @@ class RegattaResultResource extends Resource
             ->orderBy('name')
             ->get()
             ->values();
+    }
+
+    /**
+     * Управление гонками регаты (добавить / изменить / удалить) прямо из окна таблицы.
+     * Сохраняется через relationship regattaRaces (RegattaEvents типа race).
+     */
+    public static function racesManagerSchema(): Section
+    {
+        return Section::make('Гонки регаты')
+            ->description('Колонки с результатами обновятся после повторного открытия таблицы.')
+            ->collapsible()
+            ->collapsed()
+            ->schema([
+                Repeater::make('regattaRaces')
+                    ->hiddenLabel()
+                    ->relationship('regattaRaces')
+                    ->table([
+                        TableColumn::make('Название'),
+                        TableColumn::make('Дата и время')->markAsRequired(false),
+                    ])
+                    ->schema([
+                        TextInput::make('name')
+                            ->label('Название')
+                            ->required(),
+
+                        DateTimePicker::make('event_datetime')
+                            ->label('Дата и время')
+                            ->seconds(false)
+                            ->nullable(),
+                    ])
+                    // Новые события создаём именно как гонку (по умолчанию в БД — schedule).
+                    ->mutateRelationshipDataBeforeCreateUsing(function (array $data): array {
+                        $data['event_type'] = 'race';
+
+                        return $data;
+                    })
+                    ->defaultItems(0)
+                    ->addActionLabel('Добавить гонку')
+                    ->deleteAction(fn ($action) => $action->requiresConfirmation())
+                    ->columnSpanFull(),
+            ]);
     }
 
     /**
@@ -314,11 +359,19 @@ class RegattaResultResource extends Resource
      */
     public static function saveRaceResults(RegattaResult $record, array $data): void
     {
-        $raceEvents = self::raceEventsFor($record);
+        // Точное соответствие индекс колонки → id гонки, зафиксированное при открытии
+        // таблицы. Это исключает рассинхрон, если в этом же сохранении гонки
+        // добавили/переименовали/переупорядочили в блоке «Гонки регаты».
+        $eventIds = array_values(array_filter(
+            explode(',', (string) ($data['race_event_ids'] ?? '')),
+        ));
 
-        if ($raceEvents->isEmpty()) {
+        if ($eventIds === []) {
             return;
         }
+
+        // Гонки, которые ещё существуют (могли удалить в блоке «Гонки регаты»).
+        $existingEventIds = RegattaEvents::whereIn('id', $eventIds)->pluck('id')->flip();
 
         $skipped = [];
 
@@ -341,7 +394,11 @@ class RegattaResultResource extends Resource
                 continue;
             }
 
-            foreach ($raceEvents as $i => $race) {
+            foreach ($eventIds as $i => $eventId) {
+                if (! $existingEventIds->has($eventId)) {
+                    continue;
+                }
+
                 $position = $row["race_{$i}_position"] ?? null;
                 $points   = $row["race_{$i}_points"] ?? null;
 
@@ -350,7 +407,7 @@ class RegattaResultResource extends Resource
                 }
 
                 RaceResult::updateOrCreate(
-                    ['event_id' => $race->id, 'regatta_entry_id' => $entry->id],
+                    ['event_id' => $eventId, 'regatta_entry_id' => $entry->id],
                     [
                         'position' => filled($position) ? $position : null,
                         'points'   => filled($points) ? $points : 0,
@@ -468,6 +525,11 @@ class RegattaResultResource extends Resource
                     ->modalHeading('Редактировать результат регаты (таблица)')
                     ->modalWidth('screen')
                     ->schema(fn (RegattaResult $record): array => [
+                        self::racesManagerSchema(),
+                        // Фиксируем соответствие колонок гонок их id (для корректного сохранения).
+                        Hidden::make('race_event_ids')
+                            ->dehydrated(true)
+                            ->formatStateUsing(fn (): string => self::raceEventsFor($record)->pluck('id')->implode(',')),
                         self::itemsTableSchema($record),
                     ])
                     ->after(fn (RegattaResult $record, array $data) => self::saveRaceResults($record, $data)),

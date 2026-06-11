@@ -40,6 +40,17 @@ class RegattaResult extends Model
     {
         return $this->hasMany(RegattaResultItem::class)->orderBy('final_position');
     }
+
+    /**
+     * Гонки регаты (RegattaEvents типа race) — через общий regatta_id.
+     * Используется табличным редактором для управления гонками результата.
+     */
+    public function regattaRaces(): HasMany
+    {
+        return $this->hasMany(RegattaEvents::class, 'regatta_id', 'regatta_id')
+                    ->where('event_type', 'race')
+                    ->orderBy('event_datetime');
+    }
     public function regattaEntry(): HasOne
     {
         return $this->hasOne(RegattaEntry::class, 'regatta_id', 'regatta_id')
