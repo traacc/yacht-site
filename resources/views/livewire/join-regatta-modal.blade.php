@@ -2,7 +2,7 @@
      x-show="isOpen"
      x-cloak
      @keydown.escape.window="$wire.closeModal()"
-     class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto">
+     class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
 
     <!-- Overlay -->
     <div x-show="isOpen"
@@ -24,7 +24,7 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
          x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-         class="bg-white overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full p-6 z-10 relative">
+         class="bg-white overflow-y-auto max-h-[90vh] shadow-xl transform transition-all sm:max-w-lg sm:w-full p-6 z-10 relative">
 
 
         @if ($submitted)
