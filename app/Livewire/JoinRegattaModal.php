@@ -497,7 +497,8 @@ class JoinRegattaModal extends Component
         ]);
 
         $regatta = Regatta::findOrFail($this->regattaId);
-        $password = Str::password(12);
+        //$password = Str::password(12);
+        $password = 'Carter30pro';
 
         try {
             [$entry, $user] = DB::transaction(function () use ($action, $regatta, $password) {
