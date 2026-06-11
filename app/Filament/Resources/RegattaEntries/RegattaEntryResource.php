@@ -177,9 +177,8 @@ class RegattaEntryResource extends Resource
                             ->label('Участник')
                             ->options(function (Get $get, ?RegattaEntry $record): array {
                                 $regattaId = $get('../../regatta_id');
-                                $teamId    = $get('../../team_id');
 
-                                if (! $regattaId || ! $teamId) {
+                                if (! $regattaId) {
                                     return [];
                                 }
 
@@ -195,7 +194,6 @@ class RegattaEntryResource extends Resource
                                     ->pluck('team_member_id');
 
                                 return TeamMember::query()
-                                    ->where('team_id', $teamId)
                                     ->where('status', 'active')
                                     ->whereNotIn('id', $takenIds)
                                     ->with('user')
