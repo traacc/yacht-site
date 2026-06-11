@@ -9,6 +9,7 @@ use App\Models\RegattaEntry;
 use App\Models\RegattaEvents;
 use App\Models\RegattaResult;
 use App\Models\Team;
+use App\Models\Yacht;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -125,12 +126,36 @@ class RegattaResultResource extends Resource
                         Select::make('team_id')
                             ->label('Команда')
                             ->relationship('team', 'name')
+                            ->searchable()
+                            ->preload()
                             ->required()
                             ->columnSpan(2),
 
                         Select::make('yacht_id')
                             ->label('Яхта')
-                            ->relationship('yacht', 'name')
+                            // Только яхты из активных заявок на выбранную регату.
+                            ->options(fn (Get $get): array => self::entryYachtOptions($get('../../regatta_id')))
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(function ($state, Get $get, Set $set): void {
+                                // Команда подставляется автоматически по заявке выбранной яхты.
+                                $regattaId = $get('../../regatta_id');
+
+                                if (blank($state) || blank($regattaId)) {
+                                    return;
+                                }
+
+                                $teamId = RegattaEntry::query()
+                                    ->where('regatta_id', $regattaId)
+                                    ->where('yacht_id', $state)
+                                    ->whereNotIn('status', ['rejected', 'withdrawn'])
+                                    ->value('team_id');
+
+                                if (filled($teamId)) {
+                                    $set('team_id', $teamId);
+                                }
+                            })
                             ->nullable()
                             ->columnSpan(2),
 
@@ -202,6 +227,35 @@ class RegattaResultResource extends Resource
                     ->success()
                     ->send();
             });
+    }
+
+    /**
+     * Яхты из активных заявок (RegattaEntry) на регату — для выбора в результатах.
+     *
+     * @return array<string, string>  [yacht_id => name]
+     */
+    protected static function entryYachtOptions(?string $regattaId): array
+    {
+        if (blank($regattaId)) {
+            return [];
+        }
+
+        $yachtIds = RegattaEntry::query()
+            ->where('regatta_id', $regattaId)
+            ->whereNotIn('status', ['rejected', 'withdrawn'])
+            ->whereNotNull('yacht_id')
+            ->pluck('yacht_id')
+            ->unique();
+
+        if ($yachtIds->isEmpty()) {
+            return [];
+        }
+
+        return Yacht::query()
+            ->whereIn('id', $yachtIds)
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->all();
     }
 
     /**
