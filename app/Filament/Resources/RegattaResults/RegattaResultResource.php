@@ -39,6 +39,7 @@ use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -74,6 +75,19 @@ class RegattaResultResource extends Resource
                         modifyQueryUsing: fn (Builder $query) => $query->orderBy('date_end', 'desc'),
                     )
                     ->required()
+                    ->live()
+                    ->afterStateUpdated(function ($state, Set $set): void {
+                        // Перезагружаем блок «Гонки регаты» под выбранную регату —
+                        // relationship-репитер сам по себе не реактивен.
+                        $races = [];
+                        foreach (self::raceEventsForRegatta($state) as $event) {
+                            $races[(string) $event->getKey()] = [
+                                'name'           => $event->name,
+                                'event_datetime' => $event->event_datetime?->format('Y-m-d H:i:s'),
+                            ];
+                        }
+                        $set('regattaRaces', $races);
+                    })
                     ->columnSpanFull(),
 
                 Select::make('result_type')
@@ -100,9 +114,13 @@ class RegattaResultResource extends Resource
                     ->required()
                     ->default('manual'),
 
+                self::racesManagerSchema()
+                    ->columnSpanFull(),
+
                 Repeater::make('items')
                     ->label('Результаты участников')
                     ->relationship('items')
+                    ->hintAction(self::fillItemsFromEntriesAction())
                     ->schema([
                         Select::make('team_id')
                             ->label('Команда')
@@ -134,17 +152,81 @@ class RegattaResultResource extends Resource
     }
 
     /**
+     * Кнопка «Заполнить по заявкам»: полностью пересоздаёт список участников
+     * по заявкам (RegattaEntry) на выбранную регату. Текущие строки сбрасываются.
+     * Берём активные заявки (не отклонённые и не отозванные).
+     */
+    protected static function fillItemsFromEntriesAction(): Action
+    {
+        return Action::make('fillFromEntries')
+            ->label('Заполнить по заявкам')
+            ->icon(Heroicon::UserGroup)
+            ->color('gray')
+            ->requiresConfirmation()
+            ->modalHeading('Заполнить по заявкам')
+            ->modalDescription('Текущий список участников будет очищен и заполнен заново по заявкам на регату.')
+            ->action(function (Get $get, Set $set): void {
+                $regattaId = $get('regatta_id');
+
+                if (blank($regattaId)) {
+                    Notification::make()
+                        ->title('Сначала выберите регату')
+                        ->warning()
+                        ->send();
+
+                    return;
+                }
+
+                $entries = RegattaEntry::query()
+                    ->where('regatta_id', $regattaId)
+                    ->whereNotIn('status', ['rejected', 'withdrawn'])
+                    ->get();
+
+                // Сбрасываем текущие строки и заполняем заново по заявкам.
+                $items = [];
+                foreach ($entries as $entry) {
+                    $items[(string) Str::uuid()] = [
+                        'team_id'        => $entry->team_id,
+                        'yacht_id'       => $entry->yacht_id,
+                        'total_points'   => 0.0,
+                        'final_position' => null,
+                    ];
+                }
+
+                $set('items', $items);
+
+                Notification::make()
+                    ->title($items !== []
+                        ? 'Добавлено участников: ' . count($items)
+                        : 'Активных заявок на эту регату нет')
+                    ->success()
+                    ->send();
+            });
+    }
+
+    /**
      * Гонки (события типа race) регаты по порядку.
      *
      * @return \Illuminate\Support\Collection<int, \App\Models\RegattaEvents>
      */
     protected static function raceEventsFor(?RegattaResult $record): Collection
     {
-        if (! $record?->regatta) {
+        return self::raceEventsForRegatta($record?->regatta_id);
+    }
+
+    /**
+     * Гонки (события типа race) указанной регаты по порядку.
+     *
+     * @return \Illuminate\Support\Collection<int, \App\Models\RegattaEvents>
+     */
+    protected static function raceEventsForRegatta(?string $regattaId): Collection
+    {
+        if (blank($regattaId)) {
             return collect();
         }
 
-        return $record->regatta->races()
+        return RegattaEvents::query()
+            ->where('regatta_id', $regattaId)
             ->where('event_type', 'race')
             ->orderBy('event_datetime')
             ->orderBy('name')
