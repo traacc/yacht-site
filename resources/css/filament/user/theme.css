@@ -229,13 +229,20 @@
     box-shadow: 0 10px 25px rgb(0 0 0 / 0.1);
 }
 
-/* Горизонтальный скролл для табличного репитера (много колонок гонок) */
+/* Скролл для табличного репитера: по горизонтали (много колонок гонок) и по вертикали (много строк) */
 .fi-scrollable-table-repeater {
-    overflow-x: auto;
+    overflow: auto;
+    max-height: 70vh;
 }
 .fi-scrollable-table-repeater > table {
     width: max-content;
     min-width: 100%;
+}
+/* Закреплённая шапка при вертикальном скролле */
+.fi-scrollable-table-repeater > table > thead > tr > th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 .hide-repeater-header-label .fi-fo-repeater-item {
