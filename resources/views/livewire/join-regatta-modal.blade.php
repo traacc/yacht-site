@@ -190,8 +190,8 @@
                     showNew: false,
                     selectedIndex: -1,
                     init() {
-                        this.$watch('results', v => { this.isOpen = v.length > 0 || this.query.trim().length > 0; this.selectedIndex = -1; });
-                        this.$watch('query', v => { if (v.trim().length === 0) this.isOpen = false; });
+                        this.$watch('results', () => { this.selectedIndex = -1; });
+                        this.$watch('query', v => { this.isOpen = v.trim().length > 0; });
                     },
                     selectItem(userId) {
                         $wire.searchQuery = '';
