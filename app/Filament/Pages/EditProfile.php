@@ -14,6 +14,7 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use App\Models\User;
 use Illuminate\Validation\Rule;
 
@@ -31,6 +32,19 @@ class EditProfile extends BaseEditProfile
     public static function getNavigationGroup(): ?string
     {
         return 'Аккаунт'; // Or set a group name like 'Аккаунт'
+    }
+
+    public function save(): void
+    {
+        try {
+            parent::save();
+        } catch (ValidationException $exception) {
+            Notification::make()
+                ->title('Не удалось сохранить изменения')
+                ->body($exception->validator->errors()->first())
+                ->danger()
+                ->send();
+        }
     }
 
     protected function getFormActions(): array
@@ -78,8 +92,6 @@ class EditProfile extends BaseEditProfile
     {
         return $schema
             ->components([
-
-
                         FileUpload::make('photo_url')
                             ->label('Изменить фотографию')
                             ->avatar()
@@ -95,8 +107,7 @@ class EditProfile extends BaseEditProfile
                         TextInput::make('name')
                             ->label('ФИО')
                             ->columnSpanFull()
-                            ->maxLength(255)
-                            ->rule(fn () => Rule::unique('users', 'name')->ignore(auth()->id())),
+                            ->maxLength(255),
                         /*
                         TextInput::make('first_name')
                             ->label('Имя')

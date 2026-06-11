@@ -375,11 +375,7 @@ class JoinRegattaModal extends Component
     public function submitGuest(SubmitRegattaEntryAction $action): void
     {
         $rules = [
-            'guestName'  => ['required', 'string', 'max:255', function ($attribute, $value, $fail) {
-                if (User::whereRaw('LOWER(name) = LOWER(?)', [$value])->exists()) {
-                    $fail('Пользователь с таким ФИО уже зарегистрирован');
-                }
-            }],
+            'guestName'  => ['required', 'string', 'max:255'],
             'guestEmail' => ['required', 'email', 'unique:users,email'],
             'guestPhone' => ['required', 'unique:users,phone'],
             'teamName'   => ['required', 'string', 'max:255'],

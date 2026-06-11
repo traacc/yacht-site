@@ -78,13 +78,7 @@ class UserResource extends Resource
                 TextInput::make('name')
                     ->label('ФИО')
                     ->placeholder('ФИО')
-                    ->required()
-                    ->rules([
-                        fn ($record) => \Illuminate\Validation\Rule::unique('users', 'name')->ignore($record?->id),
-                    ])
-                    ->validationMessages([
-                        'unique' => 'Пользователь с таким ФИО уже зарегистрирован',
-                    ]),
+                    ->required(),
                 /*
                 TextInput::make('first_name')
                     ->label('Имя')

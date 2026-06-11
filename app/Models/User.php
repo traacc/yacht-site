@@ -19,6 +19,7 @@ use Filament\Panel;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 
 use Illuminate\Support\Facades\DB;
@@ -80,6 +81,25 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 
     protected static function booted(): void
     {
+        static::saving(function (self $user) {
+            // Уникальность пользователя по сочетанию ФИО + дата рождения
+            if (blank($user->name) || blank($user->birth_date)) {
+                return;
+            }
+
+            $duplicateExists = static::query()
+                ->where('name', $user->name)
+                ->whereDate('birth_date', $user->birth_date)
+                ->when($user->exists, fn (Builder $q) => $q->whereKeyNot($user->getKey()))
+                ->exists();
+
+            if ($duplicateExists) {
+                throw ValidationException::withMessages([
+                    'name' => 'Пользователь с таким ФИО и датой рождения уже зарегистрирован',
+                ]);
+            }
+        });
+
         static::creating(function (self $user) {
             if ($user->external_id === null) {
                 // Атомарно увеличиваем счетчик и забираем новое значение

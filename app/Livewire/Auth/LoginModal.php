@@ -93,11 +93,7 @@ class LoginModal extends Component
     public function register()
     {
         $this->validate([
-            'name'                  => ['required', 'string', 'max:255', function ($attribute, $value, $fail) {
-                if (User::whereRaw('LOWER(name) = LOWER(?)', [$value])->exists()) {
-                    $fail('Пользователь с таким ФИО уже зарегистрирован');
-                }
-            }],
+            'name'                  => ['required', 'string', 'max:255'],
             /*
             'first_name'            => ['required', 'string', 'max:255'],
             'last_name'             => ['required', 'string', 'max:255'],
