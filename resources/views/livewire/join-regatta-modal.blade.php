@@ -176,13 +176,18 @@
                         <div class="mb-3 space-y-2">
                             @foreach ($guestMembers as $i => $member)
                                 <div class="flex items-center gap-3 py-2 px-3 bg-[#F8F8F8] rounded">
-                                    <span class="text-sm flex-1">{{ $member['name'] }}</span>
+                                    <span class="text-sm flex-1">
+                                        {{ $member['name'] }}
+                                        @if (!($member['registered'] ?? true))
+                                            <span class="text-gray-400 text-xs ml-1">(новый)</span>
+                                        @endif
+                                    </span>
                                     <select wire:model="guestMembers.{{ $i }}.role"
                                             class="text-sm border-gray-200 bg-white rounded p-1 min-w-[120px]">
                                         <option value="main">Основной</option>
                                         <option value="reserve">Запасной</option>
                                     </select>
-                                    <button type="button" wire:click="removeGuestMember('{{ $member['user_id'] }}')"
+                                    <button type="button" wire:click="removeGuestMember('{{ $member['ref'] }}')"
                                             class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
                                 </div>
                             @endforeach
@@ -213,6 +218,62 @@
                             </template>
                             <div x-show="results.length === 0 && query.length > 0" class="px-3 py-2 text-sm text-gray-400">
                                 Ничего не найдено
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Добавление незарегистрированного участника --}}
+                    <div class="mt-3" x-data="{ showNew: false }">
+                        <button type="button" x-show="!showNew" @click="showNew = true"
+                                class="text-sm text-[#2D92CE] font-medium hover:underline">
+                            + Добавить незарегистрированного участника
+                        </button>
+
+                        <div x-show="showNew" x-cloak class="mt-2 p-3 bg-[#F8F8F8] rounded space-y-2">
+                            <p class="text-xs text-gray-500">
+                                Мы автоматически создадим для участника личный кабинет.
+                            </p>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">ФИО</label>
+                                <input type="text" wire:model="newMemberName"
+                                       class="w-full border border-gray-200 bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
+                                @error('newMemberName')
+                                    <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Дата рождения</label>
+                                    <input type="date" wire:model="newMemberBirthDate"
+                                           class="w-full border border-gray-200 bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
+                                    @error('newMemberBirthDate')
+                                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Спортивный разряд</label>
+                                    <select wire:model="newMemberSportCategory"
+                                            class="w-full border border-gray-200 bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
+                                        <option value="">Не указан</option>
+                                        @foreach (\App\Enums\SportCategory::cases() as $cat)
+                                            <option value="{{ $cat->value }}">{{ $cat->getLabel() }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('newMemberSportCategory')
+                                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="flex gap-2 pt-1">
+                                <button type="button" wire:click="addUnregisteredGuestMember"
+                                        class="bg-[#2D92CE] text-white text-sm px-3 py-1.5 rounded hover:bg-[#2D92CE]/90">
+                                    Добавить
+                                </button>
+                                <button type="button"
+                                        @click="showNew = false; $wire.set('newMemberName', ''); $wire.set('newMemberBirthDate', ''); $wire.set('newMemberSportCategory', '')"
+                                        class="text-gray-500 text-sm px-3 py-1.5 hover:text-gray-700">
+                                    Отмена
+                                </button>
                             </div>
                         </div>
                     </div>

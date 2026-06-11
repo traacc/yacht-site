@@ -156,4 +156,63 @@ class GuestJoinRegattaTest extends TestCase
         // Капитан (организатор) + 1 добавленный участник
         $this->assertSame(2, $entry->crew()->count());
     }
+
+    public function test_guest_can_add_unregistered_member_who_is_auto_registered(): void
+    {
+        Mail::fake();
+
+        $regatta = Regatta::factory()->create();
+        $yacht = Yacht::factory()->create(['user_id' => User::factory()]);
+
+        $component = Livewire::test(JoinRegattaModal::class)
+            ->call('openModal', $regatta->id)
+            ->set('newMemberName', 'Новиков Новик Новикович')
+            ->set('newMemberBirthDate', '1995-05-20')
+            ->set('newMemberSportCategory', 'kms')
+            ->call('addUnregisteredGuestMember')
+            ->assertHasNoErrors()
+            ->assertCount('guestMembers', 1)
+            // Поля формы сброшены после добавления
+            ->assertSet('newMemberName', '');
+
+        $component->set('guestName', 'Капитан Немо')
+            ->set('guestEmail', 'nemo2@example.com')
+            ->set('guestPhone', '+79995554400')
+            ->set('teamName', 'Арго')
+            ->set('yachtMode', 'select')
+            ->set('yachtId', $yacht->id)
+            ->call('submitGuest')
+            ->assertHasNoErrors()
+            ->assertSet('submitted', true);
+
+        $member = User::where('name', 'Новиков Новик Новикович')->first();
+        $this->assertNotNull($member);
+        $this->assertSame('1995-05-20', $member->birth_date->format('Y-m-d'));
+        $this->assertSame('kms', $member->sport_category->value);
+        // Автоматически сгенерированные email и телефон
+        $this->assertStringEndsWith('@noemail.local', $member->email);
+        $this->assertNotNull($member->phone);
+        // Пароль по умолчанию
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('Carter30pro', $member->password));
+
+        $team = Team::where('name', 'Арго')->first();
+        $this->assertTrue(
+            TeamMember::where('team_id', $team->id)->where('user_id', $member->id)->exists()
+        );
+
+        $entry = RegattaEntry::where('team_id', $team->id)->first();
+        // Капитан (организатор) + 1 незарегистрированный участник
+        $this->assertSame(2, $entry->crew()->count());
+    }
+
+    public function test_unregistered_member_requires_name_and_birth_date(): void
+    {
+        $regatta = Regatta::factory()->create();
+
+        Livewire::test(JoinRegattaModal::class)
+            ->call('openModal', $regatta->id)
+            ->call('addUnregisteredGuestMember')
+            ->assertHasErrors(['newMemberName', 'newMemberBirthDate'])
+            ->assertCount('guestMembers', 0);
+    }
 }

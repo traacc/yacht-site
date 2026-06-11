@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Actions\Regatta\SubmitRegattaEntryAction;
+use App\Enums\SportCategory;
 use App\Enums\TeamMemberRole;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Mail\SendLoginCredentials;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -86,10 +88,21 @@ class JoinRegattaModal extends Component
 
     /**
      * Добавленные гостем участники экипажа (создаются при подаче заявки).
+     * Зарегистрированные — с user_id; незарегистрированные (registered=false) —
+     * с ФИО/датой рождения/разрядом, их аккаунты создаются при подаче заявки.
      *
-     * @var array<int, array{user_id: string, name: string, email: string, role: string}>
+     * @var array<int, array{registered: bool, ref: string, user_id: ?string, name: string, email: string, birth_date: ?string, sport_category: ?string, role: string}>
      */
     public array $guestMembers = [];
+
+    /** ФИО незарегистрированного участника */
+    public string $newMemberName = '';
+
+    /** Дата рождения незарегистрированного участника */
+    public string $newMemberBirthDate = '';
+
+    /** Спортивный разряд незарегистрированного участника */
+    public string $newMemberSportCategory = '';
 
     #[On('open-join-regatta-modal')]
     public function openModal(string $regattaId): void
@@ -114,6 +127,9 @@ class JoinRegattaModal extends Component
         $this->newYachtName = '';
         $this->newYachtVfps = '';
         $this->guestMembers = [];
+        $this->newMemberName = '';
+        $this->newMemberBirthDate = '';
+        $this->newMemberSportCategory = '';
     }
 
     public function closeModal(): void
@@ -124,6 +140,7 @@ class JoinRegattaModal extends Component
             'searchQuery', 'searchResults', 'newMemberIds',
             'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'teamName',
             'yachtMode', 'newYachtName', 'newYachtVfps', 'guestMembers',
+            'newMemberName', 'newMemberBirthDate', 'newMemberSportCategory',
         ]);
     }
 
@@ -168,7 +185,7 @@ class JoinRegattaModal extends Component
                 return;
             }
 
-            $excludeIds = array_column($this->guestMembers, 'user_id');
+            $excludeIds = array_values(array_filter(array_column($this->guestMembers, 'user_id')));
 
             $this->searchResults = User::where(function ($q) use ($query) {
                     $q->where('name', 'like', "%{$query}%")
@@ -222,22 +239,94 @@ class JoinRegattaModal extends Component
         }
 
         $this->guestMembers[] = [
-            'user_id' => (string) $user->id,
-            'name'    => $user->name,
-            'email'   => (string) $user->email,
-            'role'    => 'main',
+            'registered'     => true,
+            'ref'            => (string) Str::uuid(),
+            'user_id'        => (string) $user->id,
+            'name'           => $user->name,
+            'email'          => (string) $user->email,
+            'birth_date'     => null,
+            'sport_category' => null,
+            'role'           => 'main',
         ];
 
         $this->searchQuery = '';
         $this->searchResults = [];
     }
 
-    public function removeGuestMember(string $userId): void
+    /**
+     * Гость: добавить незарегистрированного участника в экипаж (transient-список).
+     * Реальный пользователь создаётся при подаче заявки (со случайным email/телефоном).
+     */
+    public function addUnregisteredGuestMember(): void
+    {
+        $rules = [
+            'newMemberName'      => ['required', 'string', 'max:255'],
+            'newMemberBirthDate' => ['required', 'date', 'before:today'],
+        ];
+
+        if ($this->newMemberSportCategory !== '') {
+            $rules['newMemberSportCategory'] = [Rule::enum(SportCategory::class)];
+        }
+
+        $this->validate($rules, [], [
+            'newMemberName'      => 'ФИО',
+            'newMemberBirthDate' => 'дата рождения',
+            'newMemberSportCategory' => 'разряд',
+        ]);
+
+        $name = trim($this->newMemberName);
+
+        // Уникальность по сочетанию ФИО + дата рождения (как в User::saving)
+        $exists = User::where('name', $name)
+            ->whereDate('birth_date', $this->newMemberBirthDate)
+            ->exists();
+
+        if ($exists) {
+            $this->addError('newMemberName', 'Пользователь с таким ФИО и датой рождения уже зарегистрирован');
+
+            return;
+        }
+
+        $this->guestMembers[] = [
+            'registered'     => false,
+            'ref'            => (string) Str::uuid(),
+            'user_id'        => null,
+            'name'           => $name,
+            'email'          => '',
+            'birth_date'     => $this->newMemberBirthDate,
+            'sport_category' => $this->newMemberSportCategory ?: null,
+            'role'           => 'main',
+        ];
+
+        $this->reset(['newMemberName', 'newMemberBirthDate', 'newMemberSportCategory']);
+    }
+
+    public function removeGuestMember(string $ref): void
     {
         $this->guestMembers = array_values(array_filter(
             $this->guestMembers,
-            fn (array $m): bool => $m['user_id'] !== $userId,
+            fn (array $m): bool => $m['ref'] !== $ref,
         ));
+    }
+
+    /** Сгенерировать уникальный «технический» email для незарегистрированного участника */
+    private function generateUniqueEmail(): string
+    {
+        do {
+            $email = 'noemail_' . Str::lower(Str::random(24)) . '@noemail.local';
+        } while (User::where('email', $email)->exists());
+
+        return $email;
+    }
+
+    /** Сгенерировать уникальный «технический» телефон для незарегистрированного участника */
+    private function generateUniquePhone(): string
+    {
+        do {
+            $phone = '+7' . str_pad((string) random_int(0, 9999999999), 10, '0', STR_PAD_LEFT);
+        } while (User::where('phone', $phone)->exists());
+
+        return $phone;
     }
 
     /**
@@ -439,9 +528,24 @@ class JoinRegattaModal extends Component
                 $crew = [(string) $organizerMember->id => 'captain'];
 
                 foreach ($this->guestMembers as $m) {
+                    // Незарегистрированный участник: создаём аккаунт со случайным email/телефоном
+                    if (! ($m['registered'] ?? false)) {
+                        $memberUser = User::create([
+                            'name'           => $m['name'],
+                            'birth_date'     => $m['birth_date'],
+                            'sport_category' => $m['sport_category'],
+                            'email'          => $this->generateUniqueEmail(),
+                            'phone'          => $this->generateUniquePhone(),
+                            'password'       => 'Carter30pro',
+                        ]);
+                        $memberUserId = (string) $memberUser->id;
+                    } else {
+                        $memberUserId = $m['user_id'];
+                    }
+
                     $member = TeamMember::create([
                         'team_id'   => $team->id,
-                        'user_id'   => $m['user_id'],
+                        'user_id'   => $memberUserId,
                         'role'      => TeamMemberRole::Member->value,
                         'status'    => 'active',
                         'joined_at' => now(),
