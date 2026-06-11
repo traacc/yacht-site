@@ -123,14 +123,6 @@ class RegattaResultResource extends Resource
                     ->relationship('items')
                     ->hintAction(self::fillItemsFromEntriesAction())
                     ->schema([
-                        Select::make('team_id')
-                            ->label('Команда')
-                            ->relationship('team', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                            ->columnSpan(2),
-
                         Select::make('yacht_id')
                             ->label('Яхта')
                             // Только яхты из активных заявок на выбранную регату.
@@ -157,6 +149,15 @@ class RegattaResultResource extends Resource
                                 }
                             })
                             ->nullable()
+                            ->columnSpan(2),
+
+                        Select::make('team_id')
+                            ->label('Команда')
+                            ->relationship('team', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->readOnly()
                             ->columnSpan(2),
 
                         TextInput::make('total_points')
