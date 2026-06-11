@@ -11,7 +11,8 @@
     Модальное окно управляется через Livewire ($activeTeamModal),
     Alpine используется только для CSS-анимации и закрытия по клику вне.
 --}}
-<div x-data="{ get modalOpen() { return {{ $activeTeamModal ? 'true' : 'false' }}; } }">
+<div x-data="{ get modalOpen() { return {{ $activeTeamModal ? 'true' : 'false' }}; } }"
+     x-effect="modalOpen ? document.body.classList.add('overflow-hidden') : document.body.classList.remove('overflow-hidden')">
 
     @if($mode === 'list')
     {{-- ===== РЕЖИМ: СПИСОК РЕГАТ С ФИЛЬТРАМИ ===== --}}
@@ -440,9 +441,6 @@
     --}}
     @if($activeTeamModal)
         <div
-            x-data
-            x-init="$nextTick(() => document.body.classList.add('overflow-hidden'))"
-            x-destroy="document.body.classList.remove('overflow-hidden')"
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
             @keydown.escape.window="$wire.closeTeamModal()"
         >
