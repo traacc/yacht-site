@@ -226,13 +226,17 @@ class UserResource extends Resource
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать пользователя'),
-                DeleteAction::make(),
+                DeleteAction::make()->label('Удалить')
+                    ->modalHeading('Удалить пользователя')
+                    ->hidden(false) // показывать и для уже удалённых записей
+                    ->using(fn (User $record): bool => (bool) $record->forceDelete()),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    //DeleteBulkAction::make(),
+                    DeleteBulkAction::make()->label('Удалить')
+                        ->using(fn (\Illuminate\Support\Collection $records) => $records->each->forceDelete()),
                     ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),
                 ]),

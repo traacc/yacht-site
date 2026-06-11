@@ -241,13 +241,19 @@ class TeamResource extends Resource
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать команду'),
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->label('Удалить')
+                    ->modalHeading('Удалить команду')
+                    ->hidden(false) // показывать и для уже удалённых записей
+                    ->using(fn (Team $record): bool => (bool) $record->forceDelete()),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->label('Удалить')
+                        ->using(fn (\Illuminate\Support\Collection $records) => $records->each->forceDelete()),
                     ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),
                 ]),
