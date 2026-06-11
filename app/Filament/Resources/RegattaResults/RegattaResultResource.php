@@ -136,7 +136,7 @@ class RegattaResultResource extends Resource
 
                         TextInput::make('total_points')
                             ->label('Очки')
-                            ->numeric()
+                            //->numeric()
                             ->required()
                             ->default(0.0),
 
@@ -377,7 +377,7 @@ class RegattaResultResource extends Resource
 
             TextInput::make('total_points')
                 ->label('Очки')
-                ->numeric()
+                //->numeric()
                 ->required()
                 ->default(0.0),
 
@@ -389,11 +389,11 @@ class RegattaResultResource extends Resource
         foreach ($raceEvents as $i => $race) {
             $fields[] = TextInput::make("race_{$i}_position")
                 ->label($race->name . ' · место')
-                ->numeric()
+                //->numeric()
                 ->nullable();
             $fields[] = TextInput::make("race_{$i}_points")
                 ->label($race->name . ' · очки')
-                ->numeric()
+                //->numeric()
                 ->nullable();
         }
 
@@ -549,7 +549,7 @@ class RegattaResultResource extends Resource
                             ->placeholder('-'),
                         TextEntry::make('total_points')
                             ->label('Очки')
-                            ->numeric(),
+                            //->numeric(),
                     ])
                     ->columns(4)
                     ->columnSpanFull(),
