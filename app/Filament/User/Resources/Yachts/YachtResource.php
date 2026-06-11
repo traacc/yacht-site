@@ -347,7 +347,10 @@ class YachtResource extends Resource
 
                         return $record;
                     }),
-                DeleteAction::make()->hiddenLabel(),
+                DeleteAction::make()->hiddenLabel()
+                    ->modalHeading('Удалить яхту')
+                    ->hidden(false) // показывать и для уже удалённых записей
+                    ->using(fn (Yacht $record): bool => (bool) $record->forceDelete()),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
             ])

@@ -319,7 +319,10 @@ class TeamResource extends Resource
                 */
                 DeleteAction::make()
                     ->hiddenLabel()
-                    ->visible(fn (Team $record): bool => auth()->user()?->can('archiveTeam', $record) ?? false),
+                    ->visible(fn (Team $record): bool => auth()->user()?->can('archiveTeam', $record) ?? false)
+                    ->modalHeading('Удалить команду')
+                    ->hidden(false) // показывать и для уже удалённых записей
+                    ->using(fn (Team $record): bool => (bool) $record->forceDelete()),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([]),
