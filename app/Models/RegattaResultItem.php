@@ -22,7 +22,7 @@ class RegattaResultItem extends Model
     protected function casts(): array
     {
         return [
-            'total_points'   => 'decimal:3',
+            //'total_points'   => 'decimal:3',
             'final_position' => 'integer',
         ];
     }
