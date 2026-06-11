@@ -159,7 +159,7 @@
         <thead>
             <tr>
                 <th class="center" style="width: 32px;">№</th>
-                <th style="width: 120px;">Яхта / Капитан</th>
+                <th style="width: 120px;">Команда / Яхта</th>
                 <th>Участник</th>
                 <th style="width: 90px;">Дата рождения</th>
                 <th class="center" style="width: 70px;">Разряд</th>
@@ -168,17 +168,20 @@
         <tbody>
             @foreach($entries as $index => $entry)
                 @php($crew = $entry->crew ?? collect())
+                @php($captain = $crew->firstWhere('role', 'captain'))
+                @php($captainUser = $captain?->teamMember?->user)
+                @php($members = $crew->reject(fn ($c) => $c->role === 'captain'))
                 <tr class="team-row">
                     <td class="center team-num">{{ $index + 1 }}</td>
                     <td>
                         <span class="team-name">{{ $entry->team?->name ?? '—' }}</span><br>
                         <span class="muted">{{ $entry->yacht?->name ?? '—' }}</span>
                     </td>
-                    <td colspan="3">
-                        Капитан: <strong>{{ $entry->crew->firstWhere('role', 'captain')?->teamMember?->user?->name ?? '—' }}</strong>
-                    </td>
+                    <td class="member-name">Капитан: <strong>{{ $captainUser?->name ?? '—' }}</strong></td>
+                    <td>{{ $captainUser?->birth_date?->format('d.m.Y') ?? '—' }}</td>
+                    <td class="center">{{ $captainUser?->sport_category?->getLabel() ?? '—' }}</td>
                 </tr>
-                @forelse($crew as $crewMember)
+                @forelse($members as $crewMember)
                     @php($user = $crewMember->teamMember?->user)
                     <tr class="member-row">
                         <td></td>
@@ -191,7 +194,7 @@
                     <tr class="member-row">
                         <td></td>
                         <td></td>
-                        <td colspan="3" class="muted">Состав не указан</td>
+                        <td colspan="3" class="muted">Других участников нет</td>
                     </tr>
                 @endforelse
             @endforeach
