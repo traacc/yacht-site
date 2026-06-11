@@ -157,7 +157,8 @@ class RegattaResultResource extends Resource
                             ->searchable()
                             ->preload()
                             ->required()
-                            ->readOnly()
+                            ->disabled()
+                            ->dehydrated()
                             ->columnSpan(2),
 
                         TextInput::make('total_points')
