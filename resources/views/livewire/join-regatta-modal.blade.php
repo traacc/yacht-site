@@ -187,17 +187,26 @@
                     query: @entangle('searchQuery'),
                     results: @entangle('searchResults'),
                     isOpen: false,
+                    showNew: false,
                     selectedIndex: -1,
                     init() {
-                        this.$watch('results', v => { this.isOpen = v.length > 0; this.selectedIndex = -1; });
+                        this.$watch('results', v => { this.isOpen = v.length > 0 || this.query.trim().length > 0; this.selectedIndex = -1; });
+                        this.$watch('query', v => { if (v.trim().length === 0) this.isOpen = false; });
                     },
                     selectItem(userId) {
                         $wire.searchQuery = '';
                         this.isOpen = false;
                         $wire.addGuestMember(userId);
                     },
+                    addNewFromQuery() {
+                        const name = this.query.trim();
+                        this.isOpen = false;
+                        $wire.searchQuery = '';
+                        $wire.set('newMemberName', name);
+                        this.showNew = true;
+                    },
                     onKeydown(e) {
-                        if (!this.isOpen || this.results.length === 0) return;
+                        if (!this.isOpen) return;
                         if (e.key === 'ArrowDown') { e.preventDefault(); this.selectedIndex = Math.min(this.selectedIndex + 1, this.results.length - 1); }
                         else if (e.key === 'ArrowUp') { e.preventDefault(); this.selectedIndex = Math.max(this.selectedIndex - 1, -1); }
                         else if (e.key === 'Enter' && this.selectedIndex >= 0) { e.preventDefault(); this.selectItem(this.results[this.selectedIndex].id); }
@@ -261,15 +270,22 @@
                             <div x-show="results.length === 0 && query.length > 0" class="px-3 py-2 text-sm text-gray-400">
                                 Ничего не найдено
                             </div>
+                            <div x-show="query.trim().length > 0"
+                                 x-on:click="addNewFromQuery()"
+                                 class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm text-[#2D92CE] font-medium border-t border-gray-100">
+                                + Добавить «<span x-text="query.trim()"></span>» как нового участника
+                            </div>
                         </div>
                     </div>
 
-                    {{-- Добавление незарегистрированного участника --}}
-                    <div class="mt-3" x-data="{ showNew: false }">
+                    {{-- Добавление незарегистрированного участника (showNew — в общем scope экипажа) --}}
+                    <div class="mt-3">
+                        <!--
                         <button type="button" x-show="!showNew" @click="showNew = true"
                                 class="text-sm text-[#2D92CE] font-medium hover:underline">
                             + Добавить незарегистрированного участника
                         </button>
+                        -->
 
                         <div x-show="showNew" x-cloak class="mt-2 p-3 bg-[#F8F8F8] rounded space-y-2">
                             <p class="text-xs text-gray-500">
