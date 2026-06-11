@@ -8,6 +8,7 @@ use App\Filament\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\RegattaEntry;
+use App\Models\RegattaEntryCrew;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -174,16 +175,27 @@ class RegattaEntryResource extends Resource
                     ->schema([
                         Select::make('team_member_id')
                             ->label('Участник')
-                            ->options(function (Get $get): array {
-                                $teamId = $get('../../team_id');
+                            ->options(function (Get $get, ?RegattaEntry $record): array {
+                                $regattaId = $get('../../regatta_id');
 
-                                if (! $teamId) {
+                                if (! $regattaId) {
                                     return [];
                                 }
 
+                                // Участники, уже записанные в экипажи других заявок на эту регату
+                                $takenIds = RegattaEntryCrew::query()
+                                    ->whereHas('regattaEntry', function (Builder $query) use ($regattaId, $record): void {
+                                        $query->where('regatta_id', $regattaId);
+
+                                        if ($record) {
+                                            $query->whereKeyNot($record->getKey());
+                                        }
+                                    })
+                                    ->pluck('team_member_id');
+
                                 return TeamMember::query()
-                                    ->where('team_id', $teamId)
                                     ->where('status', 'active')
+                                    ->whereNotIn('id', $takenIds)
                                     ->with('user')
                                     ->get()
                                     ->mapWithKeys(fn (TeamMember $member): array => [

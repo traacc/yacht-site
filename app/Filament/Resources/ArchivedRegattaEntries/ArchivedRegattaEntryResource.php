@@ -6,7 +6,9 @@ namespace App\Filament\Resources\ArchivedRegattaEntries;
 
 use App\Filament\Resources\ArchivedRegattaEntries\Pages\ManageArchivedRegattaEntries;
 use App\Models\Team;
+use App\Models\TeamMember;
 use App\Models\RegattaEntry;
+use App\Models\RegattaEntryCrew;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
@@ -156,22 +158,31 @@ class ArchivedRegattaEntryResource extends Resource
                     ->schema([
                         Select::make('team_member_id')
                             ->label('Участник')
-                            ->options(function (Get $get): array {
-                                $teamId = $get('../../team_id');
-                                if (! $teamId) {
+                            ->options(function (Get $get, ?RegattaEntry $record): array {
+                                $regattaId = $get('../../regatta_id');
+
+                                if (! $regattaId) {
                                     return [];
                                 }
 
-                                $team = Team::find($teamId);
-                                if (! $team) {
-                                    return [];
-                                }
+                                // Участники, уже записанные в экипажи других заявок на эту регату
+                                $takenIds = RegattaEntryCrew::query()
+                                    ->whereHas('regattaEntry', function (Builder $query) use ($regattaId, $record): void {
+                                        $query->where('regatta_id', $regattaId);
 
-                                return $team->members()
-                                    ->wherePivot('status', 'active')
+                                        if ($record) {
+                                            $query->whereKeyNot($record->getKey());
+                                        }
+                                    })
+                                    ->pluck('team_member_id');
+
+                                return TeamMember::query()
+                                    ->where('status', 'active')
+                                    ->whereNotIn('id', $takenIds)
+                                    ->with('user')
                                     ->get()
-                                    ->mapWithKeys(fn (\App\Models\User $user): array => [
-                                        $user->pivot->id => $user->name,
+                                    ->mapWithKeys(fn (TeamMember $member): array => [
+                                        $member->id => $member->user?->name ?? 'Неизвестный',
                                     ])
                                     ->all();
                             })
