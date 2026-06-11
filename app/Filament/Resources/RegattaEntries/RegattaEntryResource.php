@@ -394,7 +394,7 @@ class RegattaEntryResource extends Resource
 
                         $form->fill($data);
                     })
-                    ->using(function (RegattaEntry $record, array $data): RegattaEntry {
+                    ->using(function (RegattaEntry $record, array $data, Action $action): RegattaEntry {
                         $requiredDocs = $data['required_documents'] ?? [];
                         $crew = $data['crew'] ?? [];
                         unset($data['required_documents'], $data['crew']);
@@ -412,7 +412,7 @@ class RegattaEntryResource extends Resource
                                 ->danger()
                                 ->send();
 
-                            $this->halt();
+                            $action->halt();
                         }
 
                         $record->update($data);
