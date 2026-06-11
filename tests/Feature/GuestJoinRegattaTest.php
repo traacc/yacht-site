@@ -215,4 +215,31 @@ class GuestJoinRegattaTest extends TestCase
             ->assertHasErrors(['newMemberName', 'newMemberBirthDate'])
             ->assertCount('guestMembers', 0);
     }
+
+    public function test_guest_cannot_add_more_than_max_members(): void
+    {
+        $regatta = Regatta::factory()->create();
+        $users = User::factory()->count(JoinRegattaModal::MAX_ADDED_MEMBERS + 1)->create();
+
+        $component = Livewire::test(JoinRegattaModal::class)
+            ->call('openModal', $regatta->id);
+
+        // Добавляем ровно лимит
+        foreach ($users->take(JoinRegattaModal::MAX_ADDED_MEMBERS) as $u) {
+            $component->call('addGuestMember', $u->id);
+        }
+        $component->assertCount('guestMembers', JoinRegattaModal::MAX_ADDED_MEMBERS);
+
+        // Следующий зарегистрированный участник — отклоняется
+        $component->call('addGuestMember', $users->last()->id)
+            ->assertCount('guestMembers', JoinRegattaModal::MAX_ADDED_MEMBERS)
+            ->assertHasErrors('guestMembers');
+
+        // Незарегистрированный участник сверх лимита — тоже отклоняется
+        $component->set('newMemberName', 'Лишний Участник')
+            ->set('newMemberBirthDate', '1990-01-01')
+            ->call('addUnregisteredGuestMember')
+            ->assertCount('guestMembers', JoinRegattaModal::MAX_ADDED_MEMBERS)
+            ->assertHasErrors('guestMembers');
+    }
 }

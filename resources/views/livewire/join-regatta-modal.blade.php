@@ -170,7 +170,11 @@
                     }
                 }" x-on:click.away="isOpen = false">
                     <p class="text-sm font-medium text-[#2E325C] mb-2">Экипаж</p>
-                    <p class="text-xs text-gray-500 mb-3">Вы будете капитаном команды. При необходимости добавьте зарегистрированных участников.</p>
+                    <p class="text-xs text-gray-500 mb-3">Вы будете капитаном команды. Можно добавить не более {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} зарегистрированных участников.</p>
+
+                    @error('guestMembers')
+                        <span class="text-xs text-red-600 mb-2 block">{{ $message }}</span>
+                    @enderror
 
                     @if (!empty($guestMembers))
                         <div class="mb-3 space-y-2">
@@ -194,6 +198,9 @@
                         </div>
                     @endif
 
+                    @if (count($guestMembers) >= \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS)
+                        <p class="text-xs text-amber-600">Достигнут лимит участников ({{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }}).</p>
+                    @else
                     <div class="relative">
                         <input type="text"
                                wire:model.live.debounce.350ms="searchQuery"
@@ -277,6 +284,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                 </div>
 
                 {{-- Документы --}}
@@ -467,8 +475,11 @@
                         }
                     }" x-on:click.away="isOpen = false">
                         <p class="text-sm font-medium text-[#2E325C] mb-2">Добавить участника</p>
-                        <p class="text-xs text-gray-500 mb-3">Найдите пользователя, который ещё не состоит в команде, чтобы добавить его в экипаж.</p>
+                        <p class="text-xs text-gray-500 mb-3">Найдите пользователя, который ещё не состоит в команде, чтобы добавить его в экипаж. Можно добавить не более {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} участников.</p>
 
+                        @if (count($newMemberIds) >= \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS)
+                            <p class="text-xs text-amber-600">Достигнут лимит участников ({{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }}).</p>
+                        @else
                         <div class="relative">
                             <input type="text"
                                    wire:model.live.debounce.350ms="searchQuery"
@@ -499,6 +510,7 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
                     </div>
                 @endif
 

@@ -28,6 +28,9 @@ class JoinRegattaModal extends Component
 {
     use WithFileUploads;
 
+    /** Максимальное количество добавляемых участников на заявку (без капитана) */
+    public const int MAX_ADDED_MEMBERS = 9;
+
     public ?string $regattaId = null;
 
     public ?string $teamId = null;
@@ -226,6 +229,14 @@ class JoinRegattaModal extends Component
      */
     public function addGuestMember(string $userId): void
     {
+        if (count($this->guestMembers) >= self::MAX_ADDED_MEMBERS) {
+            $this->searchQuery = '';
+            $this->searchResults = [];
+            $this->addError('guestMembers', 'Можно добавить не более ' . self::MAX_ADDED_MEMBERS . ' участников.');
+
+            return;
+        }
+
         if (in_array($userId, array_column($this->guestMembers, 'user_id'), true)) {
             $this->searchQuery = '';
             $this->searchResults = [];
@@ -259,6 +270,12 @@ class JoinRegattaModal extends Component
      */
     public function addUnregisteredGuestMember(): void
     {
+        if (count($this->guestMembers) >= self::MAX_ADDED_MEMBERS) {
+            $this->addError('guestMembers', 'Можно добавить не более ' . self::MAX_ADDED_MEMBERS . ' участников.');
+
+            return;
+        }
+
         $rules = [
             'newMemberName'      => ['required', 'string', 'max:255'],
             'newMemberBirthDate' => ['required', 'date', 'before:today'],
@@ -335,6 +352,12 @@ class JoinRegattaModal extends Component
     public function addExternalMember(string $userId): void
     {
         if (! $this->teamId) {
+            return;
+        }
+
+        if (count($this->newMemberIds) >= self::MAX_ADDED_MEMBERS) {
+            $this->addError('crew', 'Можно добавить не более ' . self::MAX_ADDED_MEMBERS . ' участников.');
+
             return;
         }
 
@@ -465,9 +488,10 @@ class JoinRegattaModal extends Component
     {
         $rules = [
             'guestName'  => ['required', 'string', 'max:255'],
-            'guestEmail' => ['required', 'email', 'unique:users,email'],
-            'guestPhone' => ['required', 'unique:users,phone'],
-            'teamName'   => ['required', 'string', 'max:255'],
+            'guestEmail'   => ['required', 'email', 'unique:users,email'],
+            'guestPhone'   => ['required', 'unique:users,phone'],
+            'teamName'     => ['required', 'string', 'max:255'],
+            'guestMembers' => ['array', 'max:' . self::MAX_ADDED_MEMBERS],
         ];
 
         if ($this->yachtMode === 'create') {
@@ -485,8 +509,9 @@ class JoinRegattaModal extends Component
         }
 
         $this->validate($rules, [
-            'guestEmail.unique' => 'Пользователь с таким email уже зарегистрирован',
-            'guestPhone.unique' => 'Пользователь с таким телефоном уже зарегистрирован',
+            'guestEmail.unique'  => 'Пользователь с таким email уже зарегистрирован',
+            'guestPhone.unique'  => 'Пользователь с таким телефоном уже зарегистрирован',
+            'guestMembers.max'   => 'Можно добавить не более ' . self::MAX_ADDED_MEMBERS . ' участников.',
         ], [
             'guestName'    => 'ФИО',
             'guestEmail'   => 'email',
