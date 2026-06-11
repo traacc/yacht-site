@@ -101,6 +101,7 @@ class TeamsList extends Component
                     ?->final_position ?? null,
             ])->values()->toArray(),
             'gallery' => $team->getMedia('gallery')->map(fn ($media) => $media->getUrl())->values()->toArray(),
+            'download_url' => route('team.history.pdf', $team),
             'can_edit' => auth()->check() && auth()->user()->can('editTeam', $team),
             'edit_url' => auth()->check() && auth()->user()->isAdmin() ? '/admin/teams' : '/user/teams',
         ])->values();

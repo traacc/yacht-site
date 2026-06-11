@@ -167,7 +167,7 @@
             <div class="members">
                 <div class="members-header flex flex-col md:flex-row items-center justify-between mb-6">
                     <h5 class="a-font text-lg md:text-3xl">Состав команды</h5>
-                    <div class="download flex gap-2 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> Скачать историю команды</div>
+                    <a :href="activeTeam?.download_url" target="_blank" class="download flex gap-2 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> Скачать историю команды</a>
                 </div>
                 <div class="overflow-y-auto max-h-[180px] relative custom-scroll mb-8">
                     <table class="w-full border-collapse bg-[#F8F8F8] responsive-table">
