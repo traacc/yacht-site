@@ -101,12 +101,13 @@
 
         tbody .item-start > td {
             border-top: 1.5px solid #2E325C;
+            text-align: center; 
         }
 
         .pos-cell { font-weight: bold; /*color: #2D92CE;*/ }
-        .team-cell { font-weight: bold; /*color: #2E325C;*/ }
-        .total-cell { font-weight: bold; }
-        .captain { font-weight: bold; }
+        .team-cell { font-weight: bold; text-align: center; /*color: #2E325C;*/ }
+        .total-cell { font-weight: bold; text-align: center;  }
+        .captain { font-weight: bold; text-align: center;  }
         .muted { color: #9ca3af; }
 
         .score-cell {
@@ -196,8 +197,8 @@
                 <tr class="item-start" style="page-break-inside: avoid;">
                     <td class="pos-cell">{{ $row['position'] }}</td>
                     <td>{{ $row['sail'] }}</td>
-                    <td class="left team-cell">{{ $row['team'] }}</td>
-                    <td class="left">{{ $row['yacht'] }}</td>
+                    <td class="team-cell">{{ $row['team'] }}</td>
+                    <td>{{ $row['yacht'] }}</td>
 
                     <td colspan="3" class="crew-cell">
                         <table class="crew-table">
