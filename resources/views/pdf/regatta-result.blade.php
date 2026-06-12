@@ -21,12 +21,29 @@
 
         /* ── Шапка ── */
         .header {
-            text-align: right;
+            width: 100%;
             margin-bottom: 12px;
+            border-collapse: collapse;
+        }
 
+        .header td {
+            vertical-align: middle;
             font-size: 14px;
             font-weight: bold;
             color: #2E325C;
+        }
+
+        .header .logo-cell {
+            text-align: left;
+            width: 200px;
+        }
+
+        .header .logo-cell img {
+            width: 180px;
+        }
+
+        .header .title-cell {
+            text-align: right;
         }
         /*
         .header .title {
@@ -137,11 +154,18 @@
 <body>
 
     {{-- Шапка --}}
-    <div class="header">
-        <div class="title">{{ $regatta?->name }}</div>
-        <div class="group">Зачётная группа Carter 30</div>
-        <div class="subtitle">{{ $regatta?->water_area }}@if($regatta?->water_area && $dateRange). @endif{{ $dateRange }}</div>
-    </div>
+    <table class="header">
+        <tr>
+            <td class="logo-cell">
+                <img src="{{ public_path('images/logo-pdf.svg') }}" alt="logo">
+            </td>
+            <td class="title-cell">
+                <div class="title">{{ $regatta?->name }}</div>
+                <div class="group">Зачётная группа Carter 30</div>
+                <div class="subtitle">{{ $regatta?->water_area }}@if($regatta?->water_area && $dateRange). @endif{{ $dateRange }}</div>
+            </td>
+        </tr>
+    </table>
 
     {{-- Таблица результатов --}}
     <table>
