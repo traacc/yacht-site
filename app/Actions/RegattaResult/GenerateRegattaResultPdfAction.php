@@ -39,8 +39,8 @@ final class GenerateRegattaResultPdfAction
         }
         $eventByRaceNumber = array_flip($raceNumberByEvent);
 
-        // Шаблон поддерживает 1–6 гонок.
-        $raceCount = max(1, min(count($raceNumberByEvent), 6));
+        // Шаблон поддерживает 0–6 гонок.
+        $raceCount = min(count($raceNumberByEvent), 6);
 
         // ── Заявки регаты, индексированные по команде ───────────────────────────
         // Приоритет у одобренной заявки: approved сортируем последними, т.к.
