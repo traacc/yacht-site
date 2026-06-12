@@ -86,8 +86,8 @@
             border-top: 1.5px solid #2E325C;
         }
 
-        .pos-cell { font-weight: bold; color: #2D92CE; }
-        .team-cell { font-weight: bold; color: #2E325C; }
+        .pos-cell { font-weight: bold; /*color: #2D92CE;*/ }
+        .team-cell { font-weight: bold; /*color: #2E325C;*/ }
         .total-cell { font-weight: bold; }
         .captain { font-weight: bold; }
         .muted { color: #9ca3af; }
@@ -108,7 +108,7 @@
 
         .crew-table td {
             border: none;
-            border-bottom: 1px solid #eef0f2;
+            /*border-bottom: 1px solid #eef0f2;*/
             padding: 2px 3px;
             vertical-align: middle;
         }
