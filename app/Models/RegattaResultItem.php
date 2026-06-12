@@ -23,7 +23,7 @@ class RegattaResultItem extends Model
     {
         return [
             //'total_points'   => 'decimal:3',
-            'final_position' => 'integer',
+            //'final_position' => 'integer',
         ];
     }
 

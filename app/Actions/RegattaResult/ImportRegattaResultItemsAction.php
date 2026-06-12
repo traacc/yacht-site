@@ -72,7 +72,8 @@ class ImportRegattaResultItemsAction
                 'team_id'       => $team->id,
                 'yacht_id'      => $yachtId,
                 'total_points'  => (float) $points,
-                'final_position' => ($position !== null && $position !== '') ? (int) $position : null,
+                'final_position' => ($position !== null && $position !== '') ? $position : null,
+                //'final_position' => ($position !== null && $position !== '') ? (int) $position : null,
             ];
         }
 
