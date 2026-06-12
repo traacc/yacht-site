@@ -92,8 +92,33 @@
         .captain { font-weight: bold; }
         .muted { color: #9ca3af; }
 
-        .crew-name { text-align: left; font-size: 8px; border: none; }
-        .crew-meta { font-size: 7.5px; border: none; }
+        .score-cell {
+            background-color: #daf2d0;
+        }
+
+        /* Экипаж выводится вложенной таблицей, чтобы строки команды не
+           разрывались между листами (dompdf теряет rowspan на разрыве). */
+        .crew-cell { padding: 0; }
+
+        .crew-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+
+        .crew-table td {
+            border: none;
+            border-bottom: 1px solid #eef0f2;
+            padding: 2px 3px;
+            vertical-align: middle;
+        }
+
+        .crew-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .crew-name { text-align: left; font-size: 8px; }
+        .crew-meta { font-size: 7.5px; text-align: center; }
 
         .footer {
             margin-top: 14px;
@@ -136,37 +161,43 @@
             <tr>
                 @for($n = 1; $n <= $raceCount; $n++)
                     <th style="width: 26px;">Место</th>
-                    <th style="width: 24px;">Очки</th>
+                    <th class="score-cell" style="width: 24px;">Очки</th>
                 @endfor
             </tr>
         </thead>
         <tbody>
             @foreach($rows as $row)
                 @php($crew = $row['crew'])
-                @php($crewCount = max(1, $crew->count()))
-                @for($i = 0; $i < $crewCount; $i++)
-                    @php($member = $crew->get($i))
-                    <tr @if($i === 0) class="item-start" @endif>
-                        @if($i === 0)
-                            <td rowspan="{{ $crewCount }}" class="pos-cell">{{ $row['position'] }}</td>
-                            <td rowspan="{{ $crewCount }}">{{ $row['sail'] }}</td>
-                            <td rowspan="{{ $crewCount }}" class="left team-cell">{{ $row['team'] }}</td>
-                            <td rowspan="{{ $crewCount }}" class="left">{{ $row['yacht'] }}</td>
-                        @endif
+                <tr class="item-start" style="page-break-inside: avoid;">
+                    <td class="pos-cell">{{ $row['position'] }}</td>
+                    <td>{{ $row['sail'] }}</td>
+                    <td class="left team-cell">{{ $row['team'] }}</td>
+                    <td class="left">{{ $row['yacht'] }}</td>
 
-                        <td class="crew-name {{ $i === 0 ? 'captain' : '' }}">{{ $member['name'] ?? '' }}</td>
-                        <td class="crew-meta">{{ $member['birth'] ?? '' }}</td>
-                        <td class="crew-meta">{{ $member['category'] ?? '' }}</td>
+                    <td colspan="3" class="crew-cell">
+                        <table class="crew-table">
+                            @forelse($crew as $i => $member)
+                                <tr>
+                                    <td class="crew-name {{ $i === 0 ? 'captain' : '' }}">{{ $member['name'] ?? '' }}</td>
+                                    <td class="crew-meta" style="width: 58px;">{{ $member['birth'] ?? '' }}</td>
+                                    <td class="crew-meta" style="width: 42px;">{{ $member['category'] ?? '' }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td class="crew-name"></td>
+                                    <td class="crew-meta" style="width: 58px;"></td>
+                                    <td class="crew-meta" style="width: 42px;"></td>
+                                </tr>
+                            @endforelse
+                        </table>
+                    </td>
 
-                        @if($i === 0)
-                            @foreach($row['races'] as $race)
-                                <td rowspan="{{ $crewCount }}">{{ $race['pos'] }}</td>
-                                <td rowspan="{{ $crewCount }}">{{ $race['pts'] !== null ? rtrim(rtrim(number_format($race['pts'], 1, '.', ''), '0'), '.') : '' }}</td>
-                            @endforeach
-                            <td rowspan="{{ $crewCount }}" class="total-cell">{{ $row['total'] }}</td>
-                        @endif
-                    </tr>
-                @endfor
+                    @foreach($row['races'] as $race)
+                        <td>{{ $race['pos'] }}</td>
+                        <td class="score-cell">{{ $race['pts'] !== null ? rtrim(rtrim(number_format($race['pts'], 1, '.', ''), '0'), '.') : '' }}</td>
+                    @endforeach
+                    <td class="total-cell">{{ $row['total'] }}</td>
+                </tr>
             @endforeach
         </tbody>
     </table>
