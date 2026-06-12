@@ -69,7 +69,7 @@ class RegattaResultExport
         // Load all result items, sorted by final position
         $resultItems = $this->regattaResult->items()
             ->with(['team', 'yacht'])
-            ->orderBy('final_position')
+            ->orderByRaw('CAST(final_position AS UNSIGNED)')
             ->get();
 
         // ── Гонки регаты (event_type = race), упорядоченные по дате ──────────
