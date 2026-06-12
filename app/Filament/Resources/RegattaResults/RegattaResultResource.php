@@ -187,7 +187,10 @@ class RegattaResultResource extends Resource
                     ->columns(6)
                     ->addActionLabel('Добавить участника')
                     ->columnSpanFull(),
-            ]);
+            ])->extraAttributes([
+            // Этот атрибут заставит блок становиться полупрозрачным во время сетевых запросов формы
+            'wire:loading.class' => 'opacity-50 pointer-events-none transition-opacity duration-200'
+        ]);
     }
 
     /**
