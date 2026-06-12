@@ -69,11 +69,11 @@
             vertical-align: middle;
         }
 
-        tbody td {
+        tbody > td {
             padding: 3px 3px;
             font-size: 8px;
             color: #1f2937;
-            border-bottom: 1px solid #d1d5db;
+            /*border-bottom: 1px solid #d1d5db;*/
             vertical-align: middle;
             text-align: center;
         }
@@ -82,7 +82,7 @@
             text-align: left;
         }
 
-        tbody .item-start td {
+        tbody .item-start > td {
             border-top: 1.5px solid #2E325C;
         }
 
@@ -118,8 +118,8 @@
             border-bottom: none;
         }
 
-        .crew-name { text-align: left; font-size: 8px; }
-        .crew-meta { font-size: 7.5px; text-align: center; }
+        .crew-name { text-align: left; font-size: 8px; border: none;}
+        .crew-meta { font-size: 7.5px; text-align: center; border: none; }
 
         .footer {
             margin-top: 14px;
