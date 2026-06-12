@@ -417,8 +417,8 @@ class RegattaResultResource extends Resource
         $raceEvents = self::raceEventsFor($record);
 
         $columns = [
-            TableColumn::make('Команда'),
             TableColumn::make('Яхта')->markAsRequired(false),
+            TableColumn::make('Команда'),
             TableColumn::make('Участники')->markAsRequired(false),
             TableColumn::make('Очки'),
             TableColumn::make('Место')->markAsRequired(false),
@@ -477,6 +477,8 @@ class RegattaResultResource extends Resource
 
             TextInput::make('final_position')
                 ->label('Место')
+                ->minValue(1)
+                ->step(1)
                 ->numeric()
                 ->nullable(),
         ];

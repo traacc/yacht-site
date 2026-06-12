@@ -232,7 +232,7 @@
 /* Скролл для табличного репитера: по горизонтали (много колонок гонок) и по вертикали (много строк) */
 .fi-scrollable-table-repeater {
     overflow: auto;
-    max-height: 70vh;
+    max-height: 55vh;
 }
 .fi-scrollable-table-repeater > table {
     width: max-content;
