@@ -103,13 +103,13 @@
         .crew-table {
             width: 100%;
             border-collapse: collapse;
+            border: none;
             margin: 0;
         }
 
         .crew-table td {
             border: none;
             /*border-bottom: 1px solid #eef0f2;*/
-            border-bottom: none;
             padding: 2px 3px;
             vertical-align: middle;
         }
