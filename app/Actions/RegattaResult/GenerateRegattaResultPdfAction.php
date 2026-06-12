@@ -20,11 +20,13 @@ final class GenerateRegattaResultPdfAction
     {
         $regatta = $regattaResult->regatta;
 
-        // Позиции результата, отсортированные по итоговому месту.
+        // Позиции результата, отсортированные по итоговому месту как число.
+        // Пустые / нечисловые final_position уходят в конец.
         $resultItems = $regattaResult->items()
             ->with(['team', 'yacht'])
-            ->orderByRaw('CAST(final_position AS UNSIGNED)')
-            ->get();
+            ->get()
+            ->sortBy(fn ($item) => is_numeric($item->final_position) ? (int) $item->final_position : PHP_INT_MAX)
+            ->values();
 
         // ── Гонки регаты (event_type = race) → порядковые номера 1..N ──────────
         $raceEvents = $regatta
