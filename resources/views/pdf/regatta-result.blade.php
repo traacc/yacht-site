@@ -174,9 +174,9 @@
             @php($headRowspan = $raceCount > 0 ? 2 : 1)
             <tr>
                 <th rowspan="{{ $headRowspan }}" style="width: 28px;">Место</th>
-                <th rowspan="{{ $headRowspan }}" style="width: 80px;">Парус №</th>
-                <th rowspan="{{ $headRowspan }}" style="width: 120px;">Команда</th>
-                <th rowspan="{{ $headRowspan }}" style="width: 120px;">Яхта</th>
+                <th rowspan="{{ $headRowspan }}" style="width: 100px;">Парус №</th>
+                <th rowspan="{{ $headRowspan }}" style="width: 150px;">Команда</th>
+                <th rowspan="{{ $headRowspan }}" style="width: 150px;">Яхта</th>
                 <th rowspan="{{ $headRowspan }}" style="width: 250px;">Экипаж</th>
                 <th rowspan="{{ $headRowspan }}" style="width: 58px;">Дата рождения</th>
                 <th rowspan="{{ $headRowspan }}" style="width: 42px;">Разряд</th>
