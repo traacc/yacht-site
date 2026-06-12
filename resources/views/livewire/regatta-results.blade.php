@@ -50,9 +50,8 @@
                 <div class="container mx-auto bg-[#F8F8F8] py-2 md:py-4">
                     <div class="flex justify-between mb-6 flex-col md:flex-row">
                         <h3 class="a-font text-lg md:text-3xl">{{ $regatta->name }}</h3>
-                        @php $pdfUrl = $regatta->results->first()?->pdf_url; @endphp
-                        @if($pdfUrl)
-                            <a href="{{ $pdfUrl }}" target="_blank" class="text-[#2E325C] text-lg font-semibold gap-2 items-center hidden md:flex cursor-pointer">
+                        @if($regatta->results->first())
+                            <a href="{{ route('regatta.results.pdf', $regatta) }}" target="_blank" class="text-[#2E325C] text-lg font-semibold gap-2 items-center hidden md:flex cursor-pointer">
                                 <img src="{{ asset('images/icons/download.svg') }}" alt="">
                                 <span>Скачать результаты PDF</span>
                             </a>
@@ -131,8 +130,8 @@
                             </tbody>
                         </table>
                     </div>
-                    @if($pdfUrl)
-                        <a href="{{ $pdfUrl }}" target="_blank" class="text-[#2E325C] text-sm font-semibold gap-2 items-center flex md:hidden justify-center mt-4 cursor-pointer">
+                    @if($regatta->results->first())
+                        <a href="{{ route('regatta.results.pdf', $regatta) }}" target="_blank" class="text-[#2E325C] text-sm font-semibold gap-2 items-center flex md:hidden justify-center mt-4 cursor-pointer">
                             <img src="{{ asset('images/icons/download.svg') }}" alt="">
                             <span>Скачать результаты PDF</span>
                         </a>
@@ -166,9 +165,8 @@
                                 </div>
                             @endif
                         </div>
-                        @php $pdfUrl = $regatta->results->first()?->pdf_url; @endphp
-                        @if($pdfUrl)
-                            <a href="{{ $pdfUrl }}" target="_blank" class="text-[#2E325C] text-lg font-semibold flex gap-2 items-center cursor-pointer">
+                        @if($regatta->results->first())
+                            <a href="{{ route('regatta.results.pdf', $regatta) }}" target="_blank" class="text-[#2E325C] text-lg font-semibold flex gap-2 items-center cursor-pointer">
                                 <img src="{{ asset('images/icons/download.svg') }}" alt="">
                                 <span>Скачать результаты PDF</span>
                             </a>
@@ -240,9 +238,8 @@
                 @if($regatta)
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="section-title a-font">Результаты регат</h2>
-                        @php $pdfUrl = $regatta->results->first()?->pdf_url; @endphp
-                        @if($pdfUrl)
-                            <a href="{{ $pdfUrl }}" target="_blank" class="text-[#2E325C] text-lg font-semibold gap-2 items-center hidden md:flex cursor-pointer">
+                        @if($regatta->results->first())
+                            <a href="{{ route('regatta.results.pdf', $regatta) }}" target="_blank" class="text-[#2E325C] text-lg font-semibold gap-2 items-center hidden md:flex cursor-pointer">
                                 <img src="{{ asset('images/icons/download.svg') }}" alt="">
                                 <span>Скачать результаты PDF</span>
                             </a>
@@ -333,9 +330,8 @@
                                     </tbody>
                                 </table>
                             </div>
-                            @php $pdfUrl = $regatta->results->first()?->pdf_url; @endphp
-                            @if($pdfUrl)
-                                <a href="{{ $pdfUrl }}" target="_blank" class="text-[#2E325C] text-sm font-semibold gap-2 items-center flex md:hidden justify-center mt-4 cursor-pointer">
+                            @if($regatta->results->first())
+                                <a href="{{ route('regatta.results.pdf', $regatta) }}" target="_blank" class="text-[#2E325C] text-sm font-semibold gap-2 items-center flex md:hidden justify-center mt-4 cursor-pointer">
                                     <img src="{{ asset('images/icons/download.svg') }}" alt="">
                                     <span>Скачать результаты PDF</span>
                                 </a>

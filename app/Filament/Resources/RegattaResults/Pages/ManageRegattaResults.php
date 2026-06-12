@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\RegattaResults\Pages;
 
+use App\Actions\RegattaResult\GenerateRegattaResultPdfAction;
 use App\Actions\RegattaResult\ImportRegattaResultItemsAction;
 use App\Exports\RegattaResultExport;
 use App\Filament\Resources\RegattaResults\RegattaResultResource;
@@ -121,6 +122,35 @@ class ManageRegattaResults extends ManageRecords
                     $filename = sprintf('results_%s_%s.xlsx', $regattaResult->regatta?->name ?? 'regatta', $regattaResult->result_type);
 
                     return (new RegattaResultExport($regattaResult))->download($filename);
+                }),
+
+            Action::make('export_pdf')
+                ->label('Экспорт в PDF')
+                ->icon(Heroicon::ArrowDownTray)
+                ->color('white')
+                ->form([
+                    Select::make('regatta_result_id')
+                        ->label('Результат регаты')
+                        ->options(function () {
+                            return RegattaResult::with('regatta')
+                                ->get()
+                                ->mapWithKeys(fn (RegattaResult $r) => [
+                                    $r->id => ($r->regatta?->name ?? '—') . ' • ' . match ($r->result_type) {
+                                        'preliminary' => 'Предварительный',
+                                        'final'       => 'Финальный',
+                                        default       => $r->result_type,
+                                    },
+                                ]);
+                        })
+                        ->searchable()
+                        ->required(),
+                ])
+                ->modalHeading('Экспорт результатов в PDF')
+                ->modalSubmitActionLabel('Скачать PDF')
+                ->action(function (array $data) {
+                    $regattaResult = RegattaResult::findOrFail($data['regatta_result_id']);
+
+                    return app(GenerateRegattaResultPdfAction::class)->execute($regattaResult);
                 }),
         ];
     }
