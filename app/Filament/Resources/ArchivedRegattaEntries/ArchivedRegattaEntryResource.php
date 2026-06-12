@@ -106,8 +106,8 @@ class ArchivedRegattaEntryResource extends Resource
                     ->required()
                     ->columnSpanFull()
                     ->live()
-                    ->afterStateUpdated(function (?string $state, Set $set): void {
-                        $set('crew', static::buildCrewDefaults($state));
+                    ->afterStateUpdated(function (?string $state, Get $get, Set $set): void {
+                        $set('crew', static::buildCrewDefaults($state, $get('regatta_id')));
                     }),
                 Select::make('yacht_id')
                     ->label('Яхта')
@@ -404,7 +404,7 @@ class ArchivedRegattaEntryResource extends Resource
      *
      * @return array<int, array{team_member_id: string, member_name: string, role: string}>
      */
-    public static function buildCrewDefaults(?string $teamId): array
+    public static function buildCrewDefaults(?string $teamId, ?string $regattaId = null): array
     {
         if ($teamId === null) {
             return [];
@@ -415,8 +415,18 @@ class ArchivedRegattaEntryResource extends Resource
             return [];
         }
 
-        return $team->members()
-            ->wherePivot('status', 'active')
+        $members = $team->members()
+            ->wherePivot('status', 'active');
+
+        if ($regattaId) {
+            $participatingIds = \App\Models\RegattaEntryCrew::query()
+                ->whereHas('regattaEntry', fn (Builder $q) => $q->where('regatta_id', $regattaId))
+                ->pluck('team_member_id');
+
+            $members->wherePivotNotIn('id', $participatingIds->all());
+        }
+
+        return $members
             ->get()
             ->map(fn (\App\Models\User $user): array => [
                 'team_member_id' => $user->pivot->id,

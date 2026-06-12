@@ -112,8 +112,8 @@ class RegattaEntryResource extends Resource
                     ->required()
                     ->columnSpanFull()
                     ->live()
-                    ->afterStateUpdated(function (?string $state, Set $set): void {
-                        $set('crew', static::buildCrewDefaults($state));
+                    ->afterStateUpdated(function (?string $state, Get $get, Set $set): void {
+                        $set('crew', static::buildCrewDefaults($state, $get('regatta_id')));
                     }),
                 Select::make('yacht_id')
                     ->label('Яхта')
@@ -477,17 +477,30 @@ class RegattaEntryResource extends Resource
     /**
      * Строит дефолтный список экипажа для формы создания.
      *
+     * Исключает участников команды, которые уже заявлены в экипаже
+     * любой заявки на эту же регату.
+     *
      * @return array<int, array{team_member_id: string, member_name: string, role: string}>
      */
-    public static function buildCrewDefaults(?string $teamId): array
+    public static function buildCrewDefaults(?string $teamId, ?string $regattaId = null): array
     {
         if (! $teamId) {
             return [];
         }
 
-        return TeamMember::query()
+        $query = TeamMember::query()
             ->where('team_id', $teamId)
-            ->where('status', 'active')
+            ->where('status', 'active');
+
+        if ($regattaId) {
+            $participatingIds = \App\Models\RegattaEntryCrew::query()
+                ->whereHas('regattaEntry', fn (Builder $q) => $q->where('regatta_id', $regattaId))
+                ->pluck('team_member_id');
+
+            $query->whereNotIn('id', $participatingIds);
+        }
+
+        return $query
             ->with('user')
             ->get()
             ->map(function (TeamMember $member): array {
