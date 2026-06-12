@@ -73,8 +73,9 @@ class RegattaResultResource extends Resource
                     ->relationship(
                         name: 'regatta',
                         titleAttribute:'name',
-                        modifyQueryUsing: fn (Builder $query) => $query->orderBy('date_end', 'desc'),
+                        modifyQueryUsing: fn (Builder $query) => $query->orderBy('date_end', 'asc'),
                     )
+                    
                     ->required()
                     ->live()
                     ->afterStateUpdated(function ($state, Set $set): void {
