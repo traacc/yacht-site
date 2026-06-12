@@ -123,8 +123,7 @@ class RegattaResultResource extends Resource
                     ->relationship('items')
                     ->hintAction(self::fillItemsFromEntriesAction())
 
-                    ->disabled()
-                    ->dehydrated()
+                    ->extraAttributes(['class' => 'regatta-result-list'])
 
                     ->schema([
                         Select::make('yacht_id')
@@ -152,6 +151,8 @@ class RegattaResultResource extends Resource
                                     $set('team_id', $teamId);
                                 }
                             })
+                            ->disabled()
+                            ->dehydrated()
                             ->nullable()
                             ->columnSpan(2),
 

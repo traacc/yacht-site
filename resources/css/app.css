@@ -329,5 +329,8 @@
   outline-offset: 2px;
   }
 
+  .regatta-result-list .fi-fo-repeater-add {
+    display: none;
+  }
 
 }
