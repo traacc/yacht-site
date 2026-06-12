@@ -169,6 +169,8 @@ class RegattaResultResource extends Resource
 
                         TextInput::make('final_position')
                             ->label('Место')
+                            ->minValue(1)
+                            ->step(1)
                             ->numeric()
                             ->nullable(),
                     ])
