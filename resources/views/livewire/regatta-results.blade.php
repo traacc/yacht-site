@@ -63,7 +63,8 @@
                             {!! file_get_contents(public_path('images/icons/calendar.svg')) !!}
                             {{ $regatta->dateRange() }}
                         </div>
-                        @if($regatta->regatta_status === \App\Enums\RegattaStatus::Finished)
+                        @php $isFinal = $regatta->results->first()?->isFinal() ?? false; @endphp
+                        @if($isFinal)
                             <div class="bg-[#15794933] px-3 py-1 text-[#157949] inline-block font-semibold max-w-[140px] w-full uppercase">
                                 Завершено
                             </div>
@@ -73,7 +74,7 @@
                             </div>
                         @endif
                     </div>
-                    @if($regatta->regatta_status !== \App\Enums\RegattaStatus::Finished)
+                    @if(! $isFinal)
                         <p class="mb-6">Таблица обновляется по мере обработки результатов. Финальные очки будут опубликованы после утверждения итогов соревнования.</p>
                     @endif
                     <div class="overflow-x-auto relative p-6 bg-white responsive-table">
@@ -155,9 +156,15 @@
                     <div class="flex justify-between mb-6">
                         <div class="flex gap-4">
                             <h3 class="a-font text-lg md:text-3xl">Результаты</h3>
-                            <div class="bg-[#A88C5833] px-3 py-1 text-[#A88C58] inline-block font-semibold max-w-[290px] w-full">
-                                Предварительные результаты
-                            </div>
+                            @if($regatta->results->first()?->isFinal())
+                                <div class="bg-[#15794933] px-3 py-1 text-[#157949] inline-block font-semibold max-w-[140px] w-full uppercase">
+                                    Завершено
+                                </div>
+                            @else
+                                <div class="bg-[#A88C5833] px-3 py-1 text-[#A88C58] inline-block font-semibold max-w-[290px] w-full">
+                                    Предварительные результаты
+                                </div>
+                            @endif
                         </div>
                         @php $pdfUrl = $regatta->results->first()?->pdf_url; @endphp
                         @if($pdfUrl)
@@ -258,7 +265,8 @@
                                     {!! file_get_contents(public_path('images/icons/calendar.svg')) !!}
                                     {{ $regatta->dateRange() }}
                                 </div>
-                                @if($regatta->regatta_status === \App\Enums\RegattaStatus::Finished)
+                                @php $isFinal = $regatta->results->first()?->isFinal() ?? false; @endphp
+                                @if($isFinal)
                                     <div class="bg-[#15794933] px-3 py-1 text-[#157949] inline-block font-semibold max-w-[140px] w-full uppercase md:text-base text-sm">
                                         Завершено
                                     </div>
@@ -268,7 +276,7 @@
                                     </div>
                                 @endif
                             </div>
-                            @if($regatta->regatta_status !== \App\Enums\RegattaStatus::Finished)
+                            @if(! $isFinal)
                                 <p class="mb-6">Таблица обновляется по мере обработки результатов. Финальные очки будут опубликованы после утверждения итогов соревнования.</p>
                             @endif
                             <div class="overflow-x-auto relative p-2 md:p-6 md:pt-0 bg-white responsive-table">
