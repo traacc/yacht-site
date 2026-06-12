@@ -89,6 +89,9 @@ class RegattaResultResource extends Resource
                             ];
                         }
                         $set('regattaRaces', $races);
+
+                        // Заполняем список участников по активным заявкам на регату.
+                        $set('items', self::itemsFromEntries($state));
                     })
                     ->columnSpanFull(),
 
@@ -213,21 +216,8 @@ class RegattaResultResource extends Resource
                     return;
                 }
 
-                $entries = RegattaEntry::query()
-                    ->where('regatta_id', $regattaId)
-                    ->whereNotIn('status', ['rejected', 'withdrawn'])
-                    ->get();
-
                 // Сбрасываем текущие строки и заполняем заново по заявкам.
-                $items = [];
-                foreach ($entries as $entry) {
-                    $items[(string) Str::uuid()] = [
-                        'team_id'        => $entry->team_id,
-                        'yacht_id'       => $entry->yacht_id,
-                        'total_points'   => 0.0,
-                        'final_position' => null,
-                    ];
-                }
+                $items = self::itemsFromEntries($regattaId);
 
                 $set('items', $items);
 
@@ -238,6 +228,36 @@ class RegattaResultResource extends Resource
                     ->success()
                     ->send();
             });
+    }
+
+    /**
+     * Строки участников по активным заявкам (RegattaEntry) на регату.
+     * Берём активные заявки (не отклонённые и не отозванные).
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    protected static function itemsFromEntries(?string $regattaId): array
+    {
+        if (blank($regattaId)) {
+            return [];
+        }
+
+        $entries = RegattaEntry::query()
+            ->where('regatta_id', $regattaId)
+            ->whereNotIn('status', ['rejected', 'withdrawn'])
+            ->get();
+
+        $items = [];
+        foreach ($entries as $entry) {
+            $items[(string) Str::uuid()] = [
+                'team_id'        => $entry->team_id,
+                'yacht_id'       => $entry->yacht_id,
+                'total_points'   => 0.0,
+                'final_position' => null,
+            ];
+        }
+
+        return $items;
     }
 
     /**
