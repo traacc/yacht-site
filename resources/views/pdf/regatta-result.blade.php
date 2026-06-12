@@ -109,6 +109,7 @@
         .crew-table td {
             border: none;
             /*border-bottom: 1px solid #eef0f2;*/
+            border-bottom: none;
             padding: 2px 3px;
             vertical-align: middle;
         }
@@ -123,7 +124,7 @@
         .footer {
             margin-top: 14px;
             padding-top: 8px;
-            border-top: 1px solid #e5e7eb;
+            /*border-top: 1px solid #e5e7eb;*/
             text-align: right;
         }
 
