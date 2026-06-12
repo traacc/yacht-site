@@ -177,7 +177,7 @@
                 <th rowspan="{{ $headRowspan }}" style="width: 40px;">Парус №</th>
                 <th rowspan="{{ $headRowspan }}" style="width: 90px;">Команда</th>
                 <th rowspan="{{ $headRowspan }}" style="width: 80px;">Яхта</th>
-                <th rowspan="{{ $headRowspan }}">Экипаж</th>
+                <th rowspan="{{ $headRowspan }}" style="width: 110px;">Экипаж</th>
                 <th rowspan="{{ $headRowspan }}" style="width: 58px;">Дата рождения</th>
                 <th rowspan="{{ $headRowspan }}" style="width: 42px;">Разряд</th>
                 @for($n = 1; $n <= $raceCount; $n++)
@@ -188,8 +188,8 @@
             @if($raceCount > 0)
                 <tr>
                     @for($n = 1; $n <= $raceCount; $n++)
-                        <th style="width: 26px;">Место</th>
-                        <th class="score-cell" style="width: 24px;">Очки</th>
+                        <th>Место</th>
+                        <th class="score-cell">Очки</th>
                     @endfor
                 </tr>
             @endif
