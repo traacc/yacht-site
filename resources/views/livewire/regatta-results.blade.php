@@ -271,7 +271,7 @@
                             @if($regatta->regatta_status !== \App\Enums\RegattaStatus::Finished)
                                 <p class="mb-6">Таблица обновляется по мере обработки результатов. Финальные очки будут опубликованы после утверждения итогов соревнования.</p>
                             @endif
-                            <div class="overflow-x-auto relative p-2 md:p-6 md:pt-0 bg-white responsive-table md:max-h-[220px]">
+                            <div class="overflow-x-auto relative p-2 md:p-6 md:pt-0 bg-white responsive-table">
                                 <table class="w-full">
                                     <thead class="sticky top-0 bg-white">
                                         <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]">
