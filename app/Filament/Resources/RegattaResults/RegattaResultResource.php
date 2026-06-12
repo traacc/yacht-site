@@ -500,10 +500,12 @@ class RegattaResultResource extends Resource
             $fields[] = TextInput::make("race_{$i}_position")
                 ->label($race->name . ' · место')
                 //->numeric()
-                // Запрещаем одиночный ноль и одиночный минус.
+                // Запрещаем одиночный ноль и любой минус.
                 ->rule(static function () {
                     return static function (string $attribute, $value, \Closure $fail): void {
-                        if (in_array(trim((string) $value), ['0', '-'], true)) {
+                        $value = trim((string) $value);
+
+                        if ($value === '0' || str_contains($value, '-')) {
                             $fail('Недопустимое значение');
                         }
                     };
