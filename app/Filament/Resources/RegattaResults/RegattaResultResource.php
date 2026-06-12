@@ -81,9 +81,13 @@ class RegattaResultResource extends Resource
                     ->afterStateUpdated(function ($state, Set $set): void {
                         // Перезагружаем блок «Гонки регаты» под выбранную регату —
                         // relationship-репитер сам по себе не реактивен.
+                        // Ключ ОБЯЗАН быть в формате "record-{id}" — именно так Filament
+                        // помечает существующие записи relationship-репитера (см.
+                        // Repeater::getCachedExistingRecords). С сырым id гонки считаются
+                        // новыми и при сохранении дублируются.
                         $races = [];
                         foreach (self::raceEventsForRegatta($state) as $event) {
-                            $races[(string) $event->getKey()] = [
+                            $races["record-{$event->getKey()}"] = [
                                 'name'           => $event->name,
                                 'event_datetime' => $event->event_datetime?->format('Y-m-d H:i:s'),
                             ];
@@ -358,6 +362,16 @@ class RegattaResultResource extends Resource
                         $data['event_type'] = 'race';
 
                         return $data;
+                    })
+                    // На создании результата кэш «существующих гонок» строится во время
+                    // валидации, когда у новой записи ещё нет regatta_id (он проставляется
+                    // только после создания). С пустым кэшом Filament не находит уже
+                    // существующие гонки регаты и плодит дубли. Сбрасываем кэш перед
+                    // сохранением, чтобы он пересобрался по сохранённой записи и
+                    // сопоставил гонки по ключам record-{id}.
+                    ->saveRelationshipsUsing(function (Repeater $component): void {
+                        $component->clearCachedExistingRecords();
+                        $component->saveToRelationship();
                     })
                     ->defaultItems(0)
                     ->addActionLabel('Добавить гонку')
