@@ -276,6 +276,11 @@
 .hide-repeater-header-label .fi-fo-repeater-item-content .fi-fo-field-label-ctn {
   display: none;
 }
+.fi-scrollable-table-repeater .fi-fo-table-repeater-add {
+  justify-content: start;
+}
+/*
 .regatta-result-list .fi-fo-repeater-add {
   display: none;
 }
+  */
