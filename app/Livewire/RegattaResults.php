@@ -202,7 +202,10 @@ class RegattaResults extends Component
     protected function eagerLoads(): array
     {
         return [
-            'results.items'                       => fn ($q) => $q->orderByRaw('final_position IS NULL')->orderBy('final_position'),
+            'results.items'                       => fn ($q) => $q->reorder()
+                ->orderByRaw('final_position IS NULL')
+                ->orderByRaw('CAST(final_position AS UNSIGNED)')
+                ->orderBy('final_position'),
             'results.items.team.organizer',
             'results.items.yacht',
             'season',
