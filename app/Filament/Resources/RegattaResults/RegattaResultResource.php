@@ -174,6 +174,9 @@ class RegattaResultResource extends Resource
                             ->dehydrated()
                             ->columnSpan(2),
 
+                        TextInput::make('not_participate')
+                            ->label('Не участвовали'),
+
                         TextInput::make('total_points')
                             ->label('Очки')
                             //->numeric()
@@ -439,6 +442,7 @@ class RegattaResultResource extends Resource
         $columns = [
             TableColumn::make('Яхта')->markAsRequired(false),
             TableColumn::make('Команда'),
+            TableColumn::make('Не участвовали')->markAsRequired(false),
             TableColumn::make('Участники')->markAsRequired(false),
             TableColumn::make('Очки'),
             TableColumn::make('Место')->markAsRequired(false),
@@ -479,7 +483,8 @@ class RegattaResultResource extends Resource
                     }
                 }),
 
-
+                TextInput::make('not_participate')
+                    ->label('Не участвовали'),
 
             Placeholder::make('crew_list')
                 ->label('Участники')

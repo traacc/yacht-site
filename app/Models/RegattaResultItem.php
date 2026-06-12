@@ -15,6 +15,7 @@ class RegattaResultItem extends Model
         'regatta_result_id',
         'team_id',
         'yacht_id',
+        'not_participate',
         'total_points',
         'final_position',
     ];
