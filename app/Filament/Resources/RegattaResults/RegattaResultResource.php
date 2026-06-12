@@ -122,6 +122,10 @@ class RegattaResultResource extends Resource
                     ->label('Результаты участников')
                     ->relationship('items')
                     ->hintAction(self::fillItemsFromEntriesAction())
+
+                    ->disabled()
+                    ->dehydrated()
+
                     ->schema([
                         Select::make('yacht_id')
                             ->label('Яхта')
@@ -174,6 +178,7 @@ class RegattaResultResource extends Resource
                             ->numeric()
                             ->nullable(),
                     ])
+                    ->defaultItems(0)
                     ->columns(6)
                     ->addActionLabel('Добавить участника')
                     ->columnSpanFull(),
@@ -399,6 +404,14 @@ class RegattaResultResource extends Resource
         }
 
         $fields = [
+            Select::make('yacht_id')
+                ->label('Яхта')
+                ->relationship('yacht', 'name')
+                ->getOptionLabelFromRecordUsing(fn ($record) => trim(($record->name ?? '') . ($record->vfps_number ? " ({$record->vfps_number})" : '')))
+                ->searchable(['name', 'vfps_number'])
+                ->preload()
+                ->nullable(),
+            
             Select::make('team_id')
                 ->label('Команда')
                 ->relationship('team', 'name')
@@ -421,12 +434,7 @@ class RegattaResultResource extends Resource
                     }
                 }),
 
-            Select::make('yacht_id')
-                ->label('Яхта')
-                ->relationship('yacht', 'name')
-                ->searchable()
-                ->preload()
-                ->nullable(),
+
 
             Placeholder::make('crew_list')
                 ->label('Участники')
