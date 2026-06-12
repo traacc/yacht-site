@@ -182,9 +182,15 @@ class RegattaResultResource extends Resource
 
                         TextInput::make('final_position')
                             ->label('Место')
-                            ->minValue(1)
-                            ->step(1)
-                            ->numeric()
+                            ->rule(static function () {
+                                return static function (string $attribute, $value, \Closure $fail): void {
+                                    $value = trim((string) $value);
+
+                                    if ($value === '0' || str_contains($value, '-')) {
+                                        $fail('Недопустимое значение');
+                                    }
+                                };
+                            })
                             ->nullable(),
                     ])
                     ->defaultItems(0)
@@ -491,9 +497,15 @@ class RegattaResultResource extends Resource
 
             TextInput::make('final_position')
                 ->label('Место')
-                ->minValue(1)
-                ->step(1)
-                ->numeric()
+                ->rule(static function () {
+                    return static function (string $attribute, $value, \Closure $fail): void {
+                        $value = trim((string) $value);
+
+                        if ($value === '0' || str_contains($value, '-')) {
+                            $fail('Недопустимое значение');
+                        }
+                    };
+                })
                 ->nullable(),
         ];
         foreach ($raceEvents as $i => $race) {
