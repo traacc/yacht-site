@@ -171,25 +171,28 @@
     {{-- Таблица результатов --}}
     <table>
         <thead>
+            @php($headRowspan = $raceCount > 0 ? 2 : 1)
             <tr>
-                <th rowspan="2" style="width: 28px;">Место</th>
-                <th rowspan="2" style="width: 40px;">Парус №</th>
-                <th rowspan="2" style="width: 90px;">Команда</th>
-                <th rowspan="2" style="width: 80px;">Яхта</th>
-                <th rowspan="2">Экипаж</th>
-                <th rowspan="2" style="width: 58px;">Дата рождения</th>
-                <th rowspan="2" style="width: 42px;">Разряд</th>
+                <th rowspan="{{ $headRowspan }}" style="width: 28px;">Место</th>
+                <th rowspan="{{ $headRowspan }}" style="width: 40px;">Парус №</th>
+                <th rowspan="{{ $headRowspan }}" style="width: 90px;">Команда</th>
+                <th rowspan="{{ $headRowspan }}" style="width: 80px;">Яхта</th>
+                <th rowspan="{{ $headRowspan }}">Экипаж</th>
+                <th rowspan="{{ $headRowspan }}" style="width: 58px;">Дата рождения</th>
+                <th rowspan="{{ $headRowspan }}" style="width: 42px;">Разряд</th>
                 @for($n = 1; $n <= $raceCount; $n++)
                     <th colspan="2">Гонка {{ $n }}</th>
                 @endfor
-                <th rowspan="2" style="width: 38px;">Итого очков</th>
+                <th rowspan="{{ $headRowspan }}" style="width: 38px;">Итого очков</th>
             </tr>
-            <tr>
-                @for($n = 1; $n <= $raceCount; $n++)
-                    <th style="width: 26px;">Место</th>
-                    <th class="score-cell" style="width: 24px;">Очки</th>
-                @endfor
-            </tr>
+            @if($raceCount > 0)
+                <tr>
+                    @for($n = 1; $n <= $raceCount; $n++)
+                        <th style="width: 26px;">Место</th>
+                        <th class="score-cell" style="width: 24px;">Очки</th>
+                    @endfor
+                </tr>
+            @endif
         </thead>
         <tbody>
             @foreach($rows as $row)
