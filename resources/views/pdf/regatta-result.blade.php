@@ -197,7 +197,7 @@
                 <tr class="item-start" style="page-break-inside: avoid;">
                     <td class="pos-cell">{{ $row['position'] }}</td>
                     <td>{{ $row['sail'] }}</td>
-                    <td class="team-cell">{{ $row['team'] }}</td>
+                    <td class="team-cell">{{ $row['team'] }}@if(!empty($row['not_participate'])) ({{ $row['not_participate'] }})@endif</td>
                     <td>{{ $row['yacht'] }}</td>
 
                     <td colspan="3" class="crew-cell">

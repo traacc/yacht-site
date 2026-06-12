@@ -105,6 +105,7 @@ final class GenerateRegattaResultPdfAction
                 'position'  => $item->final_position,
                 'sail'      => optional($item->yacht)->vfps_number ?? '',
                 'team'      => optional($item->team)->name ?? '',
+                'not_participate' => $item->not_participate ?? '',
                 'yacht'     => optional($item->yacht)->name ?? '',
                 'total'     => $item->total_points ?? 0,
                 'crew'      => $crew,
