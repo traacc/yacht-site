@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Users;
 use App\Enums\SportCategory;
 use App\Enums\TeamMemberRole;
 use App\Filament\Resources\Users\Pages\ManageUsers;
+use App\Models\Regatta;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
@@ -185,7 +186,78 @@ class UserResource extends Resource
                             ->default('active')
                             ->required(),
                     ]),
+
+                Select::make('crew_team_id')
+                    ->label('Отправить в экипаж ближайшей регаты')
+                    ->helperText('Пользователь будет добавлен в заявку выбранной команды. В списке — только команды, уже записанные на ближайшую регату (пользователя нужно добавить в эту команду выше).')
+                    ->searchable()
+                    ->preload()
+                    ->visibleOn('create')
+                    ->options(fn (): array => static::closestRegattaTeamOptions())
+                    ->columnSpanFull(),
             ]);
+    }
+
+    /**
+     * Команды, уже записанные (pending/approved) на ближайшую регату.
+     *
+     * @return array<string, string> team_id => team name
+     */
+    public static function closestRegattaTeamOptions(): array
+    {
+        $regatta = Regatta::closestUpcoming();
+
+        if (! $regatta) {
+            return [];
+        }
+
+        return $regatta->entries()
+            ->whereIn('status', ['pending', 'approved'])
+            ->with('team:id,name')
+            ->get()
+            ->pluck('team.name', 'team_id')
+            ->filter()
+            ->all();
+    }
+
+    /**
+     * Добавляет пользователя запасным в экипаж ближайшей регаты — в заявку
+     * выбранной команды, при условии что команда записана (pending/approved)
+     * и пользователь действительно состоит в этой команде.
+     *
+     * @return bool Была ли создана запись экипажа
+     */
+    public static function addToClosestRegattaCrew(User $user, string $teamId): bool
+    {
+        $regatta = Regatta::closestUpcoming();
+
+        if (! $regatta) {
+            return false;
+        }
+
+        $user->loadMissing('teamMemberships');
+
+        $membership = $user->teamMemberships->firstWhere('team_id', $teamId);
+
+        if (! $membership) {
+            return false;
+        }
+
+        $entry = $regatta->entries()
+            ->where('team_id', $teamId)
+            ->whereIn('status', ['pending', 'approved'])
+            ->first();
+
+        if (! $entry) {
+            return false;
+        }
+
+        $crew = $entry->crew()->firstOrCreate(
+            ['team_member_id' => $membership->id],
+            ['role' => 'main'],
+        );
+
+        return $crew->wasRecentlyCreated;
     }
 
     public static function table(Table $table): Table
