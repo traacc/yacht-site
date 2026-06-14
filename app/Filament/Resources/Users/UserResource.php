@@ -25,6 +25,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -79,7 +80,28 @@ class UserResource extends Resource
                 TextInput::make('name')
                     ->label('ФИО')
                     ->placeholder('ФИО')
-                    ->required(),
+                    ->required()
+                    ->rules([
+                        function (Get $get, ?User $record): \Closure {
+                            return function (string $attribute, mixed $value, \Closure $fail) use ($get, $record): void {
+                                $birthDate = $get('birth_date');
+
+                                if (blank($value) || blank($birthDate)) {
+                                    return;
+                                }
+
+                                $duplicateExists = User::query()
+                                    ->where('name', $value)
+                                    ->whereDate('birth_date', $birthDate)
+                                    ->when($record, fn (Builder $q) => $q->whereKeyNot($record->getKey()))
+                                    ->exists();
+
+                                if ($duplicateExists) {
+                                    $fail('Пользователь с таким ФИО и датой рождения уже зарегистрирован');
+                                }
+                            };
+                        },
+                    ]),
                 /*
                 TextInput::make('first_name')
                     ->label('Имя')
