@@ -104,15 +104,15 @@
                                                 <span class="text-brand-gray">{{ $result->final_position }}</span>
                                             </div>
                                         </td>
+                                        @php $crew = $crewMaps[$regatta->id][$result->team_id] ?? []; @endphp
                                         <td data-label="Команда" class="py-3">
-                                            {{ $result->team?->name ?? '—' }}
+                                            <button wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})">{{ $result->team?->name ?? '—' }}</button>
                                             <span class="md:hidden"><br>({{ $result->yacht?->name ?? '—' }})</span>
                                         </td>
                                         <td data-label="Капитан" class="py-3 hidden md:table-cell">{{ $captainMaps[$regatta->id][$result->team_id] ?? '—' }}</td>
                                         <td data-label="Яхта" class="py-3 hidden md:table-cell">{{ $result->yacht?->name ?? '—' }}</td>
                                         <td data-label="Парус №" class="py-3 hidden md:table-cell">{{ $result->yacht?->vfps_number ?? '—' }}</td>
-                                        <td data-label="Участники" class="py-3">
-                                            @php $crew = $crewMaps[$regatta->id][$result->team_id] ?? []; @endphp
+                                        <td data-label="Участники" class="py-3 hidden md:table-cell">
                                             @if(!empty($crew))
                                                 <button
                                                     wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})"
@@ -203,15 +203,16 @@
                                                 <span class="text-brand-gray">{{ $result->final_position }}</span>
                                             </div>
                                         </td>
+                                        @php $crew = $crewMap[$result->team_id] ?? []; @endphp
                                         <td class="py-3">
-                                            {{ $result->team?->name ?? '—' }}
+                                            <button wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})">{{ $result->team?->name ?? '—' }}</button>
                                             <span class="md:hidden"><br>({{ $result->yacht?->name ?? '—' }})</span>
                                         </td>
                                         <td class="py-3  hidden md:table-cell">{{ $captainMap[$result->team_id] ?? '—' }}</td>
                                         <td class="py-3  hidden md:table-cell">{{ $result->yacht?->name ?? '—' }}</td>
                                         <td class="py-3  hidden md:table-cell">{{ $result->yacht?->vfps_number ?? '—' }}</td>
-                                        <td class="py-3">
-                                            @php $crew = $crewMap[$result->team_id] ?? []; @endphp
+                                        <td class="py-3 hidden md:table-cell">
+                                            
                                             @if(!empty($crew))
                                                 <button
                                                     wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})"
@@ -310,15 +311,16 @@
                                                         <span class="text-brand-gray">{{ $result->final_position }}</span>
                                                     </div>
                                                 </td>
+                                                @php $crew = $crewMap[$result->team_id] ?? []; @endphp
                                                 <td data-label="Команда" class="py-3">
-                                                    {{ $result->team?->name ?? '—' }}
+                                                    <button wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})">{{ $result->team?->name ?? '—' }}</button>
                                                     <span class="md:hidden"><br>({{ $result->yacht?->name ?? '—' }})</span>
                                                 </td>
                                                 <td data-label="Капитан" class="py-3 hidden md:table-cell">{{ $captainMap[$result->team_id] ?? '—' }}</td>
                                                 <td data-label="Яхта" class="py-3 hidden md:table-cell">{{ $result->yacht?->name ?? '—' }}</td>
                                                 <td data-label="Парус №" class="py-3 hidden md:table-cell">{{ $result->yacht?->vfps_number ?? '—' }}</td>
-                                                <td data-label="Участники" class="py-3">
-                                                    @php $crew = $crewMap[$result->team_id] ?? []; @endphp
+                                                <td data-label="Участники" class="py-3 hidden md:table-cell">
+                                                    
                                                     @if(!empty($crew))
                                                         <button
                                                             wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})"
