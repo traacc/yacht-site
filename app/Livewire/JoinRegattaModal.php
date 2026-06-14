@@ -469,8 +469,10 @@ class JoinRegattaModal extends Component
                 $crew = [(string) $organizerMember->id => 'captain'];
 
                 foreach ($this->guestMembers as $m) {
+                    $isUnregistered = ! ($m['registered'] ?? false);
+
                     // Незарегистрированный участник: создаём аккаунт со случайным email/телефоном
-                    if (! ($m['registered'] ?? false)) {
+                    if ($isUnregistered) {
                         $memberUser = User::create([
                             'name'           => $m['name'],
                             'birth_date'     => $m['birth_date'],
@@ -491,9 +493,10 @@ class JoinRegattaModal extends Component
                             'user_id' => $memberUserId,
                         ],
                         [
-                            'role'      => TeamMemberRole::Member->value,
-                            'status'    => 'active',
-                            'joined_at' => now(),
+                            'role'         => TeamMemberRole::Member->value,
+                            'status'       => 'active',
+                            'is_permanent' => $isUnregistered,
+                            'joined_at'    => now(),
                         ],
                     );
                     $crew[(string) $member->id] = in_array($m['role'], ['main', 'reserve'], true) ? $m['role'] : 'main';
