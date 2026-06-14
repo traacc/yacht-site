@@ -207,6 +207,9 @@ class UserResource extends Resource
                             ])
                             ->default('active')
                             ->required(),
+                        Toggle::make('is_permanent')
+                            ->label('Постоянный участник')
+                            ->default(false),
                     ]),
 
                 Select::make('crew_team_id')
