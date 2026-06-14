@@ -181,8 +181,10 @@ class RegattaResultResource extends Resource
                             ->dehydrated()
                             ->columnSpan(2),
 
+                        /*
                         TextInput::make('not_participate')
                             ->label('Не участвовали'),
+                        */
 
                         TextInput::make('total_points')
                             ->label('Очки')
