@@ -480,7 +480,7 @@
                     >&times;</button>
                 </div>
 
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto max-h-[85vh]">
                     <table class="w-full bg-brand-light-bg responsive-table overflow-auto">
                         <thead>
                             <tr class="text-2xl text-brand-dark border-b border-brand-border">
