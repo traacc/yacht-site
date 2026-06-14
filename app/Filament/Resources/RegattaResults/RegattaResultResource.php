@@ -276,7 +276,17 @@ class RegattaResultResource extends Resource
             ->model(RegattaEntry::class)
             ->schema(fn (Schema $schema): Schema => RegattaEntryResource::form($schema))
             // Подставляем регату: явно переданную или из поля основной формы.
-            ->fillForm(fn (Get $get): array => ['regatta_id' => $regattaId ?? $get('regatta_id')])
+            // fillForm с явными данными не применяет default() компонентов,
+            // поэтому набор документов формируем здесь же — иначе обязательные
+            // документы требуются валидацией, но в форме нет полей загрузки.
+            ->fillForm(function (Get $get) use ($regattaId): array {
+                $resolvedRegattaId = $regattaId ?? $get('regatta_id');
+
+                return [
+                    'regatta_id'         => $resolvedRegattaId,
+                    'required_documents' => RegattaEntryResource::defaultRequiredDocuments($resolvedRegattaId),
+                ];
+            })
             ->action(function (array $data): void {
                 $requiredDocs = $data['required_documents'] ?? [];
                 $crew         = $data['crew'] ?? [];

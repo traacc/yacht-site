@@ -70,6 +70,27 @@ class RegattaEntryResource extends Resource
             */
     }
 
+    /**
+     * Строит дефолтный набор элементов Repeater'а документов для заявки.
+     *
+     * Используется и при заполнении формы дефолтами, и при подстановке
+     * регаты (afterStateUpdated / fillForm экшена).
+     *
+     * @return array<int, array{doc_type: string, title: string, is_required: bool, files: array}>
+     */
+    public static function defaultRequiredDocuments(?string $regattaId): array
+    {
+        return array_map(
+            fn (array $doc): array => [
+                'doc_type'    => $doc['doc_type'],
+                'title'       => $doc['title'],
+                'is_required' => $doc['is_required'] ?? false,
+                'files'       => [],
+            ],
+            ManageRegattaEntries::getRequiredDocuments($regattaId),
+        );
+    }
+
     public static function form(Schema $schema): Schema
     {
         $maxFiles      = (int) config('documents.max_files_per_type', 10);
@@ -95,16 +116,7 @@ class RegattaEntryResource extends Resource
                     ->columnSpanFull()
                     ->live()
                     ->afterStateUpdated(function (?string $state, Set $set): void {
-                        $docs = array_map(
-                            fn (array $doc) => [
-                                'doc_type'    => $doc['doc_type'],
-                                'title'       => $doc['title'],
-                                'is_required' => $doc['is_required'] ?? false,
-                                'files'       => [],
-                            ],
-                            ManageRegattaEntries::getRequiredDocuments($state),
-                        );
-                        $set('required_documents', $docs);
+                        $set('required_documents', static::defaultRequiredDocuments($state));
                     }),
                 Select::make('team_id')
                     ->label('Команда')
@@ -248,15 +260,7 @@ class RegattaEntryResource extends Resource
                     ->addable(false)
                     ->deletable(false)
                     ->reorderable(false)
-                    ->default(fn (Get $get) => array_map(
-                        fn (array $doc) => [
-                            'doc_type'    => $doc['doc_type'],
-                            'title'       => $doc['title'],
-                            'is_required' => $doc['is_required'] ?? false,
-                            'files'       => [],
-                        ],
-                        ManageRegattaEntries::getRequiredDocuments($get('regatta_id')),
-                    ))
+                    ->default(fn (Get $get) => static::defaultRequiredDocuments($get('regatta_id')))
                     ->columns(1)
                     ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
                     ->rules([
