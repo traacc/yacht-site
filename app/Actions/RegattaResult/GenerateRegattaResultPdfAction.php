@@ -127,7 +127,13 @@ final class GenerateRegattaResultPdfAction
         if (! $filename) {
             $safeName = preg_replace('/[^\w\s\-а-яё]/ui', '', $regatta?->name ?? 'regatta');
             $safeName = trim(preg_replace('/\s+/', '_', $safeName)) ?: 'regatta';
-            $filename = "results_{$safeName}_{$regattaResult->result_type}.pdf";
+            $result_type = $regattaResult->result_type;
+            $result_type_label = 'итоговые_результаты';
+
+            if($result_type == 'preliminary')
+                $result_type_label = 'предварительные_результаты';
+
+            $filename = "{$safeName}_{$result_type_label}.pdf";
         }
 
         // StreamedResponse (а не Pdf::download), т.к. action вызывается в
