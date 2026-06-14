@@ -24,6 +24,7 @@
                         <a href="{{ route('rules') }}"  class="block px-4 py-2 text-gray-700">Правила вступления</a>
                         <a href="{{ route('regulations') }}"  class="block px-4 py-2 text-gray-700">Технический регламент яхт</a>
                         <a href="{{ route('decisions') }}"  class="block px-4 py-2 text-gray-700">Решения общего собрания</a></li>
+                        <a href="{{ route('votings') }}"  class="block px-4 py-2 text-gray-700">Голосования</a></li>
                     </div>
                 </div>
                 <a href="{{ route('competitions') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Соревнования</a>
@@ -146,6 +147,7 @@
                             <a href="{{ route('rules') }}"  class="block px-4 py-2 text-sm">Правила вступления</a>
                             <a href="{{ route('regulations') }}"  class="block px-4 py-2 text-sm">Технический регламент яхт</a>
                             <a href="{{ route('decisions') }}"  class="block px-4 py-2 text-sm">Решения общего собрания</a></li>
+                            <a href="{{ route('votings') }}"  class="block px-4 py-2 text-sm">Голосования</a></li>
                         </div>
                     </div>
                     <a href="{{ route('competitions') }}"  class="block py-2 text-sm">Соревнования</a>
