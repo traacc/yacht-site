@@ -56,12 +56,15 @@ final class GenerateRegattaResultPdfAction
         $rows = $resultItems->map(function ($item) use ($entriesByTeam, $eventByRaceNumber, $raceCount) {
             $entry = $entriesByTeam->get($item->team_id);
 
-            // Экипаж: капитан → основной состав → запас.
+            // Экипаж: капитан → основной состав → запас, внутри роли — по алфавиту имени.
             $roleOrder = ['captain' => 0, 'main' => 1, 'reserve' => 2];
             $crew = collect();
             if ($entry) {
                 $crew = $entry->crew
-                    ->sortBy(fn ($c) => $roleOrder[$c->role] ?? 9)
+                    ->sortBy(
+                        fn ($c) => sprintf('%d|%s', $roleOrder[$c->role] ?? 9, $c->teamMember->user->name ?? ''),
+                        SORT_NATURAL | SORT_FLAG_CASE
+                    )
                     ->map(function ($c) {
                         $user = $c->teamMember->user ?? null;
                         if (! $user) {
