@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\RegattaResults;
 
+use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\RegattaResult\ImportRegattaResultItemsAction;
+use App\Filament\Resources\RegattaEntries\RegattaEntryResource;
 use App\Filament\Resources\RegattaResults\Pages\ManageRegattaResults;
 use App\Models\RaceResult;
 use App\Models\RegattaEntry;
@@ -29,6 +31,7 @@ use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -122,6 +125,10 @@ class RegattaResultResource extends Resource
                     ])
                     ->required()
                     ->default('manual'),
+
+                Actions::make([
+                    self::createEntryAction(),
+                ])->columnSpanFull(),
 
                 self::racesManagerSchema()
                     ->columnSpanFull(),
@@ -241,6 +248,63 @@ class RegattaResultResource extends Resource
                     ->title($items !== []
                         ? 'Добавлено участников: ' . count($items)
                         : 'Активных заявок на эту регату нет')
+                    ->success()
+                    ->send();
+            });
+    }
+
+    /**
+     * Кнопка «Добавить заявку»: открывает окно с полной формой заявки
+     * (RegattaEntry) — экипаж и документы. Регата подставляется из текущей
+     * формы результата. Создание выполняется тем же путём, что и на странице
+     * заявок (синхронизация экипажа и документов).
+     *
+     * Если регата известна заранее (например, в таблице редактирования по
+     * записи), её id передаётся явно; иначе берётся из поля основной формы.
+     */
+    protected static function createEntryAction(?string $regattaId = null): Action
+    {
+        return Action::make('createEntry')
+            ->label('Добавить заявку')
+            ->icon(Heroicon::PlusCircle)
+            ->color('primary')
+            ->modalHeading('Новая заявка на регату')
+            ->modalWidth('4xl')
+            ->modalSubmitActionLabel('Создать')
+            // Форма заявки использует relationship-поля (team/yacht/regatta),
+            // поэтому модель формы экшена — RegattaEntry, а не RegattaResult.
+            ->model(RegattaEntry::class)
+            ->schema(fn (Schema $schema): Schema => RegattaEntryResource::form($schema))
+            // Подставляем регату: явно переданную или из поля основной формы.
+            ->fillForm(fn (Get $get): array => ['regatta_id' => $regattaId ?? $get('regatta_id')])
+            ->action(function (array $data): void {
+                $requiredDocs = $data['required_documents'] ?? [];
+                $crew         = $data['crew'] ?? [];
+                unset($data['required_documents'], $data['crew']);
+
+                // Проверка дубликата: та же команда уже подала заявку на эту регату.
+                $conflict = RegattaEntry::query()
+                    ->where('regatta_id', $data['regatta_id'])
+                    ->where('team_id', $data['team_id'])
+                    ->first();
+
+                if ($conflict) {
+                    Notification::make()
+                        ->title('Заявка уже существует')
+                        ->body('Эта команда уже подала заявку на эту регату.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
+                $record = RegattaEntry::create($data);
+
+                app(SyncDocumentFilesAction::class)->execute($record, $requiredDocs);
+                RegattaEntryResource::syncCrew($record, $crew);
+
+                Notification::make()
+                    ->title('Заявка создана')
                     ->success()
                     ->send();
             });
@@ -442,7 +506,7 @@ class RegattaResultResource extends Resource
         $columns = [
             TableColumn::make('Яхта')->markAsRequired(false),
             TableColumn::make('Команда'),
-            TableColumn::make('Не участвовали')->markAsRequired(false),
+            //TableColumn::make('Не участвовали')->markAsRequired(false),
             TableColumn::make('Участники')->markAsRequired(false),
             TableColumn::make('Очки'),
             TableColumn::make('Место')->markAsRequired(false),
@@ -482,9 +546,10 @@ class RegattaResultResource extends Resource
                         $set('yacht_id', $yachtId);
                     }
                 }),
-
+                /*
                 TextInput::make('not_participate')
                     ->label('Не участвовали'),
+                */
 
             Placeholder::make('crew_list')
                 ->label('Участники')
@@ -744,6 +809,9 @@ class RegattaResultResource extends Resource
                     ->modalHeading('Редактировать результат регаты (таблица)')
                     ->modalWidth('screen')
                     ->schema(fn (RegattaResult $record): array => [
+                        Actions::make([
+                            self::createEntryAction($record->regatta_id),
+                        ]),
                         self::racesManagerSchema(),
                         // Фиксируем соответствие колонок гонок их id (для корректного сохранения).
                         Hidden::make('race_event_ids')
