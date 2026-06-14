@@ -67,7 +67,7 @@ class VotingResource extends Resource
                         Select::make('status')
                             ->label('Статус')
                             ->options(VotingStatus::options())
-                            ->default(VotingStatus::Draft->value)
+                            ->default(VotingStatus::Active->value)
                             ->required(),
                         /*
                         Toggle::make('is_anonymous')
@@ -133,6 +133,7 @@ class VotingResource extends Resource
                     ->label('Статус')
                     ->badge()
                     ->sortable(),
+                /*
                 IconColumn::make('is_anonymous')
                     ->label('Анонимное')
                     ->boolean()
@@ -141,6 +142,7 @@ class VotingResource extends Resource
                     ->label('Мультивыбор')
                     ->boolean()
                     ->toggleable(),
+                */
                 TextColumn::make('options_count')
                     ->label('Вариантов')
                     ->sortable()

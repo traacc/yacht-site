@@ -2,10 +2,12 @@
 
 use App\Actions\Feedback\SubmitFeedbackAction;
 use App\Actions\GenerateCalendarPdfAction;
+use App\Enums\VotingStatus;
 use App\Models\Gallery;
 use App\Models\News;
 use App\Models\Regatta;
 use App\Models\Team;
+use App\Models\Voting;
 use App\Models\Yacht;
 use App\Services\SettingsService;
 use App\Services\WeatherService;
@@ -178,7 +180,52 @@ Route::get('/association/decisions', function () {
 
     return view('pages.association-info.decisions', compact('documents'));
 })->name('decisions');
+Route::get('/association/votings', function () {
+    $activeVotings = Voting::where('status', VotingStatus::Active)
+        ->with('options')
+        ->withCount('votes')
+        ->orderByDesc('starts_at')
+        ->get();
 
+    $closedVotings = Voting::where('status', VotingStatus::Closed)
+        ->with(['options' => fn ($q) => $q->withCount('votes')])
+        ->withCount('votes')
+        ->orderByDesc('ends_at')
+        ->get();
+
+    // Варианты, за которые текущий пользователь уже проголосовал, сгруппированные по голосованию
+    $userVotedOptionIds = auth()->check()
+        ? \App\Models\Vote::where('user_id', auth()->id())
+            ->whereIn('voting_id', $activeVotings->pluck('id'))
+            ->get()
+            ->groupBy('voting_id')
+            ->map(fn ($votes) => $votes->pluck('voting_option_id')->all())
+        : collect();
+
+    return view('pages.association-info.votings', compact('activeVotings', 'closedVotings', 'userVotedOptionIds'));
+})->name('votings');
+
+Route::post('/association/votings/{voting}/vote', function (Request $request, Voting $voting) {
+    // Ошибки складываем в именованный bag, чтобы они показывались у нужной карточки
+    $bag = 'voting_' . $voting->id;
+
+    $validated = $request->validateWithBag($bag, [
+        'voting_option'   => ['required'],
+        'voting_option.*' => ['string'],
+    ], [
+        'voting_option.required' => 'Выберите вариант ответа.',
+    ]);
+
+    $optionIds = (array) $validated['voting_option'];
+
+    try {
+        app(\App\Actions\Voting\CastVoteAction::class)->handle($voting, $optionIds, auth()->id());
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return back()->withErrors($e->errors(), $bag);
+    }
+
+    return back()->with('vote_cast', $voting->id);
+})->middleware('auth')->name('votings.vote');
 Route::get('/regattas/calendar/pdf', function (Request $request) {
     $year = $request->integer('year', (int) now()->format('Y'));
     return app(GenerateCalendarPdfAction::class)->execute($year);
