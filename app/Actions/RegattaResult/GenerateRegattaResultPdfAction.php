@@ -95,7 +95,7 @@ final class GenerateRegattaResultPdfAction
                 }
 
                 $pts = $raceResult && $raceResult->points !== null
-                    ? (float) $raceResult->points
+                    ? $raceResult->points
                     : null;
 
                 $races[$raceNum] = ['pos' => $pos, 'pts' => $pts];
