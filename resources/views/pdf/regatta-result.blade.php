@@ -223,7 +223,7 @@
 
                     @foreach($row['races'] as $race)
                         <td>{{ $race['pos'] }}</td>
-                        <td class="score-cell">{{ $race['pts'] !== null ? rtrim(rtrim(number_format($race['pts'], 1, '.', ''), '0'), '.') : '' }}</td>
+                        <td class="score-cell">{{ $race['pts'] }}</td>
                     @endforeach
                     <td class="total-cell">{{ $row['total'] }}</td>
                 </tr>
