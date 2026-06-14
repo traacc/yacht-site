@@ -184,6 +184,7 @@ class RegattaEntryResource extends Resource
                                     ->mapWithKeys(fn (TeamMember $member): array => [
                                         $member->id => $member->user?->name ?? 'Неизвестный',
                                     ])
+                                    ->sort(fn (string $a, string $b): int => strnatcasecmp($a, $b))
                                     ->all();
                             })
                             ->required()
