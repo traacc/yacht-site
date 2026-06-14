@@ -184,6 +184,7 @@ class RegattaResults extends Component
                 'name'     => $c->teamMember->user->name ?? '',
                 'birthday' => $c->teamMember->user->birth_date?->format('d.m.Y') ?? '—',
                 'rank'     => $c->teamMember->user->sport_category?->getLabel() ?? '—',
+                'role'     => $c->role,
             ])->toArray();
 
             // Если у команды несколько заявок (разные яхты) — объединяем экипаж
@@ -197,6 +198,27 @@ class RegattaResults extends Component
     }
 
     /**
+     * Строит карту капитанов: team_id → имя капитана (участник экипажа с ролью 'captain').
+     *
+     * @param  array<string, array<int, array{name: string, role: ?string}>>  $crewMap
+     * @return array<string, ?string>
+     */
+    protected function buildCaptainMap(array $crewMap): array
+    {
+        $captainMap = [];
+        foreach ($crewMap as $teamId => $members) {
+            foreach ($members as $member) {
+                if (($member['role'] ?? null) === 'captain') {
+                    $captainMap[$teamId] = $member['name'] ?: null;
+                    break;
+                }
+            }
+        }
+
+        return $captainMap;
+    }
+
+    /**
      * Eager-loads, необходимые для отображения результатов.
      */
     protected function eagerLoads(): array
@@ -206,7 +228,7 @@ class RegattaResults extends Component
                 ->orderByRaw('final_position IS NULL')
                 ->orderByRaw('CAST(final_position AS UNSIGNED)')
                 ->orderBy('final_position'),
-            'results.items.team.organizer',
+            'results.items.team',
             'results.items.yacht',
             'season',
         ];
@@ -232,7 +254,8 @@ class RegattaResults extends Component
         $regatta     = $this->resolveRegatta();
         $resultItems = $regatta?->results?->flatMap->items ?? collect();
 
-        $crewMap = $regatta ? $this->buildCrewMap($regatta, $resultItems) : [];
+        $crewMap    = $regatta ? $this->buildCrewMap($regatta, $resultItems) : [];
+        $captainMap = $this->buildCaptainMap($crewMap);
 
         $topTeams        = collect();
         $topParticipants = collect();
@@ -261,22 +284,24 @@ class RegattaResults extends Component
                 ->values();
         }
 
-        return compact('regatta', 'resultItems', 'topTeams', 'topParticipants', 'crewMap');
+        return compact('regatta', 'resultItems', 'topTeams', 'topParticipants', 'crewMap', 'captainMap');
     }
 
     private function renderList(): array
     {
-        $crewMaps = [];
-        $regattas = $this->resolveRegattas();
+        $crewMaps    = [];
+        $captainMaps = [];
+        $regattas    = $this->resolveRegattas();
 
-        $regattas->each(function ($r) use (&$crewMaps) {
+        $regattas->each(function ($r) use (&$crewMaps, &$captainMaps) {
             $resultItems = $r->results->flatMap->items ?? collect();
             $r->setRelation('resultItems', $resultItems);
-            $crewMaps[$r->id] = $this->buildCrewMap($r, $resultItems);
+            $crewMaps[$r->id]    = $this->buildCrewMap($r, $resultItems);
+            $captainMaps[$r->id] = $this->buildCaptainMap($crewMaps[$r->id]);
         });
 
         $availableYears = $this->availableYears();
 
-        return compact('regattas', 'availableYears', 'crewMaps');
+        return compact('regattas', 'availableYears', 'crewMaps', 'captainMaps');
     }
 }
