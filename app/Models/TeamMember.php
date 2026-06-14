@@ -19,6 +19,7 @@ class TeamMember extends Pivot
         'user_id',
         'role',
         'status',
+        'is_permanent',
         'joined_at',
     ];
 
@@ -26,6 +27,7 @@ class TeamMember extends Pivot
     {
         return [
             'joined_at' => 'datetime',
+            'is_permanent' => 'boolean',
         ];
     }
 

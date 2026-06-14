@@ -27,6 +27,7 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -186,17 +187,18 @@ class TeamResource extends Resource
                                 name: 'user',
                                 titleAttribute: 'name',
                                 modifyQueryUsing: function (Builder $query, $component) {
-                                    $query->where(function (Builder $q) use ($component) {
-                                        $q->freeUsers()
-                                            ->orWhere('id', auth()->id());
+                                    // Текущая редактируемая команда (если есть) — её постоянных участников не исключаем
+                                    $currentTeamId = null;
+                                    $livewire = $component?->getLivewire();
+                                    if ($livewire && method_exists($livewire, 'getMountedTableActionRecord')) {
+                                        $currentTeamId = $livewire->getMountedTableActionRecord()?->getKey();
+                                    }
 
-                                        $livewire = $component?->getLivewire();
-                                        if ($livewire && method_exists($livewire, 'getMountedTableActionRecord')) {
-                                            $record = $livewire->getMountedTableActionRecord();
-                                            if ($record) {
-                                                $q->orWhereHas('teamMemberships', fn (Builder $q2) => $q2->where('team_id', $record->getKey()));
-                                            }
-                                        }
+                                    // Показываем пользователей, не являющихся постоянными участниками других команд,
+                                    // плюс самого создателя команды (он обязан быть в составе).
+                                    $query->where(function (Builder $q) use ($currentTeamId) {
+                                        $q->withoutPermanentInOtherTeams($currentTeamId)
+                                            ->orWhere('id', auth()->id());
                                     });
 
                                     // Исключаем пользователей, уже добавленных в других строках Repeater'а.
@@ -235,6 +237,9 @@ class TeamResource extends Resource
                             ->required(),
                         Hidden::make('status')
                             ->default('active'),
+                        Toggle::make('is_permanent')
+                            ->label('Постоянный участник')
+                            ->default(false),
                     ]),
 
                 Hidden::make('organizer_id')

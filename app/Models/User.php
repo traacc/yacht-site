@@ -216,6 +216,20 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         );
     }
 
+    /**
+     * Scope: пользователи, не являющиеся постоянными участниками других команд.
+     */
+    public function scopeWithoutPermanentInOtherTeams(Builder $query, $exceptTeamId = null): Builder
+    {
+        return $query->whereDoesntHave('teamMemberships', function (Builder $q) use ($exceptTeamId) {
+            $q->where('is_permanent', true);
+
+            if ($exceptTeamId) {
+                $q->where('team_id', '!=', $exceptTeamId);
+            }
+        });
+    }
+
 
     // Дней до следующего дня рождения
     protected function daysUntilBirthday(): Attribute
