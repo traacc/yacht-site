@@ -114,10 +114,10 @@
                                                 <button
                                                     wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})"
                                                     class="text-[#2D92CE] font-medium underline hover:no-underline cursor-pointer bg-transparent border-0 p-0">
-                                                    {{ count($crew) }} участников
+                                                    {{ count($crew) }} <span class="hidden md:inline">участников</span>
                                                 </button>
                                             @else
-                                                <span class="text-brand-gray">0 участников</span>
+                                                <span class="text-brand-gray">0 <span class="hidden md:inline">участников</span></span>
                                             @endif
                                         </td>
                                         <td data-label="Очки" class="py-3">{{ number_format($result->total_points, 1, ',', ' ') }}</td>
@@ -210,10 +210,10 @@
                                                 <button
                                                     wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})"
                                                     class="text-[#2D92CE] font-medium underline hover:no-underline cursor-pointer bg-transparent border-0 p-0">
-                                                    {{ count($crew) }} участников
+                                                    {{ count($crew) }} <span class="hidden md:inline">участников</span>
                                                 </button>
                                             @else
-                                                <span class="text-brand-gray">0 участников</span>
+                                                <span class="text-brand-gray">0 <span class="hidden md:inline">участников</span></span>
                                             @endif
                                         </td>
                                         <td class="py-3">{{ number_format($result->total_points, 1, ',', ' ') }}</td>
@@ -314,10 +314,10 @@
                                                         <button
                                                             wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})"
                                                             class="text-[#2D92CE] font-medium underline hover:no-underline cursor-pointer bg-transparent border-0 p-0">
-                                                            {{ count($crew) }} участников
+                                                            {{ count($crew) }} <span class="hidden md:inline">участников</span>
                                                         </button>
                                                     @else
-                                                        <span class="text-brand-gray">0 участников</span>
+                                                        <span class="text-brand-gray">0 <span class="hidden md:inline">участников</span></span>
                                                     @endif
                                                 </td>
                                                 <td data-label="Очки" class="py-3">{{ number_format($result->total_points, 1, ',', ' ') }}</td>
