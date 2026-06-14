@@ -79,7 +79,7 @@
                     <div class="overflow-x-auto relative p-6 bg-white">
                         <table class="w-full">
                             <thead>
-                                <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]  hidden md:table-cell">
+                                <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]  hidden md:table-row">
                                     <th class="pb-2 text-center font-medium w-16 a-font">Место</th>
                                     <th class="pb-2 text-center font-medium a-font">Команда</th>
                                     <th class="pb-2 text-center font-medium a-font">Капитан</th>
@@ -175,7 +175,7 @@
                     <div class="overflow-x-auto relative p-2 md:p-6 bg-white">
                         <table class="w-full">
                             <thead>
-                                <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] hidden md:table-cell">
+                                <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] hidden md:table-row">
                                     <th class="pb-2 text-center font-medium w-16 a-font">Место</th>
                                     <th class="pb-2 text-center font-medium a-font">Команда</th>
                                     <th class="pb-2 text-center font-medium a-font">Капитан</th>
@@ -279,7 +279,7 @@
                             <div class="overflow-x-auto relative p-2 md:p-6 md:pt-0 bg-white">
                                 <table class="w-full">
                                     <thead class="sticky top-0 bg-white">
-                                        <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]">
+                                        <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]  hidden md:table-row">
                                             <th class="pb-2 text-center font-medium pt-6 w-16 a-font">Место</th>
                                             <th class="pb-2 text-center font-medium pt-6 a-font">Команда</th>
                                             <th class="pb-2 text-center font-medium pt-6 a-font">Капитан</th>
@@ -305,9 +305,9 @@
                                                     </div>
                                                 </td>
                                                 <td data-label="Команда" class="py-3">{{ $result->team?->name ?? '—' }}</td>
-                                                <td data-label="Капитан" class="py-3">{{ $captainMap[$result->team_id] ?? '—' }}</td>
+                                                <td data-label="Капитан" class="py-3 hidden md:table-cell">{{ $captainMap[$result->team_id] ?? '—' }}</td>
                                                 <td data-label="Яхта" class="py-3">{{ $result->yacht?->name ?? '—' }}</td>
-                                                <td data-label="Парус №" class="py-3">{{ $result->yacht?->vfps_number ?? '—' }}</td>
+                                                <td data-label="Парус №" class="py-3 hidden md:table-cell">{{ $result->yacht?->vfps_number ?? '—' }}</td>
                                                 <td data-label="Участники" class="py-3">
                                                     @php $crew = $crewMap[$result->team_id] ?? []; @endphp
                                                     @if(!empty($crew))
