@@ -51,6 +51,13 @@ class JoinRegattaModal extends Component
     /** Результаты поиска пользователей */
     public array $searchResults = [];
 
+    /**
+     * Свободные яхты для текущей регаты (для единого списка выбора/создания).
+     *
+     * @var array<int, array{id: string, name: string, vfps: ?string}>
+     */
+    public array $freeYachts = [];
+
     // ──────────────────────────────────────────────
     // Гостевой поток: регистрация + создание команды/яхты при подаче заявки
     // ──────────────────────────────────────────────
@@ -127,6 +134,7 @@ class JoinRegattaModal extends Component
         $this->newMemberName = '';
         $this->newMemberBirthDate = '';
         $this->newMemberSportCategory = '';
+        $this->loadFreeYachts();
     }
 
     public function closeModal(): void
@@ -134,7 +142,7 @@ class JoinRegattaModal extends Component
         $this->isOpen = false;
         $this->reset([
             'regattaId', 'yachtId', 'documentFiles', 'submitted', 'leftCrew',
-            'searchQuery', 'searchResults',
+            'searchQuery', 'searchResults', 'freeYachts',
             'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'teamMode', 'teamId', 'teamName',
             'yachtMode', 'newYachtName', 'newYachtVfps', 'guestMembers',
             'newMemberName', 'newMemberBirthDate', 'newMemberSportCategory',
@@ -168,8 +176,57 @@ class JoinRegattaModal extends Component
     public function updatedRegattaId(): void
     {
         $this->yachtId = null;
+        $this->yachtMode = 'select';
+        $this->newYachtName = '';
+        $this->newYachtVfps = '';
         $this->documentFiles = [];
-        $this->resetErrorBag(['yachtId', 'regattaId']);
+        $this->loadFreeYachts();
+        $this->resetErrorBag(['yachtId', 'newYachtName', 'regattaId']);
+    }
+
+    /** Загрузить свободные яхты для текущей регаты в плоский список для единого селекта. */
+    private function loadFreeYachts(): void
+    {
+        unset($this->allFreeYachts);
+
+        $this->freeYachts = $this->allFreeYachts
+            ->map(fn (Yacht $y): array => [
+                'id'   => (string) $y->id,
+                'name' => $y->name,
+                'vfps' => $y->vfps_number,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /** Выбрать свободную яхту из единого списка. */
+    public function selectYacht(string $yachtId): void
+    {
+        $this->yachtMode = 'select';
+        $this->yachtId = $yachtId;
+        $this->newYachtName = '';
+        $this->newYachtVfps = '';
+        $this->resetErrorBag(['yachtId', 'newYachtName']);
+    }
+
+    /** Начать добавление своей яхты (название берётся из поискового запроса). */
+    public function startNewYacht(string $name = ''): void
+    {
+        $this->yachtMode = 'create';
+        $this->yachtId = null;
+        $this->newYachtName = trim($name);
+        $this->newYachtVfps = '';
+        $this->resetErrorBag(['yachtId', 'newYachtName']);
+    }
+
+    /** Сбросить выбор/создание яхты — вернуться к поиску по списку. */
+    public function clearYacht(): void
+    {
+        $this->yachtMode = 'select';
+        $this->yachtId = null;
+        $this->newYachtName = '';
+        $this->newYachtVfps = '';
+        $this->resetErrorBag(['yachtId', 'newYachtName']);
     }
 
     /**

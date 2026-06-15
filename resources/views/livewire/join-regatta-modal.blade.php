@@ -161,36 +161,103 @@
                     @endif
                 </div>
 
-                {{-- Яхта: выбор свободной или создание новой --}}
-                <div>
+                {{-- Яхта: единый список — выбрать свободную или добавить свою --}}
+                <div x-data="{
+                    query: '',
+                    isOpen: false,
+                    selectedIndex: -1,
+                    yachts: @entangle('freeYachts'),
+                    init() {
+                        this.$watch('query', () => { this.selectedIndex = -1; });
+                    },
+                    get filtered() {
+                        const q = this.query.trim().toLowerCase();
+                        if (q === '') return this.yachts;
+                        return this.yachts.filter(y =>
+                            (y.name ?? '').toLowerCase().includes(q) ||
+                            (y.vfps ?? '').toLowerCase().includes(q)
+                        );
+                    },
+                    selectYacht(yacht) {
+                        this.isOpen = false;
+                        this.query = '';
+                        $wire.selectYacht(yacht.id);
+                    },
+                    addNewFromQuery() {
+                        const name = this.query.trim();
+                        this.isOpen = false;
+                        this.query = '';
+                        $wire.startNewYacht(name);
+                    },
+                    onKeydown(e) {
+                        if (!this.isOpen) return;
+                        const items = this.filtered;
+                        if (e.key === 'ArrowDown') { e.preventDefault(); this.selectedIndex = Math.min(this.selectedIndex + 1, items.length - 1); }
+                        else if (e.key === 'ArrowUp') { e.preventDefault(); this.selectedIndex = Math.max(this.selectedIndex - 1, -1); }
+                        else if (e.key === 'Enter' && this.selectedIndex >= 0) { e.preventDefault(); this.selectYacht(items[this.selectedIndex]); }
+                        else if (e.key === 'Escape') { this.isOpen = false; }
+                    }
+                }" x-on:click.away="isOpen = false">
                     <label class="block text-sm text-brand-gray-light mb-1">Яхта</label>
-                    <div class="flex gap-4 mb-2 text-sm">
-                        <label class="inline-flex items-center gap-1.5">
-                            <input type="radio" wire:model.live="yachtMode" value="select" class="text-[#2D92CE]">
-                            <span>Выбрать свободную</span>
-                        </label>
-                        <label class="inline-flex items-center gap-1.5">
-                            <input type="radio" wire:model.live="yachtMode" value="create" class="text-[#2D92CE]">
-                            <span>Добавить свою</span>
-                        </label>
-                    </div>
 
                     @if ($yachtMode === 'create')
-                        <input type="text" wire:model="newYachtName" placeholder="Название яхты"
-                               class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('newYachtName') border-red-300 @enderror">
-                        @error('newYachtName')
-                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                        @enderror
-                        <input type="text" wire:model="newYachtVfps" placeholder="Номер паруса"
-                               class="mt-2 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm">
+                        {{-- Добавление своей яхты --}}
+                        <div class="p-3 bg-[#F8F8F8] rounded space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-gray-500">Новая яхта</span>
+                                <button type="button" wire:click="clearYacht"
+                                        class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
+                            </div>
+                            <input type="text" wire:model="newYachtName" placeholder="Название яхты"
+                                   class="block w-full border-none font-medium shadow-sm bg-white sm:text-sm @error('newYachtName') border-red-300 @enderror">
+                            @error('newYachtName')
+                                <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                            @enderror
+                            <input type="text" wire:model="newYachtVfps" placeholder="Номер паруса"
+                                   class="block w-full border-none font-medium shadow-sm bg-white sm:text-sm">
+                        </div>
+                    @elseif ($yachtId)
+                        {{-- Выбранная свободная яхта --}}
+                        @php($selectedYacht = collect($freeYachts)->firstWhere('id', $yachtId))
+                        <div class="flex items-center gap-3 py-2 px-3 bg-[#F8F8F8] rounded">
+                            <span class="text-sm flex-1">
+                                {{ $selectedYacht['name'] ?? '' }}
+                                <span class="text-gray-400 text-xs ml-1">({{ $selectedYacht['vfps'] ?? 'без номера ВФПС' }})</span>
+                            </span>
+                            <button type="button" wire:click="clearYacht"
+                                    class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
+                        </div>
                     @else
-                        <select wire:model="yachtId"
-                                class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('yachtId') border-red-300 @enderror">
-                            <option value="">Выберите яхту</option>
-                            @foreach ($this->allFreeYachts as $yacht)
-                                <option value="{{ $yacht->id }}">{{ $yacht->name }} ({{ $yacht->vfps_number ?? 'без номера ВФПС' }})</option>
-                            @endforeach
-                        </select>
+                        {{-- Поиск по списку свободных яхт --}}
+                        <div class="relative">
+                            <input type="text" x-model="query"
+                                   x-on:focus="isOpen = true"
+                                   x-on:click="isOpen = true"
+                                   x-on:keydown="onKeydown($event)"
+                                   placeholder="Выберите свободную или добавьте свою..."
+                                   class="w-full border bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none @error('yachtId') border-red-300 @else border-gray-200 @enderror">
+
+                            <div x-show="isOpen" x-cloak
+                                 class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">
+                                <template x-for="(yacht, index) in filtered" :key="yacht.id">
+                                    <div x-on:click="selectYacht(yacht)"
+                                         x-on:mouseenter="selectedIndex = index"
+                                         :class="{ 'bg-[#2D92CE]/10': selectedIndex === index }"
+                                         class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm border-b border-gray-100 last:border-b-0">
+                                        <span class="font-medium" x-text="yacht.name"></span>
+                                        <span class="text-gray-400 text-xs ml-2" x-text="yacht.vfps ? yacht.vfps : 'без номера ВФПС'"></span>
+                                    </div>
+                                </template>
+                                <div x-show="filtered.length === 0 && query.trim().length === 0" class="px-3 py-2 text-sm text-gray-400">
+                                    Нет свободных яхт
+                                </div>
+                                <div x-show="query.trim().length > 0"
+                                     x-on:click="addNewFromQuery()"
+                                     class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm text-[#2D92CE] font-medium border-t border-gray-100">
+                                    + Добавить «<span x-text="query.trim()"></span>» как свою яхту
+                                </div>
+                            </div>
+                        </div>
                         @error('yachtId')
                             <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                         @enderror
