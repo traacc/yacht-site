@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Pages;
 
+use App\Enums\CreationSource;
 use App\Filament\Resources\Users\UserResource;
 use App\Models\User;
 use Filament\Actions\CreateAction;
@@ -18,6 +19,11 @@ class ManageUsers extends ManageRecords
             CreateAction::make()
                 ->createAnother(false)
                 ->modalHeading('Новый пользователь')
+                ->mutateFormDataUsing(function (array $data): array {
+                    $data['creation_source'] = CreationSource::Admin->value;
+
+                    return $data;
+                })
                 ->after(function (User $record, array $data): void {
                     $teamId = $data['crew_team_id'] ?? null;
 

@@ -306,6 +306,11 @@ class UserResource extends Resource
                     ->label('Роль')
                     ->badge()
                     ->formatStateUsing(fn (\App\Enums\SystemRole $state): string => $state->label())->toggleable(),
+                TextColumn::make('creation_source')
+                    ->label('Источник')
+                    ->badge()
+                    ->formatStateUsing(fn (\App\Enums\CreationSource $state): string => $state->label())
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label('Рег.')
                     ->dateTime('d.m.Y H:i')
@@ -322,6 +327,9 @@ class UserResource extends Resource
                 SelectFilter::make('sport_category')
                     ->label('Спортивный разряд')
                     ->options(SportCategory::class),
+                SelectFilter::make('creation_source')
+                    ->label('Источник создания')
+                    ->options(\App\Enums\CreationSource::class),
                 TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->headerActions([

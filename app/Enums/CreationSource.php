@@ -2,7 +2,9 @@
 
 namespace App\Enums;
 
-enum CreationSource: string
+use Filament\Support\Contracts\HasLabel;
+
+enum CreationSource: string implements HasLabel
 {
     case Registration = 'registration';
     case Admin        = 'admin';
@@ -17,5 +19,10 @@ enum CreationSource: string
             self::QuickRequest => 'Быстрая заявка',
             self::Unknown      => 'Неизвестно',
         };
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label();
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Actions\Regatta\SubmitRegattaEntryAction;
+use App\Enums\CreationSource;
 use App\Enums\SportCategory;
 use App\Enums\TeamMemberRole;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
@@ -465,6 +466,7 @@ class JoinRegattaModal extends Component
                     'email'    => $this->guestEmail,
                     'phone'    => $this->guestPhone,
                     'password' => $password,
+                    'creation_source' => CreationSource::QuickRequest,
                 ]);
 
                 // 2. Команда: выбранная (где пользователь капитан) или новая
@@ -513,6 +515,7 @@ class JoinRegattaModal extends Component
                             'email'          => $this->generateUniqueEmail(),
                             'phone'          => $this->generateUniquePhone(),
                             'password'       => 'Carter30pro',
+                            'creation_source' => CreationSource::QuickRequest,
                         ]);
                         $memberUserId = (string) $memberUser->id;
                     } else {

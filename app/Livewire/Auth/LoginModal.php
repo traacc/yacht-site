@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Auth;
 
+use App\Enums\CreationSource;
 use App\Enums\SportCategory;
 use App\Mail\SendLoginCredentials;
 use App\Models\User;
@@ -153,6 +154,7 @@ class LoginModal extends Component
             'sport_category' => $this->sports_category ?: null,
             // Пароль передаём без хеширования — каст 'hashed' в модели сделает это автоматически
             'password'       => $this->password,
+            'creation_source' => CreationSource::Registration,
         ]);
 
         // 2. Автоматически входим в систему
