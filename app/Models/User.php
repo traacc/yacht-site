@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Enums\CreationSource;
 use App\Enums\SportCategory;
 use App\Enums\SystemRole;
 use Illuminate\Notifications\Notifiable;
@@ -40,6 +41,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         'password',
         'photo_url',
         'system_role',
+        'creation_source',
         'external_id',
     ];
 
@@ -62,6 +64,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             'password'          => 'hashed',
             'sport_category'    => SportCategory::class,
             'system_role'       => SystemRole::class,
+            'creation_source'   => CreationSource::class,
         ];
     }
 
