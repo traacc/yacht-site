@@ -473,6 +473,25 @@ class JoinRegattaModal extends Component
         $this->reset(['newMemberName', 'newMemberBirthDate', 'newMemberSportCategory']);
     }
 
+    /**
+     * При назначении участника капитаном — снимаем роль капитана с остальных
+     * (в экипаже может быть только один капитан).
+     */
+    public function updatedGuestMembers(mixed $value, ?string $key = null): void
+    {
+        if ($key === null || ! str_ends_with($key, '.role') || $value !== 'captain') {
+            return;
+        }
+
+        $changedIndex = (int) explode('.', $key)[0];
+
+        foreach ($this->guestMembers as $i => $m) {
+            if ($i !== $changedIndex && ($m['role'] ?? '') === 'captain') {
+                $this->guestMembers[$i]['role'] = 'main';
+            }
+        }
+    }
+
     public function removeGuestMember(string $ref): void
     {
         $this->guestMembers = array_values(array_filter(
@@ -607,8 +626,14 @@ class JoinRegattaModal extends Component
                     ]);
                 }
 
-                // 3. Экипаж: организатор — капитан, добавленные участники — со своими ролями
-                $crew = [(string) $organizerMember->id => 'captain'];
+                // 3. Экипаж: организатор — капитан по умолчанию; если капитаном
+                //    назначен другой участник, организатор становится основным.
+                $captainAssigned = false;
+                $organizerRole = collect($this->guestMembers)
+                    ->contains(fn (array $m): bool => ($m['role'] ?? '') === 'captain')
+                        ? 'main' : 'captain';
+
+                $crew = [(string) $organizerMember->id => $organizerRole];
 
                 foreach ($this->guestMembers as $m) {
                     $isUnregistered = ! ($m['registered'] ?? false);
@@ -642,7 +667,18 @@ class JoinRegattaModal extends Component
                             'joined_at'    => now(),
                         ],
                     );
-                    $crew[(string) $member->id] = in_array($m['role'], ['main', 'reserve'], true) ? $m['role'] : 'main';
+                    $role = in_array($m['role'] ?? 'main', ['main', 'reserve', 'captain'], true) ? $m['role'] : 'main';
+
+                    // Подстраховка: только один капитан среди добавленных участников
+                    if ($role === 'captain') {
+                        if ($captainAssigned) {
+                            $role = 'main';
+                        } else {
+                            $captainAssigned = true;
+                        }
+                    }
+
+                    $crew[(string) $member->id] = $role;
                 }
 
                 // 4. Яхта: новая или выбранная свободная
