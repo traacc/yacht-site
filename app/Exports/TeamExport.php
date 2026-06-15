@@ -119,6 +119,8 @@ class TeamExport
     private static function membersList(Team $team): string
     {
         return $team->activeMembers
+            ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values()
             ->map(function ($member): string {
                 $role = TeamMemberRole::tryFrom((string) $member->pivot->role)?->label();
 
