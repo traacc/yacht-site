@@ -6,7 +6,9 @@ use App\Enums\TeamMemberRole;
 use App\Filament\Resources\Teams\Pages\EditTeam;
 use App\Filament\Resources\Teams\Pages\ManageTeams;
 use App\Models\Team;
+use App\Exports\TeamExport;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -244,6 +246,16 @@ class TeamResource extends Resource
                 TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->defaultSort('name')
+            ->headerActions([
+                Action::make('exportXlsx')
+                    ->label('Экспорт в Excel')
+                    ->icon(Heroicon::ArrowDownTray)
+                    ->color('white')
+                    ->action(fn ($livewire) => (new TeamExport)->download(
+                        $livewire->getFilteredSortedTableQuery(),
+                        'teams_'.now()->format('Y-m-d').'.xlsx',
+                    )),
+            ])
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать команду'),
                 DeleteAction::make()

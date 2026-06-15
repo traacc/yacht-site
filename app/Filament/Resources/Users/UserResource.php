@@ -8,6 +8,8 @@ use App\Filament\Resources\Users\Pages\ManageUsers;
 use App\Models\Regatta;
 use App\Models\User;
 use BackedEnum;
+use App\Exports\UserExport;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -322,6 +324,16 @@ class UserResource extends Resource
                     ->options(SportCategory::class),
                 TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
+            ->headerActions([
+                Action::make('exportXlsx')
+                    ->label('Экспорт в Excel')
+                    ->icon(Heroicon::ArrowDownTray)
+                    ->color('white')
+                    ->action(fn ($livewire) => (new UserExport)->download(
+                        $livewire->getFilteredSortedTableQuery(),
+                        'users_'.now()->format('Y-m-d').'.xlsx',
+                    )),
+            ])
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать пользователя'),
                 DeleteAction::make()->label('Удалить')
