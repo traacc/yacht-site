@@ -90,7 +90,7 @@ class UserExport
             $sheet->setCellValue([4, $row], $user->email);
             $sheet->setCellValue([5, $row], $user->phone);
             $sheet->setCellValue([6, $row], $category instanceof SportCategory ? $category->getLabel() : '');
-            $sheet->setCellValue([7, $row], $role instanceof SystemRole ? $role->label() : '');
+            $sheet->setCellValue([7, $row], $role instanceof SystemRole ? $role->getLabel() : '');
             $sheet->setCellValue([8, $row], $user->created_at?->format('d.m.Y H:i'));
 
             $row++;

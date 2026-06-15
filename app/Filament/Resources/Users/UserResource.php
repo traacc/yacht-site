@@ -305,7 +305,7 @@ class UserResource extends Resource
                 TextColumn::make('system_role')
                     ->label('Роль')
                     ->badge()
-                    ->formatStateUsing(fn (\App\Enums\SystemRole $state): string => $state->label())->toggleable(),
+                    ->formatStateUsing(fn (\App\Enums\SystemRole $state): string => $state->getLabel())->toggleable(),
                 TextColumn::make('creation_source')
                     ->label('Источник')
                     ->badge()
