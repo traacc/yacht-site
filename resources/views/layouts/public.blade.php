@@ -15,7 +15,7 @@
     <link rel="preload" href="{{ Vite::asset('resources/fonts/TTLakesCondensed-DemiBold.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ Vite::asset('resources/fonts/Montserrat-Regular.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="shortcut icon" href="{{ asset('favicon.jpg?v=4') }}?v=2" type="image/svg+xml">
-    <script src="https://smartcaptcha.yandexcloud.net/captcha.js" defer></script>
+    <script src="https://smartcaptcha.yandexcloud.net/captcha.js" defer async></script>
 </head>
 <body class="font-sans bg-white text-[#2E325C] antialiased" x-data="{isRequestModalOpen: false }">
 
