@@ -35,7 +35,9 @@ class VotingResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
 
-    protected static ?int $navigationSort = 7;
+    protected static ?int $navigationSort = 15;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Сайт';
 
     public static function getModelLabel(): string
     {
