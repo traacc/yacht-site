@@ -112,6 +112,26 @@ class RegattaResource extends Resource
                     ])
                     ->createOptionUsing(fn (array $data): string => \App\Models\Season::create($data)->id)
                     ->required(),
+                Select::make('series_id')
+                    ->label('Серия')
+                    ->relationship('series', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->createOptionForm([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Название')
+                            ->required(),
+                        Forms\Components\Select::make('season_id')
+                            ->label('Сезон')
+                            ->relationship('season', 'year',
+                                modifyQueryUsing: fn (Builder $query) => $query->orderByDesc('year'))
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                        Forms\Components\Textarea::make('description')
+                            ->label('Описание'),
+                    ])
+                    ->createOptionUsing(fn (array $data): string => \App\Models\Series::create($data)->id),
                 TextInput::make('level_coefficient')
                     ->label('Коэффициент соревнований')
                     ->placeholder('Введите коэффициент соревнований')
@@ -415,6 +435,9 @@ class RegattaResource extends Resource
                     ->searchable()->sortable(),
                 TextColumn::make('season.year')
                     ->label('Сезон')
+                    ->searchable()->sortable()->toggleable(),
+                TextColumn::make('series.name')
+                    ->label('Серия')
                     ->searchable()->sortable()->toggleable(),
                 TextColumn::make('date')
                     ->label('Дата')->sortable(['date_start', 'date_end'])
