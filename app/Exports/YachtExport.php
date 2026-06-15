@@ -28,10 +28,14 @@ class YachtExport
         'Г.в.' => 'D',
         'Владелец' => 'E',
         'Место регистрации' => 'F',
+        'Телефон' => 'G',
+        'E-mail' => 'H',
+        'Дата рождения' => 'I',
     ];
 
     private const COLUMN_WIDTHS = [
         'A' => 14, 'B' => 8, 'C' => 24, 'D' => 8, 'E' => 36, 'F' => 22,
+        'G' => 20, 'H' => 30, 'I' => 14,
     ];
 
     public function download(string $filename = 'yachts.xlsx'): StreamedResponse
@@ -84,12 +88,19 @@ class YachtExport
             $sheet->setCellValue([4, $row], $yacht->year);
             $sheet->setCellValue([5, $row], $yacht->user?->name ?? $yacht->owner_name);
             $sheet->setCellValue([6, $row], $yacht->reg_place);
+            $sheet->setCellValue([7, $row], $yacht->user?->phone);
+            $sheet->setCellValue([8, $row], $yacht->user?->email);
+            $sheet->setCellValue([9, $row], $yacht->user?->birth_date?->format('d.m.Y'));
 
             $row++;
         });
 
         // Номера на парусе храним как текст, чтобы не потерять ведущие нули.
         $sheet->getStyle('B2:B'.max($row - 1, 2))
+            ->getNumberFormat()->setFormatCode('@');
+
+        // Телефон храним как текст, чтобы не потерять формат и плюс.
+        $sheet->getStyle('G2:G'.max($row - 1, 2))
             ->getNumberFormat()->setFormatCode('@');
 
         if ($row > 2) {
@@ -103,7 +114,7 @@ class YachtExport
     protected function query(): Builder
     {
         return Yacht::query()
-            ->with('user:id,name')
+            ->with('user:id,name,phone,email,birth_date')
             ->orderBy('vfps_number');
     }
 }
