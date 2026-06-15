@@ -170,6 +170,9 @@
   border: none;
 
 }
+.fi-fo-field-content-col .fi-input-wrp, .fi-fo-field-content-col .fi-input-wrp input, .fi-fo-field-content-col .fi-input-wrp select, .fi-fo-field-content-col .fi-input-wrp textarea{
+  background-color: #FFFFFF;
+}
 .fi-input-wrp-content-ctn input, .fi-fo-select, .fi-input-wrp-content-ctn {
   background-color: #F8F8F8;
   border-radius: 0px;
