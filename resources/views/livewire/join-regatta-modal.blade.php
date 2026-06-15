@@ -366,7 +366,7 @@
                         else if (e.key === 'Escape') { this.isOpen = false; $wire.searchQuery = ''; }
                     }
                 }" x-on:click.away="isOpen = false">
-                    <p class="text-sm font-medium text-[#2E325C] mb-2">Экипаж</p>
+                    <p class="text-sm font-medium text-[#2E325C] mb-2">Добавьте участников (максимум 9)</p>
                     <p class="text-xs text-gray-500 mb-3">По умолчанию капитан экипажа — вы. При необходимости назначьте капитаном другого участника. Можно добавить не более {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} зарегистрированных участников.</p>
 
                     @error('guestMembers')
