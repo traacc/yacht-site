@@ -58,6 +58,13 @@ class JoinRegattaModal extends Component
      */
     public array $freeYachts = [];
 
+    /**
+     * Команды, где пользователь капитан (для единого списка выбора/создания).
+     *
+     * @var array<int, array{id: string, name: string}>
+     */
+    public array $captainTeamsList = [];
+
     // ──────────────────────────────────────────────
     // Гостевой поток: регистрация + создание команды/яхты при подаче заявки
     // ──────────────────────────────────────────────
@@ -127,6 +134,7 @@ class JoinRegattaModal extends Component
         $this->teamId = null;
         $this->teamMode = $this->captainTeams->isNotEmpty() ? 'select' : 'create';
         $this->teamName = '';
+        $this->loadCaptainTeams();
         $this->yachtMode = 'select';
         $this->newYachtName = '';
         $this->newYachtVfps = '';
@@ -143,7 +151,7 @@ class JoinRegattaModal extends Component
         $this->reset([
             'regattaId', 'yachtId', 'documentFiles', 'submitted', 'leftCrew',
             'searchQuery', 'searchResults', 'freeYachts',
-            'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'teamMode', 'teamId', 'teamName',
+            'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'teamMode', 'teamId', 'teamName', 'captainTeamsList',
             'yachtMode', 'newYachtName', 'newYachtVfps', 'guestMembers',
             'newMemberName', 'newMemberBirthDate', 'newMemberSportCategory',
         ]);
@@ -250,6 +258,48 @@ class JoinRegattaModal extends Component
             ->pluck('team')
             ->filter()
             ->values();
+    }
+
+    /** Загрузить команды капитана в плоский список для единого селекта. */
+    private function loadCaptainTeams(): void
+    {
+        $this->captainTeamsList = $this->captainTeams
+            ->map(fn (Team $t): array => [
+                'id'   => (string) $t->id,
+                'name' => $t->name,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /** Выбрать свою команду из единого списка (с предзаполнением экипажа). */
+    public function selectTeam(string $teamId): void
+    {
+        $this->teamMode = 'select';
+        $this->teamId = $teamId;
+        $this->teamName = '';
+        $this->resetErrorBag(['teamId', 'teamName']);
+        $this->updatedTeamId();
+    }
+
+    /** Начать создание новой команды (название берётся из поискового запроса). */
+    public function startNewTeam(string $name = ''): void
+    {
+        $this->teamMode = 'create';
+        $this->teamId = null;
+        $this->teamName = trim($name);
+        $this->guestMembers = [];
+        $this->resetErrorBag(['teamId', 'teamName', 'guestMembers']);
+    }
+
+    /** Сбросить выбор/создание команды — вернуться к поиску по списку. */
+    public function clearTeam(): void
+    {
+        $this->teamMode = $this->captainTeams->isNotEmpty() ? 'select' : 'create';
+        $this->teamId = null;
+        $this->teamName = '';
+        $this->guestMembers = [];
+        $this->resetErrorBag(['teamId', 'teamName', 'guestMembers']);
     }
 
     /** При смене режима команды сбрасываем выбор и подобранный экипаж */
