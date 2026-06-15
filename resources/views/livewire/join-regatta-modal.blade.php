@@ -75,6 +75,21 @@
                     <div class="text-sm text-red-600 bg-red-50 p-3 rounded">{{ $message }}</div>
                 @enderror
 
+                {{-- Выбор регаты --}}
+                <div>
+                    <label for="regattaId" class="block text-sm text-brand-gray-light">Регата</label>
+                    <select id="regattaId" wire:model.live="regattaId"
+                            class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('regattaId') border-red-300 @enderror">
+                        <option value="">Выберите регату</option>
+                        @foreach ($this->availableRegattas as $regatta)
+                            <option value="{{ $regatta->id }}">{{ $regatta->name }}@if ($regatta->dateRange()) — {{ $regatta->dateRange() }}@endif</option>
+                        @endforeach
+                    </select>
+                    @error('regattaId')
+                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                    @enderror
+                </div>
+
                 @guest
                 {{-- Данные участника --}}
                 <div>

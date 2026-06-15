@@ -102,7 +102,7 @@ class JoinRegattaModal extends Component
     public string $newMemberSportCategory = '';
 
     #[On('open-join-regatta-modal')]
-    public function openModal(string $regattaId): void
+    public function openModal(?string $regattaId = null): void
     {
         $this->regattaId = $regattaId;
         $this->yachtId = null;
@@ -138,6 +138,37 @@ class JoinRegattaModal extends Component
             'yachtMode', 'newYachtName', 'newYachtVfps', 'guestMembers',
             'newMemberName', 'newMemberBirthDate', 'newMemberSportCategory',
         ]);
+    }
+
+    /**
+     * Регаты, доступные для выбора в заявке — предстоящие, открытые к регистрации.
+     *
+     * @return Collection<int, Regatta>
+     */
+    #[Computed]
+    public function availableRegattas(): Collection
+    {
+        $regattas = Regatta::closest()->get();
+
+        // Регата, переданная при открытии модалки (по кнопке), может быть вне
+        // списка предстоящих (например, уже идёт) — добавляем её, чтобы сработала
+        // автоматическая подстановка в селекте.
+        if ($this->regattaId && ! $regattas->contains('id', $this->regattaId)) {
+            $current = Regatta::find($this->regattaId);
+            if ($current) {
+                $regattas = $regattas->prepend($current);
+            }
+        }
+
+        return $regattas;
+    }
+
+    /** При смене регаты сбрасываем зависящие от неё поля (свободные яхты, документы) */
+    public function updatedRegattaId(): void
+    {
+        $this->yachtId = null;
+        $this->documentFiles = [];
+        $this->resetErrorBag(['yachtId', 'regattaId']);
     }
 
     /**
@@ -375,6 +406,7 @@ class JoinRegattaModal extends Component
         $selectsTeam = $actor !== null && $this->teamMode === 'select';
 
         $rules = [
+            'regattaId'    => ['required', 'string', 'exists:regattas,id'],
             'guestMembers' => ['array', 'max:' . self::MAX_ADDED_MEMBERS],
         ];
 
@@ -410,6 +442,7 @@ class JoinRegattaModal extends Component
             'guestPhone.unique'  => 'Пользователь с таким телефоном уже зарегистрирован',
             'guestMembers.max'   => 'Можно добавить не более ' . self::MAX_ADDED_MEMBERS . ' участников.',
         ], [
+            'regattaId'    => 'регата',
             'guestName'    => 'ФИО',
             'guestEmail'   => 'email',
             'guestPhone'   => 'телефон',
