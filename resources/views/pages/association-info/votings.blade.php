@@ -3,7 +3,7 @@
 </x-breadcrumbs_page>
 <x-hero-section title="Голосования Ассоциации"
 desc="Голосуйте по важным вопросам Ассоциации и участвуйте в развитии яхтенного сообщества." 
-bgImage="{{ asset('images/bg/policy.webp') }}"
+bgImage="{{ asset('images/bg/votings.webp') }}"
 >
     
 </x-hero-section>
