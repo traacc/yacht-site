@@ -591,16 +591,29 @@
                 @endif
 
                 {{-- Пароль заявки: для редактирования на странице регаты без входа --}}
-                <div class="border-t border-gray-200 pt-4">
+                <div class="border-t border-gray-200 pt-4" x-data="{ showPassword: false }">
                     <label for="entryPassword" class="block text-sm font-medium text-[#2E325C]">
                         Пароль заявки <span class="text-red-500">*</span>
                     </label>
                     <p class="text-xs text-gray-500 mt-1 mb-2">
                         Запомните его — по этому паролю можно будет редактировать заявку на странице регаты без входа в аккаунт.
                     </p>
-                    <input type="text" id="entryPassword" wire:model="entryPassword"
-                           placeholder="Придумайте пароль"
-                           class="block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('entryPassword') border-red-300 @enderror">
+                    <div class="relative">
+                        <input :type="showPassword ? 'text' : 'password'" id="entryPassword" wire:model="entryPassword"
+                               placeholder="Придумайте пароль"
+                               class="block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm pr-10 @error('entryPassword') border-red-300 @enderror">
+                        <button type="button" @click="showPassword = !showPassword"
+                                :aria-label="showPassword ? 'Скрыть пароль' : 'Показать пароль'"
+                                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                            <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                            <svg x-show="showPassword" x-cloak xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                            </svg>
+                        </button>
+                    </div>
                     @error('entryPassword')
                         <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                     @enderror
@@ -608,7 +621,7 @@
                     <label for="entryPasswordConfirmation" class="block text-sm font-medium text-[#2E325C] mt-3">
                         Подтверждение пароля <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" id="entryPasswordConfirmation" wire:model="entryPasswordConfirmation"
+                    <input :type="showPassword ? 'text' : 'password'" id="entryPasswordConfirmation" wire:model="entryPasswordConfirmation"
                            placeholder="Повторите пароль"
                            class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('entryPasswordConfirmation') border-red-300 @enderror">
                     @error('entryPasswordConfirmation')
