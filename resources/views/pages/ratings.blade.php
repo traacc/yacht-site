@@ -255,10 +255,6 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                 <span class="text-gray-500 text-sm">Дата рождения</span>
                                 <span class="font-medium text-[#2E325C] text-sm" x-text="participantModalData.birthday"></span>
                             </div>
-                            <div class="py-3 flex justify-between" x-show="participantModalData.email && participantModalData.email !== '—'">
-                                <span class="text-gray-500 text-sm">Email</span>
-                                <span class="font-medium text-[#2E325C] text-sm" x-text="participantModalData.email"></span>
-                            </div>
                         </div>
                     </div>
                 </div>
