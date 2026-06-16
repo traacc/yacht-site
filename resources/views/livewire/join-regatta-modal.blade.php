@@ -366,8 +366,8 @@
                         else if (e.key === 'Escape') { this.isOpen = false; $wire.searchQuery = ''; }
                     }
                 }" x-on:click.away="isOpen = false">
-                    <p class="text-sm font-medium text-[#2E325C] mb-2">Добавьте участников (максимум 9)</p>
-                    <p class="text-xs text-gray-500 mb-3">По умолчанию капитан экипажа — вы. При необходимости назначьте капитаном другого участника. Можно добавить не более {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} зарегистрированных участников.</p>
+                    <p class="text-sm font-medium text-[#2E325C] mb-2">Экипаж</p>
+                    <p class="text-xs text-gray-500 mb-3">Вы будете капитаном команды. Можно добавить не более {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} зарегистрированных участников.</p>
 
                     @error('guestMembers')
                         <span class="text-xs text-red-600 mb-2 block">{{ $message }}</span>
@@ -383,11 +383,10 @@
                                             <span class="text-gray-400 text-xs ml-1">(новый)</span>
                                         @endif
                                     </span>
-                                    <select wire:model.live="guestMembers.{{ $i }}.role"
+                                    <select wire:model="guestMembers.{{ $i }}.role"
                                             class="text-sm border-gray-200 bg-white rounded p-1 min-w-[120px]">
                                         <option value="main">Основной</option>
                                         <option value="reserve">Запасной</option>
-                                        <option value="captain">Капитан</option>
                                     </select>
                                     <button type="button" wire:click="removeGuestMember('{{ $member['ref'] }}')"
                                             class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
