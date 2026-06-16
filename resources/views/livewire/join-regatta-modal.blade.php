@@ -348,9 +348,9 @@
                                         <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                                     @enderror
                                 </div>
-                                <div>
+                                <div wire:key="guest-phone-wrap">
                                     <label for="guestPhone" class="block text-xs text-gray-500 mb-1">Телефон</label>
-                                    <input type="text" id="guestPhone" wire:model="guestPhone"
+                                    <input type="text" id="guestPhone" wire:model="guestPhone" wire:key="guest-phone"
                                            x-mask="+7 (999) 999-99-99" x-ref="phone"
                                            class="block w-full border-none font-medium shadow-sm bg-white sm:text-sm @error('guestPhone') border-red-300 @enderror">
                                     @error('guestPhone')
