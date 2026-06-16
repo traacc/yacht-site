@@ -45,6 +45,9 @@ class JoinRegattaModal extends Component
     /** @var array<string, \Livewire\TemporaryUploadedFile[]> */
     public array $documentFiles = [];
 
+    /** Специальный пароль заявки — для редактирования на странице регаты без входа */
+    public string $entryPassword = '';
+
     /** Поисковый запрос для добавления участников в экипаж */
     public string $searchQuery = '';
 
@@ -148,6 +151,7 @@ class JoinRegattaModal extends Component
         $this->submitted = false;
         $this->leftCrew = false;
         $this->isOpen = true;
+        $this->entryPassword = '';
         $this->searchQuery = '';
         $this->searchResults = [];
         $this->guestRegistered = false;
@@ -184,7 +188,7 @@ class JoinRegattaModal extends Component
         $this->isOpen = false;
         $this->reset([
             'regattaId', 'yachtId', 'documentFiles', 'submitted', 'leftCrew',
-            'searchQuery', 'searchResults', 'freeYachts',
+            'entryPassword', 'searchQuery', 'searchResults', 'freeYachts',
             'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'guestBirthDate', 'guestSportCategory',
             'captainMode', 'captainUserId', 'captainName', 'captainSearchQuery', 'captainSearchResults',
             'teamMode', 'teamId', 'teamSelectedName', 'teamName', 'teamSearchQuery', 'teamSearchResults',
@@ -581,8 +585,9 @@ class JoinRegattaModal extends Component
         $selectsCaptain = $this->captainMode === 'select';
 
         $rules = [
-            'regattaId'    => ['required', 'string', 'exists:regattas,id'],
-            'guestMembers' => ['array', 'max:' . self::MAX_ADDED_MEMBERS],
+            'regattaId'     => ['required', 'string', 'exists:regattas,id'],
+            'entryPassword' => ['required', 'string', 'min:4', 'max:255'],
+            'guestMembers'  => ['array', 'max:' . self::MAX_ADDED_MEMBERS],
         ];
 
         if ($selectsTeam) {
@@ -623,7 +628,8 @@ class JoinRegattaModal extends Component
             'guestPhone.unique'  => 'Пользователь с таким телефоном уже зарегистрирован',
             'guestMembers.max'   => 'Можно добавить не более ' . self::MAX_ADDED_MEMBERS . ' участников.',
         ], [
-            'regattaId'    => 'регата',
+            'regattaId'     => 'регата',
+            'entryPassword' => 'пароль заявки',
             'guestName'    => 'ФИО',
             'guestEmail'   => 'email',
             'guestPhone'   => 'телефон',
@@ -770,7 +776,7 @@ class JoinRegattaModal extends Component
                 }
 
                 // 6. Подаём заявку от имени организатора команды (проверка прав на подачу)
-                $entry = $action->handle($regatta, $team, $yacht, $submitActor, $crew);
+                $entry = $action->handle($regatta, $team, $yacht, $submitActor, $crew, $this->entryPassword);
 
                 return [$entry, $captain];
             });

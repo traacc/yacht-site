@@ -26,7 +26,7 @@ final class SubmitRegattaEntryAction
      * @throws InsufficientTeamRoleException
      * @throws ValidationException
      */
-    public function handle(Regatta $regatta, Team $team, Yacht $yacht, User $actor, array $crew = []): RegattaEntry
+    public function handle(Regatta $regatta, Team $team, Yacht $yacht, User $actor, array $crew = [], ?string $entryPassword = null): RegattaEntry
     {
         TeamRoleGuard::authorize($team, $actor, TeamMemberRole::ACTION_SUBMIT_ENTRY);
 
@@ -57,11 +57,13 @@ final class SubmitRegattaEntryAction
         }
 
         $entry = RegattaEntry::create([
-            'regatta_id'   => $regatta->id,
-            'team_id'      => $team->id,
-            'yacht_id'     => $yacht->id,
-            'status'       => 'pending',
-            'submitted_at' => now(),
+            'regatta_id'     => $regatta->id,
+            'team_id'        => $team->id,
+            'yacht_id'       => $yacht->id,
+            'status'         => 'pending',
+            'submitted_at'   => now(),
+            // Хешируется кастом 'hashed' в модели
+            'entry_password' => $entryPassword ?: null,
         ]);
 
         // Сохраняем экипаж

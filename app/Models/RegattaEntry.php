@@ -19,12 +19,18 @@ class RegattaEntry extends Model
         'yacht_id',
         'status',
         'submitted_at',
+        'entry_password',
+    ];
+
+    protected $hidden = [
+        'entry_password',
     ];
 
     protected function casts(): array
     {
         return [
-            'submitted_at' => 'datetime',
+            'submitted_at'   => 'datetime',
+            'entry_password' => 'hashed',
         ];
     }
 

@@ -612,6 +612,22 @@
                     </div>
                 @endif
 
+                {{-- Пароль заявки: для редактирования на странице регаты без входа --}}
+                <div class="border-t border-gray-200 pt-4">
+                    <label for="entryPassword" class="block text-sm font-medium text-[#2E325C]">
+                        Пароль заявки <span class="text-red-500">*</span>
+                    </label>
+                    <p class="text-xs text-gray-500 mt-1 mb-2">
+                        Запомните его — по этому паролю можно будет редактировать заявку на странице регаты без входа в аккаунт.
+                    </p>
+                    <input type="text" id="entryPassword" wire:model="entryPassword"
+                           placeholder="Придумайте пароль"
+                           class="block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('entryPassword') border-red-300 @enderror">
+                    @error('entryPassword')
+                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                    @enderror
+                </div>
+
                 <div class="mt-5 sm:mt-6">
                     <button type="submit"
                             wire:loading.attr="disabled"
