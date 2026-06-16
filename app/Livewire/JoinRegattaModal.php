@@ -8,6 +8,7 @@ use App\Enums\SportCategory;
 use App\Enums\TeamMemberRole;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Mail\SendLoginCredentials;
+use App\Mail\SendRegattaEntryPassword;
 use App\Models\Regatta;
 use App\Models\RegattaEntryCrew;
 use App\Models\Team;
@@ -899,6 +900,15 @@ class JoinRegattaModal extends Component
                     'title'    => $doc['title'],
                     'url'      => $path,
                 ]);
+            }
+        }
+
+        // Отправляем пароль заявки на почту капитану (кроме «технических» адресов).
+        if ($captain->email && ! str_ends_with($captain->email, '@noemail.local')) {
+            try {
+                Mail::to($captain->email)->send(new SendRegattaEntryPassword($captain, $regatta, $this->entryPassword));
+            } catch (\Exception $e) {
+                report($e);
             }
         }
 
