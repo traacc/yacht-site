@@ -633,6 +633,16 @@
                     @error('entryPassword')
                         <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                     @enderror
+
+                    <label for="entryPasswordConfirmation" class="block text-sm font-medium text-[#2E325C] mt-3">
+                        Подтверждение пароля <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="entryPasswordConfirmation" wire:model="entryPasswordConfirmation"
+                           placeholder="Повторите пароль"
+                           class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('entryPasswordConfirmation') border-red-300 @enderror">
+                    @error('entryPasswordConfirmation')
+                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div class="mt-5 sm:mt-6">

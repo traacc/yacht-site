@@ -48,6 +48,9 @@ class JoinRegattaModal extends Component
     /** Специальный пароль заявки — для редактирования на странице регаты без входа */
     public string $entryPassword = '';
 
+    /** Подтверждение пароля заявки */
+    public string $entryPasswordConfirmation = '';
+
     /** Поисковый запрос для добавления участников в экипаж */
     public string $searchQuery = '';
 
@@ -152,6 +155,7 @@ class JoinRegattaModal extends Component
         $this->leftCrew = false;
         $this->isOpen = true;
         $this->entryPassword = '';
+        $this->entryPasswordConfirmation = '';
         $this->searchQuery = '';
         $this->searchResults = [];
         $this->guestRegistered = false;
@@ -188,7 +192,7 @@ class JoinRegattaModal extends Component
         $this->isOpen = false;
         $this->reset([
             'regattaId', 'yachtId', 'documentFiles', 'submitted', 'leftCrew',
-            'entryPassword', 'searchQuery', 'searchResults', 'freeYachts',
+            'entryPassword', 'entryPasswordConfirmation', 'searchQuery', 'searchResults', 'freeYachts',
             'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'guestBirthDate', 'guestSportCategory',
             'captainMode', 'captainUserId', 'captainName', 'captainSearchQuery', 'captainSearchResults',
             'teamMode', 'teamId', 'teamSelectedName', 'teamName', 'teamSearchQuery', 'teamSearchResults',
@@ -587,6 +591,7 @@ class JoinRegattaModal extends Component
         $rules = [
             'regattaId'     => ['required', 'string', 'exists:regattas,id'],
             'entryPassword' => ['required', 'string', 'min:4', 'max:255'],
+            'entryPasswordConfirmation' => ['required', 'string', 'same:entryPassword'],
             'guestMembers'  => ['array', 'max:' . self::MAX_ADDED_MEMBERS],
         ];
 
@@ -627,9 +632,11 @@ class JoinRegattaModal extends Component
             'guestEmail.unique'  => 'Пользователь с таким email уже зарегистрирован',
             'guestPhone.unique'  => 'Пользователь с таким телефоном уже зарегистрирован',
             'guestMembers.max'   => 'Можно добавить не более ' . self::MAX_ADDED_MEMBERS . ' участников.',
+            'entryPasswordConfirmation.same' => 'Пароли не совпадают',
         ], [
             'regattaId'     => 'регата',
             'entryPassword' => 'пароль заявки',
+            'entryPasswordConfirmation' => 'подтверждение пароля',
             'guestName'    => 'ФИО',
             'guestEmail'   => 'email',
             'guestPhone'   => 'телефон',
