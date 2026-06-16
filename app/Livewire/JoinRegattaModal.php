@@ -51,12 +51,6 @@ class JoinRegattaModal extends Component
     /** Подтверждение пароля заявки */
     public string $entryPasswordConfirmation = '';
 
-    /** Поисковый запрос для добавления участников в экипаж */
-    public string $searchQuery = '';
-
-    /** Результаты поиска пользователей */
-    public array $searchResults = [];
-
     /**
      * Свободные яхты для текущей регаты (для единого списка выбора/создания).
      *
@@ -128,22 +122,21 @@ class JoinRegattaModal extends Component
     public string $newYachtVfps = '';
 
     /**
-     * Добавленные гостем участники экипажа (создаются при подаче заявки).
-     * Зарегистрированные — с user_id; незарегистрированные (registered=false) —
-     * с ФИО/датой рождения/разрядом, их аккаунты создаются при подаче заявки.
+     * Слоты экипажа — ровно MAX_ADDED_MEMBERS штук, показываются сразу все.
+     * Каждый слот — независимое поле «выбрать существующего или добавить нового».
      *
-     * @var array<int, array{registered: bool, ref: string, user_id: ?string, name: string, email: string, birth_date: ?string, sport_category: ?string, role: string}>
+     * mode: 'empty' (поиск) | 'filled' (выбран/добавлен) | 'new' (ввод нового).
+     * registered: null (пусто) | true (существующий user) | false (новый, аккаунт
+     * создаётся при подаче заявки).
+     *
+     * @var array<int, array{
+     *     ref: string, mode: string, registered: ?bool, user_id: ?string,
+     *     name: string, email: string, birth_date: ?string, sport_category: ?string,
+     *     role: string, query: string, results: array<int, array<string, mixed>>,
+     *     newName: string, newBirthDate: string, newSportCategory: string
+     * }>
      */
     public array $guestMembers = [];
-
-    /** ФИО незарегистрированного участника */
-    public string $newMemberName = '';
-
-    /** Дата рождения незарегистрированного участника */
-    public string $newMemberBirthDate = '';
-
-    /** Спортивный разряд незарегистрированного участника */
-    public string $newMemberSportCategory = '';
 
     #[On('open-join-regatta-modal')]
     public function openModal(?string $regattaId = null): void
@@ -156,8 +149,6 @@ class JoinRegattaModal extends Component
         $this->isOpen = true;
         $this->entryPassword = '';
         $this->entryPasswordConfirmation = '';
-        $this->searchQuery = '';
-        $this->searchResults = [];
         $this->guestRegistered = false;
         $this->guestName = '';
         $this->guestEmail = '';
@@ -180,10 +171,7 @@ class JoinRegattaModal extends Component
         $this->yachtMode = 'select';
         $this->newYachtName = '';
         $this->newYachtVfps = '';
-        $this->guestMembers = [];
-        $this->newMemberName = '';
-        $this->newMemberBirthDate = '';
-        $this->newMemberSportCategory = '';
+        $this->initMemberSlots();
         $this->loadFreeYachts();
     }
 
@@ -192,12 +180,11 @@ class JoinRegattaModal extends Component
         $this->isOpen = false;
         $this->reset([
             'regattaId', 'yachtId', 'documentFiles', 'submitted', 'leftCrew',
-            'entryPassword', 'entryPasswordConfirmation', 'searchQuery', 'searchResults', 'freeYachts',
+            'entryPassword', 'entryPasswordConfirmation', 'freeYachts',
             'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'guestBirthDate', 'guestSportCategory',
             'captainMode', 'captainUserId', 'captainName', 'captainSearchQuery', 'captainSearchResults',
             'teamMode', 'teamId', 'teamSelectedName', 'teamName', 'teamSearchQuery', 'teamSearchResults',
             'yachtMode', 'newYachtName', 'newYachtVfps', 'guestMembers',
-            'newMemberName', 'newMemberBirthDate', 'newMemberSportCategory',
         ]);
     }
 
@@ -426,56 +413,112 @@ class JoinRegattaModal extends Component
         $this->resetErrorBag(['captainUserId', 'guestName', 'guestEmail', 'guestPhone', 'guestBirthDate', 'guestSportCategory']);
     }
 
-    /**
-     * Поиск пользователей по имени/фамилии/email,
-     * исключая уже добавленных в экипаж и самого подающего.
-     */
-    public function updatedSearchQuery(): void
+    /** Пустой слот экипажа. */
+    private function emptySlot(): array
     {
-        $query = trim($this->searchQuery);
+        return [
+            'ref'              => (string) Str::uuid(),
+            'mode'             => 'empty',
+            'registered'       => null,
+            'user_id'          => null,
+            'name'             => '',
+            'email'            => '',
+            'birth_date'       => null,
+            'sport_category'   => null,
+            'role'             => 'main',
+            'query'            => '',
+            'results'          => [],
+            'newName'          => '',
+            'newBirthDate'     => '',
+            'newSportCategory' => '',
+        ];
+    }
+
+    /** Создать ровно MAX_ADDED_MEMBERS пустых слотов экипажа. */
+    private function initMemberSlots(): void
+    {
+        $this->guestMembers = [];
+        for ($i = 0; $i < self::MAX_ADDED_MEMBERS; $i++) {
+            $this->guestMembers[] = $this->emptySlot();
+        }
+    }
+
+    /**
+     * ID пользователей, уже выбранных в других слотах (для исключения из поиска),
+     * плюс выбранный капитан.
+     *
+     * @return array<int, string>
+     */
+    private function excludedMemberUserIds(?int $exceptIndex = null): array
+    {
+        $ids = [];
+        foreach ($this->guestMembers as $idx => $slot) {
+            if ($exceptIndex !== null && $idx === $exceptIndex) {
+                continue;
+            }
+            if (! empty($slot['user_id'])) {
+                $ids[] = (string) $slot['user_id'];
+            }
+        }
+
+        if ($this->captainMode === 'select' && $this->captainUserId) {
+            $ids[] = (string) $this->captainUserId;
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /**
+     * Реакция на изменение полей слотов: поиск пользователей при вводе в поле слота.
+     */
+    public function updatedGuestMembers(mixed $value, ?string $key): void
+    {
+        if ($key === null || ! str_ends_with($key, '.query')) {
+            return;
+        }
+
+        $index = (int) explode('.', $key)[0];
+        $this->searchSlot($index);
+    }
+
+    /** Поиск пользователей для конкретного слота экипажа. */
+    private function searchSlot(int $i): void
+    {
+        if (! isset($this->guestMembers[$i])) {
+            return;
+        }
+
+        $query = trim($this->guestMembers[$i]['query'] ?? '');
 
         if ($query === '') {
-            $this->searchResults = [];
+            $this->guestMembers[$i]['results'] = [];
 
             return;
         }
 
-        $excludeIds = array_values(array_filter(array_column($this->guestMembers, 'user_id')));
+        $excludeIds = $this->excludedMemberUserIds($i);
 
-        // Исключаем выбранного капитана из поиска участников экипажа (он и так капитан)
-        if ($this->captainMode === 'select' && $this->captainUserId) {
-            $excludeIds[] = (string) $this->captainUserId;
-        }
-
-        $this->searchResults = User::where(function ($q) use ($query) {
+        $this->guestMembers[$i]['results'] = User::where(function ($q) use ($query) {
                 $q->where('name', 'like', "%{$query}%")
                   ->orWhere('email', 'like', "%{$query}%");
             })
             ->when($excludeIds !== [], fn ($q) => $q->whereNotIn('id', $excludeIds))
             ->limit(10)
-            ->get()
+            ->get(['id', 'name', 'email'])
             ->toArray();
     }
 
-    /**
-     * Гость: добавить найденного пользователя в экипаж (в transient-список).
-     * Реальные TeamMember создаются при подаче заявки.
-     */
-    public function addGuestMember(string $userId): void
+    /** Выбрать существующего пользователя в слот экипажа. */
+    public function selectSlotUser(int $i, string $userId): void
     {
-        if (count($this->guestMembers) >= self::MAX_ADDED_MEMBERS) {
-            $this->searchQuery = '';
-            $this->searchResults = [];
-            $this->addError('guestMembers', 'Можно добавить не более ' . self::MAX_ADDED_MEMBERS . ' участников.');
-
+        if (! isset($this->guestMembers[$i])) {
             return;
         }
 
-        // Уже добавлен или это выбранный капитан (он и так капитан)
-        if (in_array($userId, array_column($this->guestMembers, 'user_id'), true)
-            || ($this->captainMode === 'select' && (string) $this->captainUserId === $userId)) {
-            $this->searchQuery = '';
-            $this->searchResults = [];
+        // Уже выбран в другом слоте или это капитан — игнорируем.
+        if (in_array($userId, $this->excludedMemberUserIds($i), true)) {
+            $this->guestMembers[$i]['query'] = '';
+            $this->guestMembers[$i]['results'] = [];
 
             return;
         }
@@ -485,81 +528,93 @@ class JoinRegattaModal extends Component
             return;
         }
 
-        $this->guestMembers[] = [
-            'registered'     => true,
-            'ref'            => (string) Str::uuid(),
-            'user_id'        => (string) $user->id,
-            'name'           => $user->name,
-            'email'          => (string) $user->email,
-            'birth_date'     => null,
-            'sport_category' => null,
-            'role'           => 'main',
-        ];
-
-        $this->searchQuery = '';
-        $this->searchResults = [];
+        $ref = $this->guestMembers[$i]['ref'];
+        $this->guestMembers[$i] = array_merge($this->emptySlot(), [
+            'ref'        => $ref,
+            'mode'       => 'filled',
+            'registered' => true,
+            'user_id'    => (string) $user->id,
+            'name'       => $user->name,
+            'email'      => (string) $user->email,
+            'role'       => 'main',
+        ]);
     }
 
-    /**
-     * Гость: добавить незарегистрированного участника в экипаж (transient-список).
-     * Реальный пользователь создаётся при подаче заявки (со случайным email/телефоном).
-     */
-    public function addUnregisteredGuestMember(): void
+    /** Начать ввод нового (незарегистрированного) участника в слот. */
+    public function startSlotNew(int $i): void
     {
-        if (count($this->guestMembers) >= self::MAX_ADDED_MEMBERS) {
-            $this->addError('guestMembers', 'Можно добавить не более ' . self::MAX_ADDED_MEMBERS . ' участников.');
+        if (! isset($this->guestMembers[$i])) {
+            return;
+        }
 
+        $name = trim($this->guestMembers[$i]['query'] ?? '');
+        $this->guestMembers[$i]['mode'] = 'new';
+        $this->guestMembers[$i]['newName'] = $name;
+        $this->guestMembers[$i]['newBirthDate'] = '';
+        $this->guestMembers[$i]['newSportCategory'] = '';
+        $this->guestMembers[$i]['query'] = '';
+        $this->guestMembers[$i]['results'] = [];
+    }
+
+    /** Подтвердить нового незарегистрированного участника в слоте. */
+    public function addSlotNew(int $i): void
+    {
+        if (! isset($this->guestMembers[$i])) {
             return;
         }
 
         $rules = [
-            'newMemberName'      => ['required', 'string', 'max:255'],
-            'newMemberBirthDate' => ['required', 'date', 'before:today'],
+            "guestMembers.$i.newName"      => ['required', 'string', 'max:255'],
+            "guestMembers.$i.newBirthDate" => ['required', 'date', 'before:today'],
         ];
 
-        if ($this->newMemberSportCategory !== '') {
-            $rules['newMemberSportCategory'] = [Rule::enum(SportCategory::class)];
+        if (($this->guestMembers[$i]['newSportCategory'] ?? '') !== '') {
+            $rules["guestMembers.$i.newSportCategory"] = [Rule::enum(SportCategory::class)];
         }
 
         $this->validate($rules, [], [
-            'newMemberName'      => 'ФИО',
-            'newMemberBirthDate' => 'дата рождения',
-            'newMemberSportCategory' => 'разряд',
+            "guestMembers.$i.newName"          => 'ФИО',
+            "guestMembers.$i.newBirthDate"     => 'дата рождения',
+            "guestMembers.$i.newSportCategory" => 'разряд',
         ]);
 
-        $name = trim($this->newMemberName);
+        $name = trim($this->guestMembers[$i]['newName']);
+        $birthDate = $this->guestMembers[$i]['newBirthDate'];
 
         // Уникальность по сочетанию ФИО + дата рождения (как в User::saving)
         $exists = User::where('name', $name)
-            ->whereDate('birth_date', $this->newMemberBirthDate)
+            ->whereDate('birth_date', $birthDate)
             ->exists();
 
         if ($exists) {
-            $this->addError('newMemberName', 'Пользователь с таким ФИО и датой рождения уже зарегистрирован');
+            $this->addError("guestMembers.$i.newName", 'Пользователь с таким ФИО и датой рождения уже зарегистрирован');
 
             return;
         }
 
-        $this->guestMembers[] = [
+        $ref = $this->guestMembers[$i]['ref'];
+        $this->guestMembers[$i] = array_merge($this->emptySlot(), [
+            'ref'            => $ref,
+            'mode'           => 'filled',
             'registered'     => false,
-            'ref'            => (string) Str::uuid(),
-            'user_id'        => null,
             'name'           => $name,
-            'email'          => '',
-            'birth_date'     => $this->newMemberBirthDate,
-            'sport_category' => $this->newMemberSportCategory ?: null,
+            'birth_date'     => $birthDate,
+            'sport_category' => $this->guestMembers[$i]['newSportCategory'] ?: null,
             'role'           => 'main',
-        ];
-
-        $this->reset(['newMemberName', 'newMemberBirthDate', 'newMemberSportCategory']);
+        ]);
     }
 
-    public function removeGuestMember(string $ref): void
+    /** Очистить слот — вернуть его в режим поиска. */
+    public function clearSlot(int $i): void
     {
-        $this->guestMembers = array_values(array_filter(
-            $this->guestMembers,
-            fn (array $m): bool => $m['ref'] !== $ref,
-        ));
+        if (! isset($this->guestMembers[$i])) {
+            return;
+        }
+
+        $ref = $this->guestMembers[$i]['ref'];
+        $this->guestMembers[$i] = $this->emptySlot();
+        $this->guestMembers[$i]['ref'] = $ref;
+        $this->resetErrorBag(["guestMembers.$i.newName", "guestMembers.$i.newBirthDate", "guestMembers.$i.newSportCategory"]);
     }
 
     /** Сгенерировать уникальный «технический» email для незарегистрированного участника */
@@ -601,7 +656,6 @@ class JoinRegattaModal extends Component
             'regattaId'     => ['required', 'string', 'exists:regattas,id'],
             'entryPassword' => ['required', 'string', 'min:4', 'max:255'],
             'entryPasswordConfirmation' => ['required', 'string', 'same:entryPassword'],
-            'guestMembers'  => ['array', 'max:' . self::MAX_ADDED_MEMBERS],
         ];
 
         if ($selectsTeam) {
@@ -640,7 +694,6 @@ class JoinRegattaModal extends Component
         $this->validate($rules, [
             'guestEmail.unique'  => 'Пользователь с таким email уже зарегистрирован',
             'guestPhone.unique'  => 'Пользователь с таким телефоном уже зарегистрирован',
-            'guestMembers.max'   => 'Можно добавить не более ' . self::MAX_ADDED_MEMBERS . ' участников.',
             'entryPasswordConfirmation.same' => 'Пароли не совпадают',
         ], [
             'regattaId'     => 'регата',
@@ -740,6 +793,11 @@ class JoinRegattaModal extends Component
                 $crew = [(string) $captainMember->id => 'captain'];
 
                 foreach ($this->guestMembers as $m) {
+                    // Пустой слот — пропускаем.
+                    if (($m['registered'] ?? null) === null) {
+                        continue;
+                    }
+
                     $isUnregistered = ! ($m['registered'] ?? false);
 
                     // Незарегистрированный участник: создаём аккаунт со случайным email/телефоном

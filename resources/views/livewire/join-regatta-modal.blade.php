@@ -125,7 +125,7 @@
                         else if (e.key === 'Escape') { this.isOpen = false; }
                     }
                 }" x-on:click.away="isOpen = false">
-                    <label class="block text-sm text-brand-gray-light mb-1">Команда</label>
+                    <label class="block text-sm text-brand-gray-light mb-1">Название команды</label>
 
                     @if ($teamMode === 'create')
                         {{-- Создание новой команды --}}
@@ -436,160 +436,127 @@
                     @endif
                 </div>
 
-                {{-- Экипаж: добавление зарегистрированных пользователей --}}
-                <div class="border-t border-gray-200 pt-4" x-data="{
-                    query: @entangle('searchQuery'),
-                    results: @entangle('searchResults'),
-                    isOpen: false,
-                    showNew: false,
-                    selectedIndex: -1,
-                    init() {
-                        this.$watch('results', () => { this.selectedIndex = -1; });
-                        this.$watch('query', v => { this.isOpen = v.trim().length > 0; });
-                    },
-                    selectItem(userId) {
-                        $wire.searchQuery = '';
-                        this.isOpen = false;
-                        $wire.addGuestMember(userId);
-                    },
-                    addNewFromQuery() {
-                        const name = this.query.trim();
-                        this.isOpen = false;
-                        $wire.searchQuery = '';
-                        $wire.set('newMemberName', name);
-                        this.showNew = true;
-                    },
-                    onKeydown(e) {
-                        if (!this.isOpen) return;
-                        if (e.key === 'ArrowDown') { e.preventDefault(); this.selectedIndex = Math.min(this.selectedIndex + 1, this.results.length - 1); }
-                        else if (e.key === 'ArrowUp') { e.preventDefault(); this.selectedIndex = Math.max(this.selectedIndex - 1, -1); }
-                        else if (e.key === 'Enter' && this.selectedIndex >= 0) { e.preventDefault(); this.selectItem(this.results[this.selectedIndex].id); }
-                        else if (e.key === 'Escape') { this.isOpen = false; $wire.searchQuery = ''; }
-                    }
-                }" x-on:click.away="isOpen = false">
+                {{-- Экипаж: сразу девять полей — выбор существующего или добавление нового участника --}}
+                <div class="border-t border-gray-200 pt-4">
                     <p class="text-sm font-medium text-[#2E325C] mb-2">Экипаж</p>
-                    <p class="text-xs text-gray-500 mb-3">Капитаном команды будет указанный выше пользователь. Можно добавить не более {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} участников.</p>
+                    <p class="text-xs text-gray-500 mb-3">Капитаном команды будет указанный выше пользователь. Можно добавить до {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} участников — заполните нужные поля.</p>
 
-                    @error('guestMembers')
-                        <span class="text-xs text-red-600 mb-2 block">{{ $message }}</span>
-                    @enderror
+                    <div class="space-y-2">
+                        @foreach ($guestMembers as $i => $slot)
+                            <div wire:key="member-slot-{{ $i }}"
+                                 x-data="{ open: false }" x-on:click.away="open = false">
+                                <div class="flex items-start gap-2">
+                                    <span class="text-xs text-gray-400 w-5 pt-2.5 shrink-0 text-right">{{ $i + 1 }}.</span>
+                                    <div class="flex-1 min-w-0">
+                                        @if (($slot['mode'] ?? 'empty') === 'filled')
+                                            {{-- Заполненный слот --}}
+                                            <div class="flex items-center gap-2 py-2 px-3 bg-[#F8F8F8] rounded">
+                                                <span class="text-sm flex-1 truncate">
+                                                    {{ $slot['name'] }}
+                                                    @if (($slot['registered'] ?? null) === false)
+                                                        <span class="text-gray-400 text-xs ml-1">(новый)</span>
+                                                    @endif
+                                                </span>
+                                                <select wire:model="guestMembers.{{ $i }}.role"
+                                                        class="text-sm border-gray-200 bg-white rounded p-1 min-w-[110px]">
+                                                    <option value="main">Основной</option>
+                                                    <option value="reserve">Запасной</option>
+                                                </select>
+                                                <button type="button" wire:click="clearSlot({{ $i }})"
+                                                        class="text-gray-400 hover:text-red-500 text-xl leading-none shrink-0">&times;</button>
+                                            </div>
+                                        @elseif (($slot['mode'] ?? 'empty') === 'new')
+                                            {{-- Ввод нового незарегистрированного участника --}}
+                                            <div class="p-3 bg-[#F8F8F8] rounded space-y-2">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-xs text-gray-500">Новый участник — создадим личный кабинет</span>
+                                                    <button type="button" wire:click="clearSlot({{ $i }})"
+                                                            class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs text-gray-500 mb-1">ФИО</label>
+                                                    <input type="text" wire:model="guestMembers.{{ $i }}.newName"
+                                                           class="w-full border border-gray-200 bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
+                                                    @error('guestMembers.' . $i . '.newName')
+                                                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                                    @enderror
+                                                </div>
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label class="block text-xs text-gray-500 mb-1">Дата рождения</label>
+                                                        <input type="date" wire:model="guestMembers.{{ $i }}.newBirthDate"
+                                                               class="w-full border border-gray-200 bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
+                                                        @error('guestMembers.' . $i . '.newBirthDate')
+                                                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                                        @enderror
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-xs text-gray-500 mb-1">Спортивный разряд</label>
+                                                        <select wire:model="guestMembers.{{ $i }}.newSportCategory"
+                                                                class="w-full border border-gray-200 bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
+                                                            <option value="">Не указан</option>
+                                                            @foreach (\App\Enums\SportCategory::cases() as $cat)
+                                                                <option value="{{ $cat->value }}">{{ $cat->getLabel() }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        @error('guestMembers.' . $i . '.newSportCategory')
+                                                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                                <div class="flex gap-2 pt-1">
+                                                    <button type="button" wire:click="addSlotNew({{ $i }})"
+                                                            class="bg-[#2D92CE] text-white text-sm px-3 py-1.5 rounded hover:bg-[#2D92CE]/90">
+                                                        Добавить
+                                                    </button>
+                                                    <button type="button" wire:click="clearSlot({{ $i }})"
+                                                            class="text-gray-500 text-sm px-3 py-1.5 hover:text-gray-700">
+                                                        Отмена
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        @else
+                                            {{-- Поиск: выбрать существующего или добавить нового --}}
+                                            <div class="relative">
+                                                <input type="text"
+                                                       wire:model.live.debounce.350ms="guestMembers.{{ $i }}.query"
+                                                       x-on:focus="open = true" x-on:click="open = true"
+                                                       placeholder="Поиск по имени или email..."
+                                                       class="w-full border border-gray-200 bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
 
-                    @if (!empty($guestMembers))
-                        <div class="mb-3 space-y-2">
-                            @foreach ($guestMembers as $i => $member)
-                                <div class="flex items-center gap-3 py-2 px-3 bg-[#F8F8F8] rounded">
-                                    <span class="text-sm flex-1">
-                                        {{ $member['name'] }}
-                                        @if (!($member['registered'] ?? true))
-                                            <span class="text-gray-400 text-xs ml-1">(новый)</span>
+                                                <div wire:loading wire:target="guestMembers.{{ $i }}.query" class="absolute right-3 top-2.5 text-gray-400 text-xs">
+                                                    Поиск...
+                                                </div>
+
+                                                <div x-show="open" x-cloak
+                                                     class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">
+                                                    @forelse ($slot['results'] as $user)
+                                                        <div wire:click="selectSlotUser({{ $i }}, '{{ $user['id'] }}')"
+                                                             x-on:click="open = false"
+                                                             class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm border-b border-gray-100 last:border-b-0">
+                                                            <span class="font-medium">{{ $user['name'] }}</span>
+                                                            <span class="text-gray-400 text-xs ml-2">{{ $user['email'] }}</span>
+                                                        </div>
+                                                    @empty
+                                                        @if (trim($slot['query'] ?? '') !== '')
+                                                            <div class="px-3 py-2 text-sm text-gray-400">Ничего не найдено</div>
+                                                        @endif
+                                                    @endforelse
+                                                    @if (trim($slot['query'] ?? '') !== '')
+                                                        <div wire:click="startSlotNew({{ $i }})"
+                                                             x-on:click="open = false"
+                                                             class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm text-[#2D92CE] font-medium border-t border-gray-100">
+                                                            + Добавить «{{ trim($slot['query']) }}» как нового участника
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
                                         @endif
-                                    </span>
-                                    <select wire:model="guestMembers.{{ $i }}.role"
-                                            class="text-sm border-gray-200 bg-white rounded p-1 min-w-[120px]">
-                                        <option value="main">Основной</option>
-                                        <option value="reserve">Запасной</option>
-                                    </select>
-                                    <button type="button" wire:click="removeGuestMember('{{ $member['ref'] }}')"
-                                            class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
+                                    </div>
                                 </div>
-                            @endforeach
-                        </div>
-                    @endif
-
-                    @if (count($guestMembers) >= \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS)
-                        <p class="text-xs text-amber-600">Достигнут лимит участников ({{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }}).</p>
-                    @else
-                    <div class="relative">
-                        <input type="text"
-                               wire:model.live.debounce.350ms="searchQuery"
-                               x-on:keydown="onKeydown($event)"
-                               placeholder="Поиск по имени или email..."
-                               class="w-full border border-gray-200 bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
-
-                        <div wire:loading wire:target="searchQuery" class="absolute right-3 top-2.5 text-gray-400 text-xs">
-                            Поиск...
-                        </div>
-
-                        <div x-show="isOpen" x-cloak
-                             class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">
-                            <template x-for="(user, index) in results" :key="user.id">
-                                <div x-on:click="selectItem(user.id)"
-                                     x-on:mouseenter="selectedIndex = index"
-                                     :class="{ 'bg-[#2D92CE]/10': selectedIndex === index }"
-                                     class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm border-b border-gray-100 last:border-b-0">
-                                    <span class="font-medium" x-text="user.name"></span>
-                                    <span class="text-gray-400 text-xs ml-2" x-text="user.email"></span>
-                                </div>
-                            </template>
-                            <div x-show="results.length === 0 && query.length > 0" class="px-3 py-2 text-sm text-gray-400">
-                                Ничего не найдено
                             </div>
-                            <div x-show="query.trim().length > 0"
-                                 x-on:click="addNewFromQuery()"
-                                 class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm text-[#2D92CE] font-medium border-t border-gray-100">
-                                + Добавить «<span x-text="query.trim()"></span>» как нового участника
-                            </div>
-                        </div>
+                        @endforeach
                     </div>
-
-                    {{-- Добавление незарегистрированного участника (showNew — в общем scope экипажа) --}}
-                    <div class="mt-3">
-                        <!--
-                        <button type="button" x-show="!showNew" @click="showNew = true"
-                                class="text-sm text-[#2D92CE] font-medium hover:underline">
-                            + Добавить незарегистрированного участника
-                        </button>
-                        -->
-
-                        <div x-show="showNew" x-cloak class="mt-2 p-3 bg-[#F8F8F8] rounded space-y-2">
-                            <p class="text-xs text-gray-500">
-                                Мы автоматически создадим для участника личный кабинет.
-                            </p>
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">ФИО</label>
-                                <input type="text" wire:model="newMemberName"
-                                       class="w-full border border-gray-200 bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
-                                @error('newMemberName')
-                                    <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                                @enderror
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-xs text-gray-500 mb-1">Дата рождения</label>
-                                    <input type="date" wire:model="newMemberBirthDate"
-                                           class="w-full border border-gray-200 bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
-                                    @error('newMemberBirthDate')
-                                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-gray-500 mb-1">Спортивный разряд</label>
-                                    <select wire:model="newMemberSportCategory"
-                                            class="w-full border border-gray-200 bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
-                                        <option value="">Не указан</option>
-                                        @foreach (\App\Enums\SportCategory::cases() as $cat)
-                                            <option value="{{ $cat->value }}">{{ $cat->getLabel() }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('newMemberSportCategory')
-                                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div>
-                            <div class="flex gap-2 pt-1">
-                                <button type="button" wire:click="addUnregisteredGuestMember"
-                                        class="bg-[#2D92CE] text-white text-sm px-3 py-1.5 rounded hover:bg-[#2D92CE]/90">
-                                    Добавить
-                                </button>
-                                <button type="button"
-                                        @click="showNew = false; $wire.set('newMemberName', ''); $wire.set('newMemberBirthDate', ''); $wire.set('newMemberSportCategory', '')"
-                                        class="text-gray-500 text-sm px-3 py-1.5 hover:text-gray-700">
-                                    Отмена
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
                 </div>
 
                 {{-- Документы --}}

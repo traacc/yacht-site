@@ -142,9 +142,10 @@ class GuestJoinRegattaTest extends TestCase
 
         $component = Livewire::test(JoinRegattaModal::class)
             ->call('openModal', $regatta->id)
-            ->call('addGuestMember', $other->id);
+            ->call('selectSlotUser', 0, $other->id);
 
-        $component->assertCount('guestMembers', 1);
+        $component->assertSet('guestMembers.0.user_id', (string) $other->id)
+            ->assertSet('guestMembers.0.registered', true);
 
         $component->set('captainMode', 'create')
             ->set('guestName', 'Капитан Немо')
@@ -177,14 +178,13 @@ class GuestJoinRegattaTest extends TestCase
 
         $component = Livewire::test(JoinRegattaModal::class)
             ->call('openModal', $regatta->id)
-            ->set('newMemberName', 'Новиков Новик Новикович')
-            ->set('newMemberBirthDate', '1995-05-20')
-            ->set('newMemberSportCategory', 'kms')
-            ->call('addUnregisteredGuestMember')
+            ->set('guestMembers.0.newName', 'Новиков Новик Новикович')
+            ->set('guestMembers.0.newBirthDate', '1995-05-20')
+            ->set('guestMembers.0.newSportCategory', 'kms')
+            ->call('addSlotNew', 0)
             ->assertHasNoErrors()
-            ->assertCount('guestMembers', 1)
-            // Поля формы сброшены после добавления
-            ->assertSet('newMemberName', '');
+            ->assertSet('guestMembers.0.registered', false)
+            ->assertSet('guestMembers.0.name', 'Новиков Новик Новикович');
 
         $component->set('captainMode', 'create')
             ->set('guestName', 'Капитан Немо')
@@ -225,36 +225,31 @@ class GuestJoinRegattaTest extends TestCase
 
         Livewire::test(JoinRegattaModal::class)
             ->call('openModal', $regatta->id)
-            ->call('addUnregisteredGuestMember')
-            ->assertHasErrors(['newMemberName', 'newMemberBirthDate'])
-            ->assertCount('guestMembers', 0);
+            ->call('addSlotNew', 0)
+            ->assertHasErrors(['guestMembers.0.newName', 'guestMembers.0.newBirthDate'])
+            ->assertSet('guestMembers.0.registered', null);
     }
 
-    public function test_guest_cannot_add_more_than_max_members(): void
+    public function test_crew_shows_exactly_max_slots(): void
     {
         $regatta = Regatta::factory()->create();
-        $users = User::factory()->count(JoinRegattaModal::MAX_ADDED_MEMBERS + 1)->create();
+        $users = User::factory()->count(JoinRegattaModal::MAX_ADDED_MEMBERS)->create();
 
         $component = Livewire::test(JoinRegattaModal::class)
             ->call('openModal', $regatta->id);
 
-        // Добавляем ровно лимит
-        foreach ($users->take(JoinRegattaModal::MAX_ADDED_MEMBERS) as $u) {
-            $component->call('addGuestMember', $u->id);
-        }
+        // Ровно MAX слотов экипажа доступно сразу
         $component->assertCount('guestMembers', JoinRegattaModal::MAX_ADDED_MEMBERS);
 
-        // Следующий зарегистрированный участник — отклоняется
-        $component->call('addGuestMember', $users->last()->id)
-            ->assertCount('guestMembers', JoinRegattaModal::MAX_ADDED_MEMBERS)
-            ->assertHasErrors('guestMembers');
+        // Заполняем все слоты — новых не появляется
+        foreach ($users->values() as $i => $u) {
+            $component->call('selectSlotUser', $i, $u->id);
+        }
 
-        // Незарегистрированный участник сверх лимита — тоже отклоняется
-        $component->set('newMemberName', 'Лишний Участник')
-            ->set('newMemberBirthDate', '1990-01-01')
-            ->call('addUnregisteredGuestMember')
-            ->assertCount('guestMembers', JoinRegattaModal::MAX_ADDED_MEMBERS)
-            ->assertHasErrors('guestMembers');
+        $component->assertCount('guestMembers', JoinRegattaModal::MAX_ADDED_MEMBERS);
+        foreach ($users->values() as $i => $u) {
+            $component->assertSet("guestMembers.$i.user_id", (string) $u->id);
+        }
     }
 
     public function test_authenticated_user_submits_entry_via_same_form(): void
@@ -359,7 +354,8 @@ class GuestJoinRegattaTest extends TestCase
             // Выбор команды не зависит от капитана и не предзаполняет экипаж
             ->call('selectTeam', $team->id)
             ->assertSet('teamId', (string) $team->id)
-            ->assertCount('guestMembers', 0);
+            // Выбор команды не предзаполняет слоты экипажа
+            ->assertSet('guestMembers.0.registered', null);
 
         $component->set('yachtMode', 'select')
             ->set('yachtId', $yacht->id)
