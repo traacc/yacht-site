@@ -39,6 +39,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Collection;
@@ -774,29 +775,16 @@ class RegattaResultResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('regatta.season.year')
-                    ->label('Сезон')
-                    ->searchable()
-                    ->sortable(),
                 TextColumn::make('regatta.name')
                     ->label('Регата')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('regatta.dateRange')
-                    ->label('Дата регаты')->getStateUsing(fn ($record) => $record->regatta?->dateRange()),
                 TextColumn::make('result_type')
                     ->label('Тип результатов')
                     ->formatStateUsing(fn(string $state) => match ($state) {
                         'preliminary' => 'Предварительный',
                         'final'       => 'Финальный',
                         default       => $state,
-                    }),
-                TextColumn::make('source')
-                    ->label('Формат')
-                    ->formatStateUsing(fn(string $state) => match ($state) {
-                        'manual'   => 'Вручную',
-                        'imported' => 'Импортирован',
-                        default    => $state,
                     }),
                 TextColumn::make('created_at')
                     ->label('Создан')
@@ -810,10 +798,24 @@ class RegattaResultResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
-                //
+                SelectFilter::make('season')
+                    ->label('Сезон')
+                    ->options(fn (): array => \App\Models\Season::query()
+                        ->orderByDesc('year')
+                        ->pluck('year', 'id')
+                        ->all())
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (blank($data['value'])) {
+                            return $query;
+                        }
+
+                        return $query->whereHas(
+                            'regatta',
+                            fn (Builder $q) => $q->where('season_id', $data['value']),
+                        );
+                    }),
             ])
             ->recordActions([
-                ViewAction::make(),
                 EditAction::make()->modalHeading('Редактировать результат регаты'),
                 EditAction::make('edit_table')
                     ->label('Редактировать таблицей')
@@ -832,80 +834,8 @@ class RegattaResultResource extends Resource
                         self::itemsTableSchema($record),
                     ])
                     ->after(fn (RegattaResult $record, array $data) => self::saveRaceResults($record, $data)),
-                Action::make('import_csv')
-                    ->label('Импорт CSV')
-                    ->icon(Heroicon::ArrowUpTray)
-                    ->color('success')
-                    ->form([
-                        FileUpload::make('csv_file')
-                            ->label('CSV-файл')
-                            ->acceptedFileTypes(['text/csv', 'text/plain', 'application/csv', 'application/vnd.ms-excel'])
-                            ->disk('local')
-                            ->directory('csv-imports')
-                            ->required(),
-                        Checkbox::make('replace')
-                            ->label('Заменить существующие записи')
-                            ->default(false)
-                            ->helperText('Если включено — все текущие items будут удалены перед импортом'),
-                    ])
-                    ->action(function (RegattaResult $record, array $data): void {
-                        $path    = Storage::disk('local')->path($data['csv_file']);
-                        $content = file_get_contents($path);
-                        Storage::disk('local')->delete($data['csv_file']);
-
-                        try {
-                            $result = app(ImportRegattaResultItemsAction::class)
-                                ->execute($record, $content, (bool) ($data['replace'] ?? false));
-                        } catch (\RuntimeException $e) {
-                            Notification::make()
-                                ->title('Ошибка импорта')
-                                ->body($e->getMessage())
-                                ->danger()
-                                ->send();
-                            return;
-                        }
-
-                        $body = "Импортировано: {$result['imported']}, пропущено: {$result['skipped']}";
-                        if (! empty($result['errors'])) {
-                            $body .= "\n\nОшибки:\n" . implode("\n", $result['errors']);
-                        }
-
-                        Notification::make()
-                            ->title('Импорт завершён')
-                            ->body($body)
-                            ->when(empty($result['errors']), fn($n) => $n->success())
-                            ->when(! empty($result['errors']), fn($n) => $n->warning())
-                            ->send();
-                    }),
                 DeleteAction::make(),
-                Action::make('export_csv')
-                    ->label('Экспорт CSV')
-                    ->icon(Heroicon::ArrowDownTray)
-                    ->color('gray')
-                    ->action(function (RegattaResult $record): StreamedResponse {
-                        $filename = sprintf(
-                            'result_%s_%s.csv',
-                            str($record->regatta?->name ?? $record->id)->slug(),
-                            now()->format('Y-m-d'),
-                        );
 
-                        return response()->streamDownload(function () use ($record): void {
-                            $handle = fopen('php://output', 'w');
-                            fputs($handle, "\xEF\xBB\xBF"); // BOM для Excel
-                            fputcsv($handle, ['Место', 'Команда', 'Яхта', 'Очки'], ';');
-
-                            foreach ($record->items as $item) {
-                                fputcsv($handle, [
-                                    $item->final_position ?? '',
-                                    $item->team?->name ?? '',
-                                    $item->yacht?->name ?? '',
-                                    $item->total_points,
-                                ], ';');
-                            }
-
-                            fclose($handle);
-                        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
-                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
