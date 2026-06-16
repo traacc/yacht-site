@@ -500,18 +500,15 @@ Route::get('/ratings', function () {
             'total_points' => (float) $r->total_points,
             'birthday'     => $r->user?->birth_date?->format('d.m.Y') ?? '—',
             'category'     => $r->user?->sport_category ?? '—',
-            'avatar'       => $r->user?->photo_url ?: null,
+            'avatar'       => $r->user?->photo_url ? asset('storage/'.$r->user->photo_url) : null,
         ])
         ->groupBy('total_points')
         ->map(function ($group) use (&$place) {
-            $row = [
-                'place'        => $place,
+            return [
+                'place'        => $place++,
                 'total_points' => $group->first()['total_points'],
                 'participants' => $group->values()->toArray(),
             ];
-            $place += $group->count();
-
-            return $row;
         })
         ->values()
         ->toArray();
