@@ -77,6 +77,12 @@
                         <p class="mb-6">Таблица обновляется по мере обработки результатов. Финальные очки будут опубликованы после утверждения итогов соревнования.</p>
                     @endif
                     <div class="overflow-x-auto relative p-6 bg-white">
+                        @if($regatta->results->first())
+                            <a href="{{ route('regatta.results.pdf', $regatta) }}" target="_blank" class="text-[#2E325C] text-sm font-semibold gap-2 items-center flex md:hidden justify-center mt-4 cursor-pointer">
+                                <img src="{{ asset('images/icons/download.svg') }}" alt="">
+                                <span>Скачать результаты PDF</span>
+                            </a>
+                        @endif
                         <table class="w-full">
                             <thead>
                                 <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]  hidden md:table-row">
@@ -133,12 +139,7 @@
                             </tbody>
                         </table>
                     </div>
-                    @if($regatta->results->first())
-                        <a href="{{ route('regatta.results.pdf', $regatta) }}" target="_blank" class="text-[#2E325C] text-sm font-semibold gap-2 items-center flex md:hidden justify-center mt-4 cursor-pointer">
-                            <img src="{{ asset('images/icons/download.svg') }}" alt="">
-                            <span>Скачать результаты PDF</span>
-                        </a>
-                    @endif
+
                 </div>
             </section>
         @empty
@@ -284,6 +285,12 @@
                                 <p class="mb-6">Таблица обновляется по мере обработки результатов. Финальные очки будут опубликованы после утверждения итогов соревнования.</p>
                             @endif
                             <div class="overflow-x-auto relative p-2 md:p-6 md:pt-0 bg-white">
+                                @if($regatta->results->first())
+                                    <a href="{{ route('regatta.results.pdf', $regatta) }}" target="_blank" class="text-[#2E325C] text-sm font-semibold gap-2 items-center flex md:hidden justify-center mt-4 cursor-pointer">
+                                        <img src="{{ asset('images/icons/download.svg') }}" alt="">
+                                        <span>Скачать результаты PDF</span>
+                                    </a>
+                                @endif
                                 <table class="w-full">
                                     <thead class="sticky top-0 bg-white">
                                         <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]  hidden md:table-row">
@@ -341,12 +348,7 @@
                                     </tbody>
                                 </table>
                             </div>
-                            @if($regatta->results->first())
-                                <a href="{{ route('regatta.results.pdf', $regatta) }}" target="_blank" class="text-[#2E325C] text-sm font-semibold gap-2 items-center flex md:hidden justify-center mt-4 cursor-pointer">
-                                    <img src="{{ asset('images/icons/download.svg') }}" alt="">
-                                    <span>Скачать результаты PDF</span>
-                                </a>
-                            @endif
+
                         </div>
                     </section>
                 @endif
