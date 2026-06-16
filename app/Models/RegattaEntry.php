@@ -75,6 +75,19 @@ class RegattaEntry extends Model
     // Helpers
     // ──────────────────────────────────────────────
 
+    /** Задан ли спец-пароль заявки (для редактирования без входа) */
+    public function hasEntryPassword(): bool
+    {
+        return filled($this->entry_password);
+    }
+
+    /** Проверить спец-пароль заявки */
+    public function checkEntryPassword(string $plain): bool
+    {
+        return $this->entry_password !== null
+            && \Illuminate\Support\Facades\Hash::check($plain, $this->entry_password);
+    }
+
     public function isPending(): bool   { return $this->status === 'pending'; }
     public function isApproved(): bool  { return $this->status === 'approved'; }
     public function isRejected(): bool  { return $this->status === 'rejected'; }

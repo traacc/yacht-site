@@ -176,6 +176,13 @@
                                            class="text-brand-blue font-medium underline hover:no-underline">
                                             {{ $entry->crew->count() }} участников
                                         </a>
+                                        @if ($entry->hasEntryPassword())
+                                            <button type="button"
+                                                    @click="$dispatch('open-edit-regatta-entry', { entryId: '{{ $entry->id }}' })"
+                                                    class="block mx-auto md:mx-0 mt-1 text-brand-dark text-sm font-medium underline hover:no-underline">
+                                                Редактировать заявку
+                                            </button>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty
@@ -200,6 +207,7 @@
                     @endif
             </div>
         </section>
+        <livewire:edit-regatta-entry-modal />
         @endif
 
         {{-- ===== РАСПИСАНИЕ ===== --}}
