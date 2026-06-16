@@ -6,6 +6,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Team;
 use App\Models\User;
+use App\Services\ImageConverter;
 use App\Services\SettingsService;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -471,6 +472,9 @@ class HomePageSettings extends Page
             ->flatten()
             ->filter(fn ($v) => is_string($v) && $v !== '')
             ->first();
+
+        // Изображения автоматически перекодируем в WebP (видео не трогаем)
+        $heroMedia = app(ImageConverter::class)->toWebp($heroMedia, 'public');
 
         $settings->set('home.hero_media', $heroMedia, 'home');
 
