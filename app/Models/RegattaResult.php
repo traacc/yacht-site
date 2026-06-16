@@ -17,13 +17,15 @@ class RegattaResult extends Model
         'result_type',
         'source',
         'pdf_path',
+        'is_published',
     ];
 
     protected function casts(): array
     {
         return [
-            'result_type' => 'string',
-            'source'      => 'string',
+            'result_type'  => 'string',
+            'source'       => 'string',
+            'is_published' => 'boolean',
         ];
     }
 

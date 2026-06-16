@@ -224,6 +224,7 @@ class RegattaResults extends Component
     protected function eagerLoads(): array
     {
         return [
+            'results'                             => fn ($q) => $q->where('is_published', true),
             'results.items'                       => fn ($q) => $q->reorder()
                 ->orderByRaw('final_position IS NULL')
                 ->orderByRaw('CAST(final_position AS UNSIGNED)')

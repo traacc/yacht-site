@@ -834,6 +834,34 @@ class RegattaResultResource extends Resource
                         self::itemsTableSchema($record),
                     ])
                     ->after(fn (RegattaResult $record, array $data) => self::saveRaceResults($record, $data)),
+                Action::make('publish')
+                    ->label('Опубликовать')
+                    ->icon(Heroicon::CheckCircle)
+                    ->color('success')
+                    ->visible(fn (RegattaResult $record): bool => ! $record->is_published)
+                    ->requiresConfirmation()
+                    ->action(function (RegattaResult $record): void {
+                        $record->update(['is_published' => true]);
+
+                        Notification::make()
+                            ->title('Результат опубликован')
+                            ->success()
+                            ->send();
+                    }),
+                Action::make('unpublish')
+                    ->label('Снять с публикации')
+                    ->icon(Heroicon::XCircle)
+                    ->color('warning')
+                    ->visible(fn (RegattaResult $record): bool => $record->is_published)
+                    ->requiresConfirmation()
+                    ->action(function (RegattaResult $record): void {
+                        $record->update(['is_published' => false]);
+
+                        Notification::make()
+                            ->title('Результат снят с публикации')
+                            ->success()
+                            ->send();
+                    }),
                 DeleteAction::make(),
 
             ])
