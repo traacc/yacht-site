@@ -107,7 +107,6 @@
                     selectedIndex: -1,
                     init() {
                         this.$watch('results', () => { this.selectedIndex = -1; });
-                        this.$watch('query', v => { this.isOpen = v.trim().length > 0; });
                     },
                     selectItem(teamId) {
                         this.isOpen = false;
@@ -157,6 +156,8 @@
                         <div class="relative">
                             <input type="text"
                                    wire:model.live.debounce.350ms="teamSearchQuery"
+                                   x-on:focus="isOpen = true"
+                                   x-on:click="isOpen = true"
                                    x-on:keydown="onKeydown($event)"
                                    placeholder="Найдите команду или создайте новую..."
                                    class="w-full border bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none @error('teamId') border-red-300 @else border-gray-200 @enderror">
@@ -175,6 +176,9 @@
                                         <span class="font-medium" x-text="team.name"></span>
                                     </div>
                                 </template>
+                                <div x-show="results.length === 0 && query.trim().length === 0" class="px-3 py-2 text-sm text-gray-400">
+                                    Нет команд
+                                </div>
                                 <div x-show="results.length === 0 && query.length > 0" class="px-3 py-2 text-sm text-gray-400">
                                     Ничего не найдено
                                 </div>
@@ -321,13 +325,13 @@
                         else if (e.key === 'Escape') { this.isOpen = false; }
                     }
                 }" x-on:click.away="isOpen = false">
-                    <label class="block text-sm text-brand-gray-light mb-1">Капитан</label>
+                    <label class="block text-sm text-brand-gray-light mb-1">Рулевой</label>
 
                     @if ($captainMode === 'create')
                         {{-- Новый пользователь-капитан --}}
                         <div class="p-3 bg-[#F8F8F8] rounded space-y-3">
                             <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-500">Новый капитан</span>
+                                <span class="text-xs text-gray-500">Новый рулевой</span>
                                 <button type="button" wire:click="clearCaptain"
                                         class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
                             </div>

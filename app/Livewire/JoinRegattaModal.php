@@ -176,7 +176,7 @@ class JoinRegattaModal extends Component
         $this->teamSelectedName = null;
         $this->teamName = '';
         $this->teamSearchQuery = '';
-        $this->teamSearchResults = [];
+        $this->loadTeams();
         $this->yachtMode = 'select';
         $this->newYachtName = '';
         $this->newYachtVfps = '';
@@ -289,13 +289,22 @@ class JoinRegattaModal extends Component
         $query = trim($this->teamSearchQuery);
 
         if ($query === '') {
-            $this->teamSearchResults = [];
+            $this->loadTeams();
 
             return;
         }
 
         $this->teamSearchResults = Team::where('name', 'like', "%{$query}%")
             ->orderBy('name')
+            ->limit(10)
+            ->get(['id', 'name'])
+            ->toArray();
+    }
+
+    /** Загрузить начальный список команд для показа сразу по клику (как у яхт). */
+    private function loadTeams(): void
+    {
+        $this->teamSearchResults = Team::orderBy('name')
             ->limit(10)
             ->get(['id', 'name'])
             ->toArray();
@@ -338,7 +347,7 @@ class JoinRegattaModal extends Component
         $this->teamSelectedName = null;
         $this->teamName = '';
         $this->teamSearchQuery = '';
-        $this->teamSearchResults = [];
+        $this->loadTeams();
         $this->resetErrorBag(['teamId', 'teamName']);
     }
 
