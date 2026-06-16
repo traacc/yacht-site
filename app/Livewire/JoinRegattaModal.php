@@ -760,7 +760,7 @@ class JoinRegattaModal extends Component
                     $team = Team::create([
                         'name'            => $this->teamName,
                         'organizer_id'    => $submitter->id,
-                        'approval_status' => 'pending',
+                        'approval_status' => 'approved',
                     ]);
 
                     TeamMember::firstOrCreate(
@@ -843,7 +843,7 @@ class JoinRegattaModal extends Component
                         'name'            => $this->newYachtName,
                         'vfps_number'     => $this->newYachtVfps ?: null,
                         'user_id'         => $submitter->id,
-                        'approval_status' => 'pending',
+                        'approval_status' => 'approved',
                     ]);
                 } else {
                     $yacht = Yacht::findOrFail($this->yachtId);
