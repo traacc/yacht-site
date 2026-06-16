@@ -58,13 +58,6 @@ class JoinRegattaModal extends Component
      */
     public array $freeYachts = [];
 
-    /**
-     * Команды, где пользователь капитан (для единого списка выбора/создания).
-     *
-     * @var array<int, array{id: string, name: string}>
-     */
-    public array $captainTeamsList = [];
-
     // ──────────────────────────────────────────────
     // Гостевой поток: регистрация + создание команды/яхты при подаче заявки
     // ──────────────────────────────────────────────
@@ -102,14 +95,23 @@ class JoinRegattaModal extends Component
     /** Результаты поиска пользователей для капитана */
     public array $captainSearchResults = [];
 
-    /** Способ указания команды: 'select' (своя, где капитан) | 'create' (новая) */
-    public string $teamMode = 'create';
+    /** Способ указания команды: 'select' (существующая) | 'create' (новая) */
+    public string $teamMode = 'select';
 
-    /** ID выбранной команды (режим 'select', только для авторизованных) */
+    /** ID выбранной существующей команды (режим 'select') */
     public ?string $teamId = null;
 
-    /** Название создаваемой командой гостя */
+    /** Отображаемое название выбранной команды (для чипа) */
+    public ?string $teamSelectedName = null;
+
+    /** Название создаваемой команды */
     public string $teamName = '';
+
+    /** Поисковый запрос для выбора команды */
+    public string $teamSearchQuery = '';
+
+    /** Результаты поиска команд */
+    public array $teamSearchResults = [];
 
     /** Способ указания яхты гостем: 'select' (свободная) | 'create' (новая) */
     public string $yachtMode = 'select';
@@ -154,15 +156,19 @@ class JoinRegattaModal extends Component
         $this->guestPhone = '';
         $this->guestBirthDate = '';
         $this->guestSportCategory = '';
+        // Капитан по умолчанию — текущий пользователь (для авторизованного), иначе пусто
+        $authUser = Auth::user();
         $this->captainMode = 'select';
-        $this->captainUserId = null;
-        $this->captainName = null;
+        $this->captainUserId = $authUser instanceof User ? (string) $authUser->id : null;
+        $this->captainName = $authUser instanceof User ? $authUser->name : null;
         $this->captainSearchQuery = '';
         $this->captainSearchResults = [];
         $this->teamId = null;
-        $this->teamMode = $this->captainTeams->isNotEmpty() ? 'select' : 'create';
+        $this->teamMode = 'select';
+        $this->teamSelectedName = null;
         $this->teamName = '';
-        $this->loadCaptainTeams();
+        $this->teamSearchQuery = '';
+        $this->teamSearchResults = [];
         $this->yachtMode = 'select';
         $this->newYachtName = '';
         $this->newYachtVfps = '';
@@ -181,7 +187,7 @@ class JoinRegattaModal extends Component
             'searchQuery', 'searchResults', 'freeYachts',
             'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'guestBirthDate', 'guestSportCategory',
             'captainMode', 'captainUserId', 'captainName', 'captainSearchQuery', 'captainSearchResults',
-            'teamMode', 'teamId', 'teamName', 'captainTeamsList',
+            'teamMode', 'teamId', 'teamSelectedName', 'teamName', 'teamSearchQuery', 'teamSearchResults',
             'yachtMode', 'newYachtName', 'newYachtVfps', 'guestMembers',
             'newMemberName', 'newMemberBirthDate', 'newMemberSportCategory',
         ]);
@@ -268,48 +274,40 @@ class JoinRegattaModal extends Component
     }
 
     /**
-     * Команды, где текущий пользователь — капитан (организатор).
-     *
-     * @return Collection<int, Team>
+     * Поиск команд по названию (любая команда, не зависит от капитана).
      */
-    #[Computed]
-    public function captainTeams(): Collection
+    public function updatedTeamSearchQuery(): void
     {
-        $user = Auth::user();
-        if (! $user instanceof User) {
-            return collect();
+        $query = trim($this->teamSearchQuery);
+
+        if ($query === '') {
+            $this->teamSearchResults = [];
+
+            return;
         }
 
-        return $user->teamMemberships()
-            ->where('role', TeamMemberRole::Organizer->value)
-            ->where('status', 'active')
-            ->with('team')
-            ->get()
-            ->pluck('team')
-            ->filter()
-            ->values();
+        $this->teamSearchResults = Team::where('name', 'like', "%{$query}%")
+            ->orderBy('name')
+            ->limit(10)
+            ->get(['id', 'name'])
+            ->toArray();
     }
 
-    /** Загрузить команды капитана в плоский список для единого селекта. */
-    private function loadCaptainTeams(): void
-    {
-        $this->captainTeamsList = $this->captainTeams
-            ->map(fn (Team $t): array => [
-                'id'   => (string) $t->id,
-                'name' => $t->name,
-            ])
-            ->values()
-            ->all();
-    }
-
-    /** Выбрать свою команду из единого списка (с предзаполнением экипажа). */
+    /** Выбрать существующую команду. */
     public function selectTeam(string $teamId): void
     {
+        $team = Team::find($teamId);
+        if (! $team) {
+            return;
+        }
+
         $this->teamMode = 'select';
-        $this->teamId = $teamId;
+        $this->teamId = (string) $team->id;
+        $this->teamSelectedName = $team->name;
         $this->teamName = '';
+        $this->teamSearchQuery = '';
+        $this->teamSearchResults = [];
         $this->resetErrorBag(['teamId', 'teamName']);
-        $this->updatedTeamId();
     }
 
     /** Начать создание новой команды (название берётся из поискового запроса). */
@@ -317,63 +315,23 @@ class JoinRegattaModal extends Component
     {
         $this->teamMode = 'create';
         $this->teamId = null;
+        $this->teamSelectedName = null;
         $this->teamName = trim($name);
-        $this->guestMembers = [];
-        $this->resetErrorBag(['teamId', 'teamName', 'guestMembers']);
+        $this->teamSearchQuery = '';
+        $this->teamSearchResults = [];
+        $this->resetErrorBag(['teamId', 'teamName']);
     }
 
-    /** Сбросить выбор/создание команды — вернуться к поиску по списку. */
+    /** Сбросить выбор/создание команды — вернуться к поиску. */
     public function clearTeam(): void
     {
-        $this->teamMode = $this->captainTeams->isNotEmpty() ? 'select' : 'create';
+        $this->teamMode = 'select';
         $this->teamId = null;
+        $this->teamSelectedName = null;
         $this->teamName = '';
-        $this->guestMembers = [];
-        $this->resetErrorBag(['teamId', 'teamName', 'guestMembers']);
-    }
-
-    /** При смене режима команды сбрасываем выбор и подобранный экипаж */
-    public function updatedTeamMode(): void
-    {
-        $this->teamId = null;
-        $this->guestMembers = [];
-        $this->resetErrorBag(['teamId', 'teamName', 'guestMembers']);
-    }
-
-    /** При выборе команды предзаполняем экипаж её активными участниками */
-    public function updatedTeamId(): void
-    {
-        $this->guestMembers = [];
-        $this->resetErrorBag('guestMembers');
-
-        if (! $this->teamId) {
-            return;
-        }
-
-        $members = TeamMember::where('team_id', $this->teamId)
-            ->where('status', 'active')
-            ->where('user_id', '!=', Auth::id())
-            ->with('user')
-            ->orderBy('joined_at', 'asc')
-            ->limit(self::MAX_ADDED_MEMBERS)
-            ->get();
-
-        foreach ($members as $member) {
-            if (! $member->user) {
-                continue;
-            }
-
-            $this->guestMembers[] = [
-                'registered'     => true,
-                'ref'            => (string) Str::uuid(),
-                'user_id'        => (string) $member->user_id,
-                'name'           => $member->user->name,
-                'email'          => (string) $member->user->email,
-                'birth_date'     => null,
-                'sport_category' => null,
-                'role'           => 'main',
-            ];
-        }
+        $this->teamSearchQuery = '';
+        $this->teamSearchResults = [];
+        $this->resetErrorBag(['teamId', 'teamName']);
     }
 
     /**
@@ -467,12 +425,8 @@ class JoinRegattaModal extends Component
 
         $excludeIds = array_values(array_filter(array_column($this->guestMembers, 'user_id')));
 
-        if (Auth::check()) {
-            $excludeIds[] = (string) Auth::id();
-        }
-
-        // Гость: исключаем выбранного капитана из поиска участников экипажа
-        if (! Auth::check() && $this->captainMode === 'select' && $this->captainUserId) {
+        // Исключаем выбранного капитана из поиска участников экипажа (он и так капитан)
+        if ($this->captainMode === 'select' && $this->captainUserId) {
             $excludeIds[] = (string) $this->captainUserId;
         }
 
@@ -500,10 +454,9 @@ class JoinRegattaModal extends Component
             return;
         }
 
-        // Уже добавлен, это сам подающий, или это выбранный капитан (он и так капитан)
+        // Уже добавлен или это выбранный капитан (он и так капитан)
         if (in_array($userId, array_column($this->guestMembers, 'user_id'), true)
-            || (Auth::check() && (string) Auth::id() === $userId)
-            || (! Auth::check() && $this->captainMode === 'select' && (string) $this->captainUserId === $userId)) {
+            || ($this->captainMode === 'select' && (string) $this->captainUserId === $userId)) {
             $this->searchQuery = '';
             $this->searchResults = [];
 
@@ -621,8 +574,11 @@ class JoinRegattaModal extends Component
     {
         $actor = Auth::user() instanceof User ? Auth::user() : null;
 
-        // Авторизованный может выбрать свою команду (где он капитан) вместо создания новой
-        $selectsTeam = $actor !== null && $this->teamMode === 'select';
+        // Команда: выбор существующей или создание новой — независимо от капитана
+        $selectsTeam = $this->teamMode === 'select';
+
+        // Капитан: выбор существующего пользователя или создание нового — для всех
+        $selectsCaptain = $this->captainMode === 'select';
 
         $rules = [
             'regattaId'    => ['required', 'string', 'exists:regattas,id'],
@@ -630,27 +586,21 @@ class JoinRegattaModal extends Component
         ];
 
         if ($selectsTeam) {
-            $rules['teamId'] = ['required', 'string', 'uuid'];
+            $rules['teamId'] = ['required', 'string', 'uuid', 'exists:teams,id'];
         } else {
             $rules['teamName'] = ['required', 'string', 'max:255'];
         }
 
-        // Капитан: гость выбирает существующего пользователя или создаёт нового.
-        // Авторизованный — капитан сам, его данные уже есть.
-        $selectsCaptain = $actor === null && $this->captainMode === 'select';
+        if ($selectsCaptain) {
+            $rules['captainUserId'] = ['required', 'string', 'exists:users,id'];
+        } else {
+            $rules['guestName']      = ['required', 'string', 'max:255'];
+            $rules['guestEmail']     = ['required', 'email', 'unique:users,email'];
+            $rules['guestPhone']     = ['required', 'unique:users,phone'];
+            $rules['guestBirthDate'] = ['required', 'date', 'before:today'];
 
-        if (! $actor) {
-            if ($selectsCaptain) {
-                $rules['captainUserId'] = ['required', 'string', 'exists:users,id'];
-            } else {
-                $rules['guestName']      = ['required', 'string', 'max:255'];
-                $rules['guestEmail']     = ['required', 'email', 'unique:users,email'];
-                $rules['guestPhone']     = ['required', 'unique:users,phone'];
-                $rules['guestBirthDate'] = ['required', 'date', 'before:today'];
-
-                if ($this->guestSportCategory !== '') {
-                    $rules['guestSportCategory'] = [Rule::enum(SportCategory::class)];
-                }
+            if ($this->guestSportCategory !== '') {
+                $rules['guestSportCategory'] = [Rule::enum(SportCategory::class)];
             }
         }
 
@@ -691,17 +641,13 @@ class JoinRegattaModal extends Component
         $password = 'Carter30pro';
 
         try {
-            [$entry, $user] = DB::transaction(function () use ($action, $regatta, $password, $actor, $selectsTeam, $selectsCaptain) {
-                // 1. Капитан/подающий:
-                //    - авторизованный подаёт заявку от своего имени;
-                //    - гость выбрал существующего пользователя — он становится капитаном;
-                //    - иначе регистрируем нового пользователя (пароль захешируется кастом 'hashed').
-                if ($actor) {
-                    $user = $actor;
-                } elseif ($selectsCaptain) {
-                    $user = User::findOrFail($this->captainUserId);
+            [$entry, $captain] = DB::transaction(function () use ($action, $regatta, $password, $actor, $selectsTeam, $selectsCaptain) {
+                // 1. Капитан: существующий пользователь или новый
+                //    (пароль захешируется кастом 'hashed').
+                if ($selectsCaptain) {
+                    $captain = User::findOrFail($this->captainUserId);
                 } else {
-                    $user = User::create([
+                    $captain = User::create([
                         'name'           => $this->guestName,
                         'email'          => $this->guestEmail,
                         'phone'          => $this->guestPhone,
@@ -712,39 +658,64 @@ class JoinRegattaModal extends Component
                     ]);
                 }
 
-                // 2. Команда: выбранная (где пользователь капитан) или новая
+                // Владелец/податель заявки: авторизованный — он сам; гость — капитан
+                // (единственная доступная личность в гостевом потоке).
+                $submitter = $actor ?? $captain;
+
+                // 2. Команда: существующая или новая — независимо от капитана.
+                //    Роль «капитан» назначается только в экипаже (см. ниже), организатора
+                //    существующей команды не трогаем.
                 if ($selectsTeam) {
                     $team = Team::findOrFail($this->teamId);
 
-                    $organizerMember = TeamMember::where('team_id', $team->id)
-                        ->where('user_id', $user->id)
-                        ->where('role', TeamMemberRole::Organizer->value)
+                    // Право на подачу заявки даёт действующий организатор/админ команды
+                    $submitActor = $team->teamMembers()
+                        ->whereIn('role', [TeamMemberRole::Organizer->value, TeamMemberRole::TeamAdmin->value])
                         ->where('status', 'active')
-                        ->first();
+                        ->with('user')
+                        ->first()?->user
+                        ?? $team->organizer;
 
-                    if (! $organizerMember) {
+                    if (! $submitActor instanceof User) {
                         throw \Illuminate\Validation\ValidationException::withMessages([
-                            'teamId' => 'Вы не являетесь капитаном этой команды.',
+                            'teamId' => 'У выбранной команды нет организатора, подача невозможна.',
                         ]);
                     }
                 } else {
                     $team = Team::create([
                         'name'            => $this->teamName,
-                        'organizer_id'    => $user->id,
+                        'organizer_id'    => $submitter->id,
                         'approval_status' => 'pending',
                     ]);
 
-                    $organizerMember = TeamMember::create([
-                        'team_id'   => $team->id,
-                        'user_id'   => $user->id,
-                        'role'      => TeamMemberRole::Organizer->value,
-                        'status'    => 'active',
-                        'joined_at' => now(),
-                    ]);
+                    TeamMember::firstOrCreate(
+                        ['team_id' => $team->id, 'user_id' => $submitter->id],
+                        [
+                            'role'      => TeamMemberRole::Organizer->value,
+                            'status'    => 'active',
+                            'joined_at' => now(),
+                        ],
+                    );
+
+                    $submitActor = $submitter;
                 }
 
-                // 3. Экипаж: организатор — капитан, добавленные участники — со своими ролями
-                $crew = [(string) $organizerMember->id => 'captain'];
+                // 3. Капитан — активный участник команды (без повышения роли).
+                //    Если уже состоит — роль не меняем; роль «капитан» — только в экипаже.
+                $captainMember = TeamMember::firstOrCreate(
+                    ['team_id' => $team->id, 'user_id' => $captain->id],
+                    [
+                        'role'      => TeamMemberRole::Member->value,
+                        'status'    => 'active',
+                        'joined_at' => now(),
+                    ],
+                );
+                if ($captainMember->status !== 'active') {
+                    $captainMember->update(['status' => 'active']);
+                }
+
+                // 4. Экипаж: капитан — captain, добавленные участники — со своими ролями
+                $crew = [(string) $captainMember->id => 'captain'];
 
                 foreach ($this->guestMembers as $m) {
                     $isUnregistered = ! ($m['registered'] ?? false);
@@ -762,7 +733,12 @@ class JoinRegattaModal extends Component
                         ]);
                         $memberUserId = (string) $memberUser->id;
                     } else {
-                        $memberUserId = $m['user_id'];
+                        $memberUserId = (string) $m['user_id'];
+                    }
+
+                    // Капитан уже в экипаже как captain — не дублируем
+                    if ($memberUserId === (string) $captain->id) {
+                        continue;
                     }
 
                     // Участник может уже состоять в выбранной команде — не дублируем
@@ -781,22 +757,22 @@ class JoinRegattaModal extends Component
                     $crew[(string) $member->id] = in_array($m['role'], ['main', 'reserve'], true) ? $m['role'] : 'main';
                 }
 
-                // 4. Яхта: новая или выбранная свободная
+                // 5. Яхта: новая или выбранная свободная
                 if ($this->yachtMode === 'create') {
                     $yacht = Yacht::create([
                         'name'            => $this->newYachtName,
                         'vfps_number'     => $this->newYachtVfps ?: null,
-                        'user_id'         => $user->id,
+                        'user_id'         => $submitter->id,
                         'approval_status' => 'pending',
                     ]);
                 } else {
                     $yacht = Yacht::findOrFail($this->yachtId);
                 }
 
-                // 5. Подаём заявку
-                $entry = $action->handle($regatta, $team, $yacht, $user, $crew);
+                // 6. Подаём заявку от имени организатора команды (проверка прав на подачу)
+                $entry = $action->handle($regatta, $team, $yacht, $submitActor, $crew);
 
-                return [$entry, $user];
+                return [$entry, $captain];
             });
         } catch (\Illuminate\Validation\ValidationException $e) {
             foreach ($e->errors() as $field => $messages) {
@@ -804,7 +780,7 @@ class JoinRegattaModal extends Component
                     $field = 'teamName';
                 } elseif ($field === 'yachtId' && $this->yachtMode === 'create') {
                     $field = 'newYachtName';
-                } elseif ($field === 'name' && ! $actor && ! $selectsCaptain) {
+                } elseif ($field === 'name' && ! $selectsCaptain) {
                     // Дубль ФИО+дата рождения при создании нового капитана (User::saving)
                     $field = 'guestName';
                 }
@@ -847,13 +823,14 @@ class JoinRegattaModal extends Component
         }
 
         // Гость, создавший нового капитана: входим под ним и отправляем учётные данные.
-        // Если капитаном выбран существующий пользователь — вход и письмо не нужны.
+        // Если капитаном выбран существующий пользователь или заявку подаёт
+        // авторизованный — вход и письмо не нужны.
         if (! $actor && ! $selectsCaptain) {
-            Auth::login($user);
+            Auth::login($captain);
             session()->regenerate();
 
             try {
-                Mail::to($user->email)->send(new SendLoginCredentials($user, $user->email, $password));
+                Mail::to($captain->email)->send(new SendLoginCredentials($captain, $captain->email, $password));
             } catch (\Exception $e) {
                 report($e);
             }

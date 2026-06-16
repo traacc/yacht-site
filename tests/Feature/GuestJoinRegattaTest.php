@@ -46,9 +46,12 @@ class GuestJoinRegattaTest extends TestCase
         Livewire::test(JoinRegattaModal::class)
             ->call('openModal', $regatta->id)
             ->assertSet('isOpen', true)
+            ->set('captainMode', 'create')
             ->set('guestName', 'Иванов Иван Иванович')
             ->set('guestEmail', 'guest@example.com')
             ->set('guestPhone', '+79990000000')
+            ->set('guestBirthDate', '1990-01-01')
+            ->set('teamMode', 'create')
             ->set('teamName', 'Морские волки')
             ->set('yachtMode', 'select')
             ->set('yachtId', $yacht->id)
@@ -91,9 +94,12 @@ class GuestJoinRegattaTest extends TestCase
 
         Livewire::test(JoinRegattaModal::class)
             ->call('openModal', $regatta->id)
+            ->set('captainMode', 'create')
             ->set('guestName', 'Петров Пётр')
             ->set('guestEmail', 'petr@example.com')
             ->set('guestPhone', '+79991112233')
+            ->set('guestBirthDate', '1990-01-01')
+            ->set('teamMode', 'create')
             ->set('teamName', 'Бриз')
             ->set('yachtMode', 'create')
             ->set('newYachtName', 'Альбатрос')
@@ -115,10 +121,12 @@ class GuestJoinRegattaTest extends TestCase
     {
         $regatta = Regatta::factory()->create();
 
+        // По умолчанию режимы «выбор» — пустая отправка требует выбора капитана,
+        // команды и яхты.
         Livewire::test(JoinRegattaModal::class)
             ->call('openModal', $regatta->id)
             ->call('submitGuest')
-            ->assertHasErrors(['guestName', 'guestEmail', 'guestPhone', 'teamName', 'yachtId']);
+            ->assertHasErrors(['captainUserId', 'teamId', 'yachtId']);
 
         $this->assertSame(0, User::count());
         $this->assertSame(0, RegattaEntry::count());
@@ -138,9 +146,12 @@ class GuestJoinRegattaTest extends TestCase
 
         $component->assertCount('guestMembers', 1);
 
-        $component->set('guestName', 'Капитан Немо')
+        $component->set('captainMode', 'create')
+            ->set('guestName', 'Капитан Немо')
             ->set('guestEmail', 'nemo@example.com')
             ->set('guestPhone', '+79995554433')
+            ->set('guestBirthDate', '1990-01-01')
+            ->set('teamMode', 'create')
             ->set('teamName', 'Наутилус')
             ->set('yachtMode', 'select')
             ->set('yachtId', $yacht->id)
@@ -175,9 +186,12 @@ class GuestJoinRegattaTest extends TestCase
             // Поля формы сброшены после добавления
             ->assertSet('newMemberName', '');
 
-        $component->set('guestName', 'Капитан Немо')
+        $component->set('captainMode', 'create')
+            ->set('guestName', 'Капитан Немо')
             ->set('guestEmail', 'nemo2@example.com')
             ->set('guestPhone', '+79995554400')
+            ->set('guestBirthDate', '1990-01-01')
+            ->set('teamMode', 'create')
             ->set('teamName', 'Арго')
             ->set('yachtMode', 'select')
             ->set('yachtId', $yacht->id)
@@ -257,6 +271,9 @@ class GuestJoinRegattaTest extends TestCase
             ->test(JoinRegattaModal::class)
             ->call('openModal', $regatta->id)
             ->assertSet('isOpen', true)
+            // Капитан по умолчанию — текущий пользователь
+            ->assertSet('captainUserId', (string) $user->id)
+            ->set('teamMode', 'create')
             ->set('teamName', 'Команда ветерана')
             ->set('yachtMode', 'select')
             ->set('yachtId', $yacht->id)
@@ -295,9 +312,11 @@ class GuestJoinRegattaTest extends TestCase
         Livewire::actingAs($user)
             ->test(JoinRegattaModal::class)
             ->call('openModal', $regatta->id)
+            // Команда по умолчанию в режиме выбора, капитан — сам пользователь
+            ->set('teamMode', 'create')
             ->call('submitGuest')
             ->assertHasErrors(['teamName', 'yachtId'])
-            ->assertHasNoErrors(['guestName', 'guestEmail', 'guestPhone']);
+            ->assertHasNoErrors(['guestName', 'guestEmail', 'guestPhone', 'captainUserId']);
     }
 
     public function test_authenticated_captain_can_select_existing_team(): void
@@ -335,11 +354,12 @@ class GuestJoinRegattaTest extends TestCase
         $component = Livewire::actingAs($captain)
             ->test(JoinRegattaModal::class)
             ->call('openModal', $regatta->id)
-            // Есть команда-капитанство — режим выбора по умолчанию
+            // Режим выбора команды по умолчанию
             ->assertSet('teamMode', 'select')
-            ->set('teamId', $team->id)
-            // Экипаж предзаполнен участниками команды (без самого капитана)
-            ->assertCount('guestMembers', 1);
+            // Выбор команды не зависит от капитана и не предзаполняет экипаж
+            ->call('selectTeam', $team->id)
+            ->assertSet('teamId', (string) $team->id)
+            ->assertCount('guestMembers', 0);
 
         $component->set('yachtMode', 'select')
             ->set('yachtId', $yacht->id)
@@ -355,15 +375,20 @@ class GuestJoinRegattaTest extends TestCase
             ->first();
         $this->assertNotNull($entry);
 
-        // Капитан + участник команды, дубликат TeamMember не создан
-        $this->assertSame(2, $entry->crew()->count());
+        // Только капитан в экипаже; участники команды не добавляются автоматически
+        $this->assertSame(1, $entry->crew()->count());
         $this->assertSame(2, TeamMember::where('team_id', $team->id)->count());
 
         Mail::assertNothingSent();
     }
 
-    public function test_user_cannot_submit_for_team_where_not_captain(): void
+    public function test_captain_role_applies_only_to_crew_not_team(): void
     {
+        // Выбор команды отвязан от капитана: можно подать заявку от имени любой
+        // существующей команды. Указанный капитан получает роль «капитан» ТОЛЬКО
+        // в экипаже — организатором команды его не делают (роли команды не трогаем).
+        Mail::fake();
+
         $regatta = Regatta::factory()->create();
         $yacht = Yacht::factory()->create(['user_id' => User::factory()]);
         $owner = User::factory()->create();
@@ -385,14 +410,41 @@ class GuestJoinRegattaTest extends TestCase
         Livewire::actingAs($stranger)
             ->test(JoinRegattaModal::class)
             ->call('openModal', $regatta->id)
-            ->set('teamMode', 'select')
-            ->set('teamId', $team->id)
+            ->call('selectTeam', $team->id)
+            ->set('yachtMode', 'select')
             ->set('yachtId', $yacht->id)
             ->call('submitGuest')
-            ->assertHasErrors('teamId')
-            ->assertSet('submitted', false);
+            ->assertHasNoErrors()
+            ->assertSet('submitted', true);
 
-        $this->assertSame(0, RegattaEntry::count());
+        $entry = RegattaEntry::where('regatta_id', $regatta->id)
+            ->where('team_id', $team->id)
+            ->first();
+        $this->assertNotNull($entry);
+
+        // Организатор команды не изменился
+        $this->assertSame($owner->id, $team->fresh()->organizer_id);
+        $this->assertFalse(
+            TeamMember::where('team_id', $team->id)
+                ->where('user_id', $stranger->id)
+                ->where('role', 'organizer')
+                ->exists(),
+            'Капитан не должен становиться организатором команды',
+        );
+
+        // Капитан добавлен как обычный участник команды
+        $this->assertTrue(
+            TeamMember::where('team_id', $team->id)
+                ->where('user_id', $stranger->id)
+                ->where('role', 'member')
+                ->where('status', 'active')
+                ->exists(),
+        );
+
+        // …но в экипаже он — капитан
+        $captainCrew = $entry->crew()->where('role', 'captain')->first();
+        $this->assertNotNull($captainCrew);
+        $this->assertSame($stranger->id, $captainCrew->teamMember->user_id);
     }
 
     public function test_authenticated_user_already_in_crew_sees_in_crew_state(): void
@@ -405,6 +457,7 @@ class GuestJoinRegattaTest extends TestCase
         Livewire::actingAs($user)
             ->test(JoinRegattaModal::class)
             ->call('openModal', $regatta->id)
+            ->set('teamMode', 'create')
             ->set('teamName', 'Экипаж раз')
             ->set('yachtId', $yacht->id)
             ->call('submitGuest')

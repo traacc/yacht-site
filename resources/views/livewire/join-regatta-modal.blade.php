@@ -69,7 +69,7 @@
                             class="text-[#2D92CE] font-medium hover:underline">Войти</button>
                 </p>
             @else
-                <p class="text-sm text-gray-500 mb-4">Выберите команду, где вы капитан, или создайте новую — вы будете капитаном экипажа.</p>
+                <p class="text-sm text-gray-500 mb-4">Выберите или создайте команду и укажите капитана — капитаном может быть любой зарегистрированный пользователь.</p>
             @endguest
 
             <form wire:submit.prevent="submitGuest" class="space-y-4">
@@ -92,115 +92,97 @@
                     @enderror
                 </div>
 
-                {{-- Команда: своя (где капитан) или новая --}}
-                @if (auth()->check() && $this->captainTeams->isNotEmpty())
-                    {{-- Единый список — выбрать свою команду или создать новую --}}
-                    <div x-data="{
-                        query: '',
-                        isOpen: false,
-                        selectedIndex: -1,
-                        teams: @entangle('captainTeamsList'),
-                        init() {
-                            this.$watch('query', () => { this.selectedIndex = -1; });
-                        },
-                        get filtered() {
-                            const q = this.query.trim().toLowerCase();
-                            if (q === '') return this.teams;
-                            return this.teams.filter(t => (t.name ?? '').toLowerCase().includes(q));
-                        },
-                        selectTeam(team) {
-                            this.isOpen = false;
-                            this.query = '';
-                            $wire.selectTeam(team.id);
-                        },
-                        addNewFromQuery() {
-                            const name = this.query.trim();
-                            this.isOpen = false;
-                            this.query = '';
-                            $wire.startNewTeam(name);
-                        },
-                        onKeydown(e) {
-                            if (!this.isOpen) return;
-                            const items = this.filtered;
-                            if (e.key === 'ArrowDown') { e.preventDefault(); this.selectedIndex = Math.min(this.selectedIndex + 1, items.length - 1); }
-                            else if (e.key === 'ArrowUp') { e.preventDefault(); this.selectedIndex = Math.max(this.selectedIndex - 1, -1); }
-                            else if (e.key === 'Enter' && this.selectedIndex >= 0) { e.preventDefault(); this.selectTeam(items[this.selectedIndex]); }
-                            else if (e.key === 'Escape') { this.isOpen = false; }
-                        }
-                    }" x-on:click.away="isOpen = false">
-                        <label class="block text-sm text-brand-gray-light mb-1">Команда</label>
+                {{-- Команда: выбрать любую существующую или создать новую (независимо от капитана) --}}
+                <div x-data="{
+                    query: @entangle('teamSearchQuery'),
+                    results: @entangle('teamSearchResults'),
+                    isOpen: false,
+                    selectedIndex: -1,
+                    init() {
+                        this.$watch('results', () => { this.selectedIndex = -1; });
+                        this.$watch('query', v => { this.isOpen = v.trim().length > 0; });
+                    },
+                    selectItem(teamId) {
+                        this.isOpen = false;
+                        $wire.selectTeam(teamId);
+                    },
+                    addNewFromQuery() {
+                        const name = this.query.trim();
+                        this.isOpen = false;
+                        $wire.startNewTeam(name);
+                    },
+                    onKeydown(e) {
+                        if (!this.isOpen) return;
+                        if (e.key === 'ArrowDown') { e.preventDefault(); this.selectedIndex = Math.min(this.selectedIndex + 1, this.results.length - 1); }
+                        else if (e.key === 'ArrowUp') { e.preventDefault(); this.selectedIndex = Math.max(this.selectedIndex - 1, -1); }
+                        else if (e.key === 'Enter' && this.selectedIndex >= 0) { e.preventDefault(); this.selectItem(this.results[this.selectedIndex].id); }
+                        else if (e.key === 'Escape') { this.isOpen = false; }
+                    }
+                }" x-on:click.away="isOpen = false">
+                    <label class="block text-sm text-brand-gray-light mb-1">Команда</label>
 
-                        @if ($teamMode === 'create')
-                            {{-- Создание новой команды --}}
-                            <div class="p-3 bg-[#F8F8F8] rounded space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs text-gray-500">Новая команда</span>
-                                    <button type="button" wire:click="clearTeam"
-                                            class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
-                                </div>
-                                <input type="text" wire:model="teamName" placeholder="Название команды"
-                                       class="block w-full border-none font-medium shadow-sm bg-white sm:text-sm @error('teamName') border-red-300 @enderror">
-                                @error('teamName')
-                                    <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                                @enderror
-                            </div>
-                        @elseif ($teamId)
-                            {{-- Выбранная команда --}}
-                            @php($selectedTeam = collect($captainTeamsList)->firstWhere('id', $teamId))
-                            <div class="flex items-center gap-3 py-2 px-3 bg-[#F8F8F8] rounded">
-                                <span class="text-sm flex-1">{{ $selectedTeam['name'] ?? '' }}</span>
+                    @if ($teamMode === 'create')
+                        {{-- Создание новой команды --}}
+                        <div class="p-3 bg-[#F8F8F8] rounded space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-gray-500">Новая команда</span>
                                 <button type="button" wire:click="clearTeam"
                                         class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
                             </div>
-                            @error('teamId')
+                            <input type="text" wire:model="teamName" placeholder="Название команды"
+                                   class="block w-full border-none font-medium shadow-sm bg-white sm:text-sm @error('teamName') border-red-300 @enderror">
+                            @error('teamName')
                                 <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                             @enderror
-                        @else
-                            {{-- Поиск по списку своих команд --}}
-                            <div class="relative">
-                                <input type="text" x-model="query"
-                                       x-on:focus="isOpen = true"
-                                       x-on:click="isOpen = true"
-                                       x-on:keydown="onKeydown($event)"
-                                       placeholder="Выберите свою или создайте новую..."
-                                       class="w-full border bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none @error('teamId') border-red-300 @else border-gray-200 @enderror">
-
-                                <div x-show="isOpen" x-cloak
-                                     class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">
-                                    <template x-for="(team, index) in filtered" :key="team.id">
-                                        <div x-on:click="selectTeam(team)"
-                                             x-on:mouseenter="selectedIndex = index"
-                                             :class="{ 'bg-[#2D92CE]/10': selectedIndex === index }"
-                                             class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm border-b border-gray-100 last:border-b-0">
-                                            <span class="font-medium" x-text="team.name"></span>
-                                        </div>
-                                    </template>
-                                    <div x-show="filtered.length === 0 && query.trim().length === 0" class="px-3 py-2 text-sm text-gray-400">
-                                        Нет доступных команд
-                                    </div>
-                                    <div x-show="query.trim().length > 0"
-                                         x-on:click="addNewFromQuery()"
-                                         class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm text-[#2D92CE] font-medium border-t border-gray-100">
-                                        + Создать команду «<span x-text="query.trim()"></span>»
-                                    </div>
-                                </div>
-                            </div>
-                            @error('teamId')
-                                <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                            @enderror
-                        @endif
-                    </div>
-                @else
-                    {{-- Гость или пользователь без своих команд — просто название новой команды --}}
-                    <div>
-                        <label for="teamName" class="block text-sm text-brand-gray-light">Название команды</label>
-                        <input type="text" id="teamName" wire:model="teamName"
-                               class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('teamName') border-red-300 @enderror">
-                        @error('teamName')
+                        </div>
+                    @elseif ($teamId)
+                        {{-- Выбранная команда --}}
+                        <div class="flex items-center gap-3 py-2 px-3 bg-[#F8F8F8] rounded">
+                            <span class="text-sm flex-1">{{ $teamSelectedName }}</span>
+                            <button type="button" wire:click="clearTeam"
+                                    class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
+                        </div>
+                        @error('teamId')
                             <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                         @enderror
-                    </div>
-                @endif
+                    @else
+                        {{-- Поиск любой команды --}}
+                        <div class="relative">
+                            <input type="text"
+                                   wire:model.live.debounce.350ms="teamSearchQuery"
+                                   x-on:keydown="onKeydown($event)"
+                                   placeholder="Найдите команду или создайте новую..."
+                                   class="w-full border bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none @error('teamId') border-red-300 @else border-gray-200 @enderror">
+
+                            <div wire:loading wire:target="teamSearchQuery" class="absolute right-3 top-2.5 text-gray-400 text-xs">
+                                Поиск...
+                            </div>
+
+                            <div x-show="isOpen" x-cloak
+                                 class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">
+                                <template x-for="(team, index) in results" :key="team.id">
+                                    <div x-on:click="selectItem(team.id)"
+                                         x-on:mouseenter="selectedIndex = index"
+                                         :class="{ 'bg-[#2D92CE]/10': selectedIndex === index }"
+                                         class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm border-b border-gray-100 last:border-b-0">
+                                        <span class="font-medium" x-text="team.name"></span>
+                                    </div>
+                                </template>
+                                <div x-show="results.length === 0 && query.length > 0" class="px-3 py-2 text-sm text-gray-400">
+                                    Ничего не найдено
+                                </div>
+                                <div x-show="query.trim().length > 0"
+                                     x-on:click="addNewFromQuery()"
+                                     class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm text-[#2D92CE] font-medium border-t border-gray-100">
+                                    + Создать команду «<span x-text="query.trim()"></span>»
+                                </div>
+                            </div>
+                        </div>
+                        @error('teamId')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
+                    @endif
+                </div>
 
                 {{-- Яхта: единый список — выбрать свободную или добавить свою --}}
                 <div x-data="{
@@ -305,7 +287,6 @@
                     @endif
                 </div>
                 
-                @guest
                 {{-- Капитан: выбрать существующего пользователя или создать нового --}}
                 <div x-data="{
                     query: @entangle('captainSearchQuery'),
@@ -443,7 +424,6 @@
                         @enderror
                     @endif
                 </div>
-                @endguest
 
                 {{-- Экипаж: добавление зарегистрированных пользователей --}}
                 <div class="border-t border-gray-200 pt-4" x-data="{
@@ -477,7 +457,7 @@
                     }
                 }" x-on:click.away="isOpen = false">
                     <p class="text-sm font-medium text-[#2E325C] mb-2">Экипаж</p>
-                    <p class="text-xs text-gray-500 mb-3">@auth Вы будете капитаном команды. @else Указанный выше пользователь будет капитаном команды. @endauth Можно добавить не более {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} зарегистрированных участников.</p>
+                    <p class="text-xs text-gray-500 mb-3">Капитаном команды будет указанный выше пользователь. Можно добавить не более {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} зарегистрированных участников.</p>
 
                     @error('guestMembers')
                         <span class="text-xs text-red-600 mb-2 block">{{ $message }}</span>
