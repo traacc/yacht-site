@@ -179,7 +179,7 @@
                                         @if ($entry->hasEntryPassword())
                                             <button type="button"
                                                     @click="$dispatch('open-edit-regatta-entry', { entryId: '{{ $entry->id }}' })"
-                                                    class="block mx-auto md:mx-0 mt-1 text-brand-dark text-sm font-medium underline hover:no-underline">
+                                                    class="block mx-auto mt-1 text-brand-blue text-sm font-medium underline hover:no-underline">
                                                 Редактировать заявку
                                             </button>
                                         @endif
