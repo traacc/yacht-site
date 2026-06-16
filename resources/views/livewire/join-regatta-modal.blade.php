@@ -1,7 +1,14 @@
-<div x-data="{ isOpen: @entangle('isOpen') }"
+<div x-data="{
+        isOpen: @entangle('isOpen'),
+        requireConfirm: @js($this->state === 'guest' || $this->state === 'form'),
+        attemptClose() {
+            if (this.requireConfirm && ! confirm('Закрыть окно? Введённые данные не будут сохранены.')) return;
+            $wire.closeModal();
+        }
+     }"
      x-show="isOpen"
      x-cloak
-     @keydown.escape.window="$wire.closeModal()"
+     @keydown.escape.window="attemptClose()"
      class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
 
     <!-- Overlay -->
@@ -12,7 +19,7 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
-         @click="$wire.closeModal()"
+         @click="attemptClose()"
          class="fixed inset-0 bg-black/50 transition-opacity">
     </div>
 
@@ -56,7 +63,7 @@
         @elseif ($this->state === 'guest' || $this->state === 'form')
             <div class="flex items-center justify-between pb-3 mb-4">
                 <h3 class="text-lg font-medium text-[#2E325C] a-font">Подать заявку</h3>
-                <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
+                <button @click="attemptClose()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
             </div>
             <p class="text-gray-600 mb-1">Заполните форму, чтобы подать заявку на участие в регате.</p>
             @guest
