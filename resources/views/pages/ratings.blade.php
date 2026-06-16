@@ -20,6 +20,10 @@ bgImage="{{ asset('images/bg/results.webp') }}"
         openParticipant(p) {
             this.participantModalData = p;
             this.participantModal = true;
+        },
+        initials(name) {
+            if (!name) return '?';
+            return name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
         }
     }"
     @keydown.escape.window="teamModal = false; participantModal = false"
@@ -83,22 +87,33 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                             <tbody class="divide-y text-center font-medium"
                                 x-data="{ participants: {{ Js::from($personalRatings) }} }"
                             >
-                                <template x-for="(p, i) in participants" :key="i">
+                                <template x-for="(row, i) in participants" :key="i">
                                     <tr>
                                         <td class="py-2" data-label="Место">
                                             <div class="flex items-center md:justify-center gap-3">
-                                                <span :class="i===0?'text-[#C2A36B]':i===1?'text-[#9FA6AD]':i===2?'text-[#B56A3A]':'opacity-0'" class="font-bold text-sm">{!! file_get_contents(public_path('images/icons/cup.svg')) !!}</span><span x-text="i+1"></span>
+                                                <span :class="row.place===1?'text-[#C2A36B]':row.place===2?'text-[#9FA6AD]':row.place===3?'text-[#B56A3A]':'opacity-0'" class="font-bold text-sm">{!! file_get_contents(public_path('images/icons/cup.svg')) !!}</span><span x-text="row.place"></span>
                                             </div>
                                         </td>
                                         <td class="py-2" data-label="Участник">
-                                            <button
-                                                type="button"
-                                                class="text-[#2E325C] hover:text-[#C2A36B] hover:underline transition-colors cursor-pointer font-medium"
-                                                @click="openParticipant(p)"
-                                                x-text="p.name"
-                                            ></button>
+                                            <div class="flex flex-wrap items-center md:justify-center gap-2">
+                                                <template x-for="(p, j) in row.participants" :key="j">
+                                                    <button
+                                                        type="button"
+                                                        class="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-[#2E325C] text-white text-xs font-bold ring-2 ring-transparent hover:ring-[#C2A36B] transition-all cursor-pointer flex-shrink-0"
+                                                        @click="openParticipant(p)"
+                                                        :title="p.name"
+                                                    >
+                                                        <template x-if="p.avatar">
+                                                            <img :src="p.avatar" :alt="p.name" class="w-full h-full object-cover">
+                                                        </template>
+                                                        <template x-if="!p.avatar">
+                                                            <span x-text="initials(p.name)"></span>
+                                                        </template>
+                                                    </button>
+                                                </template>
+                                            </div>
                                         </td>
-                                        <td class="py-2" data-label="Очки" x-text="p.total_points"></td>
+                                        <td class="py-2" data-label="Очки" x-text="row.total_points"></td>
                                     </tr>
                                 </template>
                                 <template x-if="participants.length === 0">

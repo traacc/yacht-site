@@ -491,17 +491,30 @@ Route::get('/ratings', function () {
             ])->values()->toArray() ?? [],
         ])->values()->toArray();
 
+    $place = 1;
     $personalRatings = \App\Models\PersonalRating::with(['user', 'season'])
         ->ranked()
         ->get()
         ->map(fn ($r) => [
             'name'         => $r->user?->name ?? '—',
             'total_points' => (float) $r->total_points,
-            'rank'         => $r->rank_position,
             'birthday'     => $r->user?->birth_date?->format('d.m.Y') ?? '—',
             'category'     => $r->user?->sport_category ?? '—',
-            'email'        => $r->user?->email ?? '—',
-        ])->values()->toArray();
+            'avatar'       => $r->user?->photo_url ?: null,
+        ])
+        ->groupBy('total_points')
+        ->map(function ($group) use (&$place) {
+            $row = [
+                'place'        => $place,
+                'total_points' => $group->first()['total_points'],
+                'participants' => $group->values()->toArray(),
+            ];
+            $place += $group->count();
+
+            return $row;
+        })
+        ->values()
+        ->toArray();
 
     return view('pages.ratings', compact('teamRatings', 'personalRatings'));
 })->name('ratings');
