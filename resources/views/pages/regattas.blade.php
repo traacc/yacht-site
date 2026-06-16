@@ -8,7 +8,7 @@ bgImage="{{ asset('images/bg/competitions.webp') }}"
 </x-hero-section>
 
 {{-- ===== ТАБЫ: РЕЗУЛЬТАТЫ | КАЛЕНДАРЬ И СПИСОК РЕГАТ ===== --}}
-<div x-data="{ activeTab: 'calendar' }" class="container mx-auto">
+<div x-data="{ activeTab: window.location.hash === '#results' ? 'results' : 'calendar' }" class="container mx-auto">
     {{-- Навигация табов --}}
     <nav class="flex border-b border-[#EAEAEA] mb-8 mt-8" role="tablist">
             <button

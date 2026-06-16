@@ -255,7 +255,7 @@
 
                     </div>
                     <div class="flex justify-end">
-                        <a href="{{ route('ratings') }}" class="text-[#2E325C] text-lg font-semibold hover:underline hidden md:block">
+                        <a href="{{ route('competitions') }}#results" class="text-[#2E325C] text-lg font-semibold hover:underline hidden md:block">
                             Все результаты →
                         </a>
                     </div>
@@ -442,7 +442,7 @@
                     </div>
                     @endif
 
-                    <a href="{{ route('ratings') }}" class="text-[#2E325C] text-sm text-center font-semibold hover:underline md:hidden">
+                    <a href="{{ route('competitions') }}#results" class="text-[#2E325C] text-sm text-center font-semibold hover:underline md:hidden">
                         Все результаты →
                     </a>
                 </div>
