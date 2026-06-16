@@ -4,7 +4,7 @@
         <div class="flex items-center justify-between h-14">
             {{-- Логотип --}}
             <a href="/"  class="shrink-0">
-                {!! file_get_contents(public_path('images/logo.svg')) !!}
+                {!! \App\Support\Svg::inline('images/logo.svg') !!}
             </a>
 
             {{-- Десктоп-меню --}}
@@ -45,10 +45,10 @@
             <div class="hidden nav-social lg:flex items-center gap-2">
                 <div class="hidden nav-social lg:flex items-center gap-2">
                     <a href="https://t.me/a_carterpro" class="text-[#2D92CE]" target="_blank">
-                        {!! file_get_contents(public_path('images/social_icons/tl.svg')) !!}
+                        {!! \App\Support\Svg::inline('images/social_icons/tl.svg') !!}
                     </a>
                     <a href="https://vk.com/carter_pro" class="text-[#2D92CE]" target="_blank">
-                        {!! file_get_contents(public_path('images/social_icons/vk.svg')) !!}
+                        {!! \App\Support\Svg::inline('images/social_icons/vk.svg') !!}
                     </a>
                 </div>
 
@@ -99,7 +99,7 @@
                 </div>
                 @else
                 <a href="#" @click="$dispatch('open-login-modal')" class="text-[#2D92CE] text-lg font-semibold px-4 py-2 transition-colors border-[#2D92CE] border flex gap-2 login-btn items-center">
-                    {!! file_get_contents(public_path('images/icons/login.svg')) !!} <span class="hidden md:inline">Войти</span>
+                    {!! \App\Support\Svg::inline('images/icons/login.svg') !!} <span class="hidden md:inline">Войти</span>
                 </a>
                 @endauth
             </div>
@@ -137,7 +137,7 @@
         >
             <div class="flex justify-between items-center mt-4 mb-4">
                 <h3 class="uppercase a-font text-xl">Меню</h3>
-                <button @click="mobileOpen = false" class="text-2xl font-bold">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
+                <button @click="mobileOpen = false" class="text-2xl font-bold">{!! \App\Support\Svg::inline('images/icons/close.svg') !!}</button>
             </div>
             <div class="max-h-[85dvh] overflow-y-auto">
                 <div class="space-y-2">
@@ -202,7 +202,7 @@
                 </form>
                 @else
                 <a href="#" @click="$dispatch('open-login-modal')" class="login-btn font-semibold px-4 py-2 transition-colors border-white border text-white justify-center flex items-center gap-2">
-                    {!! file_get_contents(public_path('images/icons/login.svg')) !!} Войти
+                    {!! \App\Support\Svg::inline('images/icons/login.svg') !!} Войти
                 </a>
                 @endauth
             </div>
