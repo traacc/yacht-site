@@ -61,7 +61,9 @@
             <p class="text-gray-600 mb-1">Заполните форму, чтобы подать заявку на участие в регате.</p>
             @guest
                 <p class="text-sm text-gray-500 mb-4">
-                    После отправки мы автоматически создадим для вас личный кабинет, а данные для входа отправим на email.
+                    @if ($captainMode === 'create')
+                        Для нового капитана мы автоматически создадим личный кабинет, а данные для входа отправим на email.
+                    @endif
                     Уже есть аккаунт?
                     <button type="button" @click="$dispatch('open-login-modal'); $wire.closeModal()"
                             class="text-[#2D92CE] font-medium hover:underline">Войти</button>
@@ -89,38 +91,6 @@
                         <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                     @enderror
                 </div>
-
-                @guest
-                {{-- Данные участника --}}
-                <div>
-                    <label for="guestName" class="block text-sm text-brand-gray-light">ФИО</label>
-                    <input type="text" id="guestName" wire:model="guestName"
-                           class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('guestName') border-red-300 @enderror">
-                    @error('guestName')
-                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                    @enderror
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label for="guestEmail" class="block text-sm text-brand-gray-light">Email</label>
-                        <input type="email" id="guestEmail" wire:model="guestEmail"
-                               class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('guestEmail') border-red-300 @enderror">
-                        @error('guestEmail')
-                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                        @enderror
-                    </div>
-                    <div>
-                        <label for="guestPhone" class="block text-sm text-brand-gray-light">Телефон</label>
-                        <input type="text" id="guestPhone" wire:model="guestPhone"
-                               x-mask="+7 (999) 999-99-99" x-ref="phone"
-                               class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('guestPhone') border-red-300 @enderror">
-                        @error('guestPhone')
-                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                        @enderror
-                    </div>
-                </div>
-                @endguest
 
                 {{-- Команда: своя (где капитан) или новая --}}
                 @if (auth()->check() && $this->captainTeams->isNotEmpty())
@@ -334,6 +304,146 @@
                         @enderror
                     @endif
                 </div>
+                
+                @guest
+                {{-- Капитан: выбрать существующего пользователя или создать нового --}}
+                <div x-data="{
+                    query: @entangle('captainSearchQuery'),
+                    results: @entangle('captainSearchResults'),
+                    isOpen: false,
+                    selectedIndex: -1,
+                    init() {
+                        this.$watch('results', () => { this.selectedIndex = -1; });
+                        this.$watch('query', v => { this.isOpen = v.trim().length > 0; });
+                    },
+                    selectItem(userId) {
+                        this.isOpen = false;
+                        $wire.selectCaptain(userId);
+                    },
+                    addNewFromQuery() {
+                        const name = this.query.trim();
+                        this.isOpen = false;
+                        $wire.startNewCaptain(name);
+                    },
+                    onKeydown(e) {
+                        if (!this.isOpen) return;
+                        if (e.key === 'ArrowDown') { e.preventDefault(); this.selectedIndex = Math.min(this.selectedIndex + 1, this.results.length - 1); }
+                        else if (e.key === 'ArrowUp') { e.preventDefault(); this.selectedIndex = Math.max(this.selectedIndex - 1, -1); }
+                        else if (e.key === 'Enter' && this.selectedIndex >= 0) { e.preventDefault(); this.selectItem(this.results[this.selectedIndex].id); }
+                        else if (e.key === 'Escape') { this.isOpen = false; }
+                    }
+                }" x-on:click.away="isOpen = false">
+                    <label class="block text-sm text-brand-gray-light mb-1">Капитан</label>
+
+                    @if ($captainMode === 'create')
+                        {{-- Новый пользователь-капитан --}}
+                        <div class="p-3 bg-[#F8F8F8] rounded space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-gray-500">Новый капитан</span>
+                                <button type="button" wire:click="clearCaptain"
+                                        class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
+                            </div>
+                            <div>
+                                <label for="guestName" class="block text-xs text-gray-500 mb-1">ФИО</label>
+                                <input type="text" id="guestName" wire:model="guestName"
+                                       class="block w-full border-none font-medium shadow-sm bg-white sm:text-sm @error('guestName') border-red-300 @enderror">
+                                @error('guestName')
+                                    <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label for="guestEmail" class="block text-xs text-gray-500 mb-1">Email</label>
+                                    <input type="email" id="guestEmail" wire:model="guestEmail"
+                                           class="block w-full border-none font-medium shadow-sm bg-white sm:text-sm @error('guestEmail') border-red-300 @enderror">
+                                    @error('guestEmail')
+                                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                <div>
+                                    <label for="guestPhone" class="block text-xs text-gray-500 mb-1">Телефон</label>
+                                    <input type="text" id="guestPhone" wire:model="guestPhone"
+                                           x-mask="+7 (999) 999-99-99" x-ref="phone"
+                                           class="block w-full border-none font-medium shadow-sm bg-white sm:text-sm @error('guestPhone') border-red-300 @enderror">
+                                    @error('guestPhone')
+                                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label for="guestBirthDate" class="block text-xs text-gray-500 mb-1">Дата рождения</label>
+                                    <input type="date" id="guestBirthDate" wire:model="guestBirthDate"
+                                           class="block w-full border bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none @error('guestBirthDate') border-red-300 @else border-gray-200 @enderror">
+                                    @error('guestBirthDate')
+                                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                <div>
+                                    <label for="guestSportCategory" class="block text-xs text-gray-500 mb-1">Спортивный разряд</label>
+                                    <select id="guestSportCategory" wire:model="guestSportCategory"
+                                            class="block w-full border bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none @error('guestSportCategory') border-red-300 @else border-gray-200 @enderror">
+                                        <option value="">Не указан</option>
+                                        @foreach (\App\Enums\SportCategory::cases() as $cat)
+                                            <option value="{{ $cat->value }}">{{ $cat->getLabel() }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('guestSportCategory')
+                                        <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+                    @elseif ($captainUserId)
+                        {{-- Выбранный капитан --}}
+                        <div class="flex items-center gap-3 py-2 px-3 bg-[#F8F8F8] rounded">
+                            <span class="text-sm flex-1">{{ $captainName }}</span>
+                            <button type="button" wire:click="clearCaptain"
+                                    class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
+                        </div>
+                        @error('captainUserId')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
+                    @else
+                        {{-- Поиск существующего пользователя --}}
+                        <div class="relative">
+                            <input type="text"
+                                   wire:model.live.debounce.350ms="captainSearchQuery"
+                                   x-on:keydown="onKeydown($event)"
+                                   placeholder="Поиск по имени или email..."
+                                   class="w-full border bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none @error('captainUserId') border-red-300 @else border-gray-200 @enderror">
+
+                            <div wire:loading wire:target="captainSearchQuery" class="absolute right-3 top-2.5 text-gray-400 text-xs">
+                                Поиск...
+                            </div>
+
+                            <div x-show="isOpen" x-cloak
+                                 class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">
+                                <template x-for="(user, index) in results" :key="user.id">
+                                    <div x-on:click="selectItem(user.id)"
+                                         x-on:mouseenter="selectedIndex = index"
+                                         :class="{ 'bg-[#2D92CE]/10': selectedIndex === index }"
+                                         class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm border-b border-gray-100 last:border-b-0">
+                                        <span class="font-medium" x-text="user.name"></span>
+                                        <span class="text-gray-400 text-xs ml-2" x-text="user.email"></span>
+                                    </div>
+                                </template>
+                                <div x-show="results.length === 0 && query.length > 0" class="px-3 py-2 text-sm text-gray-400">
+                                    Ничего не найдено
+                                </div>
+                                <div x-show="query.trim().length > 0"
+                                     x-on:click="addNewFromQuery()"
+                                     class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm text-[#2D92CE] font-medium border-t border-gray-100">
+                                    + Создать «<span x-text="query.trim()"></span>» как нового капитана
+                                </div>
+                            </div>
+                        </div>
+                        @error('captainUserId')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
+                    @endif
+                </div>
+                @endguest
 
                 {{-- Экипаж: добавление зарегистрированных пользователей --}}
                 <div class="border-t border-gray-200 pt-4" x-data="{
@@ -367,7 +477,7 @@
                     }
                 }" x-on:click.away="isOpen = false">
                     <p class="text-sm font-medium text-[#2E325C] mb-2">Экипаж</p>
-                    <p class="text-xs text-gray-500 mb-3">Вы будете капитаном команды. Можно добавить не более {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} зарегистрированных участников.</p>
+                    <p class="text-xs text-gray-500 mb-3">@auth Вы будете капитаном команды. @else Указанный выше пользователь будет капитаном команды. @endauth Можно добавить не более {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} зарегистрированных участников.</p>
 
                     @error('guestMembers')
                         <span class="text-xs text-red-600 mb-2 block">{{ $message }}</span>
