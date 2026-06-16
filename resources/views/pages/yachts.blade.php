@@ -1,4 +1,4 @@
-<x-public-layout>
+<x-public-layout title="Каталог яхт - классы, характеристики и владельцы" description="Реестр парусных судов: технические паспорта, допуски, история выступлений и контакты владельцев для участия в гонках">
 <x-breadcrumbs_page title="Яхты Ассоциации">
 </x-breadcrumbs_page>
 <x-hero-section title="Яхты Ассоциации"

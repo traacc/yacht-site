@@ -1,4 +1,4 @@
-<x-public-layout>
+<x-public-layout title="Фото и видео с регат - галерея парусных гонок" description="Профессиональные фотографии и репортажи с гонок. Старты, финиши, атмосфера регат и яркие моменты парусных соревнований">
 <x-breadcrumbs_page title="Галерея">
 </x-breadcrumbs_page>
 @php

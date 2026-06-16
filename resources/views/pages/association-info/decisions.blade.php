@@ -1,4 +1,4 @@
-<x-public-layout>
+<x-public-layout title="Решения общего собрания - протоколы и постановления" description="Архив постановлений членов CarterPro: утвержденные нормативы, стратегические планы и итоги ежегодных заседаний">
 <x-breadcrumbs_page title="Решения общего собрания">
 </x-breadcrumbs_page>
 <x-hero-section title="Решения общего собрания"

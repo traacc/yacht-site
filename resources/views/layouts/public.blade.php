@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Регаты CarterPro</title>
+    <title>{{ $title ?? 'Регаты CarterPro' }}</title>
+    @isset($description)
+        <meta name="description" content="{{ $description }}">
+    @endisset
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @livewireStyles

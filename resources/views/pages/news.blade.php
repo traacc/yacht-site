@@ -1,4 +1,4 @@
-<x-public-layout>
+<x-public-layout title="Новости парусного спорта и регат - актуальные события" description="Итоги гонок, анонсы регат, изменения в правилах, интервью с капитанами и события в мире российского парусного спорта">
 <x-breadcrumbs_page title="Новости ассоциации">
 </x-breadcrumbs_page>
 <main class="main">

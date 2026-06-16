@@ -1,4 +1,4 @@
-<x-public-layout>
+<x-public-layout title="Руководство CarterPro - состав правления" description="Познакомьтесь с директорами и членами правления. Опытные профессионалы, организующие регаты и развивающие парусный спорт">
 <x-breadcrumbs_page title="Руководство Ассоциации">
 </x-breadcrumbs_page>
 <x-hero-section title="Руководство Carter PRO"

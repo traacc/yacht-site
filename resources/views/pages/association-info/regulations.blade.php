@@ -1,4 +1,4 @@
-<x-public-layout>
+<x-public-layout title="Технический регламент яхт - требования к судам CarterPro" description="Официальные нормы допуска: классы парусников, замеры, требования к оборудованию и безопасности для участия в регатах">
 <x-breadcrumbs_page title="Технический регламент яхт">
 </x-breadcrumbs_page>
 <x-hero-section title="Технический регламент яхт"

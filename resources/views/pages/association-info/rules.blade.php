@@ -1,4 +1,4 @@
-<x-public-layout>
+<x-public-layout title="Как вступить в CarterPro - требования и условия" description="Условия приема яхтсменов, капитанов и клубов. Подайте заявку онлайн и станьте частью официального парусного сообщества">
 <x-breadcrumbs_page title="Правила вступления в Ассоциацию">
 </x-breadcrumbs_page>
 <x-hero-section title="Правила вступления в Ассоциацию"

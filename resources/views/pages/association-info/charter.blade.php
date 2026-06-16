@@ -1,4 +1,4 @@
-<x-public-layout>
+<x-public-layout  title="Об ассоциации парусного спорта - история и цели CarterPro" description="Узнайте о миссии, уставе и развитии яхтенного спорта в России. Наша цель - поддержка регат и популяризация парусных традиций">
     
 <x-breadcrumbs_page title="Об Ассоциации">
 </x-breadcrumbs_page>

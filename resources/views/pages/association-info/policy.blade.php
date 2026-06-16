@@ -1,4 +1,4 @@
-<x-public-layout>
+<x-public-layout title="Политика CarterPro - регламенты и стандарты" description="Официальные документы: этические нормы, антидопинговые правила, стандарты безопасности и организация парусных мероприятий">
 <x-breadcrumbs_page title="Политика Ассоциации">
 </x-breadcrumbs_page>
 <x-hero-section title="Политика Ассоциации"

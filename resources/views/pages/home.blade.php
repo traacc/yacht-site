@@ -1,4 +1,4 @@
-<x-public-layout>
+<x-public-layout title="Регаты и парусный спорт - CarterPro" description="Календарь гонок, рейтинги, правила и новости парусного спорта. Официальный сайт CarterPro: регистрация на гонки!">
 
 <x-capture-window></x-capture-window>
 

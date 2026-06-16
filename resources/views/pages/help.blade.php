@@ -1,4 +1,4 @@
-<x-public-layout>
+<x-public-layout title="Помощь CarterPro - актуальные вопросы и их решения" description="Готовые инструкции проверки электросистем перед регатой, ответы на частозадаваемые вопросы и помощь новым участникам CarterPro">
 <x-breadcrumbs_page title="Помощь">
 </x-breadcrumbs_page>
 <main x-data="{
