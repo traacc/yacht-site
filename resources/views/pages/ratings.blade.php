@@ -191,8 +191,8 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                             <div class="w-8 h-8 rounded-full bg-[#2E325C] text-white flex items-center justify-center text-sm font-bold flex-shrink-0" x-text="idx + 1"></div>
                                             <span class="font-medium text-[#2E325C]" x-text="member.name"></span>
                                         </div>
-                                        <div class="text-right text-sm text-gray-500 flex flex-col items-end gap-1">
-                                            <span x-show="member.category && member.category !== '—'" class="inline-flex items-center rounded-full bg-[#2E325C] text-white text-xs font-bold px-3 py-1" x-text="member.category"></span>
+                                        <div class="text-right text-sm text-gray-500">
+                                            <div x-show="member.category && member.category !== '—'" x-text="member.category"></div>
                                             <div x-show="member.birthday && member.birthday !== '—'" x-text="member.birthday"></div>
                                         </div>
                                     </div>
@@ -261,7 +261,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                             </div>
                             <div class="bg-brand-light rounded-xl px-4 py-3" x-show="participantModalData.category && participantModalData.category !== '—'">
                                 <div class="text-xs text-gray-500 mb-1">Разряд</div>
-                                <span class="inline-flex items-center rounded-full bg-[#2E325C] text-white text-xs font-bold px-3 py-1" x-text="participantModalData.category"></span>
+                                <div class="font-semibold text-[#2E325C]" x-text="participantModalData.category"></div>
                             </div>
                         </div>
 

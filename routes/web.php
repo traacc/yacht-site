@@ -487,7 +487,7 @@ Route::get('/ratings', function () {
             'members'      => $r->team?->activeMembers?->map(fn ($m) => [
                 'name'     => $m->name,
                 'birthday' => $m->birth_date?->format('d.m.Y') ?? '—',
-                'category' => $m->sport_category ?? '—',
+                'category' => $m->sport_category?->getLabel() ?? '—',
             ])->values()->toArray() ?? [],
         ])->values()->toArray();
 
@@ -499,7 +499,7 @@ Route::get('/ratings', function () {
             'name'         => $r->user?->name ?? '—',
             'total_points' => (float) $r->total_points,
             'birthday'     => $r->user?->birth_date?->format('d.m.Y') ?? '—',
-            'category'     => $r->user?->sport_category ?? '—',
+            'category'     => $r->user?->sport_category?->getLabel() ?? '—',
             'avatar'       => $r->user?->photo_url ? asset('storage/'.$r->user->photo_url) : null,
         ])
         ->groupBy('total_points')
