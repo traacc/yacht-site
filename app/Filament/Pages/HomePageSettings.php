@@ -8,6 +8,7 @@ use App\Models\Team;
 use App\Models\User;
 use App\Services\ImageConverter;
 use App\Services\SettingsService;
+use App\Services\SitemapGenerator;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
@@ -106,6 +107,30 @@ class HomePageSettings extends Page
             'maintenance_mode'    => (bool) $settings->get('home.maintenance_mode', false),
             'maintenance_message' => $settings->get('home.maintenance_message', 'Сайт в процессе обновления'),
         ]);
+    }
+
+    /**
+     * Кнопки в шапке страницы.
+     *
+     * @return array<Action>
+     */
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('generateSitemap')
+                ->label('Сгенерировать sitemap.xml')
+                ->icon(Heroicon::OutlinedMap)
+                ->color('gray')
+                ->action(function (): void {
+                    $count = app(SitemapGenerator::class)->generate();
+
+                    Notification::make()
+                        ->title('Карта сайта обновлена')
+                        ->body("Записано URL: {$count}. Файл: /sitemap.xml")
+                        ->success()
+                        ->send();
+                }),
+        ];
     }
 
     // ──────────────────────────────────────────────
