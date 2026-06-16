@@ -464,7 +464,7 @@
                     }
                 }" x-on:click.away="isOpen = false">
                     <p class="text-sm font-medium text-[#2E325C] mb-2">Экипаж</p>
-                    <p class="text-xs text-gray-500 mb-3">Капитаном команды будет указанный выше пользователь. Можно добавить не более {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} зарегистрированных участников.</p>
+                    <p class="text-xs text-gray-500 mb-3">Капитаном команды будет указанный выше пользователь. Можно добавить не более {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} участников.</p>
 
                     @error('guestMembers')
                         <span class="text-xs text-red-600 mb-2 block">{{ $message }}</span>
