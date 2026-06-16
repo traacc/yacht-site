@@ -321,10 +321,10 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return $this->hasMany(Yacht::class, 'user_id');
     }
 
-    /** Личный рейтинг по сезонам */
-    public function ratings(): HasMany
+    /** Личные рейтинги по сезонам */
+    public function personalRatings(): HasMany
     {
-        return $this->hasMany(Rating::class);
+        return $this->hasMany(PersonalRating::class);
     }
 
     /** Новости, опубликованные пользователем */

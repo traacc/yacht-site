@@ -20,11 +20,10 @@ final class GenerateTeamHistoryPdfAction
             'regattaEntries.regatta',
             'regattaEntries.yacht',
             'regattaResultItems.regattaResult',
-            'ratings.season',
+            'teamRatings.season',
         ]);
 
-        $rating = $team->ratings
-            ->where('rating_type', 'team')
+        $rating = $team->teamRatings
             ->sortByDesc(fn ($r) => $r->season?->year ?? 0)
             ->first()?->rank_position;
 

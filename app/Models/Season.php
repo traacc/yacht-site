@@ -41,9 +41,14 @@ class Season extends Model
         return $this->hasMany(Regatta::class);
     }
 
-    public function ratings(): HasMany
+    public function teamRatings(): HasMany
     {
-        return $this->hasMany(Rating::class);
+        return $this->hasMany(TeamRating::class);
+    }
+
+    public function personalRatings(): HasMany
+    {
+        return $this->hasMany(PersonalRating::class);
     }
 
     // ──────────────────────────────────────────────
@@ -65,8 +70,7 @@ class Season extends Model
     /** @return Collection<Team> */
     public function topTeams(int $limit = 3): Collection
     {
-        return $this->ratings()
-            ->team()
+        return $this->teamRatings()
             ->ranked()
             ->with('team')
             ->take($limit)
@@ -77,8 +81,7 @@ class Season extends Model
     /** @return Collection<User> */
     public function topUsers(int $limit = 3): Collection
     {
-        return $this->ratings()
-            ->personal()
+        return $this->personalRatings()
             ->ranked()
             ->with('user')
             ->take($limit)

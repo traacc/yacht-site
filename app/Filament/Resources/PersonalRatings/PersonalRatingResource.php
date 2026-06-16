@@ -1,16 +1,15 @@
 <?php
 
-namespace App\Filament\Resources\Ratings;
+namespace App\Filament\Resources\PersonalRatings;
 
-use App\Filament\Resources\Ratings\Pages\ManageRatings;
-use App\Models\Rating;
+use App\Filament\Resources\PersonalRatings\Pages\ManagePersonalRatings;
+use App\Models\PersonalRating;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -21,22 +20,22 @@ use Filament\Tables\Table;
 
 use Illuminate\Database\Eloquent\Builder;
 
-class RatingResource extends Resource
+class PersonalRatingResource extends Resource
 {
-    protected static ?string $model = Rating::class;
+    protected static ?string $model = PersonalRating::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?int $navigationSort = 9;
+    protected static ?int $navigationSort = 10;
 
     public static function getModelLabel(): string
     {
-        return 'Рейтинг'; // Название в единственном числе
+        return 'Личный рейтинг';
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'Рейтинги'; // Название во множественном числе
+        return 'Личные рейтинги';
     }
 
     public static function form(Schema $schema): Schema
@@ -67,30 +66,13 @@ class RatingResource extends Resource
                     ])
                     ->createOptionUsing(fn (array $data): string => \App\Models\Season::create($data)->id)
                     ->required(),
-                Select::make('rating_type')
-                    ->label('Тип рейтинга')
-                    ->options(['team' => 'Командный', 'personal' => 'Личный'])
-                    ->required()
-                    ->live(),
-                Select::make('team_id')
-                    ->label('Команда')
-                    ->relationship('team', 'name')
-                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => $get('rating_type') === 'team')
-                    ->required(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => $get('rating_type') === 'team')
-                    ->unique(
-                        table: 'ratings',
-                        column: 'team_id',
-                        ignoreRecord: true,
-                        modifyRuleUsing: fn (\Illuminate\Validation\Rules\Unique $rule, \Filament\Schemas\Components\Utilities\Get $get) =>
-                            $rule->where('season_id', $get('season_id')),
-                    ),
                 Select::make('user_id')
                     ->label('Участник')
                     ->relationship('user', 'name')
-                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => $get('rating_type') === 'personal')
-                    ->required(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => $get('rating_type') === 'personal')
+                    ->searchable()
+                    ->required()
                     ->unique(
-                        table: 'ratings',
+                        table: 'personal_ratings',
                         column: 'user_id',
                         ignoreRecord: true,
                         modifyRuleUsing: fn (\Illuminate\Validation\Rules\Unique $rule, \Filament\Schemas\Components\Utilities\Get $get) =>
@@ -110,19 +92,14 @@ class RatingResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('rank_position')
             ->columns([
                 TextColumn::make('season.year')
                     ->label('Сезон')
                     ->searchable(),
-                TextColumn::make('team.name')
-                    ->label('Команда')
-                    ->searchable(),
                 TextColumn::make('user.name')
                     ->label('Участник')
                     ->searchable(),
-                TextColumn::make('rating_type')
-                    ->label('Тип рейтинга')->formatStateUsing(fn (string $state): string => match ($state) {'team' => 'Командный', 'personal' => 'Личный'})
-                    ->badge(),
                 TextColumn::make('total_points')
                     ->label('Всего очков')
                     ->numeric()
@@ -144,7 +121,7 @@ class RatingResource extends Resource
                 //
             ])
             ->recordActions([
-                EditAction::make()->modalHeading('Редактировать рейтинг'),
+                EditAction::make()->modalHeading('Редактировать личный рейтинг'),
                 DeleteAction::make(),
             ])
             ->toolbarActions([
@@ -157,7 +134,7 @@ class RatingResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ManageRatings::route('/'),
+            'index' => ManagePersonalRatings::route('/'),
         ];
     }
 }

@@ -46,12 +46,12 @@ class TeamsList extends Component
             'regattaEntries.regatta',
             'regattaEntries.yacht',
             'regattaResultItems.regattaResult',
-            'ratings.season',
+            'teamRatings.season',
         ])
             ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%"))
             ->when($this->sort === 'name', fn ($q) => $q->orderBy('name'))
             ->when($this->sort === 'rating', fn ($q) => $q->orderByRaw(
-                '(SELECT COALESCE(r.rank_position, 999999) FROM ratings r WHERE r.team_id = teams.id AND r.rating_type = \'team\' ORDER BY r.season_id DESC LIMIT 1) ASC'
+                '(SELECT COALESCE(r.rank_position, 999999) FROM team_ratings r WHERE r.team_id = teams.id ORDER BY r.season_id DESC LIMIT 1) ASC'
             ))
             ->when($this->sort === 'newest', fn ($q) => $q->orderByDesc('created_at'))
             ->orderBy('name') // fallback
@@ -67,7 +67,7 @@ class TeamsList extends Component
             'status' => $team->is_archived ? 'Неактивная' : 'Активная',
             'status_class' => $team->is_archived ? 'inactive' : 'active',
             'captain' => $team->organizer?->name ?? '—',
-            'rating' => $team->ratings->where('rating_type', 'team')->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first()?->rank_position ?? '—',
+            'rating' => $team->teamRatings->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first()?->rank_position ?? '—',
             'participation_count' => $team->regattaEntries->filter(fn ($e) => $e->regatta?->date_start?->isPast())->count(),
             'members' => $team->activeMembers->map(fn ($m) => [
                 'name' => $m->name,

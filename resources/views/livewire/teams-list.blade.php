@@ -85,7 +85,7 @@
                     <tr class="border-t text-sm lg:text-2xl">
                         <td data-label="Команда" class="py-2 text-center">{{ $team->name }}</td>
                         <td data-label="Капитан" class="py-2 text-center">{{ $team->organizer?->name ?? '—' }}</td>
-                        <td data-label="Рейтинг" class="py-2 text-center">{{ $team->ratings->where('rating_type', 'team')->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first()?->rank_position ?? '—' }}</td>
+                        <td data-label="Рейтинг" class="py-2 text-center">{{ $team->teamRatings->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first()?->rank_position ?? '—' }}</td>
                         <td data-label="" class="py-2 text-center">
                             <a href="#" @click.prevent="setTeam({{ $loop->index }})" class="text-[#2D92CE] font-semibold hover:underline [&>span]:hidden md:[&>span]:inline">Подробнее  <span>→</span></a>
                         </td>

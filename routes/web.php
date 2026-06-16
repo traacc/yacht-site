@@ -477,8 +477,7 @@ Route::get('/yachts', function () {
     return view('pages.yachts', compact('yachts', 'yachtsJson'));
 })->name('yachts');
 Route::get('/ratings', function () {
-    $teamRatings = \App\Models\Rating::with(['team.activeMembers', 'season'])
-        ->team()
+    $teamRatings = \App\Models\TeamRating::with(['team.activeMembers', 'season'])
         ->ranked()
         ->get()
         ->map(fn ($r) => [
@@ -492,8 +491,7 @@ Route::get('/ratings', function () {
             ])->values()->toArray() ?? [],
         ])->values()->toArray();
 
-    $personalRatings = \App\Models\Rating::with(['user', 'season'])
-        ->personal()
+    $personalRatings = \App\Models\PersonalRating::with(['user', 'season'])
         ->ranked()
         ->get()
         ->map(fn ($r) => [

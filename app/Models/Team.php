@@ -134,10 +134,10 @@ class Team extends Model implements HasMedia
         return $this->hasMany(RegattaResultItem::class);
     }
 
-    /** Рейтинги по сезонам */
-    public function ratings(): HasMany
+    /** Командные рейтинги по сезонам */
+    public function teamRatings(): HasMany
     {
-        return $this->hasMany(Rating::class);
+        return $this->hasMany(TeamRating::class);
     }
 
     // ──────────────────────────────────────────────
