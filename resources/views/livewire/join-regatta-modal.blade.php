@@ -623,7 +623,7 @@
                         Запомните его — по этому паролю можно будет редактировать заявку на странице регаты без входа в аккаунт.
                     </p>
                     <div class="relative">
-                        <input :type="showPassword ? 'text' : 'password'" id="entryPassword" wire:model="entryPassword"
+                        <input :type="showPassword ? 'text' : 'text'" id="entryPassword" wire:model="entryPassword"
                                placeholder="Придумайте пароль"
                                class="block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm pr-10 @error('entryPassword') border-red-300 @enderror">
                         <button type="button" @click="showPassword = !showPassword"
@@ -645,7 +645,7 @@
                     <label for="entryPasswordConfirmation" class="block text-sm font-medium text-[#2E325C] mt-3">
                         Подтверждение пароля <span class="text-red-500">*</span>
                     </label>
-                    <input :type="showPassword ? 'text' : 'password'" id="entryPasswordConfirmation" wire:model="entryPasswordConfirmation"
+                    <input :type="showPassword ? 'text' : 'text'" id="entryPasswordConfirmation" wire:model="entryPasswordConfirmation"
                            placeholder="Повторите пароль"
                            class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('entryPasswordConfirmation') border-red-300 @enderror">
                     @error('entryPasswordConfirmation')
