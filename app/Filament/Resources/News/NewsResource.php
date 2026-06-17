@@ -28,6 +28,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class NewsResource extends Resource
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected static ?string $model = News::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'news';

@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class TeamRatingResource extends Resource
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected static ?string $model = TeamRating::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

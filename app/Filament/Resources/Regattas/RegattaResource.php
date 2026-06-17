@@ -52,6 +52,8 @@ use Str;
 
 class RegattaResource extends Resource
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected static ?string $model = Regatta::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'regatta';

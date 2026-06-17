@@ -30,6 +30,8 @@ use UnitEnum;
 
 class HomePageSettings extends Page
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected string $view = 'filament-panels::pages.page';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHome;

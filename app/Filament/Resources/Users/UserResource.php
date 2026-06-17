@@ -43,6 +43,8 @@ use Filament\Tables\Enums\FiltersLayout;
 
 class UserResource extends Resource
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     public static function getModelLabel(): string
     {
         return 'Пользователь'; // Название в единственном числе

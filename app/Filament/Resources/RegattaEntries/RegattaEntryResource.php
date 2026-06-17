@@ -34,6 +34,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class RegattaEntryResource extends Resource
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected static ?string $model = RegattaEntry::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'results';

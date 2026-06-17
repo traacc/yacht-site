@@ -36,6 +36,8 @@ use Illuminate\Support\HtmlString;
 
 class YachtResource extends Resource
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected static ?string $model = Yacht::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'yacht';

@@ -23,6 +23,8 @@ use Illuminate\Database\Eloquent\Collection;
 
 class PendingRegattaEntryResource extends Resource
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected static ?string $model = RegattaEntry::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-check';

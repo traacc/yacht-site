@@ -24,6 +24,8 @@ use UnitEnum;
 
 class ManagementPageSettings extends Page
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected string $view = 'filament-panels::pages.page';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;

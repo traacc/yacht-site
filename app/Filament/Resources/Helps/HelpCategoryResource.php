@@ -18,6 +18,8 @@ use Filament\Tables\Table;
 
 class HelpCategoryResource extends Resource
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected static ?string $model = HelpCategory::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;

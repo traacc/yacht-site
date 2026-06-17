@@ -42,6 +42,8 @@ use Filament\Tables\Enums\FiltersLayout;
 
 class TeamResource extends Resource
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected static ?string $model = Team::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'team';

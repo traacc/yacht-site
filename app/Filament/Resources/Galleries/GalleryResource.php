@@ -38,6 +38,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class GalleryResource extends Resource
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected static ?string $model = Gallery::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'gallery';

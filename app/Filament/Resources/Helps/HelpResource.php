@@ -33,6 +33,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class HelpResource extends Resource
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected static ?string $model = Help::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'help';

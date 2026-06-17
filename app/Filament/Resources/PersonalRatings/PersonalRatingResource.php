@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class PersonalRatingResource extends Resource
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected static ?string $model = PersonalRating::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

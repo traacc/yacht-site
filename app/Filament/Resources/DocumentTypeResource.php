@@ -25,6 +25,8 @@ use UnitEnum;
 
 class DocumentTypeResource extends Resource
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected static ?string $model = YachtDocumentType::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;

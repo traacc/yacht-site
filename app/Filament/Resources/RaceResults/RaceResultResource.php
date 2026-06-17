@@ -23,6 +23,8 @@ use Filament\Tables\Table;
 
 class RaceResultResource extends Resource
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected static ?string $model = RaceResult::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

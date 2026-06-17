@@ -25,6 +25,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class SeriesResource extends Resource
 {
+    use \App\Filament\Concerns\RestrictsAccessByRole;
+
     protected static ?string $model = Series::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
