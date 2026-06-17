@@ -194,6 +194,22 @@ class RegattaResults extends Component
             );
         }
 
+        // Сортировка: капитан всегда сверху, остальные — по алфавиту (ФИО)
+        foreach ($crewMap as $teamId => $members) {
+            usort($members, function ($a, $b) {
+                $aCaptain = ($a['role'] ?? null) === 'captain';
+                $bCaptain = ($b['role'] ?? null) === 'captain';
+
+                if ($aCaptain !== $bCaptain) {
+                    return $aCaptain ? -1 : 1;
+                }
+
+                return strcoll($a['name'], $b['name']);
+            });
+
+            $crewMap[$teamId] = $members;
+        }
+
         return $crewMap;
     }
 

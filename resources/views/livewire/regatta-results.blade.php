@@ -493,7 +493,11 @@
                         </thead>
                         <tbody class="divide-y text-center font-medium">
                             @forelse($activeTeamModal['members'] as $member)
-                                <tr class="hover:bg-white transition-colors border-b border-brand-border pb-8! md:pb-0!">
+                                @php($isCaptain = ($member['role'] ?? null) === 'captain')
+                                <tr @class([
+                                    'hover:bg-white transition-colors border-b border-brand-border pb-8! md:pb-0!',
+                                    'font-bold' => $isCaptain,
+                                ])>
                                     <td data-label="Участник" class="py-3">{{ $member['name'] }}</td>
                                     <td data-label="Дата рождения" class="py-3">{{ $member['birthday'] }}</td>
                                     <td data-label="Разряд" class="py-3">{{ $member['rank'] }}</td>
