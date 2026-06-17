@@ -49,7 +49,9 @@ class TeamsList extends Component
             'teamRatings.season',
         ])
             ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%"))
-            ->when($this->sort === 'name', fn ($q) => $q->orderBy('name'))
+            ->when($this->sort === 'name', fn ($q) => $q
+                ->orderByRaw("name REGEXP '^[А-Яа-яЁё]' DESC")
+                ->orderBy('name'))
             ->when($this->sort === 'rating', fn ($q) => $q->orderByRaw(
                 '(SELECT COALESCE(r.rank_position, 999999) FROM team_ratings r WHERE r.team_id = teams.id ORDER BY r.season_id DESC LIMIT 1) ASC'
             ))

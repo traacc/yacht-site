@@ -13,11 +13,17 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
     yachtsData: {{ $yachtsJson }},
     search: '',
     get filteredYachts() {
+        const isCyrillic = (str) => /^[а-яё]/i.test((str || '').trim());
         return this.yachtsData.filter(yacht =>
             yacht.name.toLowerCase().includes(this.search.toLowerCase()) ||
             yacht.vfps_number.toLowerCase().includes(this.search.toLowerCase()) ||
             (yacht.owner && yacht.owner.name && yacht.owner.name.toLowerCase().includes(this.search.toLowerCase()))
-        );
+        ).sort((a, b) => {
+            const aCyr = isCyrillic(a.name);
+            const bCyr = isCyrillic(b.name);
+            if (aCyr !== bCyr) return aCyr ? -1 : 1;
+            return a.name.localeCompare(b.name, 'ru');
+        });
     },
     openYachtModal(yacht) {
         this.selectedYacht = yacht;
