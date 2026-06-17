@@ -69,14 +69,14 @@
             @guest
                 <p class="text-sm text-gray-500 mb-4">
                     @if ($captainMode === 'create')
-                        Для нового капитана мы автоматически создадим личный кабинет, а данные для входа отправим на email.
+                        Для нового рулевого мы автоматически создадим личный кабинет, а данные для входа отправим на email.
                     @endif
                     Уже есть аккаунт?
                     <button type="button" @click="$dispatch('open-login-modal'); $wire.closeModal()"
                             class="text-[#2D92CE] font-medium hover:underline">Войти</button>
                 </p>
             @else
-                <p class="text-sm text-gray-500 mb-4">Выберите или создайте команду и укажите капитана — капитаном может быть любой зарегистрированный пользователь.</p>
+                <p class="text-sm text-gray-500 mb-4">Выберите или создайте команду и укажите рулевого — рулевым может быть любой зарегистрированный пользователь.</p>
             @endguest
 
             <form wire:submit.prevent="submitGuest" class="space-y-4">
@@ -442,7 +442,7 @@
                                 <div x-show="query.trim().length > 0"
                                      x-on:click="addNewFromQuery()"
                                      class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm text-[#2D92CE] font-medium border-t border-gray-100">
-                                    + Создать «<span x-text="query.trim()"></span>» как нового капитана
+                                    + Создать «<span x-text="query.trim()"></span>» как нового рулевого
                                 </div>
                             </div>
                         </div>
@@ -455,7 +455,7 @@
                 {{-- Экипаж: сразу девять полей — выбор существующего или добавление нового участника --}}
                 <div class="border-t border-gray-200 pt-4">
                     <p class="text-sm font-medium text-[#2E325C] mb-2">Экипаж</p>
-                    <p class="text-xs text-gray-500 mb-3">Капитаном команды будет указанный выше пользователь. Можно добавить до {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} участников — заполните нужные поля.</p>
+                    <p class="text-xs text-gray-500 mb-3">Рулевым команды будет указанный выше пользователь. Можно добавить до {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} участников — заполните нужные поля.</p>
 
                     <div class="space-y-2">
                         @foreach ($guestMembers as $i => $slot)
