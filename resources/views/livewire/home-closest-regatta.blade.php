@@ -156,12 +156,14 @@
             </div>
             @if($lat && $lon)
             <div class="h-[186px] w-full">
-                <iframe
-                    width="100%"
-                    height="100%"
-                    src="https://embed.windy.com/embed.html?type=forecast&location=coordinates&detail=true&detailLat={{ $lat }}&detailLon={{ $lon }}&metricTemp=°C&metricRain=mm&metricWind=default"
-                    frameborder="0">
-                </iframe>
+                <template x-if="windyModalOpen">
+                    <iframe
+                        width="100%"
+                        height="100%"
+                        src="https://embed.windy.com/embed.html?type=forecast&location=coordinates&detail=true&detailLat={{ $lat }}&detailLon={{ $lon }}&metricTemp=°C&metricRain=mm&metricWind=default"
+                        frameborder="0">
+                    </iframe>
+                </template>
             </div>
             @endif
         </div>
