@@ -3,12 +3,14 @@
         requireConfirm: @js($this->state === 'guest' || $this->state === 'form'),
         attemptClose() {
             if (this.requireConfirm && ! confirm('Закрыть окно? Введённые данные не будут сохранены.')) return;
+            this.isOpen = false;
             $wire.closeModal();
         }
      }"
      x-show="isOpen"
      x-cloak
      @keydown.escape.window="attemptClose()"
+     x-on:livewire:navigated.window="isOpen = false"
      class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
 
     <!-- Overlay -->
@@ -37,7 +39,7 @@
         @if ($submitted)
             <div class="flex items-center justify-between pb-3 mb-4">
                 <h3 class="text-lg font-medium text-[#2E325C] a-font">Заявка подана</h3>
-                <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
+                <button @click="isOpen = false; $wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
             </div>
             <div class=" p-6 text-center">
                 <svg class="mx-auto h-12 w-12 text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,11 +53,11 @@
         @elseif ($leftCrew)
             <div class="flex items-center justify-between pb-3 mb-4">
                 <h3 class="text-lg font-medium text-[#2E325C] a-font">Участие отменено</h3>
-                <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
+                <button @click="isOpen = false; $wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
             </div>
             <div class="p-6 text-center">
                 <p class="font-medium text-lg">Вы успешно отказались от участия в регате</p>
-                <button type="button" @click="$wire.closeModal()"
+                <button type="button" @click="isOpen = false; $wire.closeModal()"
                         class="mt-4 inline-flex justify-center bg-[#2D92CE] px-4 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90">
                     Закрыть
                 </button>
@@ -72,7 +74,7 @@
                         Для нового рулевого мы автоматически создадим личный кабинет, а данные для входа отправим на email.
                     @endif
                     Уже есть аккаунт?
-                    <button type="button" @click="$dispatch('open-login-modal'); $wire.closeModal()"
+                    <button type="button" @click="isOpen = false; $dispatch('open-login-modal'); $wire.closeModal()"
                             class="text-[#2D92CE] font-medium hover:underline">Войти</button>
                 </p>
             @else
@@ -663,7 +665,7 @@
         @elseif ($this->state === 'in-crew')
             <div class="flex items-center justify-between pb-3 mb-4">
                 <h3 class="text-lg font-medium text-[#2E325C] a-font">Участие в регате</h3>
-                <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
+                <button @click="isOpen = false; $wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
             </div>
             <div class="py-4">
                 <p class="text-gray-600 mb-2">Вы зарегистрированы в экипаже для участия в данной регате.</p>
@@ -675,7 +677,7 @@
                         <span wire:loading.remove wire:target="leaveCrew">Отказаться от участия</span>
                         <span wire:loading wire:target="leaveCrew">Обработка...</span>
                     </button>
-                    <button type="button" @click="$wire.closeModal()"
+                    <button type="button" @click="isOpen = false; $wire.closeModal()"
                             class="inline-flex justify-center border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow hover:bg-gray-50">
                         Отмена
                     </button>
@@ -684,7 +686,7 @@
         @elseif ($this->state === 'in-crew-captain')
             <div class="flex items-center justify-between pb-3 mb-4">
                 <h3 class="text-lg font-medium text-[#2E325C] a-font">Участие в регате</h3>
-                <button @click="$wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
+                <button @click="isOpen = false; $wire.closeModal()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
             </div>
             <div class="py-4">
                 <div class="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 mb-5">
@@ -696,7 +698,7 @@
                         <p class="text-sm text-yellow-700 mt-1">Для отказа от участия необходимо сначала назначить другого капитана в составе экипажа.</p>
                     </div>
                 </div>
-                <button type="button" @click="$wire.closeModal()"
+                <button type="button" @click="isOpen = false; $wire.closeModal()"
                         class="inline-flex w-full justify-center border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow hover:bg-gray-50">
                     Закрыть
                 </button>
