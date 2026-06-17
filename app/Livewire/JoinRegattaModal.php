@@ -333,6 +333,12 @@ class JoinRegattaModal extends Component
      */
     public function commitTeam(?string $value = null): void
     {
+        // Поле уже зафиксировано (выбрана или создаётся команда) — например, blur
+        // прилетел после удаления поля поиска из DOM при выборе варианта. Пропускаем.
+        if ($this->teamMode !== 'select' || $this->teamId !== null) {
+            return;
+        }
+
         $query = trim((string) ($value ?? $this->teamSearchQuery));
         if ($query === '') {
             return;
@@ -426,6 +432,12 @@ class JoinRegattaModal extends Component
      */
     public function commitCaptain(?string $value = null): void
     {
+        // Поле уже зафиксировано (выбран или создаётся капитан) — пропускаем blur,
+        // прилетевший после удаления поля поиска из DOM при выборе варианта.
+        if ($this->captainMode !== 'select' || $this->captainUserId !== null) {
+            return;
+        }
+
         $query = trim((string) ($value ?? $this->captainSearchQuery));
         if ($query === '') {
             return;
@@ -615,6 +627,12 @@ class JoinRegattaModal extends Component
     public function commitSlot(int $i, ?string $value = null): void
     {
         if (! isset($this->guestMembers[$i])) {
+            return;
+        }
+
+        // Слот уже зафиксирован (выбран/создаётся участник) — пропускаем blur,
+        // прилетевший после удаления поля поиска из DOM при выборе варианта.
+        if (($this->guestMembers[$i]['mode'] ?? 'empty') !== 'empty') {
             return;
         }
 
