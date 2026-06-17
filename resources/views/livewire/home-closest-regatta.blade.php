@@ -121,7 +121,7 @@
     </div>
     @endif
     <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"
-            class="pointer-events-auto relative z-20 max-w-3xs mx-auto mt-12 block w-full text-center bg-brand-blue text-2xl text-white font-semibold py-2.5 transition-colors cursor-pointer">
+            class="pointer-events-auto relative z-20 max-w-3xs mx-auto mt-16 block w-full text-center bg-brand-blue text-2xl md:text-4xl text-white font-semibold py-2.5 transition-colors cursor-pointer">
         Заявка →
     </button>
 
