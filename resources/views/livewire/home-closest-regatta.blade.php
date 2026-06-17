@@ -92,10 +92,6 @@
                         <x-icon-2 name="download" /> Скачать документы регаты
                     </a>
                     @endif
-                    <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"
-                            class="pointer-events-auto block w-full text-center bg-white font-semibold py-2.5 transition-colors cursor-pointer">
-                        Заявка →
-                    </button>
                 </div>
             </div>
             <div class="hidden md:block">
@@ -124,6 +120,10 @@
         </div>
     </div>
     @endif
+    <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"
+            class="pointer-events-auto relative z-20 max-w-3xs mx-auto mt-12 block w-full text-center bg-brand-blue text-2xl text-white font-semibold py-2.5 transition-colors cursor-pointer">
+        Заявка →
+    </button>
 
     {{-- Модальное окно Windy --}}
     <div x-show="windyModalOpen"
