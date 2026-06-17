@@ -68,10 +68,10 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                                                 :title="member.name"
                                                             >
                                                                 <template x-if="member.avatar">
-                                                                    <img :src="member.avatar" :alt="member.name" class="w-full h-full object-cover">
+                                                                    <img @click="openTeam(team)" :src="member.avatar" :alt="member.name" class="w-full h-full object-cover cursor-pointer">
                                                                 </template>
                                                                 <template x-if="!member.avatar">
-                                                                    <span x-text="initials(member.name)"></span>
+                                                                    <span @click="openTeam(team)" x-text="initials(member.name)" class="cursor-pointer"></span>
                                                                 </template>
                                                             </div>
                                                         </template>
