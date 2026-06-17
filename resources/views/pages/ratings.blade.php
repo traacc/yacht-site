@@ -63,15 +63,15 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                                 <template x-if="team.members && team.members.length > 0">
                                                     <div class="flex flex-wrap items-center md:justify-center gap-1">
                                                         <template x-for="(member, idx) in team.members" :key="idx">
-                                                            <div
-                                                                class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-[#2E325C] text-white text-[10px] font-bold flex-shrink-0 ring-2 ring-white"
+                                                            <div @click="openTeam(team)"
+                                                                class="w-8 h-8 rounded-full overflow-hidden flex items-center cursor-pointer justify-center bg-[#2E325C] text-white text-[10px] font-bold flex-shrink-0 ring-2 ring-white"
                                                                 :title="member.name"
                                                             >
                                                                 <template x-if="member.avatar">
-                                                                    <img @click="openTeam(team)" :src="member.avatar" :alt="member.name" class="w-full h-full object-cover cursor-pointer">
+                                                                    <img :src="member.avatar" :alt="member.name" class="w-full h-full object-cover">
                                                                 </template>
                                                                 <template x-if="!member.avatar">
-                                                                    <span @click="openTeam(team)" x-text="initials(member.name)" class="cursor-pointer"></span>
+                                                                    <span x-text="initials(member.name)"></span>
                                                                 </template>
                                                             </div>
                                                         </template>
