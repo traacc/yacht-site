@@ -88,7 +88,7 @@
 
                 {{-- Выбор регаты --}}
                 <div>
-                    <label for="regattaId" class="block text-sm text-brand-gray-light">Регата</label>
+                    <label for="regattaId" class="block text-sm text-brand-gray-light">Регата <span class="text-red-500">*</span></label>
                     <select id="regattaId" wire:model.live="regattaId"
                             class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('regattaId') border-red-300 @enderror">
                         <option value="">Выберите регату</option>
@@ -127,7 +127,7 @@
                         else if (e.key === 'Escape') { this.isOpen = false; }
                     }
                 }" x-on:click.away="isOpen = false">
-                    <label class="block text-sm text-brand-gray-light mb-1">Название команды</label>
+                    <label class="block text-sm text-brand-gray-light mb-1">Название команды <span class="text-red-500">*</span></label>
 
                     @if ($teamMode === 'create')
                         {{-- Создание новой команды --}}
@@ -247,7 +247,7 @@
                         else if (e.key === 'Escape') { this.isOpen = false; }
                     }
                 }" x-on:click.away="isOpen = false">
-                    <label class="block text-sm text-brand-gray-light mb-1">Яхта</label>
+                    <label class="block text-sm text-brand-gray-light mb-1">Яхта <span class="text-red-500">*</span></label>
 
                     @if ($yachtMode === 'create')
                         {{-- Добавление своей яхты --}}
@@ -343,7 +343,7 @@
                         else if (e.key === 'Escape') { this.isOpen = false; }
                     }
                 }" x-on:click.away="isOpen = false">
-                    <label class="block text-sm text-brand-gray-light mb-1">Рулевой</label>
+                    <label class="block text-sm text-brand-gray-light mb-1">Рулевой <span class="text-red-500">*</span></label>
 
                     @if ($captainMode === 'create')
                         {{-- Новый пользователь-капитан --}}
@@ -354,7 +354,7 @@
                                         class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
                             </div>
                             <div>
-                                <label for="guestName" class="block text-xs text-gray-500 mb-1">ФИО</label>
+                                <label for="guestName" class="block text-xs text-gray-500 mb-1">ФИО <span class="text-red-500">*</span></label>
                                 <input type="text" id="guestName" wire:model="guestName"
                                        class="block w-full border-none font-medium shadow-sm bg-white sm:text-sm @error('guestName') border-red-300 @enderror">
                                 @error('guestName')
@@ -363,7 +363,7 @@
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
-                                    <label for="guestEmail" class="block text-xs text-gray-500 mb-1">Email</label>
+                                    <label for="guestEmail" class="block text-xs text-gray-500 mb-1">Email <span class="text-red-500">*</span></label>
                                     <input type="email" id="guestEmail" wire:model="guestEmail"
                                            class="block w-full border-none font-medium shadow-sm bg-white sm:text-sm @error('guestEmail') border-red-300 @enderror">
                                     @error('guestEmail')
@@ -371,7 +371,7 @@
                                     @enderror
                                 </div>
                                 <div wire:key="guest-phone-wrap">
-                                    <label for="guestPhone" class="block text-xs text-gray-500 mb-1">Телефон</label>
+                                    <label for="guestPhone" class="block text-xs text-gray-500 mb-1">Телефон <span class="text-red-500">*</span></label>
                                     <input type="text" id="guestPhone" wire:model="guestPhone" wire:key="guest-phone"
                                            x-mask="+7 (999) 999-99-99" x-ref="phone"
                                            class="block w-full border-none font-medium shadow-sm bg-white sm:text-sm @error('guestPhone') border-red-300 @enderror">
@@ -382,7 +382,7 @@
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
-                                    <label for="guestBirthDate" class="block text-xs text-gray-500 mb-1">Дата рождения</label>
+                                    <label for="guestBirthDate" class="block text-xs text-gray-500 mb-1">Дата рождения <span class="text-red-500">*</span></label>
                                     <input type="date" id="guestBirthDate" wire:model="guestBirthDate"
                                            class="block w-full border bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none @error('guestBirthDate') border-red-300 @else border-gray-200 @enderror">
                                     @error('guestBirthDate')
@@ -390,7 +390,7 @@
                                     @enderror
                                 </div>
                                 <div>
-                                    <label for="guestSportCategory" class="block text-xs text-gray-500 mb-1">Спортивный разряд</label>
+                                    <label for="guestSportCategory" class="block text-xs text-gray-500 mb-1">Спортивный разряд <span class="text-red-500">*</span></label>
                                     <select id="guestSportCategory" wire:model="guestSportCategory"
                                             class="block w-full border bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none @error('guestSportCategory') border-red-300 @else border-gray-200 @enderror">
                                         <option value="">Не указан</option>
@@ -495,7 +495,7 @@
                                                             class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
                                                 </div>
                                                 <div>
-                                                    <label class="block text-xs text-gray-500 mb-1">ФИО</label>
+                                                    <label class="block text-xs text-gray-500 mb-1">ФИО <span class="text-red-500">*</span></label>
                                                     <input type="text" wire:model="guestMembers.{{ $i }}.newName"
                                                            class="w-full border border-gray-200 bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
                                                     @error('guestMembers.' . $i . '.newName')
@@ -504,7 +504,7 @@
                                                 </div>
                                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                     <div>
-                                                        <label class="block text-xs text-gray-500 mb-1">Дата рождения</label>
+                                                        <label class="block text-xs text-gray-500 mb-1">Дата рождения <span class="text-red-500">*</span></label>
                                                         <input type="date" wire:model="guestMembers.{{ $i }}.newBirthDate"
                                                                class="w-full border border-gray-200 bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
                                                         @error('guestMembers.' . $i . '.newBirthDate')
@@ -512,7 +512,7 @@
                                                         @enderror
                                                     </div>
                                                     <div>
-                                                        <label class="block text-xs text-gray-500 mb-1">Спортивный разряд</label>
+                                                        <label class="block text-xs text-gray-500 mb-1">Спортивный разряд <span class="text-red-500">*</span></label>
                                                         <select wire:model="guestMembers.{{ $i }}.newSportCategory"
                                                                 class="w-full border border-gray-200 bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
                                                             <option value="">Не указан</option>
