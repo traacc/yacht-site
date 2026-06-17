@@ -402,7 +402,7 @@
                             <input type="text"
                                    wire:model.live.debounce.350ms="captainSearchQuery"
                                    x-on:keydown="onKeydown($event)"
-                                   placeholder="Поиск по имени или email..."
+                                   placeholder="Поиск по имени..."
                                    class="w-full border bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none @error('captainUserId') border-red-300 @else border-gray-200 @enderror">
 
                             <div wire:loading wire:target="captainSearchQuery" class="absolute right-3 top-2.5 text-gray-400 text-xs">
@@ -521,7 +521,7 @@
                                                 <input type="text"
                                                        wire:model.live.debounce.350ms="guestMembers.{{ $i }}.query"
                                                        x-on:focus="open = true" x-on:click="open = true"
-                                                       placeholder="Поиск по имени или email..."
+                                                       placeholder="Поиск по имени..."
                                                        class="w-full border border-gray-200 bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
 
                                                 <div wire:loading wire:target="guestMembers.{{ $i }}.query" class="absolute right-3 top-2.5 text-gray-400 text-xs">
