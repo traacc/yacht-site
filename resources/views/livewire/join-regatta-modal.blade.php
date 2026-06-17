@@ -156,6 +156,7 @@
                         <div class="relative">
                             <input type="text"
                                    wire:model.live.debounce.350ms="teamSearchQuery"
+                                   autocomplete="off" data-lpignore="true" data-1p-ignore data-form-type="other"
                                    x-on:focus="isOpen = true"
                                    x-on:click="isOpen = true"
                                    x-on:keydown="onKeydown($event)"
@@ -277,6 +278,7 @@
                         {{-- Поиск по списку свободных яхт --}}
                         <div class="relative">
                             <input type="text" x-model="query"
+                                   autocomplete="off" data-lpignore="true" data-1p-ignore data-form-type="other"
                                    x-on:focus="isOpen = true"
                                    x-on:click="isOpen = true"
                                    x-on:keydown="onKeydown($event)"
@@ -415,6 +417,7 @@
                         <div class="relative">
                             <input type="text"
                                    wire:model.live.debounce.350ms="captainSearchQuery"
+                                   autocomplete="off" data-lpignore="true" data-1p-ignore data-form-type="other"
                                    x-on:keydown="onKeydown($event)"
                                    x-on:blur="$wire.commitCaptain($event.target.value)"
                                    placeholder="Поиск по имени..."
@@ -536,6 +539,7 @@
                                             <div class="relative">
                                                 <input type="text"
                                                        wire:model.live.debounce.350ms="guestMembers.{{ $i }}.query"
+                                                       autocomplete="off" data-lpignore="true" data-1p-ignore data-form-type="other"
                                                        x-on:focus="open = true" x-on:click="open = true"
                                                        x-on:blur="$wire.commitSlot({{ $i }}, $event.target.value)"
                                                        placeholder="Поиск по имени..."
