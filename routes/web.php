@@ -477,19 +477,30 @@ Route::get('/yachts', function () {
     return view('pages.yachts', compact('yachts', 'yachtsJson'));
 })->name('yachts');
 Route::get('/ratings', function () {
-    $teamRatings = \App\Models\TeamRating::with(['team.activeMembers', 'season'])
+    $teamRatings = \App\Models\TeamRating::with(['team.activeMembers', 'team.organizer', 'team.defaultYacht', 'season'])
         ->ranked()
         ->get()
-        ->map(fn ($r) => [
-            'name'         => $r->team?->name ?? '—',
-            'total_points' => (float) $r->total_points,
-            'rank'         => $r->rank_position,
-            'members'      => $r->team?->activeMembers?->map(fn ($m) => [
-                'name'     => $m->name,
-                'birthday' => $m->birth_date?->format('d.m.Y') ?? '—',
-                'category' => $m->sport_category?->getLabel() ?? '—',
-            ])->values()->toArray() ?? [],
-        ])->values()->toArray();
+        ->map(function ($r) {
+            $yacht = $r->team?->defaultYacht;
+
+            return [
+                'name'         => $r->team?->name ?? '—',
+                'total_points' => (float) $r->total_points,
+                'rank'         => $r->rank_position,
+                'captain'      => $r->team?->organizer?->name ?? '—',
+                'yacht'        => $yacht
+                    ? trim($yacht->name.($yacht->vfps_number ? ' ('.$yacht->vfps_number.')' : ''))
+                    : '—',
+                'members'      => $r->team?->activeMembers
+                    ?->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+                    ->map(fn ($m) => [
+                        'name'     => $m->name,
+                        'birthday' => $m->birth_date?->format('d.m.Y') ?? '—',
+                        'category' => $m->sport_category?->getLabel() ?? '—',
+                        'avatar'   => $m->photo_url ? asset('storage/'.$m->photo_url) : null,
+                    ])->values()->toArray() ?? [],
+            ];
+        })->values()->toArray();
 
     $place = 1;
     $personalRatings = \App\Models\PersonalRating::with(['user', 'season'])

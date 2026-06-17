@@ -53,12 +53,31 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                             </div>
                                         </td>
                                         <td class="py-2" data-label="Команда">
-                                            <button
-                                                type="button"
-                                                class="text-[#2E325C] hover:text-[#C2A36B] hover:underline transition-colors cursor-pointer font-medium"
-                                                @click="openTeam(team)"
-                                                x-text="team.name"
-                                            ></button>
+                                            <div class="flex flex-col md:items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    class="text-[#2E325C] hover:text-[#C2A36B] hover:underline transition-colors cursor-pointer font-medium"
+                                                    @click="openTeam(team)"
+                                                    x-text="team.name"
+                                                ></button>
+                                                <template x-if="team.members && team.members.length > 0">
+                                                    <div class="flex flex-wrap items-center md:justify-center gap-1">
+                                                        <template x-for="(member, idx) in team.members" :key="idx">
+                                                            <div
+                                                                class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-[#2E325C] text-white text-[10px] font-bold flex-shrink-0 ring-2 ring-white"
+                                                                :title="member.name"
+                                                            >
+                                                                <template x-if="member.avatar">
+                                                                    <img :src="member.avatar" :alt="member.name" class="w-full h-full object-cover">
+                                                                </template>
+                                                                <template x-if="!member.avatar">
+                                                                    <span x-text="initials(member.name)"></span>
+                                                                </template>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                            </div>
                                         </td>
                                         <td class="py-2" data-label="Очки" x-text="team.total_points"></td>
                                     </tr>
@@ -179,6 +198,17 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                             <div class="bg-brand-light rounded-xl px-4 py-2 text-center">
                                 <div class="text-xs text-gray-500 mb-1">Очки</div>
                                 <div class="font-bold text-[#2E325C] text-lg" x-text="teamModalData.total_points"></div>
+                            </div>
+                        </div>
+
+                        <div class="divide-y divide-[#EAEAEA] mb-4">
+                            <div class="py-3 flex justify-between gap-4" x-show="teamModalData.captain && teamModalData.captain !== '—'">
+                                <span class="text-gray-500 text-sm">Капитан</span>
+                                <span class="font-medium text-[#2E325C] text-sm text-right" x-text="teamModalData.captain"></span>
+                            </div>
+                            <div class="py-3 flex justify-between gap-4" x-show="teamModalData.yacht && teamModalData.yacht !== '—'">
+                                <span class="text-gray-500 text-sm">Яхта по умолчанию</span>
+                                <span class="font-medium text-[#2E325C] text-sm text-right" x-text="teamModalData.yacht"></span>
                             </div>
                         </div>
 
