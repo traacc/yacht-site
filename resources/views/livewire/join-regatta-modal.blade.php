@@ -159,6 +159,7 @@
                                    x-on:focus="isOpen = true"
                                    x-on:click="isOpen = true"
                                    x-on:keydown="onKeydown($event)"
+                                   x-on:blur="$wire.commitTeam($event.target.value)"
                                    placeholder="Найдите команду или создайте новую..."
                                    class="w-full border bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none @error('teamId') border-red-300 @else border-gray-200 @enderror">
 
@@ -167,6 +168,7 @@
                             </div>
 
                             <div x-show="isOpen" x-cloak
+                                 x-on:mousedown.prevent
                                  class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">
                                 <template x-for="(team, index) in results" :key="team.id">
                                     <div x-on:click="selectItem(team.id)"
@@ -223,6 +225,16 @@
                         this.query = '';
                         $wire.startNewYacht(name);
                     },
+                    handleBlur() {
+                        const q = this.query.trim();
+                        if (q === '') { this.isOpen = false; return; }
+                        const match = this.yachts.find(y => (y.name ?? '').trim().toLowerCase() === q.toLowerCase());
+                        if (match) {
+                            this.selectYacht(match);
+                        } else {
+                            this.addNewFromQuery();
+                        }
+                    },
                     onKeydown(e) {
                         if (!this.isOpen) return;
                         const items = this.filtered;
@@ -268,10 +280,12 @@
                                    x-on:focus="isOpen = true"
                                    x-on:click="isOpen = true"
                                    x-on:keydown="onKeydown($event)"
+                                   x-on:blur="handleBlur()"
                                    placeholder="Выберите свободную или добавьте свою..."
                                    class="w-full border bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none @error('yachtId') border-red-300 @else border-gray-200 @enderror">
 
                             <div x-show="isOpen" x-cloak
+                                 x-on:mousedown.prevent
                                  class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">
                                 <template x-for="(yacht, index) in filtered" :key="yacht.id">
                                     <div x-on:click="selectYacht(yacht)"
@@ -402,6 +416,7 @@
                             <input type="text"
                                    wire:model.live.debounce.350ms="captainSearchQuery"
                                    x-on:keydown="onKeydown($event)"
+                                   x-on:blur="$wire.commitCaptain($event.target.value)"
                                    placeholder="Поиск по имени..."
                                    class="w-full border bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none @error('captainUserId') border-red-300 @else border-gray-200 @enderror">
 
@@ -410,6 +425,7 @@
                             </div>
 
                             <div x-show="isOpen" x-cloak
+                                 x-on:mousedown.prevent
                                  class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">
                                 <template x-for="(user, index) in results" :key="user.id">
                                     <div x-on:click="selectItem(user.id)"
@@ -521,6 +537,7 @@
                                                 <input type="text"
                                                        wire:model.live.debounce.350ms="guestMembers.{{ $i }}.query"
                                                        x-on:focus="open = true" x-on:click="open = true"
+                                                       x-on:blur="$wire.commitSlot({{ $i }}, $event.target.value)"
                                                        placeholder="Поиск по имени..."
                                                        class="w-full border border-gray-200 bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
 
@@ -529,6 +546,7 @@
                                                 </div>
 
                                                 <div x-show="open" x-cloak
+                                                     x-on:mousedown.prevent
                                                      class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">
                                                     @forelse ($slot['results'] as $user)
                                                         <div wire:click="selectSlotUser({{ $i }}, '{{ $user['id'] }}')"

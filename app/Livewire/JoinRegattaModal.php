@@ -327,6 +327,28 @@ class JoinRegattaModal extends Component
         $this->resetErrorBag(['teamId', 'teamName']);
     }
 
+    /**
+     * Зафиксировать поле команды при потере фокуса:
+     * точное совпадение по названию — выбрать существующую, иначе — создать новую.
+     */
+    public function commitTeam(?string $value = null): void
+    {
+        $query = trim((string) ($value ?? $this->teamSearchQuery));
+        if ($query === '') {
+            return;
+        }
+
+        $this->teamSearchQuery = $query;
+
+        $team = Team::whereRaw('LOWER(name) = ?', [mb_strtolower($query)])->first(['id']);
+
+        if ($team) {
+            $this->selectTeam((string) $team->id);
+        } else {
+            $this->startNewTeam($query);
+        }
+    }
+
     /** Сбросить выбор/создание команды — вернуться к поиску. */
     public function clearTeam(): void
     {
@@ -396,6 +418,35 @@ class JoinRegattaModal extends Component
         $this->captainSearchResults = [];
         $this->guestName = trim($name);
         $this->resetErrorBag(['captainUserId']);
+    }
+
+    /**
+     * Зафиксировать поле капитана при потере фокуса:
+     * точное совпадение по имени/email — выбрать пользователя, иначе — создать нового.
+     */
+    public function commitCaptain(?string $value = null): void
+    {
+        $query = trim((string) ($value ?? $this->captainSearchQuery));
+        if ($query === '') {
+            return;
+        }
+
+        $this->captainSearchQuery = $query;
+
+        $excludeIds = array_values(array_filter(array_column($this->guestMembers, 'user_id')));
+
+        $user = User::where(function ($q) use ($query) {
+                $q->whereRaw('LOWER(name) = ?', [mb_strtolower($query)])
+                  ->orWhereRaw('LOWER(email) = ?', [mb_strtolower($query)]);
+            })
+            ->when($excludeIds !== [], fn ($q) => $q->whereNotIn('id', $excludeIds))
+            ->first(['id']);
+
+        if ($user) {
+            $this->selectCaptain((string) $user->id);
+        } else {
+            $this->startNewCaptain($query);
+        }
     }
 
     /** Сбросить выбор/создание капитана — вернуться к поиску. */
@@ -555,6 +606,39 @@ class JoinRegattaModal extends Component
         $this->guestMembers[$i]['newSportCategory'] = '';
         $this->guestMembers[$i]['query'] = '';
         $this->guestMembers[$i]['results'] = [];
+    }
+
+    /**
+     * Зафиксировать слот экипажа при потере фокуса:
+     * точное совпадение по имени/email — выбрать пользователя, иначе — создать нового.
+     */
+    public function commitSlot(int $i, ?string $value = null): void
+    {
+        if (! isset($this->guestMembers[$i])) {
+            return;
+        }
+
+        $query = trim((string) ($value ?? $this->guestMembers[$i]['query'] ?? ''));
+        if ($query === '') {
+            return;
+        }
+
+        $this->guestMembers[$i]['query'] = $query;
+
+        $excludeIds = $this->excludedMemberUserIds($i);
+
+        $user = User::where(function ($q) use ($query) {
+                $q->whereRaw('LOWER(name) = ?', [mb_strtolower($query)])
+                  ->orWhereRaw('LOWER(email) = ?', [mb_strtolower($query)]);
+            })
+            ->when($excludeIds !== [], fn ($q) => $q->whereNotIn('id', $excludeIds))
+            ->first(['id']);
+
+        if ($user) {
+            $this->selectSlotUser($i, (string) $user->id);
+        } else {
+            $this->startSlotNew($i);
+        }
     }
 
     /** Подтвердить нового незарегистрированного участника в слоте. */
