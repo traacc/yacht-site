@@ -140,7 +140,7 @@
   border-radius: 0px;
 
   background-color: #F8F8F8;
-  @apply px-8;
+  @apply px-3.5 pt-3.5;
 }
 
 .fi-fo-field {
