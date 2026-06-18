@@ -502,6 +502,18 @@ Route::get('/ratings', function () {
             ];
         })->values()->toArray();
 
+    $calculator = app(\App\Services\RatingCalculator::class);
+    $breakdownCache = [];
+    $breakdownFor = function ($season, $userId) use (&$breakdownCache, $calculator) {
+        if (! $season) {
+            return [];
+        }
+
+        $breakdownCache[$season->id] ??= $calculator->personalRegattaBreakdown($season);
+
+        return $breakdownCache[$season->id][$userId] ?? [];
+    };
+
     $place = 1;
     $personalRatings = \App\Models\PersonalRating::with(['user', 'season'])
         ->ranked()
@@ -512,6 +524,7 @@ Route::get('/ratings', function () {
             'birthday'     => $r->user?->birth_date?->format('d.m.Y') ?? '—',
             'category'     => $r->user?->sport_category?->getLabel() ?? '—',
             'avatar'       => $r->user?->photo_url ? asset('storage/'.$r->user->photo_url) : null,
+            'regattas'     => $breakdownFor($r->season, $r->user_id),
         ])
         ->groupBy('total_points')
         ->map(function ($group) use (&$place) {

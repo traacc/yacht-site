@@ -41,6 +41,50 @@ class RatingCalculator
         $this->recalculateForSeason($regatta->season);
     }
 
+    /**
+     * Разбивка очков личного рейтинга по регатам для каждого участника сезона:
+     *   [user_id => [ ['name' => ..., 'date' => ..., 'points' => float], ... ]].
+     * Очки регаты начисляются каждому участнику экипажа — так же, как
+     * в recalculatePersonalRatings(). Используется для всплывающего окна.
+     */
+    public function personalRegattaBreakdown(Season $season): array
+    {
+        $scoredItems = $this->scoredResultItems($season);
+        $crewByRegattaTeam = $this->crewByRegattaTeam($season);
+
+        // [user_id][regatta_id] => ['name' => ..., 'date' => ..., 'points' => ...]
+        $breakdown = [];
+        foreach ($scoredItems as $item) {
+            $userIds = $crewByRegattaTeam[$item->regatta_id][$item->team_id] ?? [];
+
+            foreach ($userIds as $userId) {
+                if (! isset($breakdown[$userId][$item->regatta_id])) {
+                    $breakdown[$userId][$item->regatta_id] = [
+                        'name'   => $item->regatta_name,
+                        'date'   => $item->regatta_date,
+                        'points' => 0.0,
+                    ];
+                }
+
+                $breakdown[$userId][$item->regatta_id]['points'] += $item->score;
+            }
+        }
+
+        // Сбрасываем ключи регат и сортируем регаты по дате (новые сверху).
+        return array_map(
+            fn ($regattas) => collect($regattas)
+                ->sortByDesc('date')
+                ->map(fn ($r) => [
+                    'name'   => $r['name'],
+                    'date'   => $r['date'] ? \Illuminate\Support\Carbon::parse($r['date'])->format('d.m.Y') : null,
+                    'points' => round($r['points'], 3),
+                ])
+                ->values()
+                ->all(),
+            $breakdown
+        );
+    }
+
     // ──────────────────────────────────────────────
     // Private
     // ──────────────────────────────────────────────
@@ -61,6 +105,8 @@ class RatingCalculator
                 'regatta_result_items.regatta_result_id',
                 'regatta_result_items.final_position',
                 'regattas.id as regatta_id',
+                'regattas.name as regatta_name',
+                'regattas.date_start as regatta_date',
                 'regattas.level_coefficient',
             ]);
 
