@@ -218,32 +218,28 @@ class GalleryResource extends Resource
                     ->circular()
                     ->toggleable(),
 
-                TextColumn::make('name')
-                    ->label('Название')
-                    ->searchable()
-                    ->sortable(),
-
-                TextColumn::make('season.year')
-                    ->label('Сезон')
-                    ->sortable(),
-
                 TextColumn::make('regatta.name')
                     ->label('Регата')
                     ->searchable()
                     ->toggleable(),
 
-                TextColumn::make('date')
-                    ->label('Дата')
-                    ->date('d.m.Y')
+                TextColumn::make('season.year')
+                    ->label('Сезон')
                     ->sortable(),
+
+                TextColumn::make('name')
+                    ->label('Название')
+                    ->searchable()
+                    ->sortable(),
+
 
                 // ★ ДОБАВЛЕНО: количество фото и видео
                 TextColumn::make('media_count')
-                    ->label('Фото/Видео/Ссылки')
+                    ->label('Фото/Ссылки')
                     ->state(fn (Gallery $record): string => sprintf(
                         '%d фото / %d видео / %d ссылок',
                         $record->getMedia('images')->count(),
-                        $record->getMedia('videos')->count(),
+                        //$record->getMedia('videos')->count(),
                         $record->videoLinks()->count(),
                     ))
                     ->toggleable(),
