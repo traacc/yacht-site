@@ -147,7 +147,7 @@ class GalleryResource extends Resource
                     ])
                     ->disk('public')
                     ->visibility('public')
-                    ->maxFiles(200)
+                    ->maxFiles(500)
                     ->columnSpanFull(),
 
                 // ★ ДОБАВЛЕНО: новое поле для загрузки видео.
