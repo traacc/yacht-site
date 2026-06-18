@@ -15,6 +15,8 @@ use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -54,7 +56,7 @@ class NewsResource extends Resource
                     ->label('Заголовок')
                     ->placeholder('Введите заголовок новости')
                     ->required(),
-                Textarea::make('content')
+                RichEditor::make('content')
                     ->label('Содержание')
                     ->placeholder('Введите текст новости')
                     ->required()
@@ -66,6 +68,23 @@ class NewsResource extends Resource
                     ->disk('public')
                     ->directory('news/covers')
                     ->visibility('public'),
+                Select::make('cover_object_position')
+                    ->label('Положение обложки в карточке')
+                    ->helperText('Какая часть изображения остаётся видимой при обрезке в карточке')
+                    ->options([
+                        'center'       => 'По центру',
+                        'top'          => 'Сверху',
+                        'bottom'       => 'Снизу',
+                        'left'         => 'Слева',
+                        'right'        => 'Справа',
+                        'top left'     => 'Сверху слева',
+                        'top right'    => 'Сверху справа',
+                        'bottom left'  => 'Снизу слева',
+                        'bottom right' => 'Снизу справа',
+                    ])
+                    ->default('center')
+                    ->selectablePlaceholder(false)
+                    ->native(false),
                 DateTimePicker::make('published_at')
                     ->label('Дата публикации')
                     ->default(now())

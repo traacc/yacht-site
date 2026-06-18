@@ -22,6 +22,7 @@ class News extends Model implements HasMedia
         'content',
         'external_url',
         'cover_image_url',
+        'cover_object_position',
         'published_to_tg',
         'published_at',
     ];
