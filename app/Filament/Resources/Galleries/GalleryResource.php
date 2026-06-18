@@ -289,8 +289,7 @@ class GalleryResource extends Resource
             ->recordAction(EditAction::class)
             ->recordActions([
                 EditAction::make()
-                    ->modalHeading('Редактировать галерею')
-                    ->hidden(),
+                    ->modalHeading('Редактировать галерею'),
                 DeleteAction::make(),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
