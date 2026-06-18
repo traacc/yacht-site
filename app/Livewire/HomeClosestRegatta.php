@@ -25,7 +25,7 @@ class HomeClosestRegatta extends Component
             )
             : null;
 
-        $temp = '—';
+        $temp = null;
         $windSpeed = null;
         $windDirection = null;
         if ($currentWeather && isset($currentWeather['hourly'])) {
@@ -43,7 +43,7 @@ class HomeClosestRegatta extends Component
                 ->setTime(12, 0)
                 ->format('Y-m-d\TH:i');
 
-            $temp = $hourly[$datetime] ?? '—';
+            $temp = $hourly[$datetime] ?? null;
             $windSpeed = $windSpeeds[$datetime] ?? null;
             $windDirection = $windDirections[$datetime] ?? null;
         }
@@ -68,6 +68,7 @@ class HomeClosestRegatta extends Component
 
         return view('livewire.home-closest-regatta', [
             'regatta'        => $regatta,
+            'hasWeather'     => $temp !== null,
             'currentWeather' => $temp . '  ℃',
             'wind'           => $wind,
             'mapUrl'         => $mapUrl,

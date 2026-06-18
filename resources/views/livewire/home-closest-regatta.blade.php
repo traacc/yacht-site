@@ -65,25 +65,35 @@
                             @endif
                         </div>
                         @if($lat && $lon)
-                        <div class="">
-                            <div class="lg:text-sm text-xs">Погода сейчас</div>
-                            <div class="pointer-events-auto flex items-center gap-2 cursor-pointer"
-                                @click="windyModalOpen = true"
-                                title="Смотреть прогноз погоды на Windy">
-                                {!!  file_get_contents(public_path('images/icons/weather.svg')) !!}
-                                {{ $currentWeather }}
-                                @if($wind)
-                                    <span class="opacity-80">· {{ $wind }}</span>
-                                @endif
+                            @if($hasWeather)
+                            <div class="">
+                                <div class="lg:text-sm text-xs">Погода сейчас</div>
+                                <div class="pointer-events-auto flex items-center gap-2 cursor-pointer"
+                                    @click="windyModalOpen = true"
+                                    title="Смотреть прогноз погоды на Windy">
+                                    {!!  file_get_contents(public_path('images/icons/weather.svg')) !!}
+                                    {{ $currentWeather }}
+                                    @if($wind)
+                                        <span class="opacity-80">· {{ $wind }}</span>
+                                    @endif
+                                </div>
                             </div>
-                        </div>
+                            @else
+                            <button type="button"
+                                @click="windyModalOpen = true"
+                                title="Смотреть прогноз погоды на Windy"
+                                class="pointer-events-auto inline-flex items-center gap-2 cursor-pointer underline underline-offset-2 transition-colors">
+                                {!!  file_get_contents(public_path('images/icons/weather.svg')) !!}
+                                Погода
+                            </button>
+                            @endif
                         @else
                         <div class="">
                             <div class="lg:text-sm text-xs">Погода сейчас</div>
                             <div class="flex items-center gap-2">
                                 {!!  file_get_contents(public_path('images/icons/weather.svg')) !!}
-                                {{ $currentWeather }}
-                                @if($wind)
+                                {{ $hasWeather ? $currentWeather : '—' }}
+                                @if($hasWeather && $wind)
                                     <span class="opacity-80">· {{ $wind }}</span>
                                 @endif
                             </div>
