@@ -37,6 +37,7 @@ class Gallery extends Model implements HasMedia
         'date',
         // ↓↓↓ УДАЛЕНО: 'cover_path' — заменено коллекцией 'cover' (см. registerMediaCollections)
         // ↓↓↓ УДАЛЕНО: 'images'     — заменено коллекцией 'images' (см. registerMediaCollections)
+        'is_published',
         'sort_order',
     ];
 

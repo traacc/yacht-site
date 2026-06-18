@@ -31,6 +31,7 @@ use Filament\Tables\Columns\IconColumn;
 // ↓↓↓ УДАЛЕНО: ImageColumn — заменён на SpatieMediaLibraryImageColumn
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -195,7 +196,11 @@ class GalleryResource extends Resource
                     ->numeric()
                     ->default(0),
                 */
-                // ★ УДАЛЕНО: is_published всегда true при создании (устанавливается в модели Gallery)
+
+                Toggle::make('is_published')
+                    ->label('Опубликовано')
+                    ->default(true)
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -232,6 +237,12 @@ class GalleryResource extends Resource
                     ->searchable()
                     ->sortable(),
 
+                IconColumn::make('is_published')
+                    ->label('Опубликовано')
+                    ->boolean()
+                    ->sortable()
+                    ->toggleable(),
+
 
                 // ★ ДОБАВЛЕНО: количество фото и видео
                 TextColumn::make('media_count')
@@ -264,6 +275,9 @@ class GalleryResource extends Resource
                 SelectFilter::make('regatta_id')
                     ->label('Регата')
                     ->relationship('regatta', 'name'),
+
+                TernaryFilter::make('is_published')
+                    ->label('Опубликовано'),
 
                 TrashedFilter::make(),
             ])
