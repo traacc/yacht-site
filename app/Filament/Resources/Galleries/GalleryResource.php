@@ -194,6 +194,29 @@ class GalleryResource extends Resource
                             $isSaving = false;
                         }
                     })
+                    // ★ ИСПРАВЛЕНИЕ ошибки UnableToRetrieveMetadata при нажатии «Сохранить».
+                    //   Автосохранение выше (saveUploadedFiles) переносит фото в медиатеку и
+                    //   УДАЛЯЕТ временный файл livewire-tmp. Но FilePond в браузере всё ещё
+                    //   ссылается на этот путь, поэтому при следующем сохранении Livewire
+                    //   восстанавливает TemporaryUploadedFile на уже удалённый файл, а правило
+                    //   валидации max читает его размер (getSize) → исключение.
+                    //   Здесь убираем из состояния для ВАЛИДАЦИИ временные файлы, которых уже
+                    //   нет на диске (они и так сохранены в медиатеке). На сохранение не влияет.
+                    ->mutateStateForValidationUsing(static function (?array $state): array {
+                        return collect(Arr::wrap($state))
+                            ->filter(function ($file): bool {
+                                if (! $file instanceof TemporaryUploadedFile) {
+                                    return true; // строки uuid уже сохранённых медиа — оставляем
+                                }
+
+                                try {
+                                    return $file->exists();
+                                } catch (\Throwable) {
+                                    return false;
+                                }
+                            })
+                            ->all();
+                    })
                     ->columnSpanFull(),
 
                 // ★ ДОБАВЛЕНО: новое поле для загрузки видео.
