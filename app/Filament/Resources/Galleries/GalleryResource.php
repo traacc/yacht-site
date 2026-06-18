@@ -281,8 +281,12 @@ class GalleryResource extends Resource
 
                 TrashedFilter::make(),
             ])
+            // Открываем редактирование по клику на строку, но саму кнопку прячем
+            ->recordAction(EditAction::class)
             ->recordActions([
-                //EditAction::make()->modalHeading('Редактировать галерею'),
+                EditAction::make()
+                    ->modalHeading('Редактировать галерею')
+                    ->hidden(),
                 DeleteAction::make(),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
