@@ -38,6 +38,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Arr;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Spatie\MediaLibrary\HasMedia;
 
 class GalleryResource extends Resource
 {
@@ -158,20 +159,39 @@ class GalleryResource extends Resource
                     //   сразу заводится черновик — см. ManageGalleries::getHeaderActions()).
                     ->live()
                     ->afterStateUpdated(function (SpatieMediaLibraryFileUpload $component): void {
-                        // Нечего прикреплять, если записи ещё нет (например, форма без черновика).
-                        if (! $component->getRecord()) {
+                        // ★ ЖЁСТКАЯ защита от бесконечной рекурсии (иначе — переполнение стека
+                        //   и segfault PHP без записи в лог). saveUploadedFiles() в конце сам
+                        //   вызывает callAfterStateUpdated() → этот же колбэк. Если Spatie по
+                        //   какой-то причине не заменит временный файл на uuid (например, record
+                        //   ещё не привязан), проверка «есть ли временные файлы» не остановит
+                        //   повтор — поэтому используем реентрант-флаг на время запроса.
+                        static $isSaving = false;
+
+                        if ($isSaving) {
                             return;
                         }
 
-                        // Сохраняем, только если в состоянии есть только что загруженные
-                        // временные файлы. Это же условие защищает от бесконечной рекурсии:
-                        // saveUploadedFiles() в конце снова вызывает afterStateUpdated, но к
-                        // тому моменту временных файлов в состоянии уже нет (только uuid).
+                        // Нужна реальная запись с медиатекой, иначе сохранять некуда.
+                        $record = $component->getRecord();
+
+                        if (! $record instanceof HasMedia) {
+                            return;
+                        }
+
+                        // Сохраняем только если есть только что загруженные временные файлы.
                         $hasNewUploads = collect(Arr::wrap($component->getRawState()))
                             ->contains(fn ($file): bool => $file instanceof TemporaryUploadedFile);
 
-                        if ($hasNewUploads) {
+                        if (! $hasNewUploads) {
+                            return;
+                        }
+
+                        $isSaving = true;
+
+                        try {
                             $component->saveUploadedFiles();
+                        } finally {
+                            $isSaving = false;
                         }
                     })
                     ->columnSpanFull(),
