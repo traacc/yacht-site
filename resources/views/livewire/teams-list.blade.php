@@ -51,7 +51,7 @@
                     <div class="text-brand-navy font-semibold leading-tight flex flex-col justify-between md:items-start md:h-[58px]">
                         <div class="font-semibold text-lg">{{ $team->name }}</div>
                         <div class="text-base">
-                            <span class="font-semibold">Капитан:</span>
+                            <span class="font-semibold">Рулевой:</span>
                             <span class="font-medium">{{ $team->organizer?->name ?? '—' }}</span>
                         </div>
                     </div>

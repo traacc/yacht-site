@@ -177,7 +177,7 @@
                         <span class="team-name">{{ $entry->team?->name ?? '—' }}</span><br>
                         <span class="muted">{{ $entry->yacht?->name ?? '—' }}</span>
                     </td>
-                    <td class="member-name">Капитан: <strong>{{ $captainUser?->name ?? '—' }}</strong></td>
+                    <td class="member-name">Рулевой: <strong>{{ $captainUser?->name ?? '—' }}</strong></td>
                     <td>{{ $captainUser?->birth_date?->format('d.m.Y') ?? '—' }}</td>
                     <td class="center">{{ $captainUser?->sport_category?->getLabel() ?? '—' }}</td>
                 </tr>
