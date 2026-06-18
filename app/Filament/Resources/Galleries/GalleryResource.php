@@ -237,7 +237,7 @@ class GalleryResource extends Resource
                 TextColumn::make('media_count')
                     ->label('Фото/Ссылки')
                     ->state(fn (Gallery $record): string => sprintf(
-                        '%d фото / %d видео / %d ссылок',
+                        '%d фото / %d ссылок',
                         $record->getMedia('images')->count(),
                         //$record->getMedia('videos')->count(),
                         $record->videoLinks()->count(),
