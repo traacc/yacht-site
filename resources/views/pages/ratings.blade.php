@@ -9,6 +9,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
 
 <main class="main"
     x-data="{
+        activeTab: 'team',
         teamModal: false,
         teamModalData: null,
         participantModal: false,
@@ -29,9 +30,37 @@ bgImage="{{ asset('images/bg/results.webp') }}"
     @keydown.escape.window="teamModal = false; participantModal = false"
 >
         <div class="container">
+            {{-- ─── Вкладки ─── --}}
+            <nav class="flex border-b border-[#EAEAEA] mb-8 mt-8" role="tablist">
+                <button
+                    type="button"
+                    @click="activeTab = 'team'"
+                    :class="activeTab === 'team'
+                        ? 'border-[#2D92CE] text-[#2D92CE]'
+                        : 'border-transparent text-[#2E325C] hover:text-[#2D92CE] hover:border-[#C6C6C6]'"
+                    class="px-6 py-3 text-lg font-semibold border-b-2 transition-colors duration-200 cursor-pointer"
+                    role="tab"
+                    :aria-selected="activeTab === 'team'"
+                >
+                    Командный рейтинг
+                </button>
+                <button
+                    type="button"
+                    @click="activeTab = 'personal'"
+                    :class="activeTab === 'personal'
+                        ? 'border-[#2D92CE] text-[#2D92CE]'
+                        : 'border-transparent text-[#2E325C] hover:text-[#2D92CE] hover:border-[#C6C6C6]'"
+                    class="px-6 py-3 text-lg font-semibold border-b-2 transition-colors duration-200 cursor-pointer"
+                    role="tab"
+                    :aria-selected="activeTab === 'personal'"
+                >
+                    Личный рейтинг
+                </button>
+            </nav>
+
             <div class="grid grid-cols-1 gap-4">
 
-                <div class="bg-brand-light rounded-xl md:p-4 md:pr-0">
+                <div x-show="activeTab === 'team'" role="tabpanel" class="bg-brand-light rounded-xl md:p-4 md:pr-0">
                     <h3 class="font-display  text-[#2E325C] text-3xl mb-4 a-font">Командный рейтинг</h3>
                     <div class="overflow-auto md:pb-6 md:pt-0 bg-white">
                         <table class="w-full text-sm md:text-base responsive-table">
@@ -92,7 +121,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                     </div>
 
                 </div>
-                <div class="bg-brand-light rounded-xl md:p-4">
+                <div x-show="activeTab === 'personal'" role="tabpanel" class="bg-brand-light rounded-xl md:p-4">
                     <h3 class="font-display  text-[#2E325C]  text-3xl mb-4 a-font">Личный рейтинг</h3>
                     <div class="overflow-x-auto md:pb-6 md:pt-0 bg-white">
                         <table class="w-full text-sm md:text-base responsive-table">
