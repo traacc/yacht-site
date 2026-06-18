@@ -465,7 +465,13 @@
                     <div class="space-y-2">
                         @foreach ($guestMembers as $i => $slot)
                             <div wire:key="member-slot-{{ $i }}"
-                                 x-data="{ open: false }" x-on:click.away="open = false">
+                                 x-data="{
+                                     open: false,
+                                     query: @entangle('guestMembers.' . $i . '.query'),
+                                     results: @entangle('guestMembers.' . $i . '.results'),
+                                     selectUser(userId) { this.open = false; $wire.selectSlotUser({{ $i }}, userId); },
+                                     addNew() { this.open = false; $wire.startSlotNew({{ $i }}); },
+                                 }" x-on:click.away="open = false">
                                 <div class="flex items-start gap-2">
                                     <span class="text-xs text-gray-400 w-5 pt-2.5 shrink-0 text-right">{{ $i + 1 }}.</span>
                                     <div class="flex-1 min-w-0">
@@ -554,25 +560,20 @@
                                                 <div x-show="open" x-cloak
                                                      x-on:mousedown.prevent
                                                      class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">
-                                                    @forelse ($slot['results'] as $user)
-                                                        <div wire:click="selectSlotUser({{ $i }}, '{{ $user['id'] }}')"
-                                                             x-on:click="open = false"
+                                                    <template x-for="user in results" :key="user.id">
+                                                        <div x-on:click="selectUser(user.id)"
                                                              class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm border-b border-gray-100 last:border-b-0">
-                                                            <span class="font-medium">{{ $user['name'] }}</span>
-                                                            <span class="text-gray-400 text-xs ml-2">{{ $user['email'] }}</span>
+                                                            <span class="font-medium" x-text="user.name"></span>
+                                                            <span class="text-gray-400 text-xs ml-2" x-text="user.email"></span>
                                                         </div>
-                                                    @empty
-                                                        @if (trim($slot['query'] ?? '') !== '')
-                                                            <div class="px-3 py-2 text-sm text-gray-400">Ничего не найдено</div>
-                                                        @endif
-                                                    @endforelse
-                                                    @if (trim($slot['query'] ?? '') !== '')
-                                                        <div wire:click="startSlotNew({{ $i }})"
-                                                             x-on:click="open = false"
-                                                             class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm text-[#2D92CE] font-medium border-t border-gray-100">
-                                                            + Добавить «{{ trim($slot['query']) }}» как нового участника
-                                                        </div>
-                                                    @endif
+                                                    </template>
+                                                    <div x-show="results.length === 0 && query.trim().length > 0"
+                                                         class="px-3 py-2 text-sm text-gray-400">Ничего не найдено</div>
+                                                    <div x-show="query.trim().length > 0"
+                                                         x-on:click="addNew()"
+                                                         class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm text-[#2D92CE] font-medium border-t border-gray-100">
+                                                        + Добавить «<span x-text="query.trim()"></span>» как нового участника
+                                                    </div>
                                                 </div>
                                             </div>
                                         @endif
