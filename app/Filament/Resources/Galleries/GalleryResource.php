@@ -217,6 +217,35 @@ class GalleryResource extends Resource
                             })
                             ->all();
                     })
+                    // ★ ИСПРАВЛЕНИЕ: при нажатии «Сохранить» фотографии пропадали.
+                    //   Стандартный saveRelationships у Spatie сначала вызывает
+                    //   deleteAbandonedFiles(): он удаляет все медиа, чьих uuid нет в текущем
+                    //   состоянии. Но из-за live-автозагрузки FilePond в браузере держит уже
+                    //   удалённые временные пути, а не uuid сохранённых медиа — поэтому
+                    //   совпадений нет и удаляются ВСЕ фото. Здесь deleteAbandonedFiles НЕ
+                    //   вызываем: добавление идёт вживую (afterStateUpdated), удаление —
+                    //   вживую (deleteUploadedFileUsing ниже). saveUploadedFiles оставляем как
+                    //   подстраховку для «опоздавших» временных файлов.
+                    ->saveRelationshipsUsing(static function (SpatieMediaLibraryFileUpload $component): void {
+                        $component->saveUploadedFiles();
+                    })
+                    // ★ Удаление фото по крестику теперь происходит сразу (вживую), а не через
+                    //   deleteAbandonedFiles на сохранении. $file — это uuid сохранённого медиа.
+                    ->deleteUploadedFileUsing(static function (SpatieMediaLibraryFileUpload $component, $file): void {
+                        if (! is_string($file)) {
+                            return; // временный файл уже удалён в removeUploadedFile()
+                        }
+
+                        $record = $component->getRecord();
+
+                        if (! $record instanceof HasMedia) {
+                            return;
+                        }
+
+                        $record->getMedia($component->getCollection() ?? 'default')
+                            ->firstWhere('uuid', $file)
+                            ?->delete();
+                    })
                     ->columnSpanFull(),
 
                 // ★ ДОБАВЛЕНО: новое поле для загрузки видео.
