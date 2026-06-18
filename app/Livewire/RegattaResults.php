@@ -175,6 +175,7 @@ class RegattaResults extends Component
 
         $entries = RegattaEntry::where('regatta_id', $regatta->id)
             ->whereIn('team_id', $teamIds)
+            ->where('status', 'approved')
             ->with(['crew.teamMember.user'])
             ->get();
 

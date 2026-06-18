@@ -60,7 +60,7 @@ final class SubmitRegattaEntryAction
             'regatta_id'     => $regatta->id,
             'team_id'        => $team->id,
             'yacht_id'       => $yacht->id,
-            'status'         => 'pending',
+            'status'         => 'approved',
             'submitted_at'   => now(),
             // Хешируется кастом 'hashed' в модели
             'entry_password' => $entryPassword ?: null,
