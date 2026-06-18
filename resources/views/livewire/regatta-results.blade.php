@@ -87,11 +87,11 @@
                             <thead>
                                 <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]  hidden md:table-row">
                                     <th class="pb-2 text-center font-medium w-16 a-font">Место</th>
-                                    <th class="pb-2 text-center font-medium a-font">Команда</th>
-                                    <th class="pb-2 text-center font-medium a-font">Капитан</th>
                                     <th class="pb-2 text-center font-medium a-font">Яхта</th>
                                     <th class="pb-2 text-center font-medium a-font">Парус №</th>
-                                    <th class="pb-2 text-center font-medium a-font">Участники</th>
+                                    <th class="pb-2 text-center font-medium a-font">Команда</th>
+                                    <th class="pb-2 text-center font-medium a-font">Рулевой</th>
+                                    <th class="pb-2 text-center font-medium a-font">Экипаж</th>
                                     <th class="pb-2 text-center font-medium a-font">Очки</th>
                                 </tr>
                             </thead>
@@ -110,15 +110,15 @@
                                                 <span class="text-brand-gray">{{ $result->final_position }}</span>
                                             </div>
                                         </td>
+                                        <td data-label="Яхта" class="py-3 hidden md:table-cell">{{ $result->yacht?->name ?? '—' }}</td>
+                                        <td data-label="Парус №" class="py-3 hidden md:table-cell">{{ $result->yacht?->vfps_number ?? '—' }}</td>
                                         @php $crew = $crewMaps[$regatta->id][$result->team_id] ?? []; @endphp
                                         <td data-label="Команда" class="py-3">
                                             <button class="text-[#2D92CE] font-medium underline hover:no-underline cursor-pointer" wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})">{{ $result->team?->name ?? '—' }}</button>
                                             <span class="md:hidden"><br>({{ $result->yacht?->name ?? '—' }})</span>
                                         </td>
-                                        <td data-label="Капитан" class="py-3 hidden md:table-cell">{{ $captainMaps[$regatta->id][$result->team_id] ?? '—' }}</td>
-                                        <td data-label="Яхта" class="py-3 hidden md:table-cell">{{ $result->yacht?->name ?? '—' }}</td>
-                                        <td data-label="Парус №" class="py-3 hidden md:table-cell">{{ $result->yacht?->vfps_number ?? '—' }}</td>
-                                        <td data-label="Участники" class="py-3 hidden md:table-cell">
+                                        <td data-label="Рулевой" class="py-3 hidden md:table-cell">{{ $captainMaps[$regatta->id][$result->team_id] ?? '—' }}</td>
+                                        <td data-label="Экипаж" class="py-3 hidden md:table-cell">
                                             @if(!empty($crew))
                                                 <button
                                                     wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})"
@@ -181,11 +181,11 @@
                             <thead>
                                 <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] hidden md:table-row">
                                     <th class="pb-2 text-center font-medium w-16 a-font">Место</th>
-                                    <th class="pb-2 text-center font-medium a-font">Команда</th>
-                                    <th class="pb-2 text-center font-medium a-font">Капитан</th>
                                     <th class="pb-2 text-center font-medium a-font">Яхта</th>
                                     <th class="pb-2 text-center font-medium a-font">Парус №</th>
-                                    <th class="pb-2 text-center font-medium a-font">Участники</th>
+                                    <th class="pb-2 text-center font-medium a-font">Команда</th>
+                                    <th class="pb-2 text-center font-medium a-font">Рулевой</th>
+                                    <th class="pb-2 text-center font-medium a-font">Экипаж</th>
                                     <th class="pb-2 text-center font-medium a-font">Очки</th>
                                 </tr>
                             </thead>
@@ -204,14 +204,14 @@
                                                 <span class="text-brand-gray">{{ $result->final_position }}</span>
                                             </div>
                                         </td>
+                                        <td class="py-3  hidden md:table-cell">{{ $result->yacht?->name ?? '—' }}</td>
+                                        <td class="py-3  hidden md:table-cell">{{ $result->yacht?->vfps_number ?? '—' }}</td>
                                         @php $crew = $crewMap[$result->team_id] ?? []; @endphp
                                         <td class="py-3">
                                             <button class="text-[#2D92CE] font-medium underline hover:no-underline cursor-pointer" wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})">{{ $result->team?->name ?? '—' }}</button>
                                             <span class="md:hidden"><br>({{ $result->yacht?->name ?? '—' }})</span>
                                         </td>
                                         <td class="py-3  hidden md:table-cell">{{ $captainMap[$result->team_id] ?? '—' }}</td>
-                                        <td class="py-3  hidden md:table-cell">{{ $result->yacht?->name ?? '—' }}</td>
-                                        <td class="py-3  hidden md:table-cell">{{ $result->yacht?->vfps_number ?? '—' }}</td>
                                         <td class="py-3 hidden md:table-cell">
                                             
                                             @if(!empty($crew))
