@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
@@ -19,7 +20,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
  */
 class Gallery extends Model implements HasMedia
 {
-    use HasFactory, HasUuids, SoftDeletes, InteractsWithMedia;
+    use HasFactory, HasUuids, SoftDeletes, InteractsWithMedia, Prunable;
 
     // ──────────────────────────────────────────────
     // Table & Fillable
@@ -232,5 +233,23 @@ class Gallery extends Model implements HasMedia
     {
         // Удаляем записи, которые были "мягко удалены" более 7 дней назад
         return static::onlyTrashed()->where('deleted_at', '<=', now()->subDays(7));
+    }
+
+    /**
+     * Брошенные черновики галерей.
+     *
+     * При нажатии «Новая галерея» сразу создаётся черновик (name = '',
+     * is_published = false), чтобы загруженные фото сохранялись мгновенно.
+     * Если админ закрыл модалку, не указав название, черновик остаётся
+     * «висеть». Такие записи старше суток удаляются плановым `model:prune`
+     * (см. routes/console.php). Spatie сам удалит связанные медиафайлы при
+     * forceDelete (модель soft-deletable → Prunable вызывает forceDelete).
+     */
+    public function prunable(): Builder
+    {
+        return static::query()
+            ->where('name', '')
+            ->where('is_published', false)
+            ->where('created_at', '<=', now()->subDay());
     }
 }

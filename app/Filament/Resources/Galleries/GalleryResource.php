@@ -36,6 +36,8 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Arr;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class GalleryResource extends Resource
 {
@@ -149,6 +151,29 @@ class GalleryResource extends Resource
                     ->disk('public')
                     ->visibility('public')
                     ->maxFiles(500)
+                    // ★ ДОБАВЛЕНО: автосохранение каждого загруженного фото без кнопки «Сохранить».
+                    //   ->live() заставляет компонент слать обновление на сервер сразу после
+                    //   загрузки файла, а afterStateUpdated немедленно переносит временные файлы
+                    //   в медиаколлекцию записи (запись уже существует: при создании галереи
+                    //   сразу заводится черновик — см. ManageGalleries::getHeaderActions()).
+                    ->live()
+                    ->afterStateUpdated(function (SpatieMediaLibraryFileUpload $component): void {
+                        // Нечего прикреплять, если записи ещё нет (например, форма без черновика).
+                        if (! $component->getRecord()) {
+                            return;
+                        }
+
+                        // Сохраняем, только если в состоянии есть только что загруженные
+                        // временные файлы. Это же условие защищает от бесконечной рекурсии:
+                        // saveUploadedFiles() в конце снова вызывает afterStateUpdated, но к
+                        // тому моменту временных файлов в состоянии уже нет (только uuid).
+                        $hasNewUploads = collect(Arr::wrap($component->getRawState()))
+                            ->contains(fn ($file): bool => $file instanceof TemporaryUploadedFile);
+
+                        if ($hasNewUploads) {
+                            $component->saveUploadedFiles();
+                        }
+                    })
                     ->columnSpanFull(),
 
                 // ★ ДОБАВЛЕНО: новое поле для загрузки видео.

@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\Galleries\Pages;
 
 use App\Filament\Resources\Galleries\GalleryResource;
-use Filament\Actions\CreateAction;
+use App\Models\Gallery;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\ManageRecords;
+use Filament\Support\Icons\Heroicon;
 
 class ManageGalleries extends ManageRecords
 {
@@ -13,7 +15,26 @@ class ManageGalleries extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->createAnother(false)->modalHeading('Новая галерея'),
+            // ★ ИЗМЕНЕНО: вместо обычного CreateAction (который сохраняет всё по кнопке)
+            //   сразу создаём черновик галереи и открываем модалку редактирования.
+            //   Так запись уже существует в БД, и загруженные фотографии сохраняются
+            //   мгновенно (см. ->live()/afterStateUpdated в GalleryResource::form()).
+            //   Брошенные безымянные черновики удаляются автоматически — см.
+            //   Gallery::prunable() + плановый `model:prune` (routes/console.php).
+            Action::make('create')
+                ->label('Новая галерея')
+                ->icon(Heroicon::Plus)
+                ->action(function (): void {
+                    $gallery = Gallery::create([
+                        'name'         => '',     // пустое имя = черновик; обязательно к заполнению в форме
+                        'is_published' => false,  // черновик скрыт на публичной части до сохранения
+                    ]);
+
+                    $this->mountAction('edit', [], [
+                        'table'     => true,
+                        'recordKey' => $gallery->getKey(),
+                    ]);
+                }),
         ];
     }
 }
