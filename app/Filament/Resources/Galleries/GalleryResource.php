@@ -213,6 +213,10 @@ class GalleryResource extends Resource
     {
         return $table
             ->defaultSort('sort_order')
+            // Подсвечиваем красным неопубликованные галереи
+            ->recordClasses(fn (Gallery $record): ?string => $record->is_published
+                ? null
+                : 'gallery-unpublished-row')
             ->columns([
 
                 // ★ ДОБАВЛЕНО: превью обложки в таблице

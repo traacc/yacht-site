@@ -282,6 +282,17 @@
 .fi-scrollable-table-repeater .fi-fo-table-repeater-add {
   justify-content: start;
 }
+
+/* Подсветка неопубликованных галерей красным */
+.gallery-unpublished-row {
+  background-color: #FEE2E2 !important;
+}
+.gallery-unpublished-row:hover {
+  background-color: #FECACA !important;
+}
+.gallery-unpublished-row .fi-ta-cell {
+  background-color: transparent !important;
+}
 /*
 .regatta-result-list .fi-fo-repeater-add {
   display: none;
