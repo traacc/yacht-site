@@ -103,7 +103,10 @@
                          class="absolute w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105">
                     <div class="bg-[#2E325C] opacity-30 absolute z-15 w-full h-full transition-transform duration-500 group-hover:scale-105"></div>
                     <div class="info relative z-20 p-6 pt-56 text-white">
-                        <h4 class="title a-font text-2xl mb-3">{{ $gallery->name }}</h4>
+                        <h4 class="title a-font text-2xl mb-1">{{ $gallery->regatta?->name ?? $gallery->name }}</h4>
+                        @if($gallery->regatta)
+                            <p class="text-lg mb-3 opacity-90">{{ $gallery->name }}</p>
+                        @endif
                         <p class="mb-3 flex gap-3">{!! file_get_contents(public_path('images/icons/calendar.svg')) !!} {{ $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM') }} · {{ $gallery->regatta?->location ?? '' }}</p>
                         <p class="flex gap-3">{!! file_get_contents(public_path('images/icons/waves.svg')) !!} {{ $gallery->water_area }}</p>
                     </div>
