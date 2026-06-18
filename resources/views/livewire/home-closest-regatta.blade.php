@@ -72,6 +72,9 @@
                                 title="Смотреть прогноз погоды на Windy">
                                 {!!  file_get_contents(public_path('images/icons/weather.svg')) !!}
                                 {{ $currentWeather }}
+                                @if($wind)
+                                    <span class="opacity-80">· {{ $wind }}</span>
+                                @endif
                             </div>
                         </div>
                         @else
@@ -80,6 +83,9 @@
                             <div class="flex items-center gap-2">
                                 {!!  file_get_contents(public_path('images/icons/weather.svg')) !!}
                                 {{ $currentWeather }}
+                                @if($wind)
+                                    <span class="opacity-80">· {{ $wind }}</span>
+                                @endif
                             </div>
                         </div>
                         @endif

@@ -21,8 +21,9 @@ class WeatherService
                     ->get('https://api.open-meteo.com/v1/forecast', [
                         'latitude'       => $lat,
                         'longitude'      => $lon,
-                        'hourly'         => 'temperature_2m',
-                        'forecast_days'  => '14',
+                        'hourly'          => 'temperature_2m,wind_speed_10m,wind_direction_10m',
+                        'wind_speed_unit' => 'ms',
+                        'forecast_days'   => '14',
                     ]);
 
                 if ($response->failed()) {
@@ -47,5 +48,17 @@ class WeatherService
                 return null;
             }
         });
+    }
+
+    /**
+     * Преобразует направление ветра в градусах в название румба (С, СВ, В, …).
+     */
+    public static function windDirectionLabel(float|int $degrees): string
+    {
+        $points = ['С', 'СВ', 'В', 'ЮВ', 'Ю', 'ЮЗ', 'З', 'СЗ'];
+
+        $index = (int) round(($degrees % 360) / 45) % 8;
+
+        return $points[$index];
     }
 }

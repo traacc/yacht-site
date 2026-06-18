@@ -23,17 +23,25 @@ class HomeRegattaTimer extends Component
             : null;
 
         $temp = '—';
+        $windSpeed = null;
+        $windDirection = null;
         if ($currentWeather && isset($currentWeather['hourly'])) {
-            $hourly = array_combine(
-                $currentWeather['hourly']['time'],
-                $currentWeather['hourly']['temperature_2m']
-            );
+            $times = $currentWeather['hourly']['time'];
+            $hourly = array_combine($times, $currentWeather['hourly']['temperature_2m']);
+            $windSpeeds = isset($currentWeather['hourly']['wind_speed_10m'])
+                ? array_combine($times, $currentWeather['hourly']['wind_speed_10m'])
+                : [];
+            $windDirections = isset($currentWeather['hourly']['wind_direction_10m'])
+                ? array_combine($times, $currentWeather['hourly']['wind_direction_10m'])
+                : [];
 
             $date = $regatta?->date_start;
             $datetime = (new DateTime($date))
                 ->setTime(12, 0)
                 ->format('Y-m-d\TH:i');
             $temp = $hourly[$datetime] ?? '—';
+            $windSpeed = $windSpeeds[$datetime] ?? null;
+            $windDirection = $windDirections[$datetime] ?? null;
         }
         $mapUrl = $regatta?->coordinates
             ? $map->makeUrl(
@@ -50,9 +58,15 @@ class HomeRegattaTimer extends Component
             ->where('url', '!=', '')
             ->exists() ?? false;
 
+        $wind = $windSpeed !== null
+            ? round($windSpeed) . ' м/с'
+                . ($windDirection !== null ? ', ' . WeatherService::windDirectionLabel($windDirection) : '')
+            : null;
+
         return view('livewire.home-regatta-timer', [
             'regatta'         => $regatta,
             'currentWeather'  => $temp . ' ℃',
+            'wind'            => $wind,
             'mapUrl'          => $mapUrl,
             'startDateTime'   => $startDateTime,
             'hasDocuments'    => $hasDocuments,
