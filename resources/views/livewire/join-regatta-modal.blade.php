@@ -438,7 +438,7 @@
                                          :class="{ 'bg-[#2D92CE]/10': selectedIndex === index }"
                                          class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm border-b border-gray-100 last:border-b-0">
                                         <span class="font-medium" x-text="user.name"></span>
-                                        <span class="text-gray-400 text-xs ml-2" x-text="user.email"></span>
+                                        <span class="text-gray-400 text-xs ml-2" x-text="user.birth_date ? user.birth_date.slice(0, 10).split('-').reverse().join('.') : ''"></span>
                                     </div>
                                 </template>
                                 <div x-show="results.length === 0 && query.length > 0" class="px-3 py-2 text-sm text-gray-400">
@@ -564,7 +564,7 @@
                                                         <div x-on:click="selectUser(user.id)"
                                                              class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm border-b border-gray-100 last:border-b-0">
                                                             <span class="font-medium" x-text="user.name"></span>
-                                                            <span class="text-gray-400 text-xs ml-2" x-text="user.email"></span>
+                                                            <span class="text-gray-400 text-xs ml-2" x-text="user.birth_date ? user.birth_date.slice(0, 10).split('-').reverse().join('.') : ''"></span>
                                                         </div>
                                                     </template>
                                                     <div x-show="results.length === 0 && query.trim().length > 0"

@@ -389,7 +389,7 @@ class JoinRegattaModal extends Component
             })
             ->when($excludeIds !== [], fn ($q) => $q->whereNotIn('id', $excludeIds))
             ->limit(10)
-            ->get(['id', 'name', 'email'])
+            ->get(['id', 'name', 'email', 'birth_date'])
             ->toArray();
     }
 
@@ -568,7 +568,7 @@ class JoinRegattaModal extends Component
             })
             ->when($excludeIds !== [], fn ($q) => $q->whereNotIn('id', $excludeIds))
             ->limit(10)
-            ->get(['id', 'name', 'email'])
+            ->get(['id', 'name', 'email', 'birth_date'])
             ->toArray();
     }
 
