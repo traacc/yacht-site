@@ -267,7 +267,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
 
     $regatta->setRelation('resultItems', $regatta->results->flatMap->items);
 
-    $entries = $regatta->entries;
+    $entries = $regatta->approvedEntries;
 
     $currentWeather = $regatta?->coordinates
         ? app(WeatherService::class)->getWeather(
