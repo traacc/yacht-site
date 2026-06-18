@@ -282,7 +282,7 @@ class GalleryResource extends Resource
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                EditAction::make()->modalHeading('Редактировать галерею'),
+                //EditAction::make()->modalHeading('Редактировать галерею'),
                 DeleteAction::make(),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
