@@ -143,23 +143,29 @@ class Gallery extends Model implements HasMedia
      */
     public function registerMediaConversions(?SpatieMedia $media = null): void
     {
+        // ИЗМЕНЕНИЕ: конверсии переведены в очередь (->queued()).
+        // Сохранение галереи теперь не блокируется генерацией миниатюр —
+        // тяжёлая обработка изображений выполняется фоновым queue worker'ом
+        // (QUEUE_CONNECTION=redis). ⚠️ Требует постоянно работающего воркера:
+        // `php artisan queue:work redis` (на проде — через Supervisor/systemd),
+        // иначе превью не сгенерируются.
         $this->addMediaConversion('thumb')
              ->width(150)
              ->height(150)
              ->sharpen(5)
-             ->nonQueued();                     // синхронно, как в соседних моделях (Yacht)
+             ->queued();
 
         $this->addMediaConversion('preview')
              ->width(400)
              ->height(300)
              ->quality(85)
-             ->nonQueued();
+             ->queued();
 
         $this->addMediaConversion('gallery_lg')
              ->width(1200)
              ->height(800)
              ->quality(92)
-             ->nonQueued();
+             ->queued();
     }
 
     // ══════════════════════════════════════════════

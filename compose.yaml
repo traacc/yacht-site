@@ -30,6 +30,29 @@ services:
             - meilisearch
             - mailpit
             - selenium
+    laravel.worker:
+        build:
+            context: './docker/8.5'
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP}'
+        image: 'sail-8.5/app'
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+        # Фоновая обработка очереди (конверсии Spatie Media Library и др.).
+        # --timeout=300: ресайз больших фото (gallery_lg 1200x800) может идти долго.
+        command: ['php', 'artisan', 'queue:work', 'redis', '--sleep=3', '--tries=3', '--max-time=3600', '--timeout=300']
+        restart: unless-stopped
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - mysql
+            - redis
     mysql:
         image: 'mysql:8.4'
         ports:
