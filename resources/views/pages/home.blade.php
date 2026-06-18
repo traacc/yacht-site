@@ -105,7 +105,7 @@
                     <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2 md:h-14">
                         {{ $newsItem->title }}
                     </h3>
-                    <p class="font-medium text-brand-gray mb-3 text-xs md:text-base">{{ Str::limit(strip_tags($newsItem->content), 60) }}</p>
+                    <p class="font-medium text-brand-gray mb-3 text-xs md:text-base">{{ Str::limit(strip_tags($newsItem->content), 75) }}</p>
                     <div class="mb-2 text-brand-gray-light text-xs md:text-base">{{ $newsItem->published_at->translatedFormat('j F Y') }}</div>
                     <div class="">
                         <a href="{{ route('news-details', $newsItem) }}" class="text-[#2E325C] font-semibold hover:underline text-xs md:text-lg">Читать далее →</a>
