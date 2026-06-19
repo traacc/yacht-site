@@ -42,8 +42,7 @@
                         <a href="{{ route('competitions') }}"  class="block px-4 py-2 text-gray-700">Календарь</a>
                         <a href="{{ route('competitions') }}#results"  class="block px-4 py-2 text-gray-700">Результаты</a>
                         @endif
-                        <button type="button" @click="open = false; $dispatch('open-join-regatta-modal')"
-                            class="block w-full text-left px-4 py-2 text-gray-700 cursor-pointer">Подать заявку на участие в регате</button>
+                        <a href="{{ route('regatta-entries') }}" class="block w-full text-left px-4 py-2 text-gray-700">Заявки</a>
                     </div>
                 </div>
                 <a href="{{ route('teams') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Команды</a>
@@ -198,8 +197,7 @@
                             <a href="{{ route('competitions') }}"  class="block px-4 py-2 text-sm">Календарь</a>
                             <a href="{{ route('competitions') }}#results"  class="block px-4 py-2 text-sm">Результаты</a>
                             @endif
-                            <button type="button" @click="mobileOpen = false; $dispatch('open-join-regatta-modal')"
-                                class="block w-full text-left px-4 py-2 text-sm">Заявки</button>
+                            <a href="{{ route('regatta-entries') }}" class="block w-full text-left px-4 py-2 text-sm">Заявки</a>
                         </div>
                     </div>
                     <a href="{{ route('teams') }}"  class="block py-2 text-sm">Команды</a>

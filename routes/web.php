@@ -252,6 +252,22 @@ Route::get('/competitions', function () {
 
         return view('pages.regattas', compact('regattas'));
 })->name('competitions');
+Route::get('/regattas/entries', function () {
+    // Все заявки по каждой регате (любой статус), сгруппированные по регате.
+    $regattas = Regatta::query()
+        ->whereHas('entries')
+        ->with([
+            'entries' => fn ($q) => $q->orderBy('submitted_at'),
+            'entries.team.organizer',
+            'entries.yacht',
+            'entries.crew.teamMember.user',
+            'season',
+        ])
+        ->orderBy('date_start', 'desc')
+        ->get();
+
+    return view('pages.regatta-entries', compact('regattas'));
+})->name('regatta-entries');
 Route::get('/regattas/{regatta}', function (Regatta $regatta) {
     $regatta->loadMissing([
         'approvedEntries.team.organizer',
