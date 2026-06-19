@@ -24,6 +24,13 @@
 @endphp
 
 <div class="container mx-auto py-10">
+    <div class="flex justify-end mb-8" x-data>
+        <button @click="$dispatch('open-join-regatta-modal')"
+                class="bg-brand-blue text-white py-2 px-6 hover:bg-brand-blue transition-colors text-lg font-semibold cursor-pointer">
+            Подать заявку →
+        </button>
+    </div>
+
     @forelse($regattas as $regatta)
         <section class="mb-12 teams">
             <div class="lg:p-6 bg-brand-light-bg">
@@ -83,6 +90,8 @@
         <p class="text-center text-brand-gray-light py-20 text-lg">Заявок пока нет.</p>
     @endforelse
 </div>
+
+<livewire:join-regatta-modal />
 
 <x-feedback-section></x-feedback-section>
 </x-public-layout>
