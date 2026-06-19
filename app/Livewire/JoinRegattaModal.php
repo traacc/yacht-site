@@ -782,7 +782,7 @@ class JoinRegattaModal extends Component
 
         if ($this->yachtMode === 'create') {
             $rules['newYachtName'] = ['required', 'string', 'max:255'];
-            $rules['newYachtVfps'] = ['nullable', 'string', 'max:255'];
+            $rules['newYachtVfps'] = ['required', 'string', 'max:255'];
         } else {
             $rules['yachtId'] = ['required', 'string', 'uuid'];
         }
@@ -811,6 +811,7 @@ class JoinRegattaModal extends Component
             'teamName'     => 'название команды',
             'yachtId'      => 'яхта',
             'newYachtName' => 'название яхты',
+            'newYachtVfps' => 'номер паруса',
             'captainUserId' => 'капитан',
         ]);
 

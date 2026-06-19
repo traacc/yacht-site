@@ -263,7 +263,10 @@
                                 <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                             @enderror
                             <input type="text" wire:model="newYachtVfps" placeholder="Номер паруса"
-                                   class="block w-full border-none font-medium shadow-sm bg-white sm:text-sm">
+                                   class="block w-full border-none font-medium shadow-sm bg-white sm:text-sm @error('newYachtVfps') border-red-300 @enderror">
+                            @error('newYachtVfps')
+                                <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                            @enderror
                         </div>
                     @elseif ($yachtId)
                         {{-- Выбранная свободная яхта --}}

@@ -414,7 +414,7 @@ class EditRegattaEntryModal extends Component
 
         if ($this->yachtMode === 'create') {
             $rules['newYachtName'] = ['required', 'string', 'max:255'];
-            $rules['newYachtVfps'] = ['nullable', 'string', 'max:255'];
+            $rules['newYachtVfps'] = ['required', 'string', 'max:255'];
         } else {
             $rules['yachtId'] = ['required', 'string', 'uuid'];
         }
@@ -431,6 +431,7 @@ class EditRegattaEntryModal extends Component
         ], [
             'yachtId'      => 'яхта',
             'newYachtName' => 'название яхты',
+            'newYachtVfps' => 'номер паруса',
         ]);
 
         // Ровно один капитан

@@ -118,7 +118,10 @@
                             <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                         @enderror
                         <input type="text" wire:model="newYachtVfps" placeholder="Номер паруса"
-                               class="block w-full border border-gray-200 bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
+                               class="block w-full border bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none @error('newYachtVfps') border-red-300 @else border-gray-200 @enderror">
+                        @error('newYachtVfps')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
                         <button type="button" wire:click="clearNewYacht"
                                 class="text-xs text-gray-500 hover:underline mt-2">Выбрать из списка</button>
                     @endif
