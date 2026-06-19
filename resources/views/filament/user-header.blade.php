@@ -27,7 +27,20 @@
                         <a href="{{ route('votings') }}"  class="block px-4 py-2 text-gray-700">Голосования</a></li>
                     </div>
                 </div>
-                <a href="{{ route('competitions') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Соревнования</a>
+                <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
+                    <button @click="open = !open"
+                        class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
+                        Соревнования
+                        <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" x-cloak x-transition
+                        class="absolute top-full left-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
+                        <a href="{{ route('competitions') }}"  class="block px-4 py-2 text-gray-700">Календарь</a>
+                        <a href="{{ route('competitions') }}#results"  class="block px-4 py-2 text-gray-700">Результаты</a>
+                        <button type="button" @click="open = false; $dispatch('open-join-regatta-modal')"
+                            class="block w-full text-left px-4 py-2 text-gray-700 cursor-pointer">Подать заявку на участие в регате</button>
+                    </div>
+                </div>
                 <a href="{{ route('teams') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Команды</a>
                 <a href="{{ route('yachts') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Яхты</a>
                 <a href="{{ route('ratings') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Рейтинги</a>
@@ -150,7 +163,19 @@
                             <a href="{{ route('votings') }}"  class="block px-4 py-2 text-sm">Голосования</a></li>
                         </div>
                     </div>
-                    <a href="{{ route('competitions') }}"  class="block py-2 text-sm">Соревнования</a>
+                    <div x-data="{ open: false }" class="relative">
+                        <button @click="open = !open"
+                            class="flex items-center gap-1 py-2 text-sm transition-colors">
+                            Соревнования
+                            <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" x-cloak x-transition class="">
+                            <a href="{{ route('competitions') }}"  class="block px-4 py-2 text-sm">Календарь</a>
+                            <a href="{{ route('competitions') }}#results"  class="block px-4 py-2 text-sm">Результаты</a>
+                            <button type="button" @click="mobileOpen = false; $dispatch('open-join-regatta-modal')"
+                                class="block w-full text-left px-4 py-2 text-sm">Заявки</button>
+                        </div>
+                    </div>
                     <a href="{{ route('teams') }}"  class="block py-2 text-sm">Команды</a>
                     <a href="{{ route('yachts') }}"  class="block py-2 text-sm">Яхты</a>
                     <a href="{{ route('ratings') }}"  class="block py-2 text-sm">Рейтинги</a>
