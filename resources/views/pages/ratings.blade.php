@@ -9,7 +9,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
 
 <main class="main"
     x-data="{
-        activeTab: 'team',
+        activeTab: window.location.hash === '#personal' ? 'personal' : 'team',
         teamModal: false,
         teamModalData: null,
         participantModal: false,
@@ -44,6 +44,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
         }
     }"
     @keydown.escape.window="teamModal = false; participantModal = false; regattaModal = false"
+    x-on:switch-ratings-tab.window="activeTab = $event.detail.tab"
 >
         <div class="container">
             {{-- ─── Вкладки ─── --}}
