@@ -6,6 +6,7 @@ namespace App\Filament\User\Resources\Yachts\Pages;
 
 use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\Yacht\UpdateYachtRequiredDocumentsAction;
+use App\Filament\User\Resources\OwnershipTransfers\OwnershipTransferResource;
 use App\Filament\User\Resources\Yachts\YachtResource;
 use App\Models\Yacht;
 use Filament\Actions\Action;
@@ -91,6 +92,23 @@ class ManageYachts extends ManageRecords
                         ->title('Готово!')
                         ->body('Поздравляем с успешной регистрацией яхты'),
                 ),
+
+            Action::make('requestTransfer')
+                ->label('Запросить передачу яхты')
+                ->icon('heroicon-o-arrows-right-left')
+                ->color('white')
+                ->modalHeading('Запросить передачу яхты')
+                ->modalSubmitActionLabel('Отправить заявку')
+                ->schema(OwnershipTransferResource::formComponents())
+                ->action(function (array $data): void {
+                    OwnershipTransferResource::createTransfer($data);
+
+                    Notification::make()
+                        ->success()
+                        ->title('Заявка отправлена')
+                        ->body('Администратор рассмотрит вашу заявку на передачу яхты.')
+                        ->send();
+                }),
         ];
     }
 
