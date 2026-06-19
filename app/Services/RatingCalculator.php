@@ -70,7 +70,42 @@ class RatingCalculator
             }
         }
 
-        // Сбрасываем ключи регат и сортируем регаты по дате (новые сверху).
+        return $this->formatBreakdown($breakdown);
+    }
+
+    /**
+     * Разбивка очков командного рейтинга по регатам для каждой команды сезона:
+     *   [team_id => [ ['name' => ..., 'date' => ..., 'points' => float], ... ]].
+     * Используется для всплывающего окна.
+     */
+    public function teamRegattaBreakdown(Season $season): array
+    {
+        // [team_id][regatta_id] => ['name' => ..., 'date' => ..., 'points' => ...]
+        $breakdown = [];
+        foreach ($this->scoredResultItems($season) as $item) {
+            if (! isset($breakdown[$item->team_id][$item->regatta_id])) {
+                $breakdown[$item->team_id][$item->regatta_id] = [
+                    'name'   => $item->regatta_name,
+                    'date'   => $item->regatta_date,
+                    'points' => 0.0,
+                ];
+            }
+
+            $breakdown[$item->team_id][$item->regatta_id]['points'] += $item->score;
+        }
+
+        return $this->formatBreakdown($breakdown);
+    }
+
+    // ──────────────────────────────────────────────
+    // Private
+
+    /**
+     * Приводит карту [entity_id][regatta_id => данные] к списку регат,
+     * отсортированному по дате (новые сверху), с форматированием даты и очков.
+     */
+    private function formatBreakdown(array $breakdown): array
+    {
         return array_map(
             fn ($regattas) => collect($regattas)
                 ->sortByDesc('date')
@@ -84,9 +119,6 @@ class RatingCalculator
             $breakdown
         );
     }
-
-    // ──────────────────────────────────────────────
-    // Private
     // ──────────────────────────────────────────────
 
     /**

@@ -477,10 +477,23 @@ Route::get('/yachts', function () {
     return view('pages.yachts', compact('yachts', 'yachtsJson'));
 })->name('yachts');
 Route::get('/ratings', function () {
+    $calculator = app(\App\Services\RatingCalculator::class);
+
+    $teamBreakdownCache = [];
+    $teamBreakdownFor = function ($season, $teamId) use (&$teamBreakdownCache, $calculator) {
+        if (! $season || ! $teamId) {
+            return [];
+        }
+
+        $teamBreakdownCache[$season->id] ??= $calculator->teamRegattaBreakdown($season);
+
+        return $teamBreakdownCache[$season->id][$teamId] ?? [];
+    };
+
     $teamRatings = \App\Models\TeamRating::with(['team.activeMembers', 'team.organizer', 'team.defaultYacht', 'season'])
         ->ranked()
         ->get()
-        ->map(function ($r) {
+        ->map(function ($r) use ($teamBreakdownFor) {
             $yacht = $r->team?->defaultYacht;
 
             return [
@@ -491,6 +504,7 @@ Route::get('/ratings', function () {
                 'yacht'        => $yacht
                     ? trim($yacht->name.($yacht->vfps_number ? ' ('.$yacht->vfps_number.')' : ''))
                     : '—',
+                'regattas'     => $teamBreakdownFor($r->season, $r->team_id),
                 'members'      => $r->team?->activeMembers
                     ?->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
                     ->map(fn ($m) => [
@@ -502,7 +516,6 @@ Route::get('/ratings', function () {
             ];
         })->values()->toArray();
 
-    $calculator = app(\App\Services\RatingCalculator::class);
     $breakdownCache = [];
     $breakdownFor = function ($season, $userId) use (&$breakdownCache, $calculator) {
         if (! $season) {

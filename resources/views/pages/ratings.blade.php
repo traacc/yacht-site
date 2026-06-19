@@ -28,6 +28,16 @@ bgImage="{{ asset('images/bg/results.webp') }}"
             this.regattaModalData = row;
             this.regattaModal = true;
         },
+        openTeamRegattas(team) {
+            this.regattaModalData = {
+                participants: [{
+                    name: team.name,
+                    total_points: team.total_points,
+                    regattas: team.regattas,
+                }],
+            };
+            this.regattaModal = true;
+        },
         initials(name) {
             if (!name) return '?';
             return name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
@@ -122,7 +132,14 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                                 </template>
                                             </div>
                                         </td>
-                                        <td class="py-2" data-label="Очки" x-text="team.total_points"></td>
+                                        <td class="py-2" data-label="Очки">
+                                            <button
+                                                type="button"
+                                                class="text-[#2D92CE] hover:text-[#C2A36B] hover:underline transition-colors cursor-pointer font-semibold"
+                                                @click="openTeamRegattas(team)"
+                                                x-text="team.total_points"
+                                            ></button>
+                                        </td>
                                     </tr>
                                 </template>
                                 <template x-if="teams.length === 0">
