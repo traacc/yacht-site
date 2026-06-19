@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Galleries;
 use App\Filament\Resources\Galleries\Pages\ManageGalleries;
 use App\Models\Gallery;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -387,6 +388,18 @@ class GalleryResource extends Resource
             ->recordActions([
                 EditAction::make()
                     ->modalHeading('Редактировать галерею'),
+                // Скачать все фотографии галереи одним ZIP-архивом.
+                Action::make('downloadPhotos')
+                    ->label('Скачать фото')
+                    ->icon(Heroicon::ArrowDownTray)
+                    ->color('gray')
+                    ->visible(fn (Gallery $record): bool => $record->getMedia('images')->isNotEmpty())
+                    ->action(function (Gallery $record) {
+                        $fileName = \Illuminate\Support\Str::slug($record->name ?: 'gallery') . '.zip';
+
+                        return \Spatie\MediaLibrary\Support\MediaStream::create($fileName)
+                            ->addMedia($record->getMedia('images'));
+                    }),
                 DeleteAction::make(),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),

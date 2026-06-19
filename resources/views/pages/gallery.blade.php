@@ -76,6 +76,7 @@
                 @foreach($items as $gallery)
                 <div class="cursor-pointer group relative"
                      @click="gallery_modal_open = true; activeGallery = {{ Js::from([
+                         'id'          => $gallery->id,
                          'name'        => $gallery->name,
                          'date'        => $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM YYYY'),
                          'date_short'  => $gallery->regatta
@@ -165,6 +166,14 @@
             </div>
             {{-- Таб «Фотографии» — images уже возвращает готовые URL через аксессор --}}
             <div x-show="activeTab === 'photo'">
+                {{-- Кнопка скачивания всех фото галереи одним ZIP-архивом --}}
+                <div class="flex justify-end mb-4" x-show="(activeGallery?.images ?? []).length > 0">
+                    <a :href="'{{ url('/gallery') }}/' + (activeGallery?.id ?? '') + '/download'"
+                       class="inline-flex items-center gap-2 bg-[#2D92CE] hover:bg-[#247fb3] text-white px-4 py-2 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                        Скачать все фото
+                    </a>
+                </div>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     <template x-for="item in activeGallery?.images ?? []">
                         <div class="card bg-[#F8F8F8]"  @click="lightbox_open = true; gallery_modal_open = false; activeImage = item; lbImages = activeGallery?.images ?? []">

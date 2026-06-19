@@ -561,6 +561,18 @@ Route::get('/gallery', function () {
 
     return view('pages.gallery', compact('galleries'));
 })->name('gallery');
+
+// Скачать все фотографии галереи одним ZIP-архивом.
+Route::get('/gallery/{gallery}/download', function (Gallery $gallery) {
+    abort_unless($gallery->is_published, 404);
+
+    $media = $gallery->getMedia('images');
+    abort_if($media->isEmpty(), 404);
+
+    $fileName = \Illuminate\Support\Str::slug($gallery->name ?: 'gallery') . '.zip';
+
+    return \Spatie\MediaLibrary\Support\MediaStream::create($fileName)->addMedia($media);
+})->name('gallery.download');
 Route::get('/help', function () {
     $helpCategories = \App\Models\HelpCategory::with(['helps' => fn ($q) =>
         $q->active()->orderBy('title')->with('media')
