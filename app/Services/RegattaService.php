@@ -11,10 +11,16 @@ class RegattaService
 {
     /**
      * Перенести событие на новую дату.
-     * Возвращает новое событие.
      *
-     * Идемпотентно: если регата уже перенесена (postponed_to_regatta_id заполнен),
-     * новая регата не создаётся — возвращается уже существующая.
+     * Политика переноса:
+     *  - оригинальная регата остаётся «живым» событием — у неё просто меняется
+     *    дата (id, external_id, URL, заявки, документы и расписание сохраняются);
+     *  - создаётся снимок со статусом «Перенесена», который хранит СТАРЫЕ даты
+     *    и служит исторической отметкой о переносе.
+     *
+     * Возвращает обновлённую (перенесённую) регату — то же самое событие.
+     *
+     * Идемпотентно: если регата уже стоит на нужной дате — снимок не создаётся.
      */
     public function postpone(Regatta $regatta, Carbon $newDate): Regatta
     {
@@ -22,12 +28,9 @@ class RegattaService
             throw new \LogicException("Нельзя перенести уже идущую регату.");
         }
 
-        // Идемпотентность: если новая регата уже создана — просто вернуть её
-        if ($regatta->postponed_to_regatta_id !== null) {
-            $existing = Regatta::find($regatta->postponed_to_regatta_id);
-            if ($existing !== null) {
-                return $existing;
-            }
+        // Идемпотентность: регата уже стоит на нужной дате — повторно не переносим
+        if ($regatta->date_start && $regatta->date_start->isSameDay($newDate)) {
+            return $regatta;
         }
 
         return DB::transaction(function () use ($regatta, $newDate) {
@@ -35,27 +38,30 @@ class RegattaService
             // Вычисляем длительность регаты (разница между date_end и date_start)
             $duration = $regatta->date_start->diffInDays($regatta->date_end);
 
-            // 1. Создаём новое событие на новую дату
-            $newRegatta = $regatta->replicate([
+            // 1. Снимок со статусом «Перенесена» — хранит СТАРЫЕ даты события
+            //    и ссылается на «живую» регату.
+            $snapshot = $regatta->replicate([
                 'regatta_status',
                 'postponed_to_date',
                 'postponed_to_regatta_id',
             ]);
-            $newRegatta->id             = null; // HasUuids: сброс UUID — creating-хук сгенерирует новый
-            $newRegatta->external_id    = null; // creating-хук сгенерирует новый
-            $newRegatta->date_start     = $newDate;
-            $newRegatta->date_end       = (clone $newDate)->addDays($duration);
-            $newRegatta->regatta_status = RegattaStatus::Upcoming;
-            $newRegatta->save();
+            $snapshot->id                      = null; // HasUuids: сброс UUID — creating-хук сгенерирует новый
+            $snapshot->external_id             = null; // creating-хук сгенерирует новый
+            $snapshot->date_start              = $regatta->date_start; // старые даты
+            $snapshot->date_end                = $regatta->date_end;
+            $snapshot->regatta_status          = RegattaStatus::Postponed;
+            $snapshot->postponed_to_date       = $newDate;
+            $snapshot->postponed_to_regatta_id = $regatta->id;
+            $snapshot->save();
 
-            // 2. Помечаем старое событие как перенесённое
+            // 2. Оригинал остаётся живым событием — просто меняем дату
             $regatta->update([
-                'regatta_status'          => RegattaStatus::Postponed,
-                'postponed_to_date'       => $newDate,
-                'postponed_to_regatta_id' => $newRegatta->id,
+                'date_start'     => $newDate,
+                'date_end'       => (clone $newDate)->addDays($duration),
+                'regatta_status' => RegattaStatus::Upcoming,
             ]);
 
-            return $newRegatta;
+            return $regatta;
         });
     }
 
