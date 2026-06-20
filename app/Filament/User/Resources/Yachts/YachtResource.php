@@ -70,48 +70,79 @@ class YachtResource extends Resource
                 ->content(new HtmlString('Выберите яхту из базы Ассоциации или заполните данные вручную. Номер ВФПС будет использован как уникальный ID яхты в системе.'))
                 ->columnSpanFull(),
                 Hidden::make('selected_yacht_id'),
+                Hidden::make('transfer_yacht_id'),
+                Hidden::make('is_owned_yacht'),
                 Select::make('yacht_search')->placeholder('Номер ВФПС или название яхты')->columnSpanFull()->label('Найти яхту в базе')->searchable()
-                ->options(fn (): array => \App\Models\Yacht::query()
-                    ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
-                    ->whereNull('user_id')
+                ->options(fn (): array => static::searchableYachtsQuery()
                     ->orderBy('name')
                     ->get()
-                    ->mapWithKeys(fn ($yacht) => [$yacht->id => trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : ''))])
+                    ->mapWithKeys(fn ($yacht) => [$yacht->id => static::yachtSearchLabel($yacht)])
                     ->toArray())
-                ->getSearchResultsUsing(fn (string $search): array => \App\Models\Yacht::query()
-                    ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
-                    ->whereNull('user_id')
+                ->getSearchResultsUsing(fn (string $search): array => static::searchableYachtsQuery()
                     ->where(function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%")
                           ->orWhere('vfps_number', 'like', "%{$search}%");
                     })
                     ->limit(50)
                     ->get()
-                    ->mapWithKeys(fn ($yacht) => [$yacht->id => trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : ''))])
+                    ->mapWithKeys(fn ($yacht) => [$yacht->id => static::yachtSearchLabel($yacht)])
                     ->toArray())
                 ->getOptionLabelUsing(function ($value): ?string {
                     $yacht = \App\Models\Yacht::query()
                         ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
                         ->find($value);
-                    return $yacht ? trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : '')) : null;
+                    return $yacht ? static::yachtSearchLabel($yacht) : null;
                 })
                 ->live()
                 ->afterStateUpdated(function ($state, $set) {
                     $yacht = \App\Models\Yacht::query()
                         ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
                         ->find($state);
-                    if ($yacht) {
-                        $set('selected_yacht_id', $yacht->id);
-                        $set('name', $yacht->name);
-                        $set('vfps_number', $yacht->vfps_number);
-                        $set('gims_number', $yacht->gims_number);
-                        $set('class', $yacht->class);
-                        $set('project', $yacht->project);
-                        $set('year', $yacht->year);
-                        $set('reg_place', $yacht->reg_place);
-                        $set('current_mass_kg', $yacht->current_mass_kg);
+
+                    if (! $yacht) {
+                        return;
                     }
+
+                    // Яхта уже принадлежит другому участнику — регистрация невозможна,
+                    // предлагаем оформить запрос на передачу владения.
+                    $isOwnedByOther = $yacht->user_id !== null && $yacht->user_id !== auth()->id();
+
+                    $set('is_owned_yacht', $isOwnedByOther);
+                    $set('transfer_yacht_id', $isOwnedByOther ? $yacht->id : null);
+
+                    if ($isOwnedByOther) {
+                        $set('selected_yacht_id', null);
+
+                        return;
+                    }
+
+                    $set('selected_yacht_id', $yacht->id);
+                    $set('name', $yacht->name);
+                    $set('vfps_number', $yacht->vfps_number);
+                    $set('gims_number', $yacht->gims_number);
+                    $set('class', $yacht->class);
+                    $set('project', $yacht->project);
+                    $set('year', $yacht->year);
+                    $set('reg_place', $yacht->reg_place);
+                    $set('current_mass_kg', $yacht->current_mass_kg);
                 }),
+
+                Placeholder::make('owned_yacht_notice')
+                    ->hiddenLabel()
+                    ->columnSpanFull()
+                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => (bool) $get('is_owned_yacht'))
+                    ->content(new HtmlString(
+                        '<div class="text-warning-600">Эта яхта зарегистрирована другим участником. '
+                        . 'Если вы являетесь собствеником этой яхты, то отправьте запрос и приложите документ, '
+                        . 'подтверждающий ваше право собственности.</div>'
+                    )),
+
+                \Filament\Schemas\Components\Actions::make([
+                    static::requestTransferAction(),
+                ])
+                    ->columnSpanFull()
+                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => (bool) $get('is_owned_yacht')),
+
                 TextInput::make('name')
                     ->required()->label('Название яхты')->placeholder('Введите название яхты'),
                     /*
@@ -400,5 +431,51 @@ class YachtResource extends Resource
             ->first(fn (\App\Models\YachtDocumentType $t) => $t->key === $docType);
 
         return $model?->label ?? ($state['title'] ?? null);
+    }
+
+    /**
+     * Яхты, доступные для поиска при регистрации: свободные (без владельца)
+     * и принадлежащие другим участникам. Свои яхты исключаются.
+     */
+    public static function searchableYachtsQuery(): Builder
+    {
+        return \App\Models\Yacht::query()
+            ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
+            ->where(function (Builder $q): void {
+                $q->whereNull('user_id')
+                  ->orWhere('user_id', '!=', auth()->id());
+            });
+    }
+
+    public static function yachtSearchLabel(\App\Models\Yacht $yacht): string
+    {
+        return trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : ''));
+    }
+
+    /**
+     * Быстрое действие «Запросить передачу яхты» для уже занятой яхты,
+     * выбранной в поиске. Открывает форму заявки с предзаполненной яхтой.
+     */
+    public static function requestTransferAction(): \Filament\Actions\Action
+    {
+        return \Filament\Actions\Action::make('requestTransfer')
+            ->label('Запросить передачу этой яхты')
+            ->icon('heroicon-o-arrows-right-left')
+            ->color('white')
+            ->modalHeading('Запросить передачу яхты')
+            ->modalSubmitActionLabel('Отправить заявку')
+            ->schema(\App\Filament\User\Resources\OwnershipTransfers\OwnershipTransferResource::formComponents())
+            ->fillForm(fn (\Filament\Schemas\Components\Utilities\Get $get): array => [
+                'yacht_id' => $get('transfer_yacht_id'),
+            ])
+            ->action(function (array $data): void {
+                \App\Filament\User\Resources\OwnershipTransfers\OwnershipTransferResource::createTransfer($data);
+
+                \Filament\Notifications\Notification::make()
+                    ->success()
+                    ->title('Заявка отправлена')
+                    ->body('Администратор рассмотрит вашу заявку на передачу яхты.')
+                    ->send();
+            });
     }
 }
