@@ -331,6 +331,35 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             <span>Скачать историю участия</span>
                         </a>
                     </div>
+
+                </div>
+
+                {{-- Аренда яхты: список регат со стоимостью --}}
+                <div class="rent mb-8" x-show="selectedYacht.for_rent && selectedYacht.rentals.length > 0">
+                    <div class="rent-header flex items-center justify-between mb-6">
+                        <h5 class="a-font text-lg md:text-3xl">Аренда яхты</h5>
+                        <div class="bg-[#2D92CE33] px-3 py-1 text-[#2D92CE] inline-block font-semibold">Доступна для аренды</div>
+                    </div>
+                    <div class="overflow-y-auto max-h-[180px] relative custom-scroll responsive-table">
+                        <table class="w-full border-collapse bg-[#F8F8F8]">
+                            <thead>
+                                <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
+                                    <th class="pt-2 pb-2 text-center font-medium a-font">Регата</th>
+                                    <th class="pt-2 pb-2 text-center font-medium a-font">Дата</th>
+                                    <th class="pt-2 pb-2 text-center font-medium a-font">Стоимость аренды</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y text-center font-medium">
+                                <template x-for="(r, i) in selectedYacht.rentals" :key="i">
+                                    <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
+                                        <td data-label="Регата" class="py-3" x-text="r.regatta"></td>
+                                        <td data-label="Дата" class="py-3" x-text="r.date_event"></td>
+                                        <td data-label="Стоимость аренды" class="py-3 font-semibold text-[#2D92CE]" x-text="r.price"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             </template>

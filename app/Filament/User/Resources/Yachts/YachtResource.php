@@ -21,6 +21,7 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -176,6 +177,39 @@ class YachtResource extends Resource
                     ->numeric(),
                 TextInput::make('current_mass_kg')->label('Масса яхты')->placeholder('Введите массу яхты')->numeric(),
                 TextInput::make('reg_place')->label('Место регистрации')->placeholder('Введите место регистрации'),
+
+                // ── Аренда яхты ──
+                Placeholder::make('Аренда')->columnSpanFull(),
+                Toggle::make('for_rent')
+                    ->label('Сдаётся в аренду')
+                    ->helperText('Включите, чтобы указать регаты и стоимость аренды яхты.')
+                    ->live()
+                    ->columnSpanFull(),
+                Repeater::make('rentals')
+                    ->label('Стоимость аренды по регатам')
+                    ->columnSpanFull()
+                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => (bool) $get('for_rent'))
+                    ->addActionLabel('Добавить регату')
+                    ->defaultItems(1)
+                    ->collapsible()
+                    ->itemLabel(fn (array $state): ?string => static::rentalItemLabel($state))
+                    ->schema([
+                        Select::make('regatta_id')
+                            ->label('Регата')
+                            ->placeholder('Выберите регату')
+                            ->options(fn (): array => static::rentableRegattaOptions())
+                            ->getOptionLabelUsing(fn ($value): ?string => \App\Models\Regatta::find($value)?->name)
+                            ->searchable()
+                            ->required()
+                            ->distinct(),
+                        TextInput::make('price')
+                            ->label('Стоимость аренды, ₽')
+                            ->placeholder('Например, 50000')
+                            ->numeric()
+                            ->minValue(0)
+                            ->required(),
+                    ])
+                    ->columns(2),
 
                 SpatieMediaLibraryFileUpload::make('gallery')
                     ->label('Галерея')
@@ -365,16 +399,26 @@ class YachtResource extends Resource
                         $data = $record->toArray();
                         $data['required_documents'] = app(\App\Actions\Document\SyncDocumentFilesAction::class)
                             ->load($record, ManageYachts::getRequiredDocuments());
+                        $data['rentals'] = $record->rentals()
+                            ->get()
+                            ->map(fn (\App\Models\YachtRental $rental): array => [
+                                'regatta_id' => $rental->regatta_id,
+                                'price'      => $rental->price,
+                            ])
+                            ->toArray();
                         $form->fill($data);
                     })
                     ->using(function (Yacht $record, array $data): Yacht {
-                        $docs = $data['required_documents'] ?? [];
-                        unset($data['required_documents'], $data['yacht_search']);
+                        $docs    = $data['required_documents'] ?? [];
+                        $rentals = $data['rentals'] ?? [];
+                        unset($data['required_documents'], $data['rentals'], $data['yacht_search']);
 
                         $record->update($data);
 
                         app(\App\Actions\Document\SyncDocumentFilesAction::class)
                             ->execute($record, $docs);
+
+                        static::syncRentals($record, $rentals);
 
                         return $record;
                     }),
@@ -450,6 +494,79 @@ class YachtResource extends Resource
     public static function yachtSearchLabel(\App\Models\Yacht $yacht): string
     {
         return trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : ''));
+    }
+
+    /**
+     * Регаты, доступные для выставления яхты в аренду:
+     * активные и предстоящие (без завершённых/отменённых/перенесённых).
+     *
+     * @return array<string, string>
+     */
+    public static function rentableRegattaOptions(): array
+    {
+        return \App\Models\Regatta::query()
+            ->activeAndClosest()
+            ->get()
+            ->mapWithKeys(fn (\App\Models\Regatta $regatta): array => [
+                $regatta->id => trim($regatta->name . ' (' . $regatta->dateRange() . ')'),
+            ])
+            ->toArray();
+    }
+
+    /**
+     * Читаемая метка строки аренды в Repeater: «Регата — 50 000 ₽».
+     */
+    public static function rentalItemLabel(array $state): ?string
+    {
+        $regattaId = $state['regatta_id'] ?? null;
+
+        if (! $regattaId) {
+            return 'Новая запись';
+        }
+
+        $label = \App\Models\Regatta::find($regattaId)?->name ?? 'Регата';
+        $price = $state['price'] ?? null;
+
+        return $price !== null && $price !== ''
+            ? $label . ' — ' . number_format((float) $price, 0, '.', ' ') . ' ₽'
+            : $label;
+    }
+
+    /**
+     * Синхронизирует предложения аренды яхты с переданными строками формы.
+     * Удаляет снятые регаты, обновляет цены и добавляет новые.
+     *
+     * @param  array<int, array{regatta_id?: string, price?: mixed}>  $rentals
+     */
+    public static function syncRentals(Yacht $yacht, array $rentals): void
+    {
+        // Если яхта не сдаётся — очищаем все предложения аренды.
+        if (! $yacht->for_rent) {
+            $yacht->rentals()->delete();
+
+            return;
+        }
+
+        $keepRegattaIds = [];
+
+        foreach ($rentals as $rental) {
+            $regattaId = $rental['regatta_id'] ?? null;
+
+            if (! $regattaId) {
+                continue;
+            }
+
+            $yacht->rentals()->updateOrCreate(
+                ['regatta_id' => $regattaId],
+                ['price' => $rental['price'] ?? null],
+            );
+
+            $keepRegattaIds[] = $regattaId;
+        }
+
+        $yacht->rentals()
+            ->whereNotIn('regatta_id', $keepRegattaIds)
+            ->delete();
     }
 
     /**

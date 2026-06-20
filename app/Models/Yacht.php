@@ -32,7 +32,6 @@ class Yacht extends Model implements HasMedia
         'sail_type',
         'current_mass_kg',
         'for_rent',
-        'rent_price',
         'approval_status',
 
         'owner_name',
@@ -48,8 +47,7 @@ class Yacht extends Model implements HasMedia
         return [
             'current_mass_kg' => 'decimal:2',
             'past_regattas'   => 'array',
-            //'rent_price'      => 'decimal:2',
-            //'for_rent'        => 'boolean',
+            'for_rent'        => 'boolean',
         ];
     }
 
@@ -90,6 +88,12 @@ class Yacht extends Model implements HasMedia
     public function regattaEntries(): HasMany
     {
         return $this->hasMany(RegattaEntry::class);
+    }
+
+    /** Предложения аренды: регата + стоимость аренды на неё */
+    public function rentals(): HasMany
+    {
+        return $this->hasMany(YachtRental::class);
     }
 
     /** Документы (ORC-сертификаты, технические паспорта) */

@@ -36,8 +36,9 @@ class ManageYachts extends ManageRecords
                 ->modalHeading('Зарегистрировать яхту')
                 ->using(function (array $data, string $model): Yacht {
                     $docs = $data['required_documents'] ?? [];
+                    $rentals = $data['rentals'] ?? [];
                     $selectedYachtId = $data['selected_yacht_id'] ?? null;
-                    unset($data['required_documents'], $data['yacht_search'], $data['selected_yacht_id']);
+                    unset($data['required_documents'], $data['rentals'], $data['yacht_search'], $data['selected_yacht_id']);
 
                     // Если яхта выбрана из базы — присваиваем её.
                     // Иначе ищем свободную яхту (без user_id) по номеру ВФПС
@@ -79,6 +80,8 @@ class ManageYachts extends ManageRecords
                     }
 
                     app(SyncDocumentFilesAction::class)->execute($record, $docs);
+
+                    YachtResource::syncRentals($record, $rentals);
 
                     return $record;
                 })

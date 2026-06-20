@@ -429,7 +429,7 @@ Route::get('/team/{team}/download-history', function (\App\Models\Team $team) {
 })->name('team.history.pdf');
 Route::view('/teams', 'pages.teams')->name('teams');
 Route::get('/yachts', function () {
-    $yachts = Yacht::with(['user', 'documents', 'regattaEntries.regatta', 'regattaEntries.team'])
+    $yachts = Yacht::with(['user', 'documents', 'regattaEntries.regatta', 'regattaEntries.team', 'rentals.regatta'])
         ->where('approval_status', 'approved')
         ->orderBy('name')
         ->paginate(250);
@@ -476,6 +476,16 @@ Route::get('/yachts', function () {
             'status' => $entry->status,
         ])->values()->toArray(),
         'participation_count' => $yacht->regattaEntries->count(),
+        'for_rent' => (bool) $yacht->for_rent,
+        'rentals' => $yacht->for_rent
+            ? $yacht->rentals->map(fn ($rental) => [
+                'regatta' => $rental->regatta?->name ?? '—',
+                'date_event' => $rental->regatta?->dateRange() ?? '—',
+                'price' => $rental->price !== null
+                    ? number_format((float) $rental->price, 0, '.', ' ').' ₽'
+                    : 'по запросу',
+            ])->values()->toArray()
+            : [],
         'gallery' => $yacht->getMedia('gallery')->map(fn ($media) => [
             'url' => $media->getUrl(),
             'thumbnail' => $media->getUrl('thumb'),
