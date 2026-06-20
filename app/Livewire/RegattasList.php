@@ -85,6 +85,7 @@ class RegattasList extends Component
     public function render()
     {
         $regattas = Regatta::query()
+            ->with(['series', 'series.regattas:id,series_id,date_start,time_start'])
             ->when($this->year, fn ($q) => $q->whereHas('season', fn ($sq) => $sq->where('year', $this->year)
             )
             )

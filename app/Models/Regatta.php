@@ -306,6 +306,44 @@ class Regatta extends Model
                     ->exists();
     }
 
+    /**
+     * Положение регаты в серии и общее число регат в серии.
+     *
+     * Регаты сортируются по дате старта (затем времени старта).
+     *
+     * @return array{position: int, total: int}|null
+     */
+    public function seriesPosition(): ?array
+    {
+        if (! $this->series_id) {
+            return null;
+        }
+
+        $regattas = $this->series?->regattas;
+
+        if ($regattas === null || $regattas->isEmpty()) {
+            return null;
+        }
+
+        $sorted = $regattas
+            ->sortBy([
+                ['date_start', 'asc'],
+                ['time_start', 'asc'],
+            ])
+            ->values();
+
+        $position = $sorted->search(fn (self $r) => $r->id === $this->id);
+
+        if ($position === false) {
+            return null;
+        }
+
+        return [
+            'position' => $position + 1,
+            'total'    => $sorted->count(),
+        ];
+    }
+
     /** Human-friendly date range for the regatta */
     public function dateRange(): string
     {

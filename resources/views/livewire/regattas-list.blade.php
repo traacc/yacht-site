@@ -32,6 +32,14 @@
                         alt="{{ $regatta->name }}"
                         class="w-full h-64 object-cover"
                     />
+                    @if ($regatta->series)
+                    @php($seriesPosition = $regatta->seriesPosition())
+                    <div class="absolute top-0 left-0 bg-[#DDEEF7] text-[#2D92CE] px-4 py-2 text-[10px] text-sm">
+                        <span class="text-white font-bold text-sm uppercase">
+                            {{ $regatta->series->name }}@if ($seriesPosition) ({{ $seriesPosition['position'] }}/{{ $seriesPosition['total'] }})@endif
+                        </span>
+                    </div>
+                    @endif
                     @if ($regatta->regatta_status === \App\Enums\RegattaStatus::Closest)
                     <div class="absolute top-0 right-0 bg-[#FDE4E3] px-4 py-2 text-[10px] text-sm">
                         <span class="text-[#F24842] font-bold text-sm uppercase">БЛИЖАЙШАЯ РЕГАТА</span>
@@ -96,6 +104,7 @@
                     <tr>
                         <th class="py-2 a-font text-center text-2xl">Дата</th>
                         <th class="py-2 a-font text-center text-2xl">Регата</th>
+                        <th class="py-2 a-font text-center text-2xl">Серия</th>
                         <th class="py-2 a-font text-center text-2xl">Акватория</th>
                         <th class="py-2 a-font text-center text-2xl">Коэфф.</th>
                         <th class="py-2 a-font text-center text-2xl">Статус</th>
@@ -107,6 +116,14 @@
                     <tr class="border-t">
                         <td data-label="Дата" class="py-2 text-center">{{ $regatta->dateRange() }}</td>
                         <td data-label="Регата" class="py-2 text-center text-brand-navy">{{ $regatta->name }}</td>
+                        <td data-label="Серия" class="py-2 text-center">
+                            @if ($regatta->series)
+                            @php($seriesPosition = $regatta->seriesPosition())
+                            {{ $regatta->series->name }}@if ($seriesPosition) ({{ $seriesPosition['position'] }}/{{ $seriesPosition['total'] }})@endif
+                            @else
+                            —
+                            @endif
+                        </td>
                         <td data-label="Акватория" class="py-2 text-center">{{ $regatta->water_area }}</td>
                         <td data-label="Коэфф." class="py-2 text-center">{{ number_format($regatta->level_coefficient, 2, ',', ' ')}}</td>
                         <td data-label="Статус" class="py-2 text-center">
@@ -130,7 +147,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="py-8 text-center text-brand-gray-light">Регаты не найдены для выбранного года.</td>
+                        <td colspan="7" class="py-8 text-center text-brand-gray-light">Регаты не найдены для выбранного года.</td>
                     </tr>
                     @endforelse
                 </tbody>
