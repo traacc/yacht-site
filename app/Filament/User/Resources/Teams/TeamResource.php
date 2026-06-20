@@ -152,15 +152,19 @@ class TeamResource extends Resource
                     ->columns(2)
                     ->columnSpanFull()
                     ->defaultItems(1)
+                    // Участников нельзя удалять — только исключать (статус «Покинул команду»),
+                    // чтобы сохранить историю участия.
+                    ->deletable(false)
                     ->rules([
                         fn (): \Closure => function (string $attribute, mixed $value, \Closure $fail): void {
                             if (! is_array($value)) {
                                 return;
                             }
 
-                            $organizerCount = collect($value)
-                                ->filter(fn (array $member): bool => ($member['role'] ?? null) === TeamMemberRole::Organizer->value)
-                                ->count();
+                            $organizers = collect($value)
+                                ->filter(fn (array $member): bool => ($member['role'] ?? null) === TeamMemberRole::Organizer->value);
+
+                            $organizerCount = $organizers->count();
 
                             if ($organizerCount === 0) {
                                 $fail('Необходимо назначить капитана команды');
@@ -168,6 +172,11 @@ class TeamResource extends Resource
 
                             if ($organizerCount > 1) {
                                 $fail('В команде может быть только один капитан');
+                            }
+
+                            // Капитана нельзя исключать из команды.
+                            if ($organizers->contains(fn (array $member): bool => ($member['status'] ?? null) === 'left')) {
+                                $fail('Капитана нельзя исключить из команды');
                             }
 
                             // Создатель команды обязан быть в составе участников.
@@ -235,8 +244,15 @@ class TeamResource extends Resource
                             ))
                             ->default(TeamMemberRole::Member->value)
                             ->required(),
-                        Hidden::make('status')
-                            ->default('active'),
+                        Select::make('status')
+                            ->label('Статус')
+                            ->options([
+                                'active' => 'Активен',
+                                'left'   => 'Покинул команду',
+                            ])
+                            ->default('active')
+                            ->selectablePlaceholder(false)
+                            ->required(),
                         Toggle::make('is_permanent')
                             ->label('Постоянный участник')
                             ->default(false),
@@ -397,9 +413,10 @@ class TeamResource extends Resource
             return;
         }
 
-        $organizerCount = collect($data['teamMembers'])
-            ->filter(fn (array $member): bool => ($member['role'] ?? null) === TeamMemberRole::Organizer->value)
-            ->count();
+        $organizers = collect($data['teamMembers'])
+            ->filter(fn (array $member): bool => ($member['role'] ?? null) === TeamMemberRole::Organizer->value);
+
+        $organizerCount = $organizers->count();
 
         if ($organizerCount === 0) {
             throw ValidationException::withMessages([
@@ -410,6 +427,12 @@ class TeamResource extends Resource
         if ($organizerCount > 1) {
             throw ValidationException::withMessages([
                 'teamMembers' => 'В команде может быть только один капитан',
+            ]);
+        }
+
+        if ($organizers->contains(fn (array $member): bool => ($member['status'] ?? null) === 'left')) {
+            throw ValidationException::withMessages([
+                'teamMembers' => 'Капитана нельзя исключить из команды',
             ]);
         }
     }
