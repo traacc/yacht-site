@@ -56,6 +56,7 @@ class TeamMember extends Pivot
 
     public function isActive(): bool   { return $this->status === 'active'; }
     public function isPending(): bool  { return $this->status === 'invited'; }
+    public function isLeft(): bool     { return $this->status === 'left'; }
     public function isOrganizer(): bool { return $this->role === 'organizer'; }
     public function isAdmin(): bool    { return in_array($this->role, ['organizer', 'team_admin']); }
 
@@ -70,5 +71,10 @@ class TeamMember extends Pivot
     public function decline(): void
     {
         $this->update(['status' => 'declined']);
+    }
+
+    public function leave(): void
+    {
+        $this->update(['status' => 'left']);
     }
 }

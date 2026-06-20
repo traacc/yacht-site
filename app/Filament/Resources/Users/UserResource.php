@@ -208,6 +208,7 @@ class UserResource extends Resource
                                 'invited'  => 'Приглашён',
                                 'active'   => 'Активен',
                                 'declined' => 'Отказался',
+                                'left'     => 'Покинул команду',
                             ])
                             ->default('active')
                             ->required(),
