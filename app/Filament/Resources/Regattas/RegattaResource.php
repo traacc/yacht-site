@@ -372,8 +372,9 @@ class RegattaResource extends Resource
                     ->schema([
                         Select::make('doc_type')
                             ->label('Тип')
-                            ->options(fn () => \App\Models\YachtDocumentType::options())
-                            ->default('other')
+                            // Тип «Прочее» (other) управляется отдельным полем other_files ниже,
+                            // поэтому исключаем его отсюда, чтобы поля не затирали файлы друг друга.
+                            ->options(fn () => collect(\App\Models\YachtDocumentType::options())->except('other')->all())
                             ->required(),
                         TextInput::make('title')
                             ->label('Название')
@@ -398,6 +399,28 @@ class RegattaResource extends Resource
                             ->downloadable()
                             ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
                     ]),
+
+                // ── Прочие документы: загрузка пачкой (как в галерее) ──
+                FileUpload::make('other_files')
+                    ->label('Прочие документы')
+                    ->helperText('Загрузите файлы пачкой — каждый сохранится как отдельный документ типа «Прочее». Название берётся из имени файла.')
+                    ->columnSpanFull()
+                    ->multiple()
+                    ->reorderable()
+                    ->appendFiles()
+                    ->panelLayout('grid')
+                    ->directory('documents')
+                    ->disk('public')
+                    ->getUploadedFileNameForStorageUsing(
+                        fn (TemporaryUploadedFile $file): string => (string) Str::of($file->getClientOriginalName())
+                            ->beforeLast('.')
+                            ->slug()
+                            ->append('.' . $file->getClientOriginalExtension()),
+                    )
+                    ->acceptedFileTypes($acceptedTypes)
+                    ->maxSize(20480)
+                    ->downloadable(),
+
                 // ── Документы для подачи заявок ──
                 Section::make('Документы для заявок')
                     ->description('Документы, которые участник должен приложить при подаче заявки. Если ничего не добавлено — применяются глобальные настройки.')
@@ -498,7 +521,9 @@ class RegattaResource extends Resource
 
                         $data = $record->toArray();
                         $data['required_documents'] = $sync->load($record, $requiredDocs);
-                        $data['extra_documents']    = $sync->loadExtra($record, $requiredDocTypes);
+                        // Тип «Прочее» (other) выводится в отдельном поле other_files, а не в Repeater.
+                        $data['extra_documents']    = $sync->loadExtra($record, array_merge($requiredDocTypes, ['other']));
+                        $data['other_files']        = $sync->loadFlat($record, 'other');
 
                         $data['is_postponed'] = ($data['regatta_status'] ?? null) === \App\Enums\RegattaStatus::Postponed->value;
                         $data['is_cancelled'] = ($data['regatta_status'] ?? null) === \App\Enums\RegattaStatus::Cancelled->value;
@@ -508,7 +533,8 @@ class RegattaResource extends Resource
                     ->using(function (Regatta $record, array $data): Regatta {
                         $requiredDocs = $data['required_documents'] ?? [];
                         $extraDocs    = $data['extra_documents'] ?? [];
-                        unset($data['required_documents'], $data['extra_documents'], $data['is_postponed'], $data['is_cancelled']);
+                        $otherFiles   = $data['other_files'] ?? [];
+                        unset($data['required_documents'], $data['extra_documents'], $data['other_files'], $data['is_postponed'], $data['is_cancelled']);
 
                         $postponedToDate = $data['postponed_to_date'] ?? null;
                         $newStatus       = $data['regatta_status'] ?? null;
@@ -521,9 +547,10 @@ class RegattaResource extends Resource
                             $sync = app(\App\Actions\Document\SyncDocumentFilesAction::class);
                             $sync->execute($record, $requiredDocs);
                             $sync->execute($record, $extraDocs);
+                            $sync->executeFlat($record, 'other', $otherFiles);
 
                             $requiredDocTypes = array_column(ManageRegattas::getRequiredDocuments(), 'doc_type');
-                            $activeExtraTypes = array_filter(array_column($extraDocs, 'doc_type'));
+                            $activeExtraTypes = array_merge(array_filter(array_column($extraDocs, 'doc_type')), ['other']);
                             $sync->pruneOrphanedDocTypes($record, $requiredDocTypes, $activeExtraTypes);
 
                             return $record->fresh();
@@ -534,9 +561,10 @@ class RegattaResource extends Resource
                         $sync = app(\App\Actions\Document\SyncDocumentFilesAction::class);
                         $sync->execute($record, $requiredDocs);
                         $sync->execute($record, $extraDocs);
+                        $sync->executeFlat($record, 'other', $otherFiles);
 
                         $requiredDocTypes = array_column(ManageRegattas::getRequiredDocuments(), 'doc_type');
-                        $activeExtraTypes = array_filter(array_column($extraDocs, 'doc_type'));
+                        $activeExtraTypes = array_merge(array_filter(array_column($extraDocs, 'doc_type')), ['other']);
                         $sync->pruneOrphanedDocTypes($record, $requiredDocTypes, $activeExtraTypes);
 
                         return $record;

@@ -86,6 +86,90 @@ final class SyncDocumentFilesAction
     }
 
     /**
+     * Синхронизировать «плоский» набор файлов одного doc_type, где каждый файл —
+     * самостоятельный Document с собственным title (= имя файла).
+     *
+     * В отличие от execute(), не группирует файлы под одним общим title:
+     * подходит для «галерейной» загрузки пачкой (поле other_files в админке регаты).
+     *
+     * @param Model    $documentable
+     * @param string   $docType
+     * @param string[] $files       Список url-путей (state поля FileUpload)
+     */
+    public function executeFlat(Model $documentable, string $docType, array $files): void
+    {
+        $newFiles = array_values(array_filter((array) $files));
+
+        /** @var \Illuminate\Database\Eloquent\Collection<int, Document> $existing */
+        $existing     = $documentable->documents()->where('doc_type', $docType)->get();
+        $existingUrls = $existing->pluck('url')->filter()->values()->toArray();
+
+        // Файлы к удалению
+        $toRemove = array_diff($existingUrls, $newFiles);
+        if ($toRemove !== []) {
+            $documentable->documents()
+                ->where('doc_type', $docType)
+                ->whereIn('url', $toRemove)
+                ->delete();
+
+            foreach ($toRemove as $path) {
+                if ($path !== '' && Storage::disk('public')->exists($path)) {
+                    Storage::disk('public')->delete($path);
+                }
+            }
+        }
+
+        // Файлы к добавлению — каждый как отдельный документ, title = имя файла
+        $toAdd     = array_diff($newFiles, $existingUrls);
+        $sortOrder = $existing->max('sort_order') ?? 0;
+
+        foreach ($toAdd as $path) {
+            if ($path === '') {
+                continue;
+            }
+
+            $sortOrder++;
+
+            $size = null;
+            $mime = null;
+
+            if (Storage::disk('public')->exists($path)) {
+                $size = Storage::disk('public')->size($path);
+                $mime = Storage::disk('public')->mimeType($path);
+            }
+
+            $documentable->documents()->create([
+                'doc_type'        => $docType,
+                'title'           => basename($path),
+                'url'             => $path,
+                'file_size_bytes' => $size,
+                'mime_type'       => $mime ?: null,
+                'sort_order'      => $sortOrder,
+            ]);
+        }
+    }
+
+    /**
+     * Загрузить «плоский» список url-файлов одного doc_type для FileUpload-state.
+     *
+     * @param Model  $documentable
+     * @param string $docType
+     *
+     * @return string[]
+     */
+    public function loadFlat(Model $documentable, string $docType): array
+    {
+        return $documentable->documents()
+            ->where('doc_type', $docType)
+            ->orderBy('sort_order')
+            ->orderBy('created_at')
+            ->pluck('url')
+            ->filter(fn (?string $u) => $u !== null && $u !== '')
+            ->values()
+            ->toArray();
+    }
+
+    /**
      * Удалить все документы с doc_type, отсутствующими в текущем списке extra-документов.
      *
      * Вызывается для синхронизации «дополнительных» документов в админке:

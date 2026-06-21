@@ -39,7 +39,8 @@ class ManageRegattas extends ManageRecords
                 ->using(function (array $data, string $model): Regatta {
                     $requiredDocs = $data['required_documents'] ?? [];
                     $extraDocs    = $data['extra_documents'] ?? [];
-                    unset($data['required_documents'], $data['extra_documents']);
+                    $otherFiles   = $data['other_files'] ?? [];
+                    unset($data['required_documents'], $data['extra_documents'], $data['other_files']);
 
                     /** @var Regatta $record */
                     $record = $model::create($data);
@@ -47,6 +48,7 @@ class ManageRegattas extends ManageRecords
                     $sync = app(SyncDocumentFilesAction::class);
                     $sync->execute($record, $requiredDocs);
                     $sync->execute($record, $extraDocs);
+                    $sync->executeFlat($record, 'other', $otherFiles);
 
                     return $record;
                 }),
