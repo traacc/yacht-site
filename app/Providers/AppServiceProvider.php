@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\News;
 use App\Models\Team;
 use App\Models\TeamMember;
+use App\Observers\NewsObserver;
 use App\Observers\TeamMemberObserver;
 use App\Policies\TeamPolicy;
 use Filament\Notifications\Notification;
@@ -31,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Team::class, TeamPolicy::class);
 
         TeamMember::observe(TeamMemberObserver::class);
+        News::observe(NewsObserver::class);
 
         Notification::configureUsing(function (Notification $notification): void {
             $notification->duration(6000); // 2000 мс = 2 секунды

@@ -46,4 +46,11 @@ return [
         'site_key' => env('YANDEX_SMARTCAPTCHA_SITE_KEY'),
         'server_key' => env('YANDEX_SMARTCAPTCHA_SERVER_KEY'),
     ],
+
+    'telegram' => [
+        // Токен бота из @BotFather.
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        // ID канала/группы (например, @my_channel или -1001234567890).
+        'chat_id'   => env('TELEGRAM_CHAT_ID'),
+    ],
 ];
