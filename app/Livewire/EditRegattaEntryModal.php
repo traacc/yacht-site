@@ -437,7 +437,7 @@ class EditRegattaEntryModal extends Component
         // Ровно один капитан
         $captainCount = count(array_filter($this->crew, fn (array $m): bool => $m['role'] === 'captain'));
         if ($captainCount !== 1) {
-            $this->addError('crew', 'В экипаже должен быть ровно один капитан.');
+            $this->addError('crew', 'В экипаже должен быть ровно один рулевой.');
 
             return;
         }

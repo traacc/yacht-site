@@ -91,7 +91,7 @@ class PendingRegattaEntryResource extends Resource
                         ->formatStateUsing(fn (string $state): string => match ($state) {
                             'main'    => 'Основной',
                             'reserve' => 'Запасной',
-                            'captain' => 'Капитан',
+                            'captain' => 'Рулевой',
                             default   => $state,
                         }),
                 ])
@@ -126,7 +126,7 @@ class PendingRegattaEntryResource extends Resource
                     ->label('Команда')
                     ->searchable(),
                 TextColumn::make('captain')
-                    ->label('Капитан')
+                    ->label('Рулевой')
                     ->state(fn (RegattaEntry $record): string => $record->crew()
                         ->where('role', 'captain')
                         ->first()?->teamMember?->user?->name ?? '—'

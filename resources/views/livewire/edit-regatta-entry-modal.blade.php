@@ -143,7 +143,7 @@
                                 </div>
                                 <select wire:model="crew.{{ $i }}.role"
                                         class="border border-gray-200 bg-white rounded px-2 py-1 text-xs focus:border-[#2D92CE] focus:outline-none">
-                                    <option value="captain">Капитан</option>
+                                    <option value="captain">Рулевой</option>
                                     <option value="main">Основной</option>
                                     <option value="reserve">Запасной</option>
                                 </select>

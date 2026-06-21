@@ -167,16 +167,16 @@ class TeamResource extends Resource
                             $organizerCount = $organizers->count();
 
                             if ($organizerCount === 0) {
-                                $fail('Необходимо назначить капитана команды');
+                                $fail('Необходимо назначить рулевого команды');
                             }
 
                             if ($organizerCount > 1) {
-                                $fail('В команде может быть только один капитан');
+                                $fail('В команде может быть только один Рулевой');
                             }
 
                             // Капитана нельзя исключать из команды.
                             if ($organizers->contains(fn (array $member): bool => ($member['status'] ?? null) === 'left')) {
-                                $fail('Капитана нельзя исключить из команды');
+                                $fail('Рулевого нельзя исключить из команды');
                             }
 
                             // Создатель команды обязан быть в составе участников.
@@ -277,7 +277,7 @@ class TeamResource extends Resource
                     ->searchable()->label('Команда'),
                 TextColumn::make('organizer.name')
                     ->width('50px')
-                    ->searchable()->label('Капитан'),
+                    ->searchable()->label('Рулевой'),
                 TextColumn::make('active_members_count')
                     ->label('Участники')
                     ->width('50px')
@@ -432,7 +432,7 @@ class TeamResource extends Resource
 
         if ($organizers->contains(fn (array $member): bool => ($member['status'] ?? null) === 'left')) {
             throw ValidationException::withMessages([
-                'teamMembers' => 'Капитана нельзя исключить из команды',
+                'teamMembers' => 'Рулевого нельзя исключить из команды',
             ]);
         }
     }

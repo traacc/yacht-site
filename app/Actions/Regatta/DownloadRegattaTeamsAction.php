@@ -29,7 +29,7 @@ final class DownloadRegattaTeamsAction
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Команды');
 
-        $headers = ['№', 'Яхта', 'Команда', 'Капитан', 'Участник', 'Дата рождения', 'Разряд'];
+        $headers = ['№', 'Яхта', 'Команда', 'Рулевой', 'Участник', 'Дата рождения', 'Разряд'];
         $sheet->fromArray($headers, null, 'A1');
 
         $sheet->getStyle('A1:G1')->applyFromArray([

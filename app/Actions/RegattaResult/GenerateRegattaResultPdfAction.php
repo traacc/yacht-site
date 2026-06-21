@@ -56,7 +56,7 @@ final class GenerateRegattaResultPdfAction
         $rows = $resultItems->map(function ($item) use ($entriesByTeam, $eventByRaceNumber, $raceCount) {
             $entry = $entriesByTeam->get($item->team_id);
 
-            // Экипаж: капитан → основной состав → запас, внутри роли — по алфавиту имени.
+            // Экипаж: Рулевой → основной состав → запас, внутри роли — по алфавиту имени.
             $roleOrder = ['captain' => 0, 'main' => 1, 'reserve' => 2];
             $crew = collect();
             if ($entry) {

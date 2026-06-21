@@ -56,7 +56,7 @@ final class CreateTeamAction
 
             if ($toAdd > Team::MAX_MEMBERS - 1) {
                 throw ValidationException::withMessages([
-                    'initial_member_ids' => 'Превышен лимит участников. Максимум ' . (Team::MAX_MEMBERS - 1) . ' чел. (одно место занимает капитан).',
+                    'initial_member_ids' => 'Превышен лимит участников. Максимум ' . (Team::MAX_MEMBERS - 1) . ' чел. (одно место занимает Рулевой).',
                 ]);
             }
 

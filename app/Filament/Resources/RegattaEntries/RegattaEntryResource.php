@@ -170,9 +170,9 @@ class RegattaEntryResource extends Resource
                             $captainCount = $crew->filter(fn (array $item): bool => ($item['role'] ?? '') === 'captain')->count();
 
                             if ($captainCount === 0) {
-                                $fail('В экипаже должен быть капитан.');
+                                $fail('В экипаже должен быть Рулевой.');
                             } elseif ($captainCount > 1) {
-                                $fail('В экипаже может быть только один капитан.');
+                                $fail('В экипаже может быть только один Рулевой.');
                             }
                         },
                     ])
@@ -239,7 +239,7 @@ class RegattaEntryResource extends Resource
                             ->options([
                                 'main'              => 'Основной',
                                 'reserve'           => 'Запасной',
-                                'captain'           => 'Капитан',
+                                'captain'           => 'Рулевой',
                                 //'not_participating' => 'Не участвует',
                             ])
                             ->required(),
@@ -327,7 +327,7 @@ class RegattaEntryResource extends Resource
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('captain')
-                    ->label('Капитан')
+                    ->label('Рулевой')
                     ->state(fn (RegattaEntry $record): string => $record->crew()
                         ->where('role', 'captain')
                         ->first()?->teamMember?->user?->name ?? '—'

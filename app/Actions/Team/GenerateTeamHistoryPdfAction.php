@@ -31,7 +31,7 @@ final class GenerateTeamHistoryPdfAction
             'name' => $member->name ?? '—',
             'birthday' => $member->birth_date?->format('d.m.Y') ?? '—',
             'category' => $member->sport_category?->getLabel() ?? '—',
-            'role' => $member->pivot?->role === 'captain' ? 'Капитан' : 'Участник',
+            'role' => $member->pivot?->role === 'captain' ? 'Рулевой' : 'Участник',
         ])->values();
 
         $participation = $team->regattaEntries

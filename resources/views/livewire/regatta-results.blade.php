@@ -296,7 +296,7 @@
                                         <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]  hidden md:table-row">
                                             <th class="pb-2 text-center font-medium pt-6 w-16 a-font">Место</th>
                                             <th class="pb-2 text-center font-medium pt-6 a-font">Команда</th>
-                                            <th class="pb-2 text-center font-medium pt-6 a-font">Капитан</th>
+                                            <th class="pb-2 text-center font-medium pt-6 a-font">Рулевой</th>
                                             <th class="pb-2 text-center font-medium pt-6 a-font">Яхта</th>
                                             <th class="pb-2 text-center font-medium pt-6 a-font">Парус №</th>
                                             <th class="pb-2 text-center font-medium pt-6 a-font">Участники</th>
@@ -323,7 +323,7 @@
                                                     <button class="text-[#2D92CE] font-medium underline hover:no-underline md:no-underline md:text-current cursor-pointer" wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})">{{ $result->team?->name ?? '—' }}</button>
                                                     <span class="md:hidden"><br>({{ $result->yacht?->name ?? '—' }})</span>
                                                 </td>
-                                                <td data-label="Капитан" class="py-3 hidden md:table-cell">{{ $captainMap[$result->team_id] ?? '—' }}</td>
+                                                <td data-label="Рулевой" class="py-3 hidden md:table-cell">{{ $captainMap[$result->team_id] ?? '—' }}</td>
                                                 <td data-label="Яхта" class="py-3 hidden md:table-cell">{{ $result->yacht?->name ?? '—' }}</td>
                                                 <td data-label="Парус №" class="py-3 hidden md:table-cell">{{ $result->yacht?->vfps_number ?? '—' }}</td>
                                                 <td data-label="Участники" class="py-3 hidden md:table-cell">

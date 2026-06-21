@@ -78,7 +78,7 @@ final class SubmitRegattaEntryAction
             $captainCount = count(array_filter($crew, fn (string $role): bool => $role === 'captain'));
             if ($captainCount > 1) {
                 throw ValidationException::withMessages([
-                    'crew' => 'В экипаже может быть только один капитан.',
+                    'crew' => 'В экипаже может быть только один Рулевой.',
                 ]);
             }
 

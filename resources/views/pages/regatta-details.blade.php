@@ -48,7 +48,7 @@
                             <th class="pb-2 text-center font-medium w-16 a-font">№</th>
                             <th class="pb-2 text-center font-medium a-font">Яхта</th>
                             <th class="pb-2 text-center font-medium a-font">Команда</th>
-                            <th class="pb-2 text-center font-medium a-font">Капитан</th>
+                            <th class="pb-2 text-center font-medium a-font">Рулевой</th>
                             <th class="pb-2 text-center font-medium a-font">Состав команды</th>
                         </tr>
                     </thead>

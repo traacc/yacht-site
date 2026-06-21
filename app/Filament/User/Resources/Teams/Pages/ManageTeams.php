@@ -164,7 +164,7 @@ class ManageTeams extends ManageRecords
                     Placeholder::make('invitation_info')
                         ->hiddenLabel()
                         ->content(
-                            "Капитан «{$invitation->requester?->name}» приглашает вас в команду «{$teamName}». "
+                            "Рулевой «{$invitation->requester?->name}» приглашает вас в команду «{$teamName}». "
                             . 'Если вы одобрите запрос, эта команда станет вашей главной командой.'
                             . ($invitation->message ? "\n\nСообщение: {$invitation->message}" : '')
                         )

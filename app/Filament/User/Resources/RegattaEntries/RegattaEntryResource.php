@@ -151,18 +151,18 @@ class RegattaEntryResource extends Resource
                             $captainCount = $crew->filter(fn (array $item): bool => ($item['role'] ?? '') === 'captain')->count();
 
                             if ($captainCount === 0) {
-                                $fail('В экипаже должен быть капитан.');
+                                $fail('В экипаже должен быть Рулевой.');
                             } elseif ($captainCount > 1) {
-                                $fail('В экипаже может быть только один капитан.');
+                                $fail('В экипаже может быть только один Рулевой.');
                             }
                         },
                     ])
                     ->itemLabel(fn (array $state): string => ($state['member_name'] ?? 'Участник')
-                        . (($state['is_captain'] ?? false) ? ' ⭐ Капитан' : '')
+                        . (($state['is_captain'] ?? false) ? ' ⭐ Рулевой' : '')
                         . ' — ' . match ($state['role'] ?? '') {
                         'main'              => 'Основной',
                         'reserve'           => 'Запасной',
-                        'captain'           => 'Капитан',
+                        'captain'           => 'Рулевой',
                         //'not_participating' => 'Не участвует',
                         default             => '—',
                     })
@@ -208,7 +208,7 @@ class RegattaEntryResource extends Resource
                             ->options([
                                 'main'              => 'Основной',
                                 'reserve'           => 'Запасной',
-                                'captain'           => 'Капитан',
+                                'captain'           => 'Рулевой',
                                 //'not_participating' => 'Не участвует',
                             ])
                             ->required(),

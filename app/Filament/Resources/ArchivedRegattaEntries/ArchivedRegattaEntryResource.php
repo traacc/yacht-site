@@ -144,16 +144,16 @@ class ArchivedRegattaEntryResource extends Resource
                         fn (): \Closure => function (string $attribute, mixed $value, \Closure $fail): void {
                             $captainCount = collect($value)->filter(fn (array $item): bool => ($item['role'] ?? '') === 'captain')->count();
                             if ($captainCount > 1) {
-                                $fail('В экипаже может быть только один капитан.');
+                                $fail('В экипаже может быть только один Рулевой.');
                             }
                         },
                     ])
                     ->itemLabel(fn (array $state): string => ($state['member_name'] ?? 'Участник')
-                        . (($state['is_captain'] ?? false) ? ' ⭐ Капитан' : '')
+                        . (($state['is_captain'] ?? false) ? ' ⭐ Рулевой' : '')
                         . ' — ' . match ($state['role'] ?? '') {
                         'main'              => 'Основной',
                         'reserve'           => 'Запасной',
-                        'captain'           => 'Капитан',
+                        'captain'           => 'Рулевой',
                         //'not_participating' => 'Не участвует',
                         default             => '—',
                     })
@@ -220,7 +220,7 @@ class ArchivedRegattaEntryResource extends Resource
                             ->options([
                                 'main'              => 'Основной',
                                 'reserve'           => 'Запасной',
-                                'captain'           => 'Капитан',
+                                'captain'           => 'Рулевой',
                                 //'not_participating' => 'Не участвует',
                             ])
                             ->required(),
@@ -308,7 +308,7 @@ class ArchivedRegattaEntryResource extends Resource
                     ->badge()
                     ->sortable()->toggleable(),
                 TextColumn::make('captain')
-                    ->label('Капитан')
+                    ->label('Рулевой')
                     ->state(fn (\App\Models\RegattaEntry $record): string => $record->crew()
                         ->where('role', 'captain')
                         ->first()?->teamMember?->user?->name ?? '—'
