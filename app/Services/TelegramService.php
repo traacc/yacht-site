@@ -20,6 +20,7 @@ class TelegramService
     public function __construct(
         private readonly ?string $botToken = null,
         private readonly ?string $chatId = null,
+        private readonly ?string $proxy = null,
     ) {
         // Значения по умолчанию берём из config/services.php.
     }
@@ -32,6 +33,11 @@ class TelegramService
     private function chat(): ?string
     {
         return $this->chatId ?? config('services.telegram.chat_id');
+    }
+
+    private function proxy(): ?string
+    {
+        return $this->proxy ?? config('services.telegram.proxy');
     }
 
     public function isConfigured(): bool
@@ -83,10 +89,15 @@ class TelegramService
     private function call(string $method, array $payload, News $news): bool
     {
         try {
-            $response = Http::timeout(self::TIMEOUT_SECONDS)
+            $request = Http::timeout(self::TIMEOUT_SECONDS)
                 ->retry(2, 1000, throw: false)
-                ->asJson()
-                ->post("https://api.telegram.org/bot{$this->token()}/{$method}", $payload);
+                ->asJson();
+
+            if (! empty($this->proxy())) {
+                $request->withOptions(['proxy' => $this->proxy()]);
+            }
+
+            $response = $request->post("https://api.telegram.org/bot{$this->token()}/{$method}", $payload);
 
             if ($response->successful() && $response->json('ok') === true) {
                 return true;

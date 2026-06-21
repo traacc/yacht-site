@@ -52,5 +52,8 @@ return [
         'bot_token' => env('TELEGRAM_BOT_TOKEN'),
         // ID канала/группы (например, @my_channel или -1001234567890).
         'chat_id'   => env('TELEGRAM_CHAT_ID'),
+        // Прокси для обхода блокировки API, например:
+        //   socks5://user:pass@host:1080  или  http://host:3128
+        'proxy'     => env('TELEGRAM_PROXY'),
     ],
 ];
