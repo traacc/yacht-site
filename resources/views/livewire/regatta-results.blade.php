@@ -360,7 +360,7 @@
                     <div class="bg-brand-light rounded-xl md:p-4 md:pr-0">
                         <h3 class="font-display text-[#2E325C] text-3xl mb-4 a-font">ТОП-3 команд сезона</h3>
                         <div class="overflow-auto md:p-6 md:pt-0 bg-white md:max-h-[220px]">
-                            <table class="w-full text-sm md:text-base responsive-table">
+                            <table class="w-full text-sm md:text-base">
                                 <thead class="sticky bg-white top-0 pt-6">
                                     <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]">
                                         <th class="pb-2 text-center font-medium a-font pt-6 w-16">Место</th>
@@ -403,7 +403,7 @@
                     <div class="bg-brand-light rounded-xl md:p-4">
                         <h3 class="font-display text-[#2E325C] text-3xl mb-4 a-font">ТОП-3 участников</h3>
                         <div class="overflow-x-auto md:p-6 md:pt-0 bg-white md:max-h-[220px]">
-                            <table class="w-full text-sm md:text-base responsive-table">
+                            <table class="w-full text-sm md:text-base">
                                 <thead>
                                     <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] bg-white sticky top-0">
                                         <th class="pb-2 text-center font-medium a-font pt-6 w-16">Место</th>
@@ -483,7 +483,7 @@
                 </div>
 
                 <div class="overflow-x-auto max-h-[85vh]">
-                    <table class="w-full bg-brand-light-bg responsive-table overflow-auto">
+                    <table class="w-full bg-brand-light-bg overflow-auto">
                         <thead>
                             <tr class="text-2xl text-brand-dark border-b border-brand-border">
                                 <th class="pb-2 text-center font-medium a-font">Участник</th>

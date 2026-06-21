@@ -99,24 +99,40 @@
             @endforelse
         </div>
         <div class="reggata-list__items bg-[#F8F8F8] pb-3" x-show="view === 'list'">
-            <table class="w-full text-left border-collapse responsive-table bg-[#F8F8F8]">
+            <table class="w-full text-left border-collapse bg-[#F8F8F8]">
                 <thead class="sticky top-0 bg-[#F8F8F8] md:max-h-[220px]">
                     <tr>
-                        <th class="py-2 a-font text-center text-2xl">Дата</th>
-                        <th class="py-2 a-font text-center text-2xl">Регата</th>
-                        <th class="py-2 a-font text-center text-2xl">Серия</th>
-                        <th class="py-2 a-font text-center text-2xl">Акватория</th>
-                        <th class="py-2 a-font text-center text-2xl">Коэфф.</th>
-                        <th class="py-2 a-font text-center text-2xl">Статус</th>
+                        <th class="py-2 a-font text-center text-lg md:text-2xl">Дата</th>
+                        <th class="py-2 a-font text-center text-lg md:text-2xl">Регата</th>
+                        <th class="py-2 a-font text-center text-2xl hidden md:table-cell">Серия</th>
+                        <th class="py-2 a-font text-center text-2xl hidden md:table-cell">Акватория</th>
+                        <th class="py-2 a-font text-center text-2xl hidden md:table-cell">Коэфф.</th>
+                        <th class="py-2 a-font text-center text-2xl hidden md:table-cell">Статус</th>
                         <th class="py-2 a-font text-center"></th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($regattas as $regatta)
+                    @php($statusBadge = match ($regatta->regatta_status) {
+                        \App\Enums\RegattaStatus::Closest   => ['bg-[#FDE4E3] text-[#F24842]', 'Ближайшая регата'],
+                        \App\Enums\RegattaStatus::Upcoming  => ['bg-[#ECECEC] text-brand-gray-light', 'Планируемая'],
+                        \App\Enums\RegattaStatus::Finished  => ['bg-[#E6F4EA] text-[#157949]', 'Состоявшаяся'],
+                        \App\Enums\RegattaStatus::Active    => ['bg-[#FFF3E0] text-[#E67E22]', 'Идёт сейчас'],
+                        \App\Enums\RegattaStatus::Cancelled => ['bg-[#FDE4E3] text-[#F24842]', 'Отменена'],
+                        \App\Enums\RegattaStatus::Postponed => ['bg-[#FFF3E0] text-[#E67E22]', 'Перенесена'],
+                        default => null,
+                    })
                     <tr class="border-t">
-                        <td data-label="Дата" class="py-2 text-center">{{ $regatta->dateRange() }}</td>
-                        <td data-label="Регата" class="py-2 text-center text-brand-navy">{{ $regatta->name }}</td>
-                        <td data-label="Серия" class="py-2 text-center">
+                        <td class="py-2 text-center">{{ $regatta->dateRange() }}</td>
+                        <td class="py-2 text-center text-brand-navy">
+                            {{ $regatta->name }}
+                            @if ($statusBadge)
+                            <div class="md:hidden mt-1">
+                                <span class="{{ $statusBadge[0] }} px-3 py-1 inline-block font-semibold text-sm">{{ $statusBadge[1] }}</span>
+                            </div>
+                            @endif
+                        </td>
+                        <td class="py-2 text-center hidden md:table-cell">
                             @if ($regatta->series)
                             @php($seriesPosition = $regatta->seriesPosition())
                             {{ $regatta->series->name }}@if ($seriesPosition) ({{ $seriesPosition['position'] }}/{{ $seriesPosition['total'] }})@endif
@@ -124,21 +140,11 @@
                             —
                             @endif
                         </td>
-                        <td data-label="Акватория" class="py-2 text-center">{{ $regatta->water_area }}</td>
-                        <td data-label="Коэфф." class="py-2 text-center">{{ number_format($regatta->level_coefficient, 2, ',', ' ')}}</td>
-                        <td data-label="Статус" class="py-2 text-center">
-                            @if ($regatta->regatta_status === \App\Enums\RegattaStatus::Closest)
-                            <div class="bg-[#FDE4E3] px-3 py-1 w-full max-w-[200px] text-[#F24842] inline-block font-semibold">Ближайшая регата</div>
-                            @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Upcoming)
-                            <div class="bg-[#ECECEC] px-3 py-1 w-full max-w-[200px] text-brand-gray-light inline-block font-semibold">Планируемая</div>
-                            @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Finished)
-                            <div class="bg-[#E6F4EA] px-3 py-1 w-full max-w-[200px] text-[#157949] inline-block font-semibold">Состоявшаяся</div>
-                            @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Active)
-                            <div class="bg-[#FFF3E0] px-3 py-1 w-full max-w-[200px] text-[#E67E22] inline-block font-semibold">Идёт сейчас</div>
-                            @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Cancelled)
-                            <div class="bg-[#FDE4E3] px-3 py-1 w-full max-w-[200px] text-[#F24842] inline-block font-semibold">Отменена</div>
-                            @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Postponed)
-                            <div class="bg-[#FFF3E0] px-3 py-1 w-full max-w-[200px] text-[#E67E22] inline-block font-semibold">Перенесена</div>
+                        <td class="py-2 text-center hidden md:table-cell">{{ $regatta->water_area }}</td>
+                        <td class="py-2 text-center hidden md:table-cell">{{ number_format($regatta->level_coefficient, 2, ',', ' ')}}</td>
+                        <td class="py-2 text-center hidden md:table-cell">
+                            @if ($statusBadge)
+                            <div class="{{ $statusBadge[0] }} px-3 py-1 w-full max-w-[200px] inline-block font-semibold">{{ $statusBadge[1] }}</div>
                             @endif
                         </td>
                         <td class="py-2 text-center">

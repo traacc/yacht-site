@@ -170,7 +170,7 @@
                     <a :href="activeTeam?.download_url" target="_blank" class="download flex gap-2 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> Скачать историю команды</a>
                 </div>
                 <div class="overflow-y-auto max-h-[180px] relative custom-scroll mb-8">
-                    <table class="w-full border-collapse bg-[#F8F8F8] responsive-table">
+                    <table class="w-full border-collapse bg-[#F8F8F8]">
                         <thead>
                             <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
                                 <th class="pt-2 pb-2 text-center font-medium a-font">Участник</th>
@@ -210,7 +210,7 @@
                     </div>
                 </div>
                 <div class="overflow-y-auto max-h-[180px] relative custom-scroll">
-                    <table class="w-full border-collapse bg-[#F8F8F8] responsive-table">
+                    <table class="w-full border-collapse bg-[#F8F8F8]">
                         <thead>
                             <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
                                 <th class="pt-2 pb-2 text-center font-medium a-font">Регата</th>
@@ -241,7 +241,7 @@
             <div class="upcoming mb-8">
                 <h5 class="a-font text-lg md:text-3xl mb-6">Заявлена на регаты</h5>
                 <div class="overflow-y-auto max-h-[180px] relative custom-scroll">
-                    <table class="w-full border-collapse bg-[#F8F8F8] responsive-table">
+                    <table class="w-full border-collapse bg-[#F8F8F8]">
                         <thead>
                             <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
                                 <th class="pt-2 pb-2 text-center font-medium a-font">Регата</th>
