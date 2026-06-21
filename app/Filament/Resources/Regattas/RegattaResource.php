@@ -21,7 +21,7 @@ use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\TimePicker;
-use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Hidden;
@@ -404,26 +404,35 @@ class RegattaResource extends Resource
                     ->columnSpanFull()
                     ->collapsible()
                     ->schema([
-                        Repeater::make('entry_required_documents')
+                        CheckboxList::make('entry_required_documents')
                             ->label('Документы')
-                            ->defaultItems(0)
+                            ->options(fn () => \App\Models\YachtDocumentType::cachedConfigurable()
+                                ->pluck('label', 'key')
+                                ->all())
+                            ->descriptions(fn () => \App\Models\YachtDocumentType::cachedConfigurable()
+                                ->whereNotNull('description')
+                                ->pluck('description', 'key')
+                                ->all())
                             ->columns(2)
-                            ->addActionLabel('Добавить документ')
-                            ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
-                            ->schema([
-                                Select::make('doc_type')
-                                    ->label('Тип документа')
-                                    ->options(fn () => \App\Models\YachtDocumentType::cachedConfigurable()
-                                        ->pluck('label', 'key')
-                                        ->all())
-                                    ->required()
-                                    ->distinct(),
-                                Checkbox::make('is_required')
-                                    ->label('Обязательный')
-                                    ->default(false),
-                            ])
-                            ->collapsible()
-                            ->helperText('Добавьте типы документов для заявки. По умолчанию документ необязателен.'),
+                            ->bulkToggleable()
+                            ->formatStateUsing(function ($state): array {
+                                if (! is_array($state)) {
+                                    return [];
+                                }
+
+                                // Новый плоский формат: ['key1', 'key2']
+                                if (isset($state[0]) && is_string($state[0])) {
+                                    return $state;
+                                }
+
+                                // Старый формат: [{doc_type, is_required}] → ['key1', 'key2']
+                                return collect($state)
+                                    ->pluck('doc_type')
+                                    ->filter()
+                                    ->values()
+                                    ->all();
+                            })
+                            ->helperText('Отметьте документы, которые участник должен приложить при подаче заявки.'),
                     ]),
             ]);
     }
