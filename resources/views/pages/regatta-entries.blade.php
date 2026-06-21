@@ -53,28 +53,28 @@
                 </div>
 
                 <div class="overflow-x-auto p-3 md:p-6 bg-white">
-                    <table class="w-full responsive-table">
+                    <table class="w-full">
                         <thead>
-                            <tr class="text-2xl text-brand-dark border-b border-brand-border">
-                                <th class="pb-2 text-center font-medium w-16 a-font">№</th>
+                            <tr class="text-lg md:text-2xl text-brand-dark border-b border-brand-border">
+                                <th class="pb-2 text-center font-medium w-10 md:w-16 a-font">№</th>
                                 <th class="pb-2 text-center font-medium a-font">Яхта</th>
-                                <th class="pb-2 text-center font-medium a-font">Команда</th>
-                                <th class="pb-2 text-center font-medium a-font">Рулевой</th>
-                                <th class="pb-2 text-center font-medium a-font">Состав</th>
-                                <th class="pb-2 text-center font-medium a-font">Дата подачи</th>
+                                <th class="pb-2 text-center font-medium a-font hidden md:table-cell">Команда</th>
+                                <th class="pb-2 text-center font-medium a-font hidden md:table-cell">Рулевой</th>
+                                <th class="pb-2 text-center font-medium a-font hidden md:table-cell">Состав</th>
+                                <th class="pb-2 text-center font-medium a-font hidden md:table-cell">Дата подачи</th>
                                 <th class="pb-2 text-center font-medium a-font">Статус</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y text-center font-medium">
                             @foreach($regatta->entries as $index => $entry)
-                                <tr class="hover:bg-white transition-colors border-b border-brand-border pb-8! md:pb-0!">
-                                    <td data-label="№" class="py-3">{{ $index + 1 }}</td>
-                                    <td data-label="Яхта" class="py-3">{{ $entry->yacht?->name ?? '—' }}</td>
-                                    <td data-label="Команда" class="py-3">{{ $entry->team?->name ?? '—' }}</td>
-                                    <td data-label="Рулевой" class="py-3">{{ $entry->crew->firstWhere('role', 'captain')?->teamMember?->user?->name ?? '—' }}</td>
-                                    <td data-label="Состав" class="py-3">{{ $entry->crew->count() }}</td>
-                                    <td data-label="Дата подачи" class="py-3">{{ $entry->submitted_at?->format('d.m.Y') ?? '—' }}</td>
-                                    <td data-label="Статус" class="py-3">
+                                <tr class="hover:bg-gray-50 transition-colors border-b border-brand-border">
+                                    <td class="py-3">{{ $index + 1 }}</td>
+                                    <td class="py-3">{{ $entry->yacht?->name ?? '—' }}</td>
+                                    <td class="py-3 hidden md:table-cell">{{ $entry->team?->name ?? '—' }}</td>
+                                    <td class="py-3 hidden md:table-cell">{{ $entry->crew->firstWhere('role', 'captain')?->teamMember?->user?->name ?? '—' }}</td>
+                                    <td class="py-3 hidden md:table-cell">{{ $entry->crew->count() }}</td>
+                                    <td class="py-3 hidden md:table-cell">{{ $entry->submitted_at?->format('d.m.Y') ?? '—' }}</td>
+                                    <td class="py-3">
                                         <span class="inline-block rounded-full px-3 py-1 text-sm font-medium {{ $statusClasses[$entry->status] ?? 'bg-gray-100 text-gray-600' }}">
                                             {{ $statusLabels[$entry->status] ?? $entry->status }}
                                         </span>
