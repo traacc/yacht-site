@@ -140,6 +140,28 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     {
         return trim(" {$this->last_name} {$this->first_name} {$this->patronymic}");
     }
+
+    /**
+     * Фамилия с инициалами, например «Иванов И. И.».
+     * Генерируется из поля name (порядок: Фамилия Имя Отчество).
+     */
+    public function getShortNameAttribute(): string
+    {
+        $parts = preg_split('/\s+/', trim((string) $this->name), -1, PREG_SPLIT_NO_EMPTY);
+
+        if (empty($parts)) {
+            return '';
+        }
+
+        $lastName = array_shift($parts);
+
+        $initials = array_map(
+            fn (string $part) => mb_strtoupper(mb_substr($part, 0, 1)) . '.',
+            $parts
+        );
+
+        return trim($lastName . ' ' . implode(' ', $initials));
+    }
     /*
     protected function firstName(): Attribute
     {
