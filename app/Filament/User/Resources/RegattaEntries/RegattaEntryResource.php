@@ -26,6 +26,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -239,35 +240,7 @@ class RegattaEntryResource extends Resource
                     ))
                     ->columns(1)
                     ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
-                    ->rules([
-                        function (Get $get): \Closure {
-                            return function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
-                                $requiredDocs = ManageRegattaEntries::getRequiredDocuments($get('regatta_id'));
-                                $missing = [];
-
-                                foreach ($requiredDocs as $required) {
-                                    if (! ($required['is_required'] ?? false)) {
-                                        continue;
-                                    }
-
-                                    $docType = $required['doc_type'];
-                                    $item = collect((array) $value)->first(
-                                        fn (array $doc): bool => ($doc['doc_type'] ?? '') === $docType
-                                    );
-
-                                    $files = array_filter((array) ($item['files'] ?? []));
-
-                                    if ($item === null || $files === []) {
-                                        $missing[] = $required['title'];
-                                    }
-                                }
-
-                                if ($missing !== []) {
-                                    $fail('Загрузите следующие обязательные документы: ' . implode(', ', $missing) . '.');
-                                }
-                            };
-                        },
-                    ])
+                    ->helperText('Заявку можно подать без документов — недостающие обязательные документы будут отмечены и их можно загрузить позже.')
                     ->schema([
                         Hidden::make('doc_type'),
                         Hidden::make('title'),
@@ -298,6 +271,10 @@ class RegattaEntryResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            // Подсвечиваем жёлтым заявки с неполными документами
+            ->recordClasses(fn (RegattaEntry $record): ?string => $record->hasMissingDocuments()
+                ? 'entry-incomplete-docs-row'
+                : null)
             ->columns([
                 TextColumn::make('regatta.name')->label('Регата')
                     ->searchable(),
@@ -323,6 +300,16 @@ class RegattaEntryResource extends Resource
                         ->whereIn('role', ['main', 'reserve', 'captain'])
                         ->count()
                     ),
+                IconColumn::make('documents_complete')
+                    ->label('Документы')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-exclamation-triangle')
+                    ->trueColor('success')
+                    ->falseColor('warning')
+                    ->tooltip(fn (RegattaEntry $record): ?string => $record->hasMissingDocuments()
+                        ? 'Поданы не все обязательные документы'
+                        : null),
 
                 TextColumn::make('created_at')
                     ->dateTime()
@@ -367,6 +354,7 @@ class RegattaEntryResource extends Resource
                             $this->halt();
                         }
 
+                        $data['documents_complete'] = static::documentsComplete($docs);
                         $record->update($data);
 
                         app(\App\Actions\Document\SyncDocumentFilesAction::class)
@@ -391,6 +379,26 @@ class RegattaEntryResource extends Resource
     /**
      * Определяет читаемую метку для документа в Repeater.
      */
+    /**
+     * Все ли обязательные документы загружены среди элементов repeater'а.
+     *
+     * @param array<int, array{doc_type?: string, is_required?: bool, files?: array}> $docs
+     */
+    public static function documentsComplete(array $docs): bool
+    {
+        foreach ($docs as $doc) {
+            if (! ($doc['is_required'] ?? false)) {
+                continue;
+            }
+
+            if (array_filter((array) ($doc['files'] ?? [])) === []) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public static function resolveDocumentLabel(array $state): ?string
     {
         $docType = $state['doc_type'] ?? null;

@@ -18,6 +18,7 @@ class RegattaEntry extends Model
         'team_id',
         'yacht_id',
         'status',
+        'documents_complete',
         'submitted_at',
         'entry_password',
     ];
@@ -29,8 +30,9 @@ class RegattaEntry extends Model
     protected function casts(): array
     {
         return [
-            'submitted_at'   => 'datetime',
-            'entry_password' => 'hashed',
+            'submitted_at'       => 'datetime',
+            'entry_password'     => 'hashed',
+            'documents_complete' => 'boolean',
         ];
     }
 
@@ -74,6 +76,12 @@ class RegattaEntry extends Model
     // ──────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────
+
+    /** Поданы ли не все обязательные документы (заявка помечена для проверки) */
+    public function hasMissingDocuments(): bool
+    {
+        return ! $this->documents_complete;
+    }
 
     /** Задан ли спец-пароль заявки (для редактирования без входа) */
     public function hasEntryPassword(): bool

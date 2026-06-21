@@ -51,6 +51,7 @@ class ManageRegattaEntries extends ManageRecords
                     unset($data['required_documents'], $data['crew']);
 
                     $data['status'] = 'pending';
+                    $data['documents_complete'] = RegattaEntryResource::documentsComplete($docs);
 
                     // Проверка дубликата до записи в БД
                     /** @var RegattaEntry $model */

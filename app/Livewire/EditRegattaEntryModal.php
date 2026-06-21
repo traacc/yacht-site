@@ -442,25 +442,6 @@ class EditRegattaEntryModal extends Component
             return;
         }
 
-        // Обязательные документы: должен остаться хотя бы один файл (существующий не удалён или новый)
-        foreach ($this->requiredDocuments() as $doc) {
-            if (! ($doc['is_required'] ?? false)) {
-                continue;
-            }
-
-            $existing = array_filter(
-                $this->existingDocuments[$doc['doc_type']] ?? [],
-                fn (array $f): bool => ! in_array($f['url'], $this->removedDocuments, true),
-            );
-            $uploaded = array_filter((array) ($this->documentFiles[$doc['doc_type']] ?? []));
-
-            if ($existing === [] && $uploaded === []) {
-                $this->addError('documentFiles.' . $doc['doc_type'], 'Загрузите обязательный документ «' . $doc['title'] . '».');
-
-                return;
-            }
-        }
-
         try {
             DB::transaction(function () use ($entry, $syncDocuments) {
                 $team = $entry->team;
@@ -529,6 +510,7 @@ class EditRegattaEntryModal extends Component
 
                 // 3. Документы
                 $documentsData = [];
+                $documentsComplete = true;
                 foreach ($this->requiredDocuments() as $doc) {
                     $docType = $doc['doc_type'];
 
@@ -547,6 +529,11 @@ class EditRegattaEntryModal extends Component
                         $files[] = $file->store('documents', 'public');
                     }
 
+                    // Нет ни одного файла по обязательному документу — заявка неполная.
+                    if ($files === [] && ($doc['is_required'] ?? false)) {
+                        $documentsComplete = false;
+                    }
+
                     $documentsData[] = [
                         'doc_type' => $docType,
                         'title'    => $doc['title'],
@@ -555,6 +542,8 @@ class EditRegattaEntryModal extends Component
                 }
 
                 $syncDocuments->execute($entry, $documentsData);
+
+                $entry->update(['documents_complete' => $documentsComplete]);
             });
         } catch (\Exception $e) {
             report($e);

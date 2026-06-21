@@ -787,10 +787,11 @@ class JoinRegattaModal extends Component
             $rules['yachtId'] = ['required', 'string', 'uuid'];
         }
 
+        // Документы не блокируют подачу: заявку можно подать без файлов.
+        // Недостающие обязательные документы помечаются на заявке (documents_complete).
         foreach ($this->requiredDocuments() as $doc) {
             $key = 'documentFiles.' . $doc['doc_type'];
-            $isRequired = $doc['is_required'] ?? false;
-            $rules[$key] = [$isRequired ? 'required' : 'nullable', 'array'];
+            $rules[$key] = ['nullable', 'array'];
             $rules[$key . '.*'] = ['file', 'mimes:pdf,doc,docx,jpg,jpeg,png,webp', 'max:20480'];
         }
 
@@ -985,7 +986,8 @@ class JoinRegattaModal extends Component
             return;
         }
 
-        // Сохраняем загруженные документы
+        // Сохраняем загруженные документы и попутно отмечаем нехватку обязательных.
+        $missingRequired = false;
         foreach ($this->requiredDocuments() as $doc) {
             $files = $this->documentFiles[$doc['doc_type']] ?? [];
 
@@ -993,10 +995,13 @@ class JoinRegattaModal extends Component
                 $files = [$files];
             }
 
+            $files = array_filter($files);
+
+            if ($files === [] && ($doc['is_required'] ?? false)) {
+                $missingRequired = true;
+            }
+
             foreach ($files as $file) {
-                if (! $file) {
-                    continue;
-                }
                 $path = $file->store('documents', 'public');
                 $entry->documents()->create([
                     'doc_type' => $doc['doc_type'],
@@ -1004,6 +1009,10 @@ class JoinRegattaModal extends Component
                     'url'      => $path,
                 ]);
             }
+        }
+
+        if ($missingRequired) {
+            $entry->update(['documents_complete' => false]);
         }
 
         // Отправляем пароль заявки на почту капитану (кроме «технических» адресов).

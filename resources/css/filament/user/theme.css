@@ -293,6 +293,17 @@
 .gallery-unpublished-row .fi-ta-cell {
   background-color: transparent !important;
 }
+
+/* Подсветка заявок с неполными документами жёлтым */
+.entry-incomplete-docs-row {
+  background-color: #FEF9C3 !important;
+}
+.entry-incomplete-docs-row:hover {
+  background-color: #FEF08A !important;
+}
+.entry-incomplete-docs-row .fi-ta-cell {
+  background-color: transparent !important;
+}
 /*
 .regatta-result-list .fi-fo-repeater-add {
   display: none;

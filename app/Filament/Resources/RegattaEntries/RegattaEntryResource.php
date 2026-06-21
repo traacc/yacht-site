@@ -28,6 +28,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -317,6 +318,10 @@ class RegattaEntryResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            // Подсвечиваем жёлтым заявки с неполными документами
+            ->recordClasses(fn (RegattaEntry $record): ?string => $record->hasMissingDocuments()
+                ? 'entry-incomplete-docs-row'
+                : null)
             ->columns([
                 TextColumn::make('team.name')
                     ->label('Команда')
@@ -388,6 +393,18 @@ class RegattaEntryResource extends Resource
                         'withdrawn' => 'gray',
                         default     => 'gray',
                     })->toggleable(),
+                IconColumn::make('documents_complete')
+                    ->label('Документы')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-exclamation-triangle')
+                    ->trueColor('success')
+                    ->falseColor('warning')
+                    ->tooltip(fn (RegattaEntry $record): ?string => $record->hasMissingDocuments()
+                        ? 'Поданы не все обязательные документы'
+                        : null)
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
