@@ -71,7 +71,7 @@
                                     <td class="py-3">{{ $index + 1 }}</td>
                                     <td class="py-3">{{ $entry->yacht?->name ?? '—' }}</td>
                                     <td class="py-3 hidden md:table-cell">{{ $entry->team?->name ?? '—' }}</td>
-                                    <td class="py-3 hidden md:table-cell">{{ $entry->crew->firstWhere('role', 'captain')?->teamMember?->user?->name ?? '—' }}</td>
+                                    <td class="py-3 hidden md:table-cell">{{ $entry->crew->firstWhere('role', 'captain')?->teamMember?->user?->short_name ?? '—' }}</td>
                                     <td class="py-3 hidden md:table-cell">{{ $entry->crew->count() }}</td>
                                     <td class="py-3 hidden md:table-cell">{{ $entry->submitted_at?->format('d.m.Y') ?? '—' }}</td>
                                     <td class="py-3">

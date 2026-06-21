@@ -343,7 +343,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
             ->sortBy(fn ($crewMember) => ($crewMember->role === 'captain' ? '0' : '1')
                 . mb_strtolower((string) ($crewMember->teamMember?->user?->name ?? '')))
             ->map(fn ($crewMember) => [
-                'name' => $crewMember->teamMember?->user?->name ?? '',
+                'name' => $crewMember->teamMember?->user?->short_name ?? '',
                 'birthday' => $crewMember->teamMember?->user?->birth_date?->format('d.m.Y') ?? '',
                 'rank' => $crewMember->teamMember?->user?->sport_category?->getLabel() ?? '',
                 'is_captain' => $crewMember->role === 'captain',
@@ -439,7 +439,7 @@ Route::get('/yachts', function () {
         'name' => $yacht->name,
         'vfps_number' => $yacht->vfps_number,
         'owner' => [
-            'name' => $yacht->user?->name ?? '—',
+            'name' => $yacht->user?->short_name ?? '—',
             'phone' => $yacht->user?->phone ?? '—',
             'email' => $yacht->user?->email ?? '—',
             'photo_url' => $yacht->user?->photo_url
@@ -558,7 +558,7 @@ Route::get('/ratings', function () {
         ->ranked()
         ->get()
         ->map(fn ($r) => [
-            'name'         => $r->user?->name ?? '—',
+            'name'         => $r->user?->short_name ?? '—',
             'total_points' => (float) $r->total_points,
             'birthday'     => $r->user?->birth_date?->format('d.m.Y') ?? '—',
             'category'     => $r->user?->sport_category?->getLabel() ?? '—',
