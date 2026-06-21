@@ -4,14 +4,19 @@ namespace App\Services;
 
 use App\Models\News;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class TelegramService
 {
-    private const TIMEOUT_SECONDS = 10;
+    // Через прокси и при загрузке картинки соединение бывает медленным.
+    private const TIMEOUT_SECONDS = 25;
+    private const CONNECT_TIMEOUT_SECONDS = 8;
 
     // Лимиты Telegram Bot API на длину текста.
     private const CAPTION_LIMIT = 1024;
@@ -47,7 +52,7 @@ class TelegramService
 
     /**
      * Публикует новость в Telegram-канал/группу.
-     * Если задана обложка — отправляет фото с подписью, иначе текстовое сообщение.
+     * Если есть обложка — отправляет фото с подписью, иначе текстовое сообщение.
      */
     public function publishNews(News $news): bool
     {
@@ -59,45 +64,72 @@ class TelegramService
             return false;
         }
 
-        $photoUrl = $this->coverUrl($news);
+        $coverPath = $this->coverPath($news);
 
-        return $photoUrl !== null
-            ? $this->sendPhoto($photoUrl, $this->caption($news, self::CAPTION_LIMIT), $news)
+        return $coverPath !== null
+            ? $this->sendPhoto($coverPath, $this->caption($news, self::CAPTION_LIMIT), $news)
             : $this->sendMessage($this->caption($news, self::MESSAGE_LIMIT), $news);
     }
 
-    private function sendPhoto(string $photoUrl, string $caption, News $news): bool
+    /**
+     * Отправляет обложку как загружаемый файл (multipart), а не ссылкой:
+     * это не зависит от публичной доступности сайта и идёт через наш прокси.
+     */
+    private function sendPhoto(string $coverPath, string $caption, News $news): bool
     {
-        return $this->call('sendPhoto', [
-            'chat_id'    => $this->chat(),
-            'photo'      => $photoUrl,
-            'caption'    => $caption,
-            'parse_mode' => 'HTML',
-        ], $news);
+        $contents = Storage::disk('public')->get($coverPath);
+
+        return $this->execute('sendPhoto', $news, fn (PendingRequest $request): Response => $request
+            ->attach('photo', $contents, basename($coverPath))
+            ->post($this->endpoint('sendPhoto'), [
+                'chat_id'    => $this->chat(),
+                'caption'    => $caption,
+                'parse_mode' => 'HTML',
+            ]));
     }
 
     private function sendMessage(string $text, News $news): bool
     {
-        return $this->call('sendMessage', [
-            'chat_id'                  => $this->chat(),
-            'text'                     => $text,
-            'parse_mode'               => 'HTML',
-            'disable_web_page_preview' => false,
-        ], $news);
+        return $this->execute('sendMessage', $news, fn (PendingRequest $request): Response => $request
+            ->asJson()
+            ->post($this->endpoint('sendMessage'), [
+                'chat_id'                  => $this->chat(),
+                'text'                     => $text,
+                'parse_mode'               => 'HTML',
+                'disable_web_page_preview' => false,
+            ]));
     }
 
-    private function call(string $method, array $payload, News $news): bool
+    /**
+     * Базовый запрос с таймаутами, ретраями и прокси (если задан).
+     */
+    private function baseRequest(): PendingRequest
+    {
+        $request = Http::connectTimeout(self::CONNECT_TIMEOUT_SECONDS)
+            ->timeout(self::TIMEOUT_SECONDS)
+            ->retry(2, 1000, throw: false);
+
+        if (! empty($this->proxy())) {
+            $request->withOptions(['proxy' => $this->proxy()]);
+        }
+
+        return $request;
+    }
+
+    private function endpoint(string $method): string
+    {
+        return "https://api.telegram.org/bot{$this->token()}/{$method}";
+    }
+
+    /**
+     * Выполняет запрос к API и обрабатывает ответ/ошибки единообразно.
+     *
+     * @param  callable(PendingRequest): Response  $send
+     */
+    private function execute(string $method, News $news, callable $send): bool
     {
         try {
-            $request = Http::timeout(self::TIMEOUT_SECONDS)
-                ->retry(2, 1000, throw: false)
-                ->asJson();
-
-            if (! empty($this->proxy())) {
-                $request->withOptions(['proxy' => $this->proxy()]);
-            }
-
-            $response = $request->post("https://api.telegram.org/bot{$this->token()}/{$method}", $payload);
+            $response = $send($this->baseRequest());
 
             if ($response->successful() && $response->json('ok') === true) {
                 return true;
@@ -149,12 +181,18 @@ class TelegramService
         return trim(preg_replace("/\n{3,}/", "\n\n", strip_tags(html_entity_decode($text))));
     }
 
-    private function coverUrl(News $news): ?string
+    /**
+     * Относительный путь к обложке на публичном диске, если файл существует.
+     * Если файла нет локально — вернётся null, и новость уйдёт текстом со ссылкой.
+     */
+    private function coverPath(News $news): ?string
     {
         if (empty($news->cover_image_url)) {
             return null;
         }
 
-        return asset('storage/' . $news->cover_image_url);
+        return Storage::disk('public')->exists($news->cover_image_url)
+            ? $news->cover_image_url
+            : null;
     }
 }
