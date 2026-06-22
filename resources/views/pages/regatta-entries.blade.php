@@ -9,6 +9,17 @@
 </x-hero-section>
 
 @php
+    $initials = function (?string $name): string {
+        $parts = preg_split('/\s+/', trim((string) $name), -1, PREG_SPLIT_NO_EMPTY);
+        if (empty($parts)) {
+            return '?';
+        }
+        return mb_strtoupper(implode('', array_map(
+            fn ($p) => mb_substr($p, 0, 1),
+            array_slice($parts, 0, 2)
+        )));
+    };
+
     $statusLabels = [
         'pending'   => 'На рассмотрении',
         'approved'  => 'Одобрена',
@@ -72,7 +83,25 @@
                                     <td class="py-3">{{ $entry->yacht?->name ?? '—' }}</td>
                                     <td class="py-3 hidden md:table-cell">{{ $entry->team?->name ?? '—' }}</td>
                                     <td class="py-3 hidden md:table-cell">{{ $entry->crew->firstWhere('role', 'captain')?->teamMember?->user?->short_name ?? '—' }}</td>
-                                    <td class="py-3 hidden md:table-cell">{{ $entry->crew->count() }}</td>
+                                    <td class="py-3 hidden md:table-cell">
+                                        @if($entry->crew->count())
+                                            <div class="flex items-center justify-center -space-x-2">
+                                                @foreach($entry->crew as $crewMember)
+                                                    @php $user = $crewMember->teamMember?->user; @endphp
+                                                    <div class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-[#2E325C] text-white text-[10px] font-bold flex-shrink-0 ring-2 {{ $crewMember->role === 'captain' ? 'ring-[#C2A36B]' : 'ring-white' }}"
+                                                         title="{{ $user?->short_name ?? $user?->name }}">
+                                                        @if($user?->photo_url)
+                                                            <img src="{{ asset('storage/'.$user->photo_url) }}" alt="{{ $user?->short_name }}" class="w-full h-full object-cover">
+                                                        @else
+                                                            <span>{{ $initials($user?->name) }}</span>
+                                                        @endif
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
                                     <td class="py-3 hidden md:table-cell">{{ $entry->submitted_at?->format('d.m.Y') ?? '—' }}</td>
                                     <td class="py-3">
                                         <span class="inline-block rounded-full px-3 py-1 text-sm font-medium {{ $statusClasses[$entry->status] ?? 'bg-gray-100 text-gray-600' }}">
