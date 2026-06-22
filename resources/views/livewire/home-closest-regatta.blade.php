@@ -176,7 +176,7 @@
                     <iframe
                         width="100%"
                         height="100%"
-                        src="https://embed.windy.com/embed.html?type=forecast&location=coordinates&detail=true&detailLat={{ $lat }}&detailLon={{ $lon }}&metricTemp=°C&metricRain=mm&metricWind=default"
+                        src="https://embed.windy.com/embed.html?type=forecast&location=coordinates&detail=true&detailLat={{ $lat }}&detailLon={{ $lon }}&metricTemp=°C&metricRain=mm&metricWind=m/s"
                         frameborder="0">
                     </iframe>
                 </template>
