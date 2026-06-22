@@ -250,7 +250,18 @@ Route::get('/competitions', function () {
         ->get()
         ->each(fn ($r) => $r->setRelation('resultItems', $r->results->flatMap->items));
 
-        return view('pages.regattas', compact('regattas'));
+    // Серии регат с входящими в них регатами (отсортированы по дате старта).
+    $series = \App\Models\Series::query()
+        ->whereHas('regattas')
+        ->with([
+            'season',
+            'regattas' => fn ($q) => $q->orderBy('date_start')->orderBy('time_start'),
+        ])
+        ->get()
+        ->sortByDesc(fn ($s) => $s->season?->year)
+        ->values();
+
+        return view('pages.regattas', compact('regattas', 'series'));
 })->name('competitions');
 Route::get('/regattas/entries', function () {
     // Все заявки по каждой регате (любой статус), сгруппированные по регате.

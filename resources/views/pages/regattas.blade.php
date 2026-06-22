@@ -40,9 +40,12 @@ bgImage="{{ asset('images/bg/competitions.webp') }}"
     {{-- Содержимое вкладки «Календарь регат» --}}
     <div x-show="activeTab === 'calendar'" role="tabpanel">
         <livewire:regattas-list />
+        <x-regatta-series-list :series="$series" />
         @livewire('regattas-calendar')
-        
+
     </div>
+
+
 
     {{-- Содержимое вкладки «Результаты» --}}
     <div x-show="activeTab === 'results'" role="tabpanel">
