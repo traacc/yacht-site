@@ -67,7 +67,11 @@
                         @if($lat && $lon)
                             @if($hasWeather)
                             <div class="">
-                                <div class="lg:text-sm text-xs">Погода сейчас</div>
+                                <div class="flex">
+                                    <div class="lg:text-sm text-xs">Погода сейчас</div>
+                                    <div @click="windyModalOpen = true" class="lg:text-sm text-xs underline">Прогноз</div>
+                                </div>
+                                
                                 <div class="pointer-events-auto flex items-center gap-2 cursor-pointer"
                                     @click="windyModalOpen = true"
                                     title="Смотреть прогноз погоды на Windy">
