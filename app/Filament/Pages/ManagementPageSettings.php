@@ -113,6 +113,13 @@ class ManagementPageSettings extends Page
                                     ->placeholder('Введите полное имя')
                                     ->required()
                                     ->maxLength(255)
+                                    ->autocomplete('off')
+                                    ->extraInputAttributes([
+                                        'autocomplete' => 'off',
+                                        'data-1p-ignore' => 'true',
+                                        'data-lpignore' => 'true',
+                                        'data-form-type' => 'other',
+                                    ])
                                     ->rules(['required', 'string', 'max:255']),
 
                                 TextInput::make('position')
