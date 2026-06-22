@@ -277,7 +277,7 @@ class TeamResource extends Resource
                     ->searchable()->label('Команда'),
                 TextColumn::make('organizer.name')
                     ->width('50px')
-                    ->searchable()->label('Рулевой'),
+                    ->searchable()->label('Капитан'),
                 TextColumn::make('active_members_count')
                     ->label('Участники')
                     ->width('50px')

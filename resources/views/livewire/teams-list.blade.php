@@ -51,7 +51,7 @@
                     <div class="text-brand-navy font-semibold leading-tight flex flex-col justify-between md:items-start md:h-[58px]">
                         <div class="font-semibold text-lg">{{ $team->name }}</div>
                         <div class="text-base">
-                            <span class="font-semibold">Рулевой:</span>
+                            <span class="font-semibold">Капитан:</span>
                             <span class="font-medium">{{ $team->organizer?->name ?? '—' }}</span>
                         </div>
                     </div>
@@ -75,7 +75,7 @@
                 <thead class="text-sm lg:text-2xl">
                     <tr>
                         <th class="py-2 a-font text-center">Команда</th>
-                        <th class="py-2 a-font text-center">Рулевой</th>
+                        <th class="py-2 a-font text-center">Капитан</th>
                         <th class="py-2 a-font text-center">Рейтинг</th>
                         <th class="py-2 a-font text-center"></th>
                     </tr>
@@ -84,7 +84,7 @@
                     @forelse($teams as $team)
                     <tr class="border-t text-sm lg:text-2xl">
                         <td data-label="Команда" class="py-2 text-center">{{ $team->name }}</td>
-                        <td data-label="Рулевой" class="py-2 text-center">{{ $team->organizer?->name ?? '—' }}</td>
+                        <td data-label="Капитан" class="py-2 text-center">{{ $team->organizer?->name ?? '—' }}</td>
                         <td data-label="Рейтинг" class="py-2 text-center">{{ $team->teamRatings->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first()?->rank_position ?? '—' }}</td>
                         <td data-label="" class="py-2 text-center">
                             <a href="#" @click.prevent="setTeam({{ $loop->index }})" class="text-[#2D92CE] font-semibold hover:underline [&>span]:hidden md:[&>span]:inline">Подробнее  <span>→</span></a>
@@ -138,7 +138,7 @@
                             <td x-text="activeTeam?.status"></td>
                         </tr>
                         <tr>
-                            <td class="pr-4">Рулевой</td>
+                            <td class="pr-4">Капитан</td>
                             <td x-text="activeTeam?.captain"></td>
                         </tr>
                         <tr>

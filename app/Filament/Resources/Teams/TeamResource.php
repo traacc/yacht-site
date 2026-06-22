@@ -123,7 +123,7 @@ class TeamResource extends Resource
                             }
 
                             if ($organizerCount > 1) {
-                                $fail('В команде может быть только один Рулевой.');
+                                $fail('В команде может быть только один Капитан.');
                             }
                         },
                     ])
