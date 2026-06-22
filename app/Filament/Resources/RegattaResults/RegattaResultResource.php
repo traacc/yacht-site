@@ -32,6 +32,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -189,24 +190,24 @@ class RegattaResultResource extends Resource
                             ->label('Не участвовали'),
                         */
 
-                        TextInput::make('total_points')
-                            ->label('Очки')
-                            //->numeric()
-                            ->required()
-                            ->default(0.0),
+                        // TextInput::make('total_points')
+                        //     ->label('Очки')
+                        //     //->numeric()
+                        //     ->required()
+                        //     ->default(0.0),
 
-                        TextInput::make('final_position')
-                            ->label('Место')
-                            ->rule(static function () {
-                                return static function (string $attribute, $value, \Closure $fail): void {
-                                    $value = trim((string) $value);
+                        // TextInput::make('final_position')
+                        //     ->label('Место')
+                        //     ->rule(static function () {
+                        //         return static function (string $attribute, $value, \Closure $fail): void {
+                        //             $value = trim((string) $value);
 
-                                    if ($value === '0' || str_contains($value, '-')) {
-                                        $fail('Недопустимое значение');
-                                    }
-                                };
-                            })
-                            ->nullable(),
+                        //             if ($value === '0' || str_contains($value, '-')) {
+                        //                 $fail('Недопустимое значение');
+                        //             }
+                        //         };
+                        //     })
+                        //     ->nullable(),
                     ])
                     ->defaultItems(0)
                     ->columns(6)
@@ -523,12 +524,10 @@ class RegattaResultResource extends Resource
             TableColumn::make('Команда'),
             //TableColumn::make('Не участвовали')->markAsRequired(false),
             TableColumn::make('Участники')->markAsRequired(false),
-            TableColumn::make('Очки'),
-            TableColumn::make('Место')->markAsRequired(false),
+            TableColumn::make('Очки / Место')->markAsRequired(false),
         ];
         foreach ($raceEvents as $race) {
-            $columns[] = TableColumn::make($race->name . ' · место')->markAsRequired(false);
-            $columns[] = TableColumn::make($race->name . ' · очки')->markAsRequired(false);
+            $columns[] = TableColumn::make($race->name . ' · место / очки')->markAsRequired(false);
         }
 
         $fields = [
@@ -574,44 +573,48 @@ class RegattaResultResource extends Resource
                     $get('yacht_id'),
                 )),
 
-            TextInput::make('total_points')
-                ->label('Очки')
-                //->numeric()
-                ->required()
-                ->default(0.0),
+            Group::make([
+                TextInput::make('total_points')
+                    ->label('Очки')
+                    //->numeric()
+                    ->required()
+                    ->default(0.0),
 
-            TextInput::make('final_position')
-                ->label('Место')
-                ->rule(static function () {
-                    return static function (string $attribute, $value, \Closure $fail): void {
-                        $value = trim((string) $value);
+                TextInput::make('final_position')
+                    ->label('Место')
+                    ->rule(static function () {
+                        return static function (string $attribute, $value, \Closure $fail): void {
+                            $value = trim((string) $value);
 
-                        if ($value === '0' || str_contains($value, '-')) {
-                            $fail('Недопустимое значение');
-                        }
-                    };
-                })
-                ->nullable(),
+                            if ($value === '0' || str_contains($value, '-')) {
+                                $fail('Недопустимое значение');
+                            }
+                        };
+                    })
+                    ->nullable(),
+            ]),
         ];
         foreach ($raceEvents as $i => $race) {
-            $fields[] = TextInput::make("race_{$i}_position")
-                ->label($race->name . ' · место')
-                //->numeric()
-                // Запрещаем одиночный ноль и любой минус.
-                ->rule(static function () {
-                    return static function (string $attribute, $value, \Closure $fail): void {
-                        $value = trim((string) $value);
+            $fields[] = Group::make([
+                TextInput::make("race_{$i}_position")
+                    ->label($race->name . ' · место')
+                    //->numeric()
+                    // Запрещаем одиночный ноль и любой минус.
+                    ->rule(static function () {
+                        return static function (string $attribute, $value, \Closure $fail): void {
+                            $value = trim((string) $value);
 
-                        if ($value === '0' || str_contains($value, '-')) {
-                            $fail('Недопустимое значение');
-                        }
-                    };
-                })
-                ->nullable();
-            $fields[] = TextInput::make("race_{$i}_points")
-                ->label($race->name . ' · очки')
-                //->numeric()
-                ->nullable();
+                            if ($value === '0' || str_contains($value, '-')) {
+                                $fail('Недопустимое значение');
+                            }
+                        };
+                    })
+                    ->nullable(),
+                TextInput::make("race_{$i}_points")
+                    ->label($race->name . ' · очки')
+                    //->numeric()
+                    ->nullable(),
+            ]);
         }
 
         return Repeater::make('items')
