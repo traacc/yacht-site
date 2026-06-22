@@ -95,10 +95,10 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                                     x-text="team.name"
                                                 ></button>
                                                 <template x-if="team.members && team.members.length > 0">
-                                                    <div class="flex flex-wrap items-center md:justify-center gap-1">
+                                                    <div class="flex items-center md:justify-center -space-x-2">
                                                         <template x-for="(member, idx) in team.members" :key="idx">
                                                             <div @click="openTeam(team)"
-                                                                class="w-8 h-8 rounded-full overflow-hidden flex items-center cursor-pointer justify-center bg-[#2E325C] text-white text-[10px] font-bold flex-shrink-0 ring-2 ring-white"
+                                                                class="relative hover:z-10 w-8 h-8 rounded-full overflow-hidden flex items-center cursor-pointer justify-center bg-[#2E325C] text-white text-[10px] font-bold flex-shrink-0 ring-2 ring-white transition-transform hover:scale-110"
                                                                 :title="member.name"
                                                             >
                                                                 <template x-if="member.avatar">
@@ -155,11 +155,11 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                             </div>
                                         </td>
                                         <td class="py-2" data-label="Участник">
-                                            <div class="flex flex-wrap items-center md:justify-center gap-2">
+                                            <div class="flex items-center md:justify-center -space-x-3">
                                                 <template x-for="(p, j) in row.participants" :key="j">
                                                     <button
                                                         type="button"
-                                                        class="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-[#2E325C] text-white text-xs font-bold ring-2 ring-transparent hover:ring-[#C2A36B] transition-all cursor-pointer flex-shrink-0"
+                                                        class="relative hover:z-10 w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-[#2E325C] text-white text-xs font-bold ring-2 ring-white hover:ring-[#C2A36B] hover:scale-110 transition-all cursor-pointer flex-shrink-0"
                                                         @click="openParticipant(p)"
                                                         :title="p.name"
                                                     >
