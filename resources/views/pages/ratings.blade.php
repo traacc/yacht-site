@@ -56,32 +56,11 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                 <p><b>Личный рейтинг</b> присваивается непосредственно заявленным участникам экипажа в составе команды. Поэтому если были приглашены временные участники, а часть основного состава не участвовала, то рейтинг будет начислен только им.</p>
                 <p><b>Итоговый рейтинг</b> рассчитывается и публикуется как сумма рейтинговых очков за все прошедшие регаты текущего сезона.</p>
             </div>
-            <nav class="flex border-b border-[#EAEAEA] mb-8 mt-8" role="tablist">
-                <button
-                    type="button"
-                    @click="activeTab = 'team'"
-                    :class="activeTab === 'team'
-                        ? 'border-[#2D92CE] text-[#2D92CE]'
-                        : 'border-transparent text-[#2E325C] hover:text-[#2D92CE] hover:border-[#C6C6C6]'"
-                    class="px-6 py-3 text-lg font-semibold border-b-2 transition-colors duration-200 cursor-pointer"
-                    role="tab"
-                    :aria-selected="activeTab === 'team'"
-                >
-                    Командный рейтинг
-                </button>
-                <button
-                    type="button"
-                    @click="activeTab = 'personal'"
-                    :class="activeTab === 'personal'
-                        ? 'border-[#2D92CE] text-[#2D92CE]'
-                        : 'border-transparent text-[#2E325C] hover:text-[#2D92CE] hover:border-[#C6C6C6]'"
-                    class="px-6 py-3 text-lg font-semibold border-b-2 transition-colors duration-200 cursor-pointer"
-                    role="tab"
-                    :aria-selected="activeTab === 'personal'"
-                >
-                    Личный рейтинг
-                </button>
-            </nav>
+            <x-ratings-tabs :tabs="[
+                'team' => 'Командный рейтинг',
+                'personal' => 'Личный рейтинг',
+                'entries' => ['label' => 'Заявки', 'url' => route('regatta-entries')],
+            ]" />
 
             <div class="grid grid-cols-1 gap-4">
 

@@ -35,6 +35,12 @@
 @endphp
 
 <div class="container mx-auto py-10">
+    <x-ratings-tabs :tabs="[
+        'team' => ['label' => 'Командный рейтинг', 'url' => route('ratings')],
+        'personal' => ['label' => 'Личный рейтинг', 'url' => route('ratings') . '#personal'],
+        'entries' => ['label' => 'Заявки', 'url' => route('regatta-entries'), 'active' => true],
+    ]" />
+
     <div class="flex justify-end mb-8" x-data>
         <button @click="$dispatch('open-join-regatta-modal')"
                 class="bg-brand-blue text-white py-2 px-6 hover:bg-brand-blue transition-colors text-lg font-semibold cursor-pointer">
