@@ -581,17 +581,53 @@ Route::get('/ratings', function () {
 Route::get('/series/results', function () {
     $calculator = app(\App\Services\RatingCalculator::class);
 
+    // Состав команд для всплывающего окна (капитан, яхта, участники).
+    $teamDetails = \App\Models\Team::with(['activeMembers', 'organizer', 'defaultYacht'])
+        ->get()
+        ->mapWithKeys(fn ($team) => [$team->id => [
+            'name'     => $team->name,
+            'captain'  => $team->organizer?->name ?? '—',
+            'yacht'    => $team->defaultYacht
+                ? trim($team->defaultYacht->name.($team->defaultYacht->vfps_number ? ' ('.$team->defaultYacht->vfps_number.')' : ''))
+                : '—',
+            'members'  => $team->activeMembers
+                ?->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+                ->map(fn ($m) => [
+                    'name'     => $m->name,
+                    'birthday' => $m->birth_date?->format('d.m.Y') ?? '—',
+                    'category' => $m->sport_category?->getLabel() ?? '—',
+                    'avatar'   => $m->photo_url ? asset('storage/'.$m->photo_url) : null,
+                ])->values()->toArray() ?? [],
+        ]]);
+
     // Серии, в регатах которых есть опубликованные результаты.
     $series = \App\Models\Series::query()
         ->whereHas('regattas.results.items')
         ->with('season')
         ->get()
-        ->map(fn ($s) => [
-            'name'        => $s->name,
-            'description' => $s->description,
-            'season'      => $s->season?->year,
-            'standings'   => $calculator->seriesTeamStandings($s),
-        ])
+        ->map(function ($s) use ($calculator, $teamDetails) {
+            $standings = $calculator->seriesTeamStandings($s);
+
+            // Дополняем строки таблицы данными команды для модального окна.
+            $standings['standings'] = array_map(function ($row) use ($teamDetails) {
+                $row['team'] = $teamDetails[$row['team_id']] ?? [
+                    'name'    => $row['name'],
+                    'captain' => '—',
+                    'yacht'   => '—',
+                    'members' => [],
+                ];
+                $row['team']['total_points'] = $row['total'];
+
+                return $row;
+            }, $standings['standings']);
+
+            return [
+                'name'        => $s->name,
+                'description' => $s->description,
+                'season'      => $s->season?->year,
+                'standings'   => $standings,
+            ];
+        })
         ->filter(fn ($s) => ! empty($s['standings']['standings']))
         ->sortByDesc('season')
         ->values();
