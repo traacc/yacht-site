@@ -7,7 +7,10 @@ use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use App\Models\RegattaResultItem;
 use App\Models\Season;
+use App\Models\Series;
+use App\Models\Team;
 use App\Models\TeamRating;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -95,6 +98,92 @@ class RatingCalculator
         }
 
         return $this->formatBreakdown($breakdown);
+    }
+
+    /**
+     * Командные результаты серии — итоговая турнирная таблица по всем регатам
+     * серии. Очки за регату считаются по той же формуле, что и в рейтинге:
+     * (участвовало команд + 1 − место) × коэффициент регаты.
+     *
+     * @return array{
+     *     regattas: array<int, array{id:string, external_id:int, name:string, date:?string}>,
+     *     standings: array<int, array{rank:int, name:string, points:array<string,?float>, total:float}>
+     * }
+     */
+    public function seriesTeamStandings(Series $series): array
+    {
+        $items = RegattaResultItem::query()
+            ->join('regatta_results', 'regatta_results.id', '=', 'regatta_result_items.regatta_result_id')
+            ->join('regattas', 'regattas.id', '=', 'regatta_results.regatta_id')
+            ->where('regattas.series_id', $series->id)
+            ->whereNull('regattas.deleted_at')
+            ->get([
+                'regatta_result_items.team_id',
+                'regatta_result_items.regatta_result_id',
+                'regatta_result_items.final_position',
+                'regattas.id as regatta_id',
+                'regattas.name as regatta_name',
+                'regattas.external_id as regatta_external_id',
+                'regattas.date_start as regatta_date',
+                'regattas.level_coefficient',
+            ])
+            // Только реально стартовавшие команды (числовое место).
+            ->filter(fn ($item) => is_numeric($item->final_position))
+            ->values();
+
+        // Колонки таблицы — регаты серии, отсортированные по дате старта.
+        $regattas = $items
+            ->unique('regatta_id')
+            ->sortBy('regatta_date')
+            ->map(fn ($item) => [
+                'id'          => $item->regatta_id,
+                'external_id' => $item->regatta_external_id,
+                'name'        => $item->regatta_name,
+                'date'        => $item->regatta_date ? Carbon::parse($item->regatta_date)->format('d.m.Y') : null,
+            ])
+            ->values()
+            ->all();
+
+        // Количество участвовавших команд в каждой регате.
+        $participantsByResult = $items->groupBy('regatta_result_id')->map->count();
+
+        $teamNames = Team::whereIn('id', $items->pluck('team_id')->unique())->pluck('name', 'id');
+
+        // Суммируем очки по командам, сохраняя разбивку по регатам.
+        $byTeam = [];
+        foreach ($items as $item) {
+            $participants = $participantsByResult[$item->regatta_result_id] ?? 0;
+            $score = ($participants + 1 - (int) $item->final_position) * (float) $item->level_coefficient;
+
+            $teamId = $item->team_id;
+            $byTeam[$teamId] ??= [
+                'name'   => $teamNames[$teamId] ?? '—',
+                'points' => [],
+                'total'  => 0.0,
+            ];
+            $byTeam[$teamId]['points'][$item->regatta_id] = ($byTeam[$teamId]['points'][$item->regatta_id] ?? 0) + $score;
+            $byTeam[$teamId]['total'] += $score;
+        }
+
+        $standings = collect($byTeam)
+            ->sortByDesc('total')
+            ->values()
+            ->map(fn ($row, $i) => [
+                'rank'   => $i + 1,
+                'name'   => $row['name'],
+                'points' => collect($regattas)
+                    ->mapWithKeys(fn ($r) => [
+                        $r['id'] => isset($row['points'][$r['id']]) ? round($row['points'][$r['id']], 3) : null,
+                    ])
+                    ->all(),
+                'total'  => round($row['total'], 3),
+            ])
+            ->all();
+
+        return [
+            'regattas'  => $regattas,
+            'standings' => $standings,
+        ];
     }
 
     // ──────────────────────────────────────────────

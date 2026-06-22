@@ -38,6 +38,7 @@
     <x-ratings-tabs :tabs="[
         'team' => ['label' => 'Командный рейтинг', 'url' => route('ratings')],
         'personal' => ['label' => 'Личный рейтинг', 'url' => route('ratings') . '#personal'],
+        'series' => ['label' => 'Результаты серий', 'url' => route('series-results')],
         'entries' => ['label' => 'Заявки', 'url' => route('regatta-entries'), 'active' => true],
     ]" />
 

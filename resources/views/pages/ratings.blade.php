@@ -59,6 +59,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
             <x-ratings-tabs :tabs="[
                 'team' => 'Командный рейтинг',
                 'personal' => 'Личный рейтинг',
+                'series' => ['label' => 'Результаты серий', 'url' => route('series-results')],
                 'entries' => ['label' => 'Заявки', 'url' => route('regatta-entries')],
             ]" />
 

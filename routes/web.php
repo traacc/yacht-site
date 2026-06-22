@@ -578,6 +578,26 @@ Route::get('/ratings', function () {
 
     return view('pages.ratings', compact('teamRatings', 'personalRatings'));
 })->name('ratings');
+Route::get('/series/results', function () {
+    $calculator = app(\App\Services\RatingCalculator::class);
+
+    // Серии, в регатах которых есть опубликованные результаты.
+    $series = \App\Models\Series::query()
+        ->whereHas('regattas.results.items')
+        ->with('season')
+        ->get()
+        ->map(fn ($s) => [
+            'name'        => $s->name,
+            'description' => $s->description,
+            'season'      => $s->season?->year,
+            'standings'   => $calculator->seriesTeamStandings($s),
+        ])
+        ->filter(fn ($s) => ! empty($s['standings']['standings']))
+        ->sortByDesc('season')
+        ->values();
+
+    return view('pages.series-results', compact('series'));
+})->name('series-results');
 Route::get('/gallery', function () {
     $galleries = Gallery::published()
         ->with('season', 'regatta')
