@@ -10,6 +10,7 @@ use App\Models\RaceResult;
 use App\Models\RegattaEntry;
 use App\Models\RegattaEvents;
 use App\Models\RegattaResult;
+use App\Models\RegattaResultItem;
 use App\Models\Team;
 use App\Models\Yacht;
 use BackedEnum;
@@ -524,7 +525,7 @@ class RegattaResultResource extends Resource
             TableColumn::make('Команда'),
             //TableColumn::make('Не участвовали')->markAsRequired(false),
             TableColumn::make('Участники')->markAsRequired(false),
-            TableColumn::make('Очки / Место')->markAsRequired(false),
+            TableColumn::make('Место / Очки')->markAsRequired(false),
         ];
         foreach ($raceEvents as $race) {
             $columns[] = TableColumn::make($race->name . ' · место / очки')->markAsRequired(false);
@@ -574,24 +575,21 @@ class RegattaResultResource extends Resource
                 )),
 
             Group::make([
-                TextInput::make('total_points')
-                    ->label('Очки')
-                    //->numeric()
-                    ->required()
-                    ->default(0.0),
+                // Итог считается автоматически из результатов гонок (см. recomputeItemTotals),
+                // поэтому поля только для чтения и не сохраняются формой напрямую.
+
 
                 TextInput::make('final_position')
                     ->label('Место')
-                    ->rule(static function () {
-                        return static function (string $attribute, $value, \Closure $fail): void {
-                            $value = trim((string) $value);
+                    ->helperText('Считается автоматически')
+                    ->disabled()
+                    ->dehydrated(false),
 
-                            if ($value === '0' || str_contains($value, '-')) {
-                                $fail('Недопустимое значение');
-                            }
-                        };
-                    })
-                    ->nullable(),
+                TextInput::make('total_points')
+                    ->label('Очки')
+                    ->helperText('Сумма очков по гонкам — считается автоматически')
+                    ->disabled()
+                    ->dehydrated(false),
             ]),
         ];
         foreach ($raceEvents as $i => $race) {
@@ -727,6 +725,63 @@ class RegattaResultResource extends Resource
         }
     }
 
+    /**
+     * Пересчитывает итоговые очки и места участников по результатам гонок.
+     *
+     * Система малых очков без отбросов: total_points — сумма points по всем
+     * гонкам регаты, final_position — ранг по возрастанию суммы (равные суммы
+     * получают одно и то же место, например 1-2-2-4). Участникам без единого
+     * результата гонки место не присваивается (final_position = null), чтобы
+     * они не оказались на первом месте с нулём очков.
+     */
+    public static function recomputeItemTotals(RegattaResult $record): void
+    {
+        $record->loadMissing('items');
+
+        $eventIds = self::raceEventsForRegatta($record->regatta_id)->pluck('id');
+
+        // 1) Сумма очков по каждому участнику + признак участия (есть ли гонки).
+        $ranked = collect();
+
+        foreach ($record->items as $item) {
+            $entryId = blank($item->team_id) ? null : RegattaEntry::query()
+                ->where('regatta_id', $record->regatta_id)
+                ->where('team_id', $item->team_id)
+                ->when(filled($item->yacht_id), fn ($q) => $q->where('yacht_id', $item->yacht_id))
+                ->value('id');
+
+            $results = $entryId
+                ? RaceResult::query()
+                    ->where('regatta_entry_id', $entryId)
+                    ->whereIn('event_id', $eventIds)
+                    ->get()
+                : collect();
+
+            // В очки гонки можно вписать нечисловое значение (DNF, DSQ, прочерк) —
+            // такие результаты в сумму не идут.
+            $item->total_points = (float) $results
+                ->filter(fn (RaceResult $r) => is_numeric($r->points))
+                ->sum(fn (RaceResult $r) => (float) $r->points);
+
+            if ($results->isNotEmpty()) {
+                $ranked->push($item);
+            } else {
+                $item->final_position = null;
+            }
+        }
+
+        // 2) Места по возрастанию суммы; равные суммы — одинаковое место.
+        foreach ($ranked as $item) {
+            $item->final_position = $ranked
+                ->filter(fn (RegattaResultItem $other) => (float) $other->total_points < (float) $item->total_points)
+                ->count() + 1;
+        }
+
+        foreach ($record->items as $item) {
+            $item->save();
+        }
+    }
+
     public static function infolist(Schema $schema): Schema
     {
         return $schema
@@ -838,7 +893,10 @@ class RegattaResultResource extends Resource
                             ->formatStateUsing(fn (): string => self::raceEventsFor($record)->pluck('id')->implode(',')),
                         self::itemsTableSchema($record),
                     ])
-                    ->after(fn (RegattaResult $record, array $data) => self::saveRaceResults($record, $data)),
+                    ->after(function (RegattaResult $record, array $data): void {
+                        self::saveRaceResults($record, $data);
+                        self::recomputeItemTotals($record);
+                    }),
                 Action::make('publish')
                     ->label('Опубликовать')
                     ->icon(Heroicon::CheckCircle)
