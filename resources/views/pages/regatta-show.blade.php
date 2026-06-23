@@ -412,7 +412,7 @@
         <div x-show="team_modal_open"
              x-cloak
              class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-            <div class="relative p-6 w-full max-w-[1000px] bg-white gap-6"
+            <div class="relative md:p-6 p-3 w-full max-w-[90vw] md:max-w-[1000px] bg-white gap-6"
                  @click.away="team_modal_open = false"
                  x-transition:enter="transition ease-out duration-300"
                  x-transition:enter-start="opacity-0 scale-95"

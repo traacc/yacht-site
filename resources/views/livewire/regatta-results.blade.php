@@ -462,7 +462,7 @@
             @keydown.escape.window="$wire.closeTeamModal()"
         >
             <div
-                class="relative p-6 w-full max-w-[1000px] bg-white"
+                class="relative md:p-6 p-3 w-full max-w-[90vw] md:max-w-[1000px] bg-white"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 scale-95"
                 x-transition:enter-end="opacity-100 scale-100"
