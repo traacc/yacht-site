@@ -151,7 +151,22 @@ class TeamResource extends Resource
                     ->addActionLabel('Добавить участника')
                     ->columns(2)
                     ->columnSpanFull()
-                    ->defaultItems(1)
+                    // При создании команды первым участником автоматически добавляется
+                    // текущий пользователь с ролью Капитана (Organizer).
+                    ->default(function (string $operation): array {
+                        if ($operation !== 'create') {
+                            return [];
+                        }
+
+                        return [
+                            [
+                                'user_id'      => (string) auth()->id(),
+                                'role'         => TeamMemberRole::Organizer->value,
+                                'status'       => 'active',
+                                'is_permanent' => true,
+                            ],
+                        ];
+                    })
                     // Участников нельзя удалять — только исключать (статус «Покинул команду»),
                     // чтобы сохранить историю участия.
                     ->deletable(false)
@@ -167,16 +182,16 @@ class TeamResource extends Resource
                             $organizerCount = $organizers->count();
 
                             if ($organizerCount === 0) {
-                                $fail('Необходимо назначить рулевого команды');
+                                $fail('Необходимо назначить капитана команды');
                             }
 
                             if ($organizerCount > 1) {
-                                $fail('В команде может быть только один Рулевой');
+                                $fail('В команде может быть только один Капитан');
                             }
 
                             // Капитана нельзя исключать из команды.
                             if ($organizers->contains(fn (array $member): bool => ($member['status'] ?? null) === 'left')) {
-                                $fail('Рулевого нельзя исключить из команды');
+                                $fail('Капитана нельзя исключить из команды');
                             }
 
                             // Создатель команды обязан быть в составе участников.
@@ -432,7 +447,7 @@ class TeamResource extends Resource
 
         if ($organizers->contains(fn (array $member): bool => ($member['status'] ?? null) === 'left')) {
             throw ValidationException::withMessages([
-                'teamMembers' => 'Рулевого нельзя исключить из команды',
+                'teamMembers' => 'Капитана нельзя исключить из команды',
             ]);
         }
     }
