@@ -16,7 +16,6 @@ use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -63,28 +62,19 @@ class NewsResource extends Resource
                     ->columnSpanFull(),
                 FileUpload::make('cover_image_url')
                     ->label('Обложка')
+                    ->helperText('После загрузки нажмите на карандаш, чтобы кадрировать, приблизить или повернуть изображение')
                     ->image()
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                     ->disk('public')
                     ->directory('news/covers')
-                    ->visibility('public'),
-                Select::make('cover_object_position')
-                    ->label('Положение обложки в карточке')
-                    ->helperText('Какая часть изображения остаётся видимой при обрезке в карточке')
-                    ->options([
-                        'center'       => 'По центру',
-                        'top'          => 'Сверху',
-                        'bottom'       => 'Снизу',
-                        'left'         => 'Слева',
-                        'right'        => 'Справа',
-                        'top left'     => 'Сверху слева',
-                        'top right'    => 'Сверху справа',
-                        'bottom left'  => 'Снизу слева',
-                        'bottom right' => 'Снизу справа',
-                    ])
-                    ->default('center')
-                    ->selectablePlaceholder(false)
-                    ->native(false),
+                    ->visibility('public')
+                    ->imageEditor()
+                    ->imageEditorAspectRatios([
+                        null,
+                        '16:9',
+                        '4:3',
+                        '1:1',
+                    ]),
                 DateTimePicker::make('published_at')
                     ->label('Дата публикации')
                     ->default(now())
