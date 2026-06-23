@@ -48,6 +48,12 @@
                 <div class="overflow-x-auto p-3 md:p-6 bg-white">
                     <table class="w-full text-sm md:text-base">
                         <thead>
+                            <tr class="text-brand-dark">
+                                <th></th>
+                                <th></th>
+                                <th class="pb-1 px-3 text-center text-brand-gray-light font-normal text-xs md:text-sm a-font" colspan="{{ count($regattas) }}">Этапы</th>
+                                <th></th>
+                            </tr>
                             <tr class="text-lg md:text-2xl text-brand-dark border-b border-brand-border">
                                 <th class="pb-2 text-center font-medium w-10 md:w-16 a-font"></th>
                                 <th class="pb-2 text-left font-medium a-font">Команда</th>
