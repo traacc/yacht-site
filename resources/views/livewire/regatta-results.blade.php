@@ -485,7 +485,7 @@
                 <div class="overflow-x-auto max-h-[85vh]">
                     <table class="w-full bg-brand-light-bg overflow-auto">
                         <thead>
-                            <tr class="text-2xl text-brand-dark border-b border-brand-border">
+                            <tr class="md:text-2xl text-brand-dark border-b border-brand-border">
                                 <th class="pb-2 text-center font-medium a-font">Участник</th>
                                 <th class="pb-2 text-center font-medium a-font">Дата рождения</th>
                                 <th class="pb-2 text-center font-medium a-font">Разряд</th>
