@@ -737,6 +737,11 @@ class RegattaResultResource extends Resource
                     continue;
                 }
 
+                // Числовые очки округляем до десятых; нечисловые (DNF, DSQ…) — как есть.
+                if (filled($points) && is_numeric($points)) {
+                    $points = round((float) $points, 1);
+                }
+
                 RaceResult::updateOrCreate(
                     ['event_id' => $eventId, 'regatta_entry_id' => $entry->id],
                     [
