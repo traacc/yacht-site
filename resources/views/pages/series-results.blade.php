@@ -27,7 +27,6 @@
         'team' => ['label' => 'Командный рейтинг', 'url' => route('ratings')],
         'personal' => ['label' => 'Личный рейтинг', 'url' => route('ratings') . '#personal'],
         'series' => ['label' => 'Результаты серий', 'url' => route('series-results'), 'active' => true],
-        'entries' => ['label' => 'Заявки', 'url' => route('regatta-entries')],
     ]" />
 
     @forelse($series as $serie)

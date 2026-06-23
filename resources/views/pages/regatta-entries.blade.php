@@ -36,9 +36,8 @@
 
 <div class="container mx-auto py-10">
     <x-ratings-tabs :tabs="[
-        'team' => ['label' => 'Командный рейтинг', 'url' => route('ratings')],
-        'personal' => ['label' => 'Личный рейтинг', 'url' => route('ratings') . '#personal'],
-        'series' => ['label' => 'Результаты серий', 'url' => route('series-results')],
+        'calendar' => ['label' => 'Календарь регат', 'url' => route('competitions')],
+        'results' => ['label' => 'Результаты', 'url' => route('competitions') . '#results'],
         'entries' => ['label' => 'Заявки', 'url' => route('regatta-entries'), 'active' => true],
     ]" />
 

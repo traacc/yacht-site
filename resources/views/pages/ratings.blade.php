@@ -60,7 +60,6 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                 'team' => 'Командный рейтинг',
                 'personal' => 'Личный рейтинг',
                 'series' => ['label' => 'Результаты серий', 'url' => route('series-results')],
-                'entries' => ['label' => 'Заявки', 'url' => route('regatta-entries')],
             ]" />
 
             <div class="grid grid-cols-1 gap-4">
