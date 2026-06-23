@@ -18,6 +18,8 @@ class RegattaResultItem extends Model
         'not_participate',
         'total_points',
         'final_position',
+        'total_points_overridden',
+        'final_position_overridden',
     ];
 
     protected function casts(): array
@@ -25,6 +27,8 @@ class RegattaResultItem extends Model
         return [
             //'total_points'   => 'decimal:3',
             //'final_position' => 'integer',
+            'total_points_overridden'   => 'boolean',
+            'final_position_overridden' => 'boolean',
         ];
     }
 

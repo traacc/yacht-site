@@ -575,21 +575,52 @@ class RegattaResultResource extends Resource
                 )),
 
             Group::make([
-                // Итог считается автоматически из результатов гонок (см. recomputeItemTotals),
-                // поэтому поля только для чтения и не сохраняются формой напрямую.
-
-
+                // По умолчанию итог считается автоматически из результатов гонок
+                // (см. recomputeItemTotals). Если пользователь правит поле вручную —
+                // ставим флаг *_overridden, и авторасчёт это значение больше не трогает.
+                // Очистка поля снимает флаг и возвращает авторасчёт.
                 TextInput::make('final_position')
                     ->label('Место')
-                    ->helperText('Считается автоматически')
-                    ->disabled()
-                    ->dehydrated(false),
+                    // Пометка ручного ввода: жёлтый хинт «Вручную» + рамка, иначе серый «Авто».
+                    ->hint(fn (Get $get): string => $get('final_position_overridden') ? 'Вручную' : 'Авто')
+                    ->hintColor(fn (Get $get): string => $get('final_position_overridden') ? 'warning' : 'gray')
+                    ->extraInputAttributes(fn (Get $get): array => $get('final_position_overridden')
+                        ? ['class' => 'ring-1 ring-amber-400']
+                        : [])
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn ($state, Set $set) => $set('final_position_overridden', filled($state)))
+                    ->suffixAction(self::resetToAutoAction('final_position', 'final_position_overridden'))
+                    ->rule(static function () {
+                        return static function (string $attribute, $value, \Closure $fail): void {
+                            $value = trim((string) $value);
+
+                            if ($value === '0' || str_contains($value, '-')) {
+                                $fail('Недопустимое значение');
+                            }
+                        };
+                    })
+                    ->dehydrated(),
+
+                Hidden::make('final_position_overridden')
+                    ->dehydrated(),
 
                 TextInput::make('total_points')
                     ->label('Очки')
-                    ->helperText('Сумма очков по гонкам — считается автоматически')
-                    ->disabled()
-                    ->dehydrated(false),
+                    ->hint(fn (Get $get): string => $get('total_points_overridden') ? 'Вручную' : 'Авто')
+                    ->hintColor(fn (Get $get): string => $get('total_points_overridden') ? 'warning' : 'gray')
+                    ->extraInputAttributes(fn (Get $get): array => $get('total_points_overridden')
+                        ? ['class' => 'ring-1 ring-amber-400']
+                        : [])
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn ($state, Set $set) => $set('total_points_overridden', filled($state)))
+                    ->suffixAction(self::resetToAutoAction('total_points', 'total_points_overridden'))
+                    // Колонка NOT NULL: relationship-репитер сохраняет строки до пересчёта,
+                    // поэтому пустое значение приводим к 0 (сумму проставит recomputeItemTotals).
+                    ->dehydrateStateUsing(fn ($state) => filled($state) ? $state : 0)
+                    ->dehydrated(),
+
+                Hidden::make('total_points_overridden')
+                    ->dehydrated(),
             ]),
         ];
         foreach ($raceEvents as $i => $race) {
@@ -733,10 +764,14 @@ class RegattaResultResource extends Resource
      * получают одно и то же место, например 1-2-2-4). Участникам без единого
      * результата гонки место не присваивается (final_position = null), чтобы
      * они не оказались на первом месте с нулём очков.
+     *
+     * Поля с флагом *_overridden заданы вручную — авторасчёт их не трогает,
+     * но ручная сумма по-прежнему участвует в ранжировании остальных.
      */
     public static function recomputeItemTotals(RegattaResult $record): void
     {
-        $record->loadMissing('items');
+        // load (не loadMissing) — нужны свежие значения и флаги после сохранения формы.
+        $record->load('items');
 
         $eventIds = self::raceEventsForRegatta($record->regatta_id)->pluck('id');
 
@@ -758,20 +793,27 @@ class RegattaResultResource extends Resource
                 : collect();
 
             // В очки гонки можно вписать нечисловое значение (DNF, DSQ, прочерк) —
-            // такие результаты в сумму не идут.
-            $item->total_points = (float) $results
-                ->filter(fn (RaceResult $r) => is_numeric($r->points))
-                ->sum(fn (RaceResult $r) => (float) $r->points);
+            // такие результаты в сумму не идут. Ручную сумму не перезаписываем.
+            if (! $item->total_points_overridden) {
+                $item->total_points = (float) $results
+                    ->filter(fn (RaceResult $r) => is_numeric($r->points))
+                    ->sum(fn (RaceResult $r) => (float) $r->points);
+            }
 
             if ($results->isNotEmpty()) {
                 $ranked->push($item);
-            } else {
+            } elseif (! $item->final_position_overridden) {
                 $item->final_position = null;
             }
         }
 
         // 2) Места по возрастанию суммы; равные суммы — одинаковое место.
+        // Ручные места оставляем как есть.
         foreach ($ranked as $item) {
+            if ($item->final_position_overridden) {
+                continue;
+            }
+
             $item->final_position = $ranked
                 ->filter(fn (RegattaResultItem $other) => (float) $other->total_points < (float) $item->total_points)
                 ->count() + 1;
@@ -780,6 +822,24 @@ class RegattaResultResource extends Resource
         foreach ($record->items as $item) {
             $item->save();
         }
+    }
+
+    /**
+     * Кнопка-суффикс «сбросить к авторасчёту»: очищает поле и снимает флаг
+     * ручного ввода. Видна только когда поле переопределено вручную.
+     * Само авто-значение подставится при сохранении (recomputeItemTotals).
+     */
+    protected static function resetToAutoAction(string $field, string $flagField): Action
+    {
+        return Action::make("reset_{$field}")
+            ->label('Сбросить к авторасчёту')
+            ->icon(Heroicon::ArrowPath)
+            ->color('gray')
+            ->visible(fn (Get $get): bool => (bool) $get($flagField))
+            ->action(function (Set $set) use ($field, $flagField): void {
+                $set($field, null);
+                $set($flagField, false);
+            });
     }
 
     public static function infolist(Schema $schema): Schema
