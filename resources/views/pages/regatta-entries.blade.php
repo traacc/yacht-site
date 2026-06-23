@@ -60,7 +60,7 @@
                         </h2>
                         <p class="text-brand-gray-light mt-1">
                             {{ $regatta->dateRange() }}
-                            @if($regatta->location) · {{ $regatta->location }} @endif
+                            @if($regatta->water_area) · {{ $regatta->water_area }} @endif
                             · <span class="font-medium">{{ $regatta->regatta_status?->getLabel() }}</span>
                         </p>
                     </div>
@@ -78,7 +78,6 @@
                                 <th class="pb-2 text-center font-medium a-font hidden md:table-cell">Команда</th>
                                 <th class="pb-2 text-center font-medium a-font hidden md:table-cell">Рулевой</th>
                                 <th class="pb-2 text-center font-medium a-font hidden md:table-cell">Состав</th>
-                                <th class="pb-2 text-center font-medium a-font hidden md:table-cell">Дата подачи</th>
                                 <th class="pb-2 text-center font-medium a-font">Статус</th>
                             </tr>
                         </thead>
@@ -108,7 +107,6 @@
                                             —
                                         @endif
                                     </td>
-                                    <td class="py-3 hidden md:table-cell">{{ $entry->submitted_at?->format('d.m.Y') ?? '—' }}</td>
                                     <td class="py-3">
                                         <span class="inline-block rounded-full px-3 py-1 text-sm font-medium {{ $statusClasses[$entry->status] ?? 'bg-gray-100 text-gray-600' }}">
                                             {{ $statusLabels[$entry->status] ?? $entry->status }}
