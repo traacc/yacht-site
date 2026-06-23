@@ -178,7 +178,7 @@
                                 <th class="pt-2 pb-2 text-center font-medium a-font">Разряд</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y text-center font-medium">
+                        <tbody class="divide-y text-center font-medium text-sm md:text-base">
                             <template x-if="activeTeam?.members?.length">
                                 <template x-for="(member, i) in activeTeam.members" :key="i">
                                     <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">

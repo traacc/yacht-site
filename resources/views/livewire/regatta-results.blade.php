@@ -491,7 +491,7 @@
                                 <th class="pb-2 text-center font-medium a-font">Разряд</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y text-center font-medium">
+                        <tbody class="divide-y text-center font-medium text-sm md:text-base">
                             @forelse($activeTeamModal['members'] as $member)
                                 @php($isCaptain = ($member['role'] ?? null) === 'captain')
                                 <tr @class([
