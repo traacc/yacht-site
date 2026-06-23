@@ -31,9 +31,10 @@
                 <div class="bg-white border border-brand-border overflow-hidden"
                      style="border-left: 4px solid {{ $color }}">
                     {{-- Шапка серии --}}
-                    <div class="px-5 py-4" style="background-color: {{ $color }}14">
+                    <a href="{{ route('series-details', $serie) }}"
+                       class="block px-5 py-4 hover:brightness-95 transition-all" style="background-color: {{ $color }}14">
                         <div class="flex items-start justify-between gap-3">
-                            <h3 class="text-xl font-semibold a-font leading-tight" style="color: {{ $color }}">
+                            <h3 class="text-xl font-semibold a-font leading-tight hover:underline" style="color: {{ $color }}">
                                 {{ $serie->name }}
                             </h3>
                             @if($serie->season)
@@ -45,7 +46,7 @@
                         @if($serie->description)
                             <p class="text-sm text-brand-gray-light mt-1">{{ $serie->description }}</p>
                         @endif
-                    </div>
+                    </a>
 
                     {{-- Регаты серии --}}
                     <ul class="divide-y divide-brand-border">

@@ -636,6 +636,7 @@ Route::get('/series/results', function () {
                 'name'        => $s->name,
                 'description' => $s->description,
                 'season'      => $s->season?->year,
+                'url'         => route('series-details', $s),
                 'standings'   => $standings,
             ];
         })
@@ -645,6 +646,14 @@ Route::get('/series/results', function () {
 
     return view('pages.series-results', compact('series'));
 })->name('series-results');
+Route::get('/series/{series}', function (\App\Models\Series $series) {
+    $series->loadMissing([
+        'season',
+        'regattas' => fn ($q) => $q->orderBy('date_start')->orderBy('time_start'),
+    ]);
+
+    return view('pages.series-show', compact('series'));
+})->name('series-details');
 Route::get('/gallery', function () {
     $galleries = Gallery::published()
         ->with('season', 'regatta')

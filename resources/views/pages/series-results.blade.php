@@ -35,7 +35,9 @@
             <div class="lg:p-6 bg-brand-light-bg">
                 <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
                     <div>
-                        <h2 class="section-title a-font">{{ $serie['name'] }}</h2>
+                        <h2 class="section-title a-font">
+                            <a href="{{ $serie['url'] }}" class="hover:text-brand-blue hover:underline transition-colors">{{ $serie['name'] }}</a>
+                        </h2>
                         @if($serie['description'])
                             <p class="text-brand-gray-light mt-1">{{ $serie['description'] }}</p>
                         @endif
