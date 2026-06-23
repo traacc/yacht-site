@@ -616,7 +616,8 @@ class RegattaResultResource extends Resource
                     ->suffixAction(self::resetToAutoAction('total_points', 'total_points_overridden'))
                     // Колонка NOT NULL: relationship-репитер сохраняет строки до пересчёта,
                     // поэтому пустое значение приводим к 0 (сумму проставит recomputeItemTotals).
-                    ->dehydrateStateUsing(fn ($state) => filled($state) ? $state : 0)
+                    // Запятую в десятичной дроби приводим к точке (ввод в русской раскладке).
+                    ->dehydrateStateUsing(fn ($state) => filled($state) ? self::normalizePoints($state) : 0)
                     ->dehydrated(),
 
                 Hidden::make('total_points_overridden')
@@ -731,7 +732,8 @@ class RegattaResultResource extends Resource
                 }
 
                 $position = $row["race_{$i}_position"] ?? null;
-                $points   = $row["race_{$i}_points"] ?? null;
+                // Запятую как десятичный разделитель приводим к точке (русская раскладка).
+                $points   = self::normalizePoints($row["race_{$i}_points"] ?? null);
 
                 if (blank($position) && blank($points)) {
                     continue;
@@ -827,6 +829,22 @@ class RegattaResultResource extends Resource
         foreach ($record->items as $item) {
             $item->save();
         }
+    }
+
+    /**
+     * Нормализует ввод очков: запятую как десятичный разделитель приводит к точке
+     * (привычный ввод в русской раскладке: «2,5» → «2.5»). Нечисловые значения
+     * (DNF, DSQ, прочерк) возвращаются без изменений.
+     */
+    public static function normalizePoints(mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        $normalized = str_replace(',', '.', trim($value));
+
+        return is_numeric($normalized) ? $normalized : $value;
     }
 
     /**

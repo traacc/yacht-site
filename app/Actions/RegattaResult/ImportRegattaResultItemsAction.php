@@ -71,7 +71,8 @@ class ImportRegattaResultItemsAction
             $items[] = [
                 'team_id'       => $team->id,
                 'yacht_id'      => $yachtId,
-                'total_points'  => (float) $points,
+                // Запятую как десятичный разделитель приводим к точке (русская раскладка).
+                'total_points'  => (float) str_replace(',', '.', trim((string) $points)),
                 'final_position' => ($position !== null && $position !== '') ? $position : null,
                 //'final_position' => ($position !== null && $position !== '') ? (int) $position : null,
             ];
