@@ -62,6 +62,7 @@
                         <a href="{{ route('ratings') }}"  class="block px-4 py-2 text-gray-700">Командный</a>
                         <a href="{{ route('ratings') }}#personal"  class="block px-4 py-2 text-gray-700">Личный</a>
                         @endif
+                        <a href="{{ route('series-results') }}" class="block px-4 py-2 text-gray-700">Серии</a>
                     </div>
                 </div>
                 <a href="{{ route('gallery') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Галерея</a>
@@ -225,6 +226,7 @@
                             <a href="{{ route('ratings') }}"  class="block px-4 py-2 text-sm">Командный</a>
                             <a href="{{ route('ratings') }}#personal"  class="block px-4 py-2 text-sm">Личный</a>
                             @endif
+                            <a href="{{ route('series-results') }}" class="block px-4 py-2 text-sm">Серии</a>
                         </div>
                     </div>
                     <a href="{{ route('gallery') }}"  class="block py-2 text-sm">Галерея</a>
