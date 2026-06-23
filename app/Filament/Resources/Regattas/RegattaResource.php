@@ -367,6 +367,7 @@ class RegattaResource extends Resource
                     ->columnSpanFull()
                     ->addActionLabel('Добавить документ')
                     ->collapsible()
+                    ->hidden()
                     ->defaultItems(3)
                     ->itemLabel(fn (array $state): ?string => static::resolveDocumentLabel($state))
                     ->schema([
@@ -402,7 +403,7 @@ class RegattaResource extends Resource
 
                 // ── Прочие документы: загрузка пачкой (как в галерее) ──
                 FileUpload::make('other_files')
-                    ->label('Прочие документы')
+                    ->label('Документы регаты')
                     ->helperText('Загрузите файлы пачкой — каждый сохранится как отдельный документ типа «Прочее». Название берётся из имени файла.')
                     ->columnSpanFull()
                     ->multiple()
