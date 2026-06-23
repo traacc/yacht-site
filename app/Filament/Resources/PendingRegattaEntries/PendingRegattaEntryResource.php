@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\PendingRegattaEntries;
 
 use App\Filament\Resources\PendingRegattaEntries\Pages\ManagePendingRegattaEntries;
+use App\Filament\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Models\RegattaEntry;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -16,6 +17,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -111,12 +113,65 @@ class PendingRegattaEntryResource extends Resource
                 ->columns(2)
                 ->columnSpanFull()
                 ->placeholder('Документы не прикреплены'),
+
+            RepeatableEntry::make('required_documents_status')
+                ->label('Проверка обязательных документов')
+                ->state(fn (RegattaEntry $record): array => static::requiredDocumentsStatus($record))
+                ->schema([
+                    TextEntry::make('title')
+                        ->label('Документ'),
+                    TextEntry::make('status')
+                        ->label('Статус')
+                        ->badge()
+                        ->formatStateUsing(fn (string $state): string => match ($state) {
+                            'uploaded'         => 'Загружен',
+                            'missing_required' => 'Не загружен (обязательный)',
+                            'missing_optional' => 'Не загружен',
+                            default            => $state,
+                        })
+                        ->color(fn (string $state): string => match ($state) {
+                            'uploaded'         => 'success',
+                            'missing_required' => 'danger',
+                            'missing_optional' => 'gray',
+                            default            => 'gray',
+                        }),
+                ])
+                ->columns(2)
+                ->columnSpanFull()
+                ->visible(fn (RegattaEntry $record): bool => static::requiredDocumentsStatus($record) !== []),
         ]);
+    }
+
+    /**
+     * Статус каждого настроенного для регаты документа: загружен ли он в заявке.
+     *
+     * @return array<int, array{title: string, status: 'uploaded'|'missing_required'|'missing_optional'}>
+     */
+    public static function requiredDocumentsStatus(RegattaEntry $record): array
+    {
+        $required = ManageRegattaEntries::getRequiredDocuments($record->regatta_id);
+
+        if ($required === []) {
+            return [];
+        }
+
+        $uploaded = $record->documents->pluck('doc_type')->all();
+
+        return array_map(fn (array $doc): array => [
+            'title'  => $doc['title'],
+            'status' => in_array($doc['doc_type'], $uploaded, true)
+                ? 'uploaded'
+                : (($doc['is_required'] ?? false) ? 'missing_required' : 'missing_optional'),
+        ], $required);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            // Подсвечиваем жёлтым заявки с неполными документами
+            ->recordClasses(fn (RegattaEntry $record): ?string => $record->hasMissingDocuments()
+                ? 'entry-incomplete-docs-row'
+                : null)
             ->columns([
                 TextColumn::make('regatta.name')
                     ->label('Регата')
@@ -137,6 +192,16 @@ class PendingRegattaEntryResource extends Resource
                         ->whereIn('role', ['main', 'reserve', 'captain'])
                         ->count()
                     ),
+                IconColumn::make('documents_complete')
+                    ->label('Документы')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-exclamation-triangle')
+                    ->trueColor('success')
+                    ->falseColor('warning')
+                    ->tooltip(fn (RegattaEntry $record): ?string => $record->hasMissingDocuments()
+                        ? 'Поданы не все обязательные документы'
+                        : null),
                 TextColumn::make('created_at')
                     ->label('Подана')
                     ->dateTime('d M Y'),
