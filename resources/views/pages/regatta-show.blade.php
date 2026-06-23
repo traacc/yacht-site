@@ -428,13 +428,13 @@
                 </div>
                 <table class="w-full bg-brand-light-bg">
                     <thead>
-                        <tr class="text-2xl text-brand-dark border-b border-brand-border">
+                        <tr class="md:text-2xl text-brand-dark border-b border-brand-border">
                             <th class="pb-2 text-center font-medium a-font">Участник</th>
                             <th class="pb-2 text-center font-medium a-font">Дата рождения</th>
                             <th class="pb-2 text-center font-medium a-font">Разряд</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y text-center font-medium  max-h-[80dvh] overflow-auto block md:table-row-group">
+                    <tbody class="divide-y text-center font-medium  max-h-[80dvh] overflow-auto">
                         <template x-for="(member, i) in (activeTeamIndex !== null ? (entriesJson[activeTeamIndex]?.crew || []) : [])" :key="i">
                             <tr class="hover:bg-white transition-colors border-b border-brand-border pb-8! md:pb-0!" :class="{ 'font-bold': member.is_captain }">
                                 <td data-label="Участник" class="py-3" x-text="member.name"></td>

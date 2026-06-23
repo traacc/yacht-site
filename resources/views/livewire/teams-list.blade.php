@@ -172,7 +172,7 @@
                 <div class="overflow-y-auto max-h-[180px] relative custom-scroll mb-8">
                     <table class="w-full border-collapse bg-[#F8F8F8]">
                         <thead>
-                            <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
+                            <tr class="md:text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
                                 <th class="pt-2 pb-2 text-center font-medium a-font">Участник</th>
                                 <th class="pt-2 pb-2 text-center font-medium a-font">Дата рождения</th>
                                 <th class="pt-2 pb-2 text-center font-medium a-font">Разряд</th>
