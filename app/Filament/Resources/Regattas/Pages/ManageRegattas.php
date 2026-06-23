@@ -40,7 +40,11 @@ class ManageRegattas extends ManageRecords
                     $requiredDocs = $data['required_documents'] ?? [];
                     $extraDocs    = $data['extra_documents'] ?? [];
                     $otherFiles   = $data['other_files'] ?? [];
-                    unset($data['required_documents'], $data['extra_documents'], $data['other_files']);
+                    $data['entry_required_documents'] = RegattaResource::assembleEntryRequiredDocuments(
+                        $data['entry_doc_selected'] ?? [],
+                        $data['entry_doc_required'] ?? [],
+                    );
+                    unset($data['required_documents'], $data['extra_documents'], $data['other_files'], $data['entry_doc_selected'], $data['entry_doc_required']);
 
                     /** @var Regatta $record */
                     $record = $model::create($data);

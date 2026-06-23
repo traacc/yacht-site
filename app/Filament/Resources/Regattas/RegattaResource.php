@@ -428,7 +428,7 @@ class RegattaResource extends Resource
                     ->columnSpanFull()
                     ->collapsible()
                     ->schema([
-                        CheckboxList::make('entry_required_documents')
+                        CheckboxList::make('entry_doc_selected')
                             ->label('Документы')
                             ->options(fn () => \App\Models\YachtDocumentType::cachedConfigurable()
                                 ->pluck('label', 'key')
@@ -439,24 +439,18 @@ class RegattaResource extends Resource
                                 ->all())
                             ->columns(2)
                             ->bulkToggleable()
-                            ->formatStateUsing(function ($state): array {
-                                if (! is_array($state)) {
-                                    return [];
-                                }
-
-                                // Новый плоский формат: ['key1', 'key2']
-                                if (isset($state[0]) && is_string($state[0])) {
-                                    return $state;
-                                }
-
-                                // Старый формат: [{doc_type, is_required}] → ['key1', 'key2']
-                                return collect($state)
-                                    ->pluck('doc_type')
-                                    ->filter()
-                                    ->values()
-                                    ->all();
-                            })
+                            ->live()
                             ->helperText('Отметьте документы, которые участник должен приложить при подаче заявки.'),
+                        CheckboxList::make('entry_doc_required')
+                            ->label('Обязательные к загрузке')
+                            ->options(fn (Get $get) => \App\Models\YachtDocumentType::cachedConfigurable()
+                                ->whereIn('key', (array) $get('entry_doc_selected'))
+                                ->pluck('label', 'key')
+                                ->all())
+                            ->columns(2)
+                            ->bulkToggleable()
+                            ->visible(fn (Get $get): bool => filled($get('entry_doc_selected')))
+                            ->helperText('Отметьте, какие из выбранных документов обязательны к загрузке. Остальные участник прикладывает по желанию.'),
                     ]),
             ]);
     }
@@ -529,13 +523,21 @@ class RegattaResource extends Resource
                         $data['is_postponed'] = ($data['regatta_status'] ?? null) === \App\Enums\RegattaStatus::Postponed->value;
                         $data['is_cancelled'] = ($data['regatta_status'] ?? null) === \App\Enums\RegattaStatus::Cancelled->value;
 
+                        $entryDocs = static::splitEntryRequiredDocuments($record->entry_required_documents);
+                        $data['entry_doc_selected'] = $entryDocs['selected'];
+                        $data['entry_doc_required'] = $entryDocs['required'];
+
                         $form->fill($data);
                     })
                     ->using(function (Regatta $record, array $data): Regatta {
                         $requiredDocs = $data['required_documents'] ?? [];
                         $extraDocs    = $data['extra_documents'] ?? [];
                         $otherFiles   = $data['other_files'] ?? [];
-                        unset($data['required_documents'], $data['extra_documents'], $data['other_files'], $data['is_postponed'], $data['is_cancelled']);
+                        $data['entry_required_documents'] = static::assembleEntryRequiredDocuments(
+                            $data['entry_doc_selected'] ?? [],
+                            $data['entry_doc_required'] ?? [],
+                        );
+                        unset($data['required_documents'], $data['extra_documents'], $data['other_files'], $data['is_postponed'], $data['is_cancelled'], $data['entry_doc_selected'], $data['entry_doc_required']);
 
                         $postponedToDate = $data['postponed_to_date'] ?? null;
                         $newStatus       = $data['regatta_status'] ?? null;
@@ -608,6 +610,63 @@ class RegattaResource extends Resource
         }
 
         return is_string($status) && $status === $target->value;
+    }
+
+    /**
+     * Разбирает хранимый список документов заявки на два набора ключей
+     * для двух CheckboxList: выбранные документы и обязательные к загрузке.
+     *
+     * Поддерживает старый плоский формат ['key1', 'key2'] (все обязательные)
+     * и новый [{doc_type, is_required}].
+     *
+     * @return array{selected: array<int, string>, required: array<int, string>}
+     */
+    public static function splitEntryRequiredDocuments(mixed $raw): array
+    {
+        if (! is_array($raw) || $raw === []) {
+            return ['selected' => [], 'required' => []];
+        }
+
+        // Старый плоский формат: все выбранные считаются обязательными.
+        if (isset($raw[0]) && is_string($raw[0])) {
+            $keys = array_values(array_filter($raw, 'is_string'));
+
+            return ['selected' => $keys, 'required' => $keys];
+        }
+
+        $selected = [];
+        $required = [];
+        foreach ($raw as $item) {
+            $key = $item['doc_type'] ?? null;
+            if (! is_string($key) || $key === '') {
+                continue;
+            }
+            $selected[] = $key;
+            if ($item['is_required'] ?? false) {
+                $required[] = $key;
+            }
+        }
+
+        return ['selected' => $selected, 'required' => $required];
+    }
+
+    /**
+     * Собирает хранимый формат [{doc_type, is_required}] из двух наборов ключей.
+     *
+     * @return array<int, array{doc_type: string, is_required: bool}>
+     */
+    public static function assembleEntryRequiredDocuments(mixed $selected, mixed $required): array
+    {
+        $selectedKeys = array_values(array_unique(array_filter((array) $selected, 'is_string')));
+        $requiredKeys = array_filter((array) $required, 'is_string');
+
+        return array_map(
+            fn (string $key): array => [
+                'doc_type'    => $key,
+                'is_required' => in_array($key, $requiredKeys, true),
+            ],
+            $selectedKeys,
+        );
     }
 
     /**
