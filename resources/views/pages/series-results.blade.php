@@ -49,13 +49,13 @@
                     <table class="w-full text-sm md:text-base">
                         <thead>
                             <tr class="text-lg md:text-2xl text-brand-dark border-b border-brand-border">
-                                <th class="pb-2 text-center font-medium w-10 md:w-16 a-font">Место</th>
+                                <th class="pb-2 text-center font-medium w-10 md:w-16 a-font"></th>
                                 <th class="pb-2 text-left font-medium a-font">Команда</th>
-                                @foreach($regattas as $regatta)
+                                @foreach($regattas as $key => $regatta)
                                     <th class="pb-2 px-3 text-center font-medium a-font whitespace-nowrap">
                                         <a href="{{ route('competition-details', $regatta['external_id']) }}"
                                            class="hover:text-brand-blue hover:underline">
-                                            {{ $regatta['name'] }}
+                                            {{ $key + 1 }}
                                         </a>
                                         @if($regatta['date'])
                                             <div class="text-xs text-brand-gray-light font-normal">{{ $regatta['date'] }}</div>
