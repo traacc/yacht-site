@@ -156,8 +156,8 @@
         @if($regatta && $regatta->regatta_status === \App\Enums\RegattaStatus::Finished)
             <section class="results mb-12">
                 <div class="container mx-auto bg-[#F8F8F8]">
-                    <div class="flex justify-between mb-6">
-                        <div class="flex gap-4">
+                    <div class="flex flex-col md:flex-row mb-6">
+                        <div class="flex justify-between md:justify-start md:gap-4">
                             <h3 class="a-font text-lg md:text-3xl">Результаты</h3>
                             @if($regatta->results->first()?->isFinal())
                                 <div class="bg-[#15794933] px-3 py-1 text-[#157949] inline-block font-semibold max-w-[140px] w-full uppercase">
