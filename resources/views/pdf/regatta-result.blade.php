@@ -114,6 +114,21 @@
             background-color: #daf2d0;
         }
 
+        /* Объединённый столбец гонки: место сверху, очки снизу */
+        .race-head, .race-cell { padding: 0; }
+
+        .race-head .race-pos,
+        .race-cell .race-pos {
+            padding: 3px 3px;
+        }
+
+        .race-head .race-pts,
+        .race-cell .race-pts {
+            padding: 3px 3px;
+            background-color: #daf2d0;
+            border-top: 1px solid #c2e0b3;
+        }
+
         /* Экипаж выводится вложенной таблицей, чтобы строки команды не
            разрывались между листами (dompdf теряет rowspan на разрыве). */
         .crew-cell { padding: 0; }
@@ -181,15 +196,17 @@
                 <th rowspan="{{ $headRowspan }}" style="width: 58px;">Дата рождения</th>
                 <th rowspan="{{ $headRowspan }}" style="width: 42px;">Разряд</th>
                 @for($n = 1; $n <= $raceCount; $n++)
-                    <th colspan="2">Гонка {{ $n }}</th>
+                    <th style="width: 32px;">Гонка {{ $n }}</th>
                 @endfor
                 <th rowspan="{{ $headRowspan }}" style="width: 38px;">Итого очков</th>
             </tr>
             @if($raceCount > 0)
                 <tr>
                     @for($n = 1; $n <= $raceCount; $n++)
-                        <th>Место</th>
-                        <th class="score-cell">Очки</th>
+                        <th class="race-head">
+                            <div class="race-pos">Место</div>
+                            <div class="race-pts">Очки</div>
+                        </th>
                     @endfor
                 </tr>
             @endif
@@ -222,8 +239,10 @@
                     </td>
 
                     @foreach($row['races'] as $race)
-                        <td>{{ $race['pos'] }}</td>
-                        <td class="score-cell">{{ $race['pts'] }}</td>
+                        <td class="race-cell">
+                            <div class="race-pos">{{ $race['pos'] }}</div>
+                            <div class="race-pts">{{ $race['pts'] }}</div>
+                        </td>
                     @endforeach
                     <td class="total-cell">{{ $row['total'] }}</td>
                 </tr>
