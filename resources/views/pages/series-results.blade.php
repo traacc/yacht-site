@@ -70,7 +70,7 @@
                                         @endif
                                     </th>
                                 @endforeach
-                                <th class="pb-2 px-3 text-center font-medium a-font">Итого</th>
+                                <th class="pb-2 px-3 text-center font-medium a-font">Очки</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y font-medium">
