@@ -185,6 +185,7 @@ class RegattaResults extends Component
                 'name'     => $c->teamMember->user->name ?? '',
                 'birthday' => $c->teamMember->user->birth_date?->format('d.m.Y') ?? '—',
                 'rank'     => $c->teamMember->user->sport_category?->getLabel() ?? '—',
+                'avatar'   => $c->teamMember->user->photo_url ? asset('storage/'.$c->teamMember->user->photo_url) : null,
                 'role'     => $c->role,
             ])->toArray();
 
