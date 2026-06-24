@@ -75,7 +75,7 @@ enum TeamMemberRole: string
     public function label(): string
     {
         return match ($this) {
-            self::Organizer => 'Рулевой',
+            self::Organizer => 'Капитан',
             self::TeamAdmin => 'Администратор',
             self::Member    => 'Участник',
         };
