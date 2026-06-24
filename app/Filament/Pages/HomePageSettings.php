@@ -193,6 +193,15 @@ class HomePageSettings extends Page
                             ->directory('home/hero')
                             ->visibility('public')
                             ->maxSize(51200)
+                            ->imageEditor()
+                            ->imageEditorViewportWidth(1920)
+                            ->imageEditorViewportHeight(1080)
+                            ->imageEditorAspectRatios([
+                                '16:9',
+                                '4:3',
+                                '1:1',
+                                null,
+                            ])
                             ->columnSpanFull(),
                     ]),
 

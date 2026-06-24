@@ -136,6 +136,14 @@ class TrusteesPageSettings extends Page
                                     ->maxSize(2048)
                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                                     ->nullable()
+                                    ->imageEditor()
+                                    ->imageEditorViewportWidth(1710)
+                                    ->imageEditorViewportHeight(2280)
+                                    ->imageEditorAspectRatios([
+                                        '3:4',
+                                        '1:1',
+                                        null,
+                                    ])
                                     ->columnSpanFull(),
 
                                 Repeater::make('responsibilities')
