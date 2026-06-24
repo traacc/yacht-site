@@ -16,6 +16,44 @@
     selectedYear: '{{ $years->first() }}',
     selectedWater: '',
     touchStartX: 0,
+    copied: false,
+    {{-- Открывает альбом: проставляет состояние модалки и пишет id альбома в URL,
+         чтобы текущую ссылку можно было скопировать/расшарить. --}}
+    openAlbum(gallery) {
+        this.activeGallery = gallery;
+        this.activeTab = this.listTab;
+        this.gallery_modal_open = true;
+        history.replaceState(null, '', '{{ route('gallery') }}?album=' + gallery.id);
+    },
+    {{-- Закрывает модалку альбома и убирает ?album из URL. --}}
+    closeAlbum() {
+        this.gallery_modal_open = false;
+        history.replaceState(null, '', '{{ route('gallery') }}');
+    },
+    {{-- Копирует ссылку на альбом / вызывает нативный «Поделиться» на мобильных. --}}
+    shareAlbum() {
+        const url = '{{ route('gallery') }}?album=' + (this.activeGallery?.id ?? '');
+        if (navigator.share) {
+            navigator.share({ title: this.activeGallery?.name ?? 'Галерея', url }).catch(() => {});
+            return;
+        }
+        navigator.clipboard.writeText(url).then(() => {
+            this.copied = true;
+            setTimeout(() => this.copied = false, 2000);
+        });
+    },
+    {{-- При загрузке страницы: если в URL есть ?album=<id>, открываем нужный альбом. --}}
+    openAlbumFromUrl() {
+        const id = new URLSearchParams(window.location.search).get('album');
+        if (!id) return;
+        const card = document.querySelector('[data-album-id=' + JSON.stringify(id) + ']');
+        if (!card) return;
+        if (card.dataset.albumYear) this.selectedYear = card.dataset.albumYear;
+        this.$nextTick(() => {
+            card.click();
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    },
     get currentIndex() {
         return this.lbImages.indexOf(this.activeImage);
     },
@@ -44,7 +82,7 @@
         if (!container) return;
         container.scrollBy({ left: dir * 200, behavior: 'smooth' });
     },
-}" class="main">
+}" x-init="openAlbumFromUrl()" class="main">
     <section class="md:py-12 py-4 reggata-list px-2 2xl:px-0">
         <div class="container mx-auto">
             <div class="flex justify-between mb-6 flex-col md:flex-row">
@@ -85,8 +123,10 @@
                 @foreach($items as $gallery)
                 {{-- ★ В режиме вкладки «Видео» показываем только альбомы с видео-ссылками --}}
                 <div class="cursor-pointer group relative"
+                     data-album-id="{{ $gallery->id }}"
+                     data-album-year="{{ $year }}"
                      x-show="listTab === 'photo' || {{ $gallery->videoLinks->isNotEmpty() ? 'true' : 'false' }}"
-                     @click="gallery_modal_open = true; activeTab = listTab; activeGallery = {{ Js::from([
+                     @click="openAlbum({{ Js::from([
                          'id'          => $gallery->id,
                          'name'        => $gallery->name,
                          'date'        => $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM YYYY'),
@@ -107,7 +147,7 @@
                              'title'     => $vl->title,
                              'embed_url' => $vl->embed_url,
                          ])->values()->toArray(),
-                     ]) }}">
+                     ]) }})">
 
                     {{-- ★ ИЗМЕНЕНО: аксессор cover_path уже возвращает готовый URL, Storage::disk()->url() не нужен --}}
                     <img src="{{ $gallery->cover_path ?: asset('images/news/news_1.webp') }}"
@@ -133,15 +173,22 @@
         x-cloak
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 team-modal">
         <!-- Модальное окно для подробной информации о галерее -->
-        <div @click.away="gallery_modal_open = false"  class="relative p-6 max-w-[1200px] w-full max-h-[80vh] overflow-y-auto bg-white gap-6"
+        <div @click.away="closeAlbum()"  class="relative p-6 max-w-[1200px] w-full max-h-[80vh] overflow-y-auto bg-white gap-6"
             x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95"
             x-transition:enter-end="opacity-100 scale-100"
         >
             <div class="flex justify-between mb-4">
                 <h3 class="text-3xl a-font" x-text="activeGallery?.name ?? ''"></h3>
-                <div class="close">
-                    <button @click="gallery_modal_open = false" class="text-2xl font-bold">&times;</button>
+                <div class="flex items-center gap-3">
+                    {{-- Кнопка «Поделиться»: нативный share на мобильных, копирование ссылки на десктопе --}}
+                    <button @click="shareAlbum()"
+                            class="inline-flex items-center gap-2 text-[#2D92CE] hover:text-[#247fb3] transition-colors"
+                            :title="copied ? 'Ссылка скопирована' : 'Поделиться альбомом'">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                        <span class="text-sm" x-text="copied ? 'Ссылка скопирована' : 'Поделиться'"></span>
+                    </button>
+                    <button @click="closeAlbum()" class="text-2xl font-bold">&times;</button>
                 </div>
             </div>
             <p class="text-lg mb-6" x-text="(activeGallery?.date_short ?? '') + ' · ' + (activeGallery?.water_area ?? '')"></p>
