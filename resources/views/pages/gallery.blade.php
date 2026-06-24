@@ -77,12 +77,15 @@
     </section>
 
     @foreach($galleries as $year => $items)
-    <section x-show="selectedYear == '{{ $year }}' && (selectedWater === '' || selectedWater === '{{ $items->first()?->water_area }}')">
+    {{-- ★ В режиме «Видео» скрываем год целиком, если в нём нет ни одного альбома с видео --}}
+    <section x-show="selectedYear == '{{ $year }}' && (selectedWater === '' || selectedWater === '{{ $items->first()?->water_area }}') && (listTab === 'photo' || {{ $items->contains(fn ($g) => $g->videoLinks->isNotEmpty()) ? 'true' : 'false' }})">
         <div class="container mx-auto pb-12 mb-4 border-b border-b-[#EAEAEA]">
             <h2 class="section-title a-font text-5xl">{{ $year }}</h2>
             <div class="grid md:grid-cols-3 gap-6 mt-6">
                 @foreach($items as $gallery)
+                {{-- ★ В режиме вкладки «Видео» показываем только альбомы с видео-ссылками --}}
                 <div class="cursor-pointer group relative"
+                     x-show="listTab === 'photo' || {{ $gallery->videoLinks->isNotEmpty() ? 'true' : 'false' }}"
                      @click="gallery_modal_open = true; activeTab = listTab; activeGallery = {{ Js::from([
                          'id'          => $gallery->id,
                          'name'        => $gallery->name,
