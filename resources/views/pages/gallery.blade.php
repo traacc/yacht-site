@@ -12,6 +12,7 @@
     lbImages: [],
     activeGallery: null,
     activeTab: 'photo',
+    listTab: 'photo',
     selectedYear: '{{ $years->first() }}',
     selectedWater: '',
     touchStartX: 0,
@@ -65,6 +66,13 @@
                     </select>
                 </div>
             </div>
+
+            {{-- Табы «Фотографии / Видео» над списком. Управляют тем, на какую вкладку
+                 откроется модальное окно при клике по карточке галереи. --}}
+            <div class="flex gap-4 font-medium text-lg">
+                <button @click="listTab = 'photo'" :class="listTab === 'photo' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="p-4 text-center">Фотографии</button>
+                <button @click="listTab = 'video'" :class="listTab === 'video' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="p-4 text-center">Видео</button>
+            </div>
         </div>
     </section>
 
@@ -74,33 +82,29 @@
             <h2 class="section-title a-font text-5xl">{{ $year }}</h2>
             <div class="grid md:grid-cols-3 gap-6 mt-6">
                 @foreach($items as $gallery)
-                {{-- ★ ИЗМЕНЕНО: данные галереи вынесены в переменную, чтобы переиспользовать в карточке и в табах --}}
-                @php
-                    $galleryJs = Js::from([
-                        'id'          => $gallery->id,
-                        'name'        => $gallery->name,
-                        'date'        => $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM YYYY'),
-                        'date_short'  => $gallery->regatta
-                            ? ($gallery->regatta->date_start?->isSameDay($gallery->regatta->date_end ?? $gallery->regatta->date_start)
-                                ? $gallery->regatta->date_start->isoFormat('D MMMM')
-                                : $gallery->regatta->date_start->isoFormat('D').'–'.$gallery->regatta->date_end->isoFormat('D MMMM'))
-                            : $gallery->date?->isoFormat('D MMMM'),
-                        'water_area'  => $gallery->water_area,
-                        'location'    => $gallery->regatta?->location,
-                        // ★ ИЗМЕНЕНО: аксессор cover_path теперь возвращает готовый URL (см. Gallery::getCoverPathAttribute)
-                        'cover'       => $gallery->cover_path ?: asset('images/news/news_1.webp'),
-                        // ★ ИЗМЕНЕНО: аксессор images теперь возвращает массив готовых URL (см. Gallery::getImagesAttribute)
-                        'images'      => $gallery->images,
-                        // ★ ДОБАВЛЕНО: video_links из таблицы video_links (embed-блоки)
-                        'video_links' => $gallery->videoLinks->map(fn ($vl) => [
-                            'url'       => $vl->url,
-                            'title'     => $vl->title,
-                            'embed_url' => $vl->embed_url,
-                        ])->values()->toArray(),
-                    ]);
-                @endphp
                 <div class="cursor-pointer group relative"
-                     @click="gallery_modal_open = true; activeTab = 'photo'; activeGallery = {{ $galleryJs }}">
+                     @click="gallery_modal_open = true; activeTab = listTab; activeGallery = {{ Js::from([
+                         'id'          => $gallery->id,
+                         'name'        => $gallery->name,
+                         'date'        => $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM YYYY'),
+                         'date_short'  => $gallery->regatta
+                             ? ($gallery->regatta->date_start?->isSameDay($gallery->regatta->date_end ?? $gallery->regatta->date_start)
+                                 ? $gallery->regatta->date_start->isoFormat('D MMMM')
+                                 : $gallery->regatta->date_start->isoFormat('D').'–'.$gallery->regatta->date_end->isoFormat('D MMMM'))
+                             : $gallery->date?->isoFormat('D MMMM'),
+                         'water_area'  => $gallery->water_area,
+                         'location'    => $gallery->regatta?->location,
+                         // ★ ИЗМЕНЕНО: аксессор cover_path теперь возвращает готовый URL (см. Gallery::getCoverPathAttribute)
+                         'cover'       => $gallery->cover_path ?: asset('images/news/news_1.webp'),
+                         // ★ ИЗМЕНЕНО: аксессор images теперь возвращает массив готовых URL (см. Gallery::getImagesAttribute)
+                         'images'      => $gallery->images,
+                         // ★ ДОБАВЛЕНО: video_links из таблицы video_links (embed-блоки)
+                         'video_links' => $gallery->videoLinks->map(fn ($vl) => [
+                             'url'       => $vl->url,
+                             'title'     => $vl->title,
+                             'embed_url' => $vl->embed_url,
+                         ])->values()->toArray(),
+                     ]) }}">
 
                     {{-- ★ ИЗМЕНЕНО: аксессор cover_path уже возвращает готовый URL, Storage::disk()->url() не нужен --}}
                     <img src="{{ $gallery->cover_path ?: asset('images/news/news_1.webp') }}"
@@ -113,19 +117,7 @@
                             <p class="text-lg mb-3 opacity-90">{{ $gallery->name }}</p>
                         @endif
                         <p class="mb-3 flex gap-3">{!! file_get_contents(public_path('images/icons/calendar.svg')) !!} {{ $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM') }} · {{ $gallery->regatta?->location ?? '' }}</p>
-                        <p class="mb-4 flex gap-3">{!! file_get_contents(public_path('images/icons/waves.svg')) !!} {{ $gallery->water_area }}</p>
-
-                        {{-- ★ ДОБАВЛЕНО: табы «Фото»/«Видео» — открывают модалку сразу на нужном табе --}}
-                        <div class="flex gap-3">
-                            <button type="button"
-                                    @click.stop="gallery_modal_open = true; activeTab = 'photo'; activeGallery = {{ $galleryJs }}"
-                                    class="px-4 py-2 bg-white/20 hover:bg-white/30 transition-colors backdrop-blur-sm">Фото</button>
-                            @if($gallery->videoLinks->isNotEmpty())
-                            <button type="button"
-                                    @click.stop="gallery_modal_open = true; activeTab = 'video'; activeGallery = {{ $galleryJs }}"
-                                    class="px-4 py-2 bg-white/20 hover:bg-white/30 transition-colors backdrop-blur-sm">Видео</button>
-                            @endif
-                        </div>
+                        <p class="flex gap-3">{!! file_get_contents(public_path('images/icons/waves.svg')) !!} {{ $gallery->water_area }}</p>
                     </div>
                 </div>
                 @endforeach
