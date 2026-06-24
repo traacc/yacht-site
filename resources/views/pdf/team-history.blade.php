@@ -158,7 +158,7 @@
             <td class="value">{{ $team->getFormattedExternalIdAttribute() }}</td>
         </tr>
         <tr>
-            <td class="label">Рулевой</td>
+            <td class="label">Капитан</td>
             <td class="value">{{ $captain }}</td>
         </tr>
         <tr>

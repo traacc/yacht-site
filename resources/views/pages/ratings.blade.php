@@ -250,7 +250,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
 
                         <div class="divide-y divide-[#EAEAEA] mb-4">
                             <div class="py-3 flex justify-between gap-4" x-show="teamModalData.captain && teamModalData.captain !== '—'">
-                                <span class="text-gray-500 text-sm">Рулевой</span>
+                                <span class="text-gray-500 text-sm">Капитан</span>
                                 <span class="font-medium text-[#2E325C] text-sm text-right" x-text="teamModalData.captain"></span>
                             </div>
                             <div class="py-3 flex justify-between gap-4" x-show="teamModalData.yacht && teamModalData.yacht !== '—'">
