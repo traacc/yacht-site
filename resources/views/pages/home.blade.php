@@ -315,28 +315,147 @@ function gallerySlider() {
 
 
 {{-- ===== СПОНСОРЫ ===== --}}
-<section class="py-10 bg-white">
+@if($sponsors->isNotEmpty())
+<section class="py-10 bg-white"
+    x-data="sponsorsSlider()"
+    x-init="init()"
+    @resize.window.debounce.100ms="calcDimensions()">
+
     <div class="container mx-auto">
         <div class="flex items-center justify-between mb-6">
             <h2 class="section-title a-font">Партнёры ассоциации</h2>
-            <div class="flex gap-2">
-                <button class="bg-[#2D92CE] hover:bg-[#0074CC] rounded-full w-8 h-8 flex items-center justify-center text-white transition-colors">
+            <div class="hidden md:flex items-center gap-2" x-show="maxIndex > 0">
+                <button @click="prev()"
+                    :disabled="current === 0"
+                    :class="current === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#0074CC] cursor-pointer'"
+                    class="bg-[#2D92CE] rounded-full w-8 h-8 flex items-center justify-center shadow-sm text-white transition-all">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 </button>
-                <button class="bg-[#2D92CE] hover:bg-[#0074CC] rounded-full w-8 h-8 flex items-center justify-center text-white transition-colors">
+                <button @click="next()"
+                    :disabled="current >= maxIndex"
+                    :class="current >= maxIndex ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#0074CC] cursor-pointer'"
+                    class="bg-[#2D92CE] rounded-full w-8 h-8 flex items-center justify-center shadow-sm text-white transition-all">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </button>
             </div>
         </div>
-        <div class="grid grid-cols-4 gap-4">
-            <template x-data="{sponsors: [1,2,3,4]}" x-for="s in sponsors" :key="s">
-                <div class="bg-[#E2E2E2] h-20 flex items-center justify-center hover:shadow-md transition-shadow cursor-pointer">
-                    <span class="text-gray-300 font-display text-lg font-bold uppercase tracking-wider"></span>
-                </div>
+
+        {{-- Трек слайдера --}}
+        <div class="overflow-hidden"
+            x-ref="track"
+            @touchstart.passive="touchStart($event)"
+            @touchmove.passive="touchMove($event)"
+            @touchend="touchEnd($event)"
+        >
+            <div
+                class="flex"
+                :style="`gap: ${gap}px; transform: translateX(-${offset}px); transition: ${dragging ? 'none' : 'transform 0.4s cubic-bezier(0.4,0,0.2,1)'}; will-change: transform;`"
+            >
+                <template x-for="(s, idx) in sponsors" :key="idx">
+                    <a
+                        :href="s.url || null"
+                        :target="s.url ? '_blank' : null"
+                        :rel="s.url ? 'noopener noreferrer' : null"
+                        class="shrink-0 bg-[#E2E2E2] h-20 flex items-center justify-center p-3 hover:shadow-md transition-shadow"
+                        :class="s.url ? 'cursor-pointer' : 'pointer-events-none'"
+                        :style="`width: ${cardWidth}px`"
+                    >
+                        <img :src="s.logo" :alt="s.name || ''" class="max-h-full max-w-full object-contain">
+                    </a>
+                </template>
+            </div>
+        </div>
+
+        {{-- Точки пагинации --}}
+        <div class="flex justify-center gap-1.5 mt-5" x-show="maxIndex > 0">
+            <template x-for="(_, idx) in Array.from({ length: maxIndex + 1 })" :key="idx">
+                <button
+                    class="page-dot h-1.5 rounded-full border-0 cursor-pointer transition-all duration-300"
+                    :class="idx === current ? 'w-5 bg-[#2D92CE]' : 'w-1.5 bg-slate-300'"
+                    @click="goTo(idx)"
+                    :aria-label="`Слайд ${idx + 1}`">
+                </button>
             </template>
         </div>
     </div>
 </section>
+
+<script>
+function sponsorsSlider() {
+    return {
+        sponsors: {!! json_encode($sponsors->values()->all()) !!},
+
+        // Брейкпоинты: сколько логотипов видно
+        breakpoints: [
+            { maxWidth: 639,  visible: 2.2 },
+            { maxWidth: 1023, visible: 3.3 },
+            { maxWidth: Infinity, visible: 4 },
+        ],
+
+        visible: 4,
+        gap: 16,
+        cardWidth: 0,
+        current: 0,
+
+        // Touch
+        touchStartX: 0,
+        touchDeltaX: 0,
+        dragging: false,
+
+        get maxIndex() {
+            return Math.max(0, this.sponsors.length - Math.floor(this.visible));
+        },
+        get offset() {
+            return this.current * (this.cardWidth + this.gap);
+        },
+
+        init() {
+            this.$nextTick(() => this.calcDimensions());
+        },
+
+        calcDimensions() {
+            const track = this.$refs.track;
+            if (!track) return;
+
+            const w = window.innerWidth;
+            const bp = this.breakpoints.find(b => w <= b.maxWidth);
+            this.visible = bp ? bp.visible : 4;
+
+            this.cardWidth = (track.clientWidth - this.gap * (this.visible - 1)) / this.visible;
+
+            if (this.current > this.maxIndex) this.current = this.maxIndex;
+        },
+
+        prev() {
+            if (this.current > 0) this.current--;
+        },
+        next() {
+            if (this.current < this.maxIndex) this.current++;
+        },
+        goTo(idx) {
+            this.current = Math.min(Math.max(0, idx), this.maxIndex);
+        },
+
+        // Touch-свайп
+        touchStart(e) {
+            this.touchStartX = e.touches[0].clientX;
+            this.touchDeltaX = 0;
+            this.dragging = true;
+        },
+        touchMove(e) {
+            this.touchDeltaX = e.touches[0].clientX - this.touchStartX;
+        },
+        touchEnd() {
+            this.dragging = false;
+            const threshold = this.cardWidth * 0.25;
+            if (this.touchDeltaX < -threshold) this.next();
+            else if (this.touchDeltaX > threshold) this.prev();
+            this.touchDeltaX = 0;
+        },
+    };
+}
+</script>
+@endif
 
 {{-- ===== FAQ ===== --}}
 @if(!empty($faq))

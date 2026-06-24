@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\ImageConverter;
@@ -30,7 +31,7 @@ use UnitEnum;
 
 class HomePageSettings extends Page
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected string $view = 'filament-panels::pages.page';
 
@@ -62,9 +63,10 @@ class HomePageSettings extends Page
         /** @var SettingsService $settings */
         $settings = app(SettingsService::class);
 
-        $teams        = $settings->get('home.top_teams', []);
+        $teams = $settings->get('home.top_teams', []);
         $participants = $settings->get('home.top_participants', []);
-        $faq          = $settings->get('home.faq', []);
+        $faq = $settings->get('home.faq', []);
+        $sponsors = $settings->get('home.sponsors', []);
 
         // Нормализуем gallery_photos в индексированный массив строк
         $rawPhotos = $settings->get('home.gallery_photos', []);
@@ -83,30 +85,32 @@ class HomePageSettings extends Page
         // Заполняем форму через fill() — это запускает afterStateHydrated на FileUpload
         $this->form->fill([
             // TOP-3 команд
-            'top_team_1'               => $teams[0]['id']     ?? null,
-            'top_team_1_points'        => $teams[0]['points'] ?? null,
-            'top_team_2'               => $teams[1]['id']     ?? null,
-            'top_team_2_points'        => $teams[1]['points'] ?? null,
-            'top_team_3'               => $teams[2]['id']     ?? null,
-            'top_team_3_points'        => $teams[2]['points'] ?? null,
+            'top_team_1' => $teams[0]['id'] ?? null,
+            'top_team_1_points' => $teams[0]['points'] ?? null,
+            'top_team_2' => $teams[1]['id'] ?? null,
+            'top_team_2_points' => $teams[1]['points'] ?? null,
+            'top_team_3' => $teams[2]['id'] ?? null,
+            'top_team_3_points' => $teams[2]['points'] ?? null,
             // TOP-3 участников
-            'top_participant_1'        => $participants[0]['id']     ?? null,
+            'top_participant_1' => $participants[0]['id'] ?? null,
             'top_participant_1_points' => $participants[0]['points'] ?? null,
-            'top_participant_2'        => $participants[1]['id']     ?? null,
+            'top_participant_2' => $participants[1]['id'] ?? null,
             'top_participant_2_points' => $participants[1]['points'] ?? null,
-            'top_participant_3'        => $participants[2]['id']     ?? null,
+            'top_participant_3' => $participants[2]['id'] ?? null,
             'top_participant_3_points' => $participants[2]['points'] ?? null,
             // FAQ
             'faq' => $faq,
+            // Спонсоры / партнёры
+            'sponsors' => $sponsors,
             // Галерея
             'gallery_photos' => $galleryPhotos,
-            'gallery_count'  => (int) $settings->get('home.gallery_count', 10),
+            'gallery_count' => (int) $settings->get('home.gallery_count', 10),
             'gallery_random' => (bool) $settings->get('home.gallery_random', false),
-            'gallery_sort'   => $settings->get('home.gallery_sort', 'manual') ?? 'manual',
+            'gallery_sort' => $settings->get('home.gallery_sort', 'manual') ?? 'manual',
             // Hero-фон главной страницы
             'hero_media' => $heroMedia,
             // Режим обновления сайта
-            'maintenance_mode'    => (bool) $settings->get('home.maintenance_mode', false),
+            'maintenance_mode' => (bool) $settings->get('home.maintenance_mode', false),
             'maintenance_message' => $settings->get('home.maintenance_message', 'Сайт в процессе обновления'),
         ]);
     }
@@ -190,6 +194,44 @@ class HomePageSettings extends Page
                             ->visibility('public')
                             ->maxSize(51200)
                             ->columnSpanFull(),
+                    ]),
+
+                // ── Спонсоры / партнёры ──────────────────────
+                Section::make('Партнёры ассоциации')
+                    ->description('Логотипы партнёров для блока «Партнёры ассоциации» на главной странице. Перетаскивайте записи для изменения порядка отображения.')
+                    ->schema([
+                        Repeater::make('sponsors')
+                            ->label('Логотипы партнёров')
+                            ->addActionLabel('Добавить партнёра')
+                            ->reorderable()
+                            ->collapsible()
+                            ->defaultItems(0)
+                            ->schema([
+                                FileUpload::make('logo')
+                                    ->label('Логотип')
+                                    ->image()
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
+                                    ->disk('public')
+                                    ->directory('home/sponsors')
+                                    ->visibility('public')
+                                    ->maxSize(5120)
+                                    ->columnSpanFull(),
+
+                                Grid::make(2)->schema([
+                                    TextInput::make('name')
+                                        ->label('Название')
+                                        ->placeholder('Название партнёра')
+                                        ->maxLength(255)
+                                        ->rules(['nullable', 'string', 'max:255']),
+
+                                    TextInput::make('url')
+                                        ->label('Ссылка')
+                                        ->placeholder('https://example.com')
+                                        ->url()
+                                        ->maxLength(2048)
+                                        ->rules(['nullable', 'url', 'max:2048']),
+                                ]),
+                            ]),
                     ]),
 
                 // ── TOP-3 команд ──────────────────────────────
@@ -331,8 +373,6 @@ class HomePageSettings extends Page
                         ]),
                     ]),
 
-
-
                 // ── Галерея главной страницы ──────────────────
                 Section::make('Галерея главной страницы')
                     ->description('Настройте фотографии, отображаемые в слайдере галереи на главной странице.')
@@ -378,9 +418,9 @@ class HomePageSettings extends Page
                                 ->label('Порядок сортировки')
                                 ->helperText('Применяется только при отключённом случайном порядке.')
                                 ->options([
-                                    'manual'  => 'Ручной (как загружено)',
-                                    'newest'  => 'Сначала новые',
-                                    'oldest'  => 'Сначала старые',
+                                    'manual' => 'Ручной (как загружено)',
+                                    'newest' => 'Сначала новые',
+                                    'oldest' => 'Сначала старые',
                                 ])
                                 ->default('manual')
                                 ->required()
@@ -389,7 +429,7 @@ class HomePageSettings extends Page
                         ]),
                     ]),
 
-                                // ── FAQ ──────────────────────────────────────
+                // ── FAQ ──────────────────────────────────────
                 Section::make('FAQ')
                     ->description('Добавьте вопросы и ответы для блока «Часто задаваемые вопросы» на главной странице. Перетаскивайте записи для изменения порядка отображения.')
                     ->schema([
@@ -416,7 +456,7 @@ class HomePageSettings extends Page
                             ]),
                     ]),
             ]);
-            
+
     }
 
     // ──────────────────────────────────────────────
@@ -440,23 +480,23 @@ class HomePageSettings extends Page
         $data = $this->form->getState();
 
         $this->validate([
-            'data.top_team_1'               => ['nullable', 'exists:teams,id'],
-            'data.top_team_1_points'        => ['nullable', 'numeric', 'min:0'],
-            'data.top_team_2'               => ['nullable', 'exists:teams,id'],
-            'data.top_team_2_points'        => ['nullable', 'numeric', 'min:0'],
-            'data.top_team_3'               => ['nullable', 'exists:teams,id'],
-            'data.top_team_3_points'        => ['nullable', 'numeric', 'min:0'],
-            'data.top_participant_1'        => ['nullable', 'exists:users,id'],
+            'data.top_team_1' => ['nullable', 'exists:teams,id'],
+            'data.top_team_1_points' => ['nullable', 'numeric', 'min:0'],
+            'data.top_team_2' => ['nullable', 'exists:teams,id'],
+            'data.top_team_2_points' => ['nullable', 'numeric', 'min:0'],
+            'data.top_team_3' => ['nullable', 'exists:teams,id'],
+            'data.top_team_3_points' => ['nullable', 'numeric', 'min:0'],
+            'data.top_participant_1' => ['nullable', 'exists:users,id'],
             'data.top_participant_1_points' => ['nullable', 'numeric', 'min:0'],
-            'data.top_participant_2'        => ['nullable', 'exists:users,id'],
+            'data.top_participant_2' => ['nullable', 'exists:users,id'],
             'data.top_participant_2_points' => ['nullable', 'numeric', 'min:0'],
-            'data.top_participant_3'        => ['nullable', 'exists:users,id'],
+            'data.top_participant_3' => ['nullable', 'exists:users,id'],
             'data.top_participant_3_points' => ['nullable', 'numeric', 'min:0'],
-            'data.gallery_count'            => ['required', 'integer', 'min:1', 'max:50'],
-            'data.gallery_random'           => ['boolean'],
-            'data.gallery_sort'             => ['required', 'in:manual,newest,oldest'],
-            'data.maintenance_mode'         => ['boolean'],
-            'data.maintenance_message'      => ['nullable', 'string', 'max:255'],
+            'data.gallery_count' => ['required', 'integer', 'min:1', 'max:50'],
+            'data.gallery_random' => ['boolean'],
+            'data.gallery_sort' => ['required', 'in:manual,newest,oldest'],
+            'data.maintenance_mode' => ['boolean'],
+            'data.maintenance_message' => ['nullable', 'string', 'max:255'],
         ]);
 
         /** @var SettingsService $settings */
@@ -482,6 +522,26 @@ class HomePageSettings extends Page
 
         $settings->set('home.faq', $faq, 'home');
 
+        // Спонсоры: оставляем только записи с загруженным логотипом
+        $sponsors = collect((array) ($data['sponsors'] ?? []))
+            ->map(function (array $item): array {
+                $logo = collect((array) ($item['logo'] ?? []))
+                    ->flatten()
+                    ->filter(fn ($v) => is_string($v) && $v !== '')
+                    ->first();
+
+                return [
+                    'logo' => $logo,
+                    'name' => trim((string) ($item['name'] ?? '')) ?: null,
+                    'url' => trim((string) ($item['url'] ?? '')) ?: null,
+                ];
+            })
+            ->filter(fn (array $item) => ! empty($item['logo']))
+            ->values()
+            ->all();
+
+        $settings->set('home.sponsors', $sponsors, 'home');
+
         // Нормализуем пути фото в индексированный массив строк перед сохранением
         $photos = collect((array) ($data['gallery_photos'] ?? []))
             ->flatten()
@@ -490,9 +550,9 @@ class HomePageSettings extends Page
             ->all();
 
         $settings->set('home.gallery_photos', $photos, 'home');
-        $settings->set('home.gallery_count',  (int) $data['gallery_count'], 'home');
+        $settings->set('home.gallery_count', (int) $data['gallery_count'], 'home');
         $settings->set('home.gallery_random', (bool) $data['gallery_random'], 'home');
-        $settings->set('home.gallery_sort',   $data['gallery_sort'] ?? 'manual', 'home');
+        $settings->set('home.gallery_sort', $data['gallery_sort'] ?? 'manual', 'home');
 
         // Hero-фон: нормализуем к одиночному пути (строка) либо null
         $heroMedia = collect((array) ($data['hero_media'] ?? []))
