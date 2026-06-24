@@ -334,7 +334,17 @@ bgImage="{{ asset('images/bg/results.webp') }}"
             <template x-if="participantModalData">
                 <div>
                     <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#EAEAEA]">
-                        <h2 class="font-display text-2xl text-[#2E325C] a-font" x-text="participantModalData.name"></h2>
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full overflow-hidden bg-[#2E325C] text-white flex items-center justify-center text-base font-bold flex-shrink-0">
+                                <template x-if="participantModalData.avatar">
+                                    <img :src="participantModalData.avatar" :alt="participantModalData.name" class="w-full h-full object-cover">
+                                </template>
+                                <template x-if="!participantModalData.avatar">
+                                    <span x-text="initials(participantModalData.name)"></span>
+                                </template>
+                            </div>
+                            <h2 class="font-display text-2xl text-[#2E325C] a-font" x-text="participantModalData.name"></h2>
+                        </div>
                         <button
                             type="button"
                             class="text-gray-400 hover:text-gray-600 transition-colors"
@@ -419,8 +429,16 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                     <div class="px-6 py-4 space-y-6">
                         <template x-for="(p, j) in regattaModalData.participants" :key="j">
                             <div>
-                                <div class="flex items-center justify-between gap-4 mb-3"
+                                <div class="flex items-center gap-3 mb-3"
                                      x-show="regattaModalData.participants.length > 1">
+                                    <div class="w-8 h-8 rounded-full overflow-hidden bg-[#2E325C] text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                        <template x-if="p.avatar">
+                                            <img :src="p.avatar" :alt="p.name" class="w-full h-full object-cover">
+                                        </template>
+                                        <template x-if="!p.avatar">
+                                            <span x-text="initials(p.name)"></span>
+                                        </template>
+                                    </div>
                                     <h3 class="font-semibold text-[#2E325C]" x-text="p.name"></h3>
                                 </div>
 
