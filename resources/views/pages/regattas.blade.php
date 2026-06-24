@@ -36,6 +36,13 @@ bgImage="{{ asset('images/bg/competitions.webp') }}"
             Результаты
         </button>
         <a
+            href="{{ route('series-results') }}"
+            class="px-3 py-2 text-sm sm:px-6 sm:py-3 sm:text-lg font-semibold border-l-2 sm:border-l-0 sm:border-b-2 border-transparent text-[#2E325C] hover:text-[#2D92CE] hover:border-[#C6C6C6] transition-colors duration-200 cursor-pointer text-center"
+            role="tab"
+        >
+            Результаты серий
+        </a>
+        <a
             href="{{ route('regatta-entries') }}"
             class="px-3 py-2 text-sm sm:px-6 sm:py-3 sm:text-lg font-semibold border-l-2 sm:border-l-0 sm:border-b-2 border-transparent text-[#2E325C] hover:text-[#2D92CE] hover:border-[#C6C6C6] transition-colors duration-200 cursor-pointer text-center"
             role="tab"
