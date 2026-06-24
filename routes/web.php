@@ -538,6 +538,7 @@ Route::get('/ratings', function () {
                 'total_points' => (float) $r->total_points,
                 'rank'         => $r->rank_position,
                 'captain'      => $r->team?->organizer?->name ?? '—',
+                'captain_avatar' => $r->team?->organizer?->photo_url ? asset('storage/'.$r->team->organizer->photo_url) : null,
                 'yacht'        => $yacht
                     ? trim($yacht->name.($yacht->vfps_number ? ' ('.$yacht->vfps_number.')' : ''))
                     : '—',
@@ -598,6 +599,7 @@ Route::get('/series/results', function () {
         ->mapWithKeys(fn ($team) => [$team->id => [
             'name'     => $team->name,
             'captain'  => $team->organizer?->name ?? '—',
+            'captain_avatar' => $team->organizer?->photo_url ? asset('storage/'.$team->organizer->photo_url) : null,
             'yacht'    => $team->defaultYacht
                 ? trim($team->defaultYacht->name.($team->defaultYacht->vfps_number ? ' ('.$team->defaultYacht->vfps_number.')' : ''))
                 : '—',
@@ -624,6 +626,7 @@ Route::get('/series/results', function () {
                 $row['team'] = $teamDetails[$row['team_id']] ?? [
                     'name'    => $row['name'],
                     'captain' => '—',
+                    'captain_avatar' => null,
                     'yacht'   => '—',
                     'members' => [],
                 ];

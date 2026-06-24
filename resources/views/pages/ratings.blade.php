@@ -249,9 +249,19 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                         </div>
 
                         <div class="divide-y divide-[#EAEAEA] mb-4">
-                            <div class="py-3 flex justify-between gap-4" x-show="teamModalData.captain && teamModalData.captain !== '—'">
+                            <div class="py-3 flex justify-between items-center gap-4" x-show="teamModalData.captain && teamModalData.captain !== '—'">
                                 <span class="text-gray-500 text-sm">Капитан</span>
-                                <span class="font-medium text-[#2E325C] text-sm text-right" x-text="teamModalData.captain"></span>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-medium text-[#2E325C] text-sm text-right" x-text="teamModalData.captain"></span>
+                                    <div class="w-8 h-8 rounded-full overflow-hidden bg-[#2E325C] text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                        <template x-if="teamModalData.captain_avatar">
+                                            <img :src="teamModalData.captain_avatar" :alt="teamModalData.captain" class="w-full h-full object-cover">
+                                        </template>
+                                        <template x-if="!teamModalData.captain_avatar">
+                                            <span x-text="initials(teamModalData.captain)"></span>
+                                        </template>
+                                    </div>
+                                </div>
                             </div>
                             <div class="py-3 flex justify-between gap-4" x-show="teamModalData.yacht && teamModalData.yacht !== '—'">
                                 <span class="text-gray-500 text-sm">Яхта по умолчанию</span>
