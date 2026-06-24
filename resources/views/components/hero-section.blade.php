@@ -1,5 +1,5 @@
-@props(['title' => '', 'desc' => '', 'bgImage' => ''])
-<section style="background-image: url({{ $bgImage }})" class="bg-cover relative
+@props(['title' => '', 'desc' => '', 'bgImage' => '', 'bgPosition' => 'center'])
+<section style="background-image: url({{ $bgImage }}); background-position: {{ $bgPosition }}" class="bg-cover relative
             after:absolute after:inset-0 
             after:content-[''] 
             after:bg-linear-to-t 
