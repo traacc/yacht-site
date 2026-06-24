@@ -265,7 +265,14 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                 <template x-for="(member, idx) in teamModalData.members" :key="idx">
                                     <div class="py-3 flex items-center justify-between gap-4">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-full bg-[#2E325C] text-white flex items-center justify-center text-sm font-bold flex-shrink-0" x-text="idx + 1"></div>
+                                            <div class="w-8 h-8 rounded-full overflow-hidden bg-[#2E325C] text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                                <template x-if="member.avatar">
+                                                    <img :src="member.avatar" :alt="member.name" class="w-full h-full object-cover">
+                                                </template>
+                                                <template x-if="!member.avatar">
+                                                    <span x-text="initials(member.name)"></span>
+                                                </template>
+                                            </div>
                                             <span class="font-medium text-[#2E325C]" x-text="member.name"></span>
                                         </div>
                                         <div class="text-right text-sm text-gray-500">
