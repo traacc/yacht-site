@@ -127,6 +127,12 @@ class GalleryResource extends Resource
                     ->image()
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                     ->imageEditor()
+                    ->imageEditorViewportWidth(2000)
+                    ->imageEditorViewportHeight(2000)
+                    ->imageEditorAspectRatios([
+                        '1:1',
+                        null,
+                    ])
                     ->maxSize(10240)                      // 10 МБ на файл
                     ->validationMessages([
                         'max' => 'Файл слишком большой. Максимальный размер — 10 МБ.',

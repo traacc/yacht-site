@@ -224,6 +224,13 @@ class HomePageSettings extends Page
                                     ->directory('home/sponsors')
                                     ->visibility('public')
                                     ->maxSize(5120)
+                                    ->imageEditor()
+                                    ->imageEditorViewportWidth(1920)
+                                    ->imageEditorViewportHeight(1080)
+                                    ->imageEditorAspectRatios([
+                                        '16:9',
+                                        null,
+                                    ])
                                     ->columnSpanFull(),
 
                                 Grid::make(2)->schema([

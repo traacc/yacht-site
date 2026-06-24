@@ -103,6 +103,13 @@ class TeamResource extends Resource
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                     ->avatar()
                     ->directory('owners')
+                    ->imageEditor()
+                    ->imageEditorViewportWidth(2380)
+                    ->imageEditorViewportHeight(1785)
+                    ->imageEditorAspectRatios([
+                        '4:3',
+                        null,
+                    ])
                     ->disk('public')->columnSpanFull(),
                 TextInput::make('name')
                     ->label('Название')

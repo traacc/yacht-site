@@ -104,6 +104,13 @@ class EditProfile extends BaseEditProfile
                             ->directory('avatars')
                             ->columnSpanFull()
                             ->visibility('public')
+                            ->imageEditor()
+                            ->imageEditorViewportWidth(2000)
+                            ->imageEditorViewportHeight(2000)
+                            ->imageEditorAspectRatios([
+                                '1:1',
+                                null,
+                            ])
                             ->extraFieldWrapperAttributes(['class' => 'photo_wrapper']),
 
                         TextInput::make('name')
