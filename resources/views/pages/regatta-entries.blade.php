@@ -75,7 +75,7 @@
                             <tr class="text-lg md:text-2xl text-brand-dark border-b border-brand-border">
                                 <th class="pb-2 text-center font-medium w-10 md:w-16 a-font">№</th>
                                 <th class="pb-2 text-center font-medium a-font">Яхта</th>
-                                <th class="pb-2 text-center font-medium a-font hidden md:table-cell">Команда</th>
+                                <!--<th class="pb-2 text-center font-medium a-font hidden md:table-cell">Команда</th>-->
                                 <th class="pb-2 text-center font-medium a-font hidden md:table-cell">Рулевой</th>
                                 <th class="pb-2 text-center font-medium a-font hidden md:table-cell">Состав</th>
                                 <th class="pb-2 text-center font-medium a-font">Статус</th>
@@ -86,7 +86,7 @@
                                 <tr class="hover:bg-gray-50 transition-colors border-b border-brand-border">
                                     <td class="py-3">{{ $index + 1 }}</td>
                                     <td class="py-3">{{ $entry->yacht?->name ?? '—' }}</td>
-                                    <td class="py-3 hidden md:table-cell">{{ $entry->team?->name ?? '—' }}</td>
+                                    <!--<td class="py-3 hidden md:table-cell">{{ $entry->team?->name ?? '—' }}</td>-->
                                     <td class="py-3 hidden md:table-cell">{{ $entry->crew->firstWhere('role', 'captain')?->teamMember?->user?->short_name ?? '—' }}</td>
                                     <td class="py-3 hidden md:table-cell">
                                         @if($entry->crew->count())
