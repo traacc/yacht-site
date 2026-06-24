@@ -33,10 +33,12 @@
     {{-- Копирует ссылку на альбом / вызывает нативный «Поделиться» на мобильных. --}}
     shareAlbum() {
         const url = '{{ route('gallery') }}?album=' + (this.activeGallery?.id ?? '');
+        /*
         if (navigator.share) {
             navigator.share({ title: this.activeGallery?.name ?? 'Галерея', url }).catch(() => {});
             return;
         }
+        */
         navigator.clipboard.writeText(url).then(() => {
             this.copied = true;
             //setTimeout(() => this.copied = false, 2000);
