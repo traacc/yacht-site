@@ -69,11 +69,14 @@ class NewsResource extends Resource
                     ->directory('news/covers')
                     ->visibility('public')
                     ->imageEditor()
+                    ->imageEditorViewportWidth(1920)
+                    ->imageEditorViewportHeight(840)
                     ->imageEditorAspectRatios([
-                        null,
+                        '16:7',
                         '16:9',
                         '4:3',
                         '1:1',
+                        null,
                     ]),
                 DateTimePicker::make('published_at')
                     ->label('Дата публикации')
