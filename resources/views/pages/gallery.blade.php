@@ -39,7 +39,7 @@
         }
         navigator.clipboard.writeText(url).then(() => {
             this.copied = true;
-            setTimeout(() => this.copied = false, 2000);
+            //setTimeout(() => this.copied = false, 2000);
         });
     },
     {{-- При загрузке страницы: если в URL есть ?album=<id>, открываем нужный альбом. --}}
