@@ -62,8 +62,11 @@ class LoginModal extends Component
         if (Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
             session()->regenerate();
 
-            // Перенаправляем пользователя или обновляем страницу
-            return $this->redirect(route('home'), navigate: true);
+            // Полная перезагрузка страницы (без wire:navigate): после
+            // session()->regenerate() меняется CSRF-токен, а navigate обновляет
+            // только <body> и оставляет старый токен из @livewireScripts в <head>,
+            // из-за чего все последующие Livewire-запросы падают с 419.
+            return $this->redirect(route('home'));
         }
 
         // Если пароль не подошел, возвращаем ошибку в форму
@@ -164,8 +167,9 @@ class LoginModal extends Component
 
         session()->flash('registered', true);
 
-        // 3. Редирект на главную или в личный кабинет
-        return $this->redirect(route('home'), navigate: true);
+        // 3. Редирект на главную (полная перезагрузка, не wire:navigate —
+        // см. комментарий в login() про CSRF-токен после regenerate)
+        return $this->redirect(route('home'));
     }
 
     public function sendLoginCredentials()
@@ -193,7 +197,8 @@ class LoginModal extends Component
         $this->selectedUserId = '';
         $this->senderPassword = '';
 
-        return $this->redirect(route('home'), navigate: true);
+        // Полная перезагрузка, не wire:navigate (см. комментарий в login())
+        return $this->redirect(route('home'));
     }
 
     public function getUsersProperty()
