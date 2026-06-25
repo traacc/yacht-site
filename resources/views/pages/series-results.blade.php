@@ -80,7 +80,7 @@
                                         >{{ $row['name'] }}</button>
                                     </td>
                                     <td class="py-3 px-3 text-center">
-                                        {{ $regattas->count() }}
+                                        {{ count($regattas) }}
                                     </td>
                                     <td class="py-3 px-3 text-center font-bold text-brand-blue">{{ $row['total'] }}</td>
                                 </tr>
