@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Regatta;
 
+use App\Enums\PaymentStatus;
 use App\Enums\TeamMemberRole;
 use App\Exceptions\InsufficientTeamRoleException;
 use App\Models\Regatta;
@@ -26,7 +27,7 @@ final class SubmitRegattaEntryAction
      * @throws InsufficientTeamRoleException
      * @throws ValidationException
      */
-    public function handle(Regatta $regatta, Team $team, Yacht $yacht, User $actor, array $crew = [], ?string $entryPassword = null): RegattaEntry
+    public function handle(Regatta $regatta, Team $team, Yacht $yacht, User $actor, array $crew = [], ?string $entryPassword = null, bool $feePaid = false): RegattaEntry
     {
         TeamRoleGuard::authorize($team, $actor, TeamMemberRole::ACTION_SUBMIT_ENTRY);
 
@@ -62,9 +63,21 @@ final class SubmitRegattaEntryAction
             'yacht_id'       => $yacht->id,
             'status'         => 'approved',
             'submitted_at'   => now(),
+            // Сбор за участие отмечается участником только если регата его требует
+            'fee_paid'       => $regatta->entry_fee_required ? $feePaid : false,
             // Хешируется кастом 'hashed' в модели
             'entry_password' => $entryPassword ?: null,
         ]);
+
+        // Если регата требует сбор — создаём запись в реестре платежей,
+        // привязанную к заявке (полиморфная связь payable).
+        if ($regatta->entry_fee_required) {
+            $entry->paymentRegistries()->create([
+                'name'   => "Сбор за участие — {$regatta->name} ({$team->name})",
+                'amount' => $regatta->entry_fee_amount,
+                'status' => $feePaid ? PaymentStatus::Paid : PaymentStatus::Pending,
+            ]);
+        }
 
         // Сохраняем экипаж
         if ($crew !== []) {

@@ -94,6 +94,11 @@ class PaymentRegistryResource extends Resource
                     ->label('Статус оплаты')
                     ->badge()
                     ->sortable(),
+                TextColumn::make('payable')
+                    ->label('Источник')
+                    ->getStateUsing(fn (PaymentRegistry $record): string => $record->payableLabel())
+                    ->placeholder('—')
+                    ->toggleable(),
                 TextColumn::make('document')
                     ->label('Документ')
                     ->formatStateUsing(fn ($state) => $state ? 'Прикреплён' : '—')

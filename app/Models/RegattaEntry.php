@@ -19,6 +19,7 @@ class RegattaEntry extends Model
         'yacht_id',
         'status',
         'documents_complete',
+        'fee_paid',
         'submitted_at',
         'entry_password',
     ];
@@ -33,6 +34,7 @@ class RegattaEntry extends Model
             'submitted_at'       => 'datetime',
             'entry_password'     => 'hashed',
             'documents_complete' => 'boolean',
+            'fee_paid'           => 'boolean',
         ];
     }
 
@@ -71,6 +73,12 @@ class RegattaEntry extends Model
     public function documents(): MorphMany
     {
         return $this->morphMany(Document::class, 'documentable');
+    }
+
+    /** Записи в реестре платежей, связанные с этой заявкой (сборы за участие) */
+    public function paymentRegistries(): MorphMany
+    {
+        return $this->morphMany(PaymentRegistry::class, 'payable');
     }
 
     // ──────────────────────────────────────────────

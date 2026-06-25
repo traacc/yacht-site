@@ -37,6 +37,8 @@ class Regatta extends Model
         'race_days_count',
         'races_count',
         'prizes',
+        'entry_fee_required',
+        'entry_fee_amount',
         'external_id',
         'regatta_status',
         'postponed_to_date',
@@ -58,6 +60,8 @@ class Regatta extends Model
             'regatta_status'           => RegattaStatus::class,
             'postponed_to_date'        => 'date',
             'entry_required_documents' => 'array',
+            'entry_fee_required'       => 'boolean',
+            'entry_fee_amount'         => 'decimal:2',
         ];
     }
     public function getRouteKeyName(): string

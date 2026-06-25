@@ -3,9 +3,13 @@
 namespace App\Providers;
 
 use App\Models\News;
+use App\Models\PaymentRegistry;
+use App\Models\RegattaEntry;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Observers\NewsObserver;
+use App\Observers\PaymentRegistryObserver;
+use App\Observers\RegattaEntryFeeObserver;
 use App\Observers\TeamMemberObserver;
 use App\Policies\TeamPolicy;
 use Filament\Notifications\Notification;
@@ -34,6 +38,8 @@ class AppServiceProvider extends ServiceProvider
 
         TeamMember::observe(TeamMemberObserver::class);
         News::observe(NewsObserver::class);
+        RegattaEntry::observe(RegattaEntryFeeObserver::class);
+        PaymentRegistry::observe(PaymentRegistryObserver::class);
 
         Notification::configureUsing(function (Notification $notification): void {
             $notification->duration(6000); // 2000 мс = 2 секунды

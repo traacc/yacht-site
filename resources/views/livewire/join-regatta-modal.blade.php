@@ -624,6 +624,29 @@
                     </div>
                 @endif
 
+                {{-- Сборы за участие --}}
+                @if ($this->selectedRegatta && $this->selectedRegatta->entry_fee_required)
+                    <div class="border-t border-gray-200 pt-4">
+                        <p class="text-sm font-medium text-[#2E325C] mb-2">Оплата сборов</p>
+                        <div class="rounded bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+                            Для участия в этой регате необходимо оплатить сбор
+                            @if ($this->selectedRegatta->entry_fee_amount !== null)
+                                в размере <span class="font-semibold">{{ number_format((float) $this->selectedRegatta->entry_fee_amount, 2, ',', ' ') }} ₽</span>.
+                            @else
+                                .
+                            @endif
+                        </div>
+                        <label class="mt-3 flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" wire:model="feePaid"
+                                   class="rounded border-gray-300 text-[#2D92CE] focus:ring-[#2D92CE]">
+                            <span class="text-sm text-[#2E325C]">Сбор оплачен</span>
+                        </label>
+                        @error('feePaid')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
+                    </div>
+                @endif
+
                 {{-- Пароль заявки: для редактирования на странице регаты без входа --}}
                 <div class="border-t border-gray-200 pt-4" x-data="{ showPassword: false }">
                     <label for="entryPassword" class="block text-sm font-medium text-[#2E325C]">

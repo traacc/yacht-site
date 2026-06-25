@@ -232,6 +232,27 @@ class RegattaResource extends Resource
                     ->label('Призы')
                     ->placeholder('Описание призового фонда')
                     ->columnSpanFull(),
+
+                // ── Сборы за участие ──────────────────────
+                Section::make('Сборы за участие')
+                    ->description('Если оплата сборов обязательна, участник увидит сумму при подаче заявки и сможет отметить, оплатил ли он сбор.')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->schema([
+                        Toggle::make('entry_fee_required')
+                            ->label('Требуется оплата сборов')
+                            ->live()
+                            ->default(false),
+                        TextInput::make('entry_fee_amount')
+                            ->label('Сумма сбора')
+                            ->numeric()
+                            ->minValue(0)
+                            ->step(0.01)
+                            ->suffix('₽')
+                            ->visible(fn (Get $get): bool => (bool) $get('entry_fee_required'))
+                            ->required(fn (Get $get): bool => (bool) $get('entry_fee_required')),
+                    ]),
+
                 Hidden::make('regatta_status')
                     ->default(\App\Enums\RegattaStatus::Upcoming->value)
                     ->required(),

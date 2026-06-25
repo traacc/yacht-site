@@ -48,6 +48,9 @@ class JoinRegattaModal extends Component
     /** @var array<string, \Livewire\TemporaryUploadedFile[]> */
     public array $documentFiles = [];
 
+    /** Отметка участника об оплате сбора (если регата требует сбор) */
+    public bool $feePaid = false;
+
     /** Специальный пароль заявки — для редактирования на странице регаты без входа */
     public string $entryPassword = '';
 
@@ -150,6 +153,7 @@ class JoinRegattaModal extends Component
         $this->submitted = false;
         $this->leftCrew = false;
         $this->isOpen = true;
+        $this->feePaid = false;
         $this->entryPassword = '';
         $this->entryPasswordConfirmation = '';
         $this->guestRegistered = false;
@@ -183,7 +187,7 @@ class JoinRegattaModal extends Component
         $this->isOpen = false;
         $this->reset([
             'regattaId', 'yachtId', 'documentFiles', 'submitted', 'leftCrew',
-            'entryPassword', 'entryPasswordConfirmation', 'freeYachts',
+            'feePaid', 'entryPassword', 'entryPasswordConfirmation', 'freeYachts',
             'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'guestBirthDate', 'guestSportCategory',
             'captainMode', 'captainUserId', 'captainName', 'captainSearchQuery', 'captainSearchResults',
             'teamMode', 'teamId', 'teamSelectedName', 'teamName', 'teamSearchQuery', 'teamSearchResults',
@@ -222,8 +226,17 @@ class JoinRegattaModal extends Component
         $this->newYachtName = '';
         $this->newYachtVfps = '';
         $this->documentFiles = [];
+        $this->feePaid = false;
+        unset($this->selectedRegatta);
         $this->loadFreeYachts();
         $this->resetErrorBag(['yachtId', 'newYachtName', 'regattaId']);
+    }
+
+    /** Выбранная регата — для показа информации о сборах в форме. */
+    #[Computed]
+    public function selectedRegatta(): ?Regatta
+    {
+        return $this->regattaId ? Regatta::find($this->regattaId) : null;
     }
 
     /** Загрузить свободные яхты для текущей регаты в плоский список для единого селекта. */
@@ -997,7 +1010,7 @@ class JoinRegattaModal extends Component
                 }
 
                 // 6. Подаём заявку от имени организатора команды (проверка прав на подачу)
-                $entry = $action->handle($regatta, $team, $yacht, $submitActor, $crew, $this->entryPassword);
+                $entry = $action->handle($regatta, $team, $yacht, $submitActor, $crew, $this->entryPassword, $this->feePaid);
 
                 return [$entry, $captain];
             });

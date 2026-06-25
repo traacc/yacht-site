@@ -30,6 +30,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -403,6 +404,13 @@ class RegattaEntryResource extends Resource
                     ->tooltip(fn (RegattaEntry $record): ?string => $record->hasMissingDocuments()
                         ? 'Поданы не все обязательные документы'
                         : null)
+                    ->sortable()
+                    ->toggleable(),
+                ToggleColumn::make('fee_paid')
+                    ->label('Сбор оплачен')
+                    ->visible(fn (): bool => RegattaEntry::query()
+                        ->whereHas('regatta', fn ($q) => $q->where('entry_fee_required', true))
+                        ->exists())
                     ->sortable()
                     ->toggleable(),
                 TextColumn::make('created_at')

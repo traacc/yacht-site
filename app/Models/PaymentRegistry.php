@@ -6,6 +6,7 @@ use App\Enums\PaymentStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\Storage;
 
 class PaymentRegistry extends Model
@@ -17,6 +18,8 @@ class PaymentRegistry extends Model
         'amount',
         'status',
         'document',
+        'payable_type',
+        'payable_id',
     ];
 
     protected function casts(): array
@@ -25,6 +28,16 @@ class PaymentRegistry extends Model
             'amount' => 'decimal:2',
             'status' => PaymentStatus::class,
         ];
+    }
+
+    // ──────────────────────────────────────────────
+    // Relationships
+    // ──────────────────────────────────────────────
+
+    /** Полиморфный источник платежа: RegattaEntry, Team и т.д. (может отсутствовать). */
+    public function payable(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     // ──────────────────────────────────────────────
@@ -37,5 +50,22 @@ class PaymentRegistry extends Model
         return $this->document
             ? Storage::disk('public')->url($this->document)
             : null;
+    }
+
+    /** Человекочитаемое описание связанной модели (источника платежа). */
+    public function payableLabel(): string
+    {
+        $payable = $this->payable;
+
+        if ($payable === null) {
+            return '';
+        }
+
+        return match (true) {
+            $payable instanceof RegattaEntry => 'Заявка: '
+                . ($payable->team?->name ?? '—')
+                . ' — ' . ($payable->regatta?->name ?? '—'),
+            default => class_basename($payable) . ' #' . $payable->getKey(),
+        };
     }
 }
