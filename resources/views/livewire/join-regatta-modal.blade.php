@@ -218,6 +218,7 @@
                         );
                     },
                     selectYacht(yacht) {
+                        if (yacht.taken) return;
                         this.isOpen = false;
                         this.query = '';
                         $wire.selectYacht(yacht.id);
@@ -233,6 +234,8 @@
                         if (q === '') { this.isOpen = false; return; }
                         const match = this.yachts.find(y => (y.name ?? '').trim().toLowerCase() === q.toLowerCase());
                         if (match) {
+                            // Яхта уже участвует в регате — не выбираем и не создаём дубль.
+                            if (match.taken) { this.isOpen = false; return; }
                             this.selectYacht(match);
                         } else {
                             this.addNewFromQuery();
@@ -296,11 +299,14 @@
                                  class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">
                                 <template x-for="(yacht, index) in filtered" :key="yacht.id">
                                     <div x-on:click="selectYacht(yacht)"
-                                         x-on:mouseenter="selectedIndex = index"
-                                         :class="{ 'bg-[#2D92CE]/10': selectedIndex === index }"
-                                         class="px-3 py-2 cursor-pointer hover:bg-[#2D92CE]/10 text-sm border-b border-gray-100 last:border-b-0">
+                                         x-on:mouseenter="if (!yacht.taken) selectedIndex = index"
+                                         :class="yacht.taken
+                                            ? 'opacity-60 cursor-not-allowed'
+                                            : ('cursor-pointer hover:bg-[#2D92CE]/10 ' + (selectedIndex === index ? 'bg-[#2D92CE]/10' : ''))"
+                                         class="px-3 py-2 text-sm border-b border-gray-100 last:border-b-0">
                                         <span class="font-medium" x-text="yacht.name"></span>
                                         <span class="text-gray-400 text-xs ml-2" x-text="yacht.vfps ? yacht.vfps : 'без номера ВФПС'"></span>
+                                        <span x-show="yacht.taken" class="text-amber-600 text-xs ml-2">уже участвует</span>
                                     </div>
                                 </template>
                                 <div x-show="filtered.length === 0 && query.trim().length === 0" class="px-3 py-2 text-sm text-gray-400">

@@ -10,6 +10,7 @@ use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Mail\SendLoginCredentials;
 use App\Mail\SendRegattaEntryPassword;
 use App\Models\Regatta;
+use App\Models\RegattaEntry;
 use App\Models\RegattaEntryCrew;
 use App\Models\Scopes\OwnedScope;
 use App\Models\Team;
@@ -232,9 +233,10 @@ class JoinRegattaModal extends Component
 
         $this->freeYachts = $this->allFreeYachts
             ->map(fn (Yacht $y): array => [
-                'id'   => (string) $y->id,
-                'name' => $y->name,
-                'vfps' => $y->vfps_number,
+                'id'    => (string) $y->id,
+                'name'  => $y->name,
+                'vfps'  => $y->vfps_number,
+                'taken' => (bool) $y->getAttribute('is_taken'),
             ])
             ->values()
             ->all();
@@ -243,6 +245,11 @@ class JoinRegattaModal extends Component
     /** Выбрать свободную яхту из единого списка. */
     public function selectYacht(string $yachtId): void
     {
+        // Яхта уже заявлена в эту регату — выбрать её нельзя.
+        if (in_array($yachtId, $this->takenYachtIds(), true)) {
+            return;
+        }
+
         $this->yachtMode = 'select';
         $this->yachtId = $yachtId;
         $this->newYachtName = '';
@@ -1093,9 +1100,38 @@ class JoinRegattaModal extends Component
     #[Computed]
     public function allFreeYachts(): Collection
     {
-        return Yacht::whereDoesntHave('regattaEntries', function ($q) {
-            $q->where('regatta_id', $this->regattaId);
-        })->get();
+        $takenIds = $this->takenYachtIds();
+
+        return Yacht::query()
+            ->orderBy('name')
+            ->get()
+            ->map(function (Yacht $y) use ($takenIds): Yacht {
+                $y->setAttribute('is_taken', in_array((string) $y->id, $takenIds, true));
+
+                return $y;
+            })
+            // Свободные яхты — в начале списка, занятые — в конце.
+            ->sortBy('is_taken')
+            ->values();
+    }
+
+    /**
+     * ID яхт, уже заявленных в текущую регату.
+     *
+     * @return list<string>
+     */
+    private function takenYachtIds(): array
+    {
+        if (! $this->regattaId) {
+            return [];
+        }
+
+        return RegattaEntry::query()
+            ->where('regatta_id', $this->regattaId)
+            ->whereNotNull('yacht_id')
+            ->pluck('yacht_id')
+            ->map(fn ($id): string => (string) $id)
+            ->all();
     }
 
     /**
