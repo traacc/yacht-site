@@ -93,7 +93,7 @@
                                             <div class="flex items-center justify-center -space-x-2">
                                                 @foreach($entry->crew as $crewMember)
                                                     @php $user = $crewMember->teamMember?->user; @endphp
-                                                    <div class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-[#2E325C] text-white text-[10px] font-bold flex-shrink-0 ring-2 {{ $crewMember->role === 'captain' ? 'ring-[#C2A36B]' : 'ring-white' }}"
+                                                    <div class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-[#2E325C] text-white text-[10px] font-bold flex-shrink-0 ring-2 {{ $crewMember->role === 'captain' ? 'ring-[#2D92CE]' : 'ring-white' }}"
                                                          title="{{ $user?->short_name ?? $user?->name }}">
                                                         @if($user?->photo_url)
                                                             <img src="{{ asset('storage/'.$user->photo_url) }}" alt="{{ $user?->short_name }}" class="w-full h-full object-cover">

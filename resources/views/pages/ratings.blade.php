@@ -89,7 +89,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                             <div class="flex flex-col md:items-center gap-2">
                                                 <button
                                                     type="button"
-                                                    class="text-[#2E325C] hover:text-[#C2A36B] hover:underline transition-colors cursor-pointer font-medium"
+                                                    class="text-[#2E325C] hover:text-[#2D92CE] hover:underline transition-colors cursor-pointer font-medium"
                                                     @click="openTeam(team)"
                                                     x-text="team.name"
                                                 ></button>
@@ -115,7 +115,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                         <td class="py-2" data-label="Очки">
                                             <button
                                                 type="button"
-                                                class="text-[#2D92CE] hover:text-[#C2A36B] hover:underline transition-colors cursor-pointer font-semibold"
+                                                class="text-[#2D92CE] hover:text-[#2D92CE] hover:underline transition-colors cursor-pointer font-semibold"
                                                 @click="openTeamRegattas(team)"
                                                 x-text="team.total_points"
                                             ></button>
@@ -158,7 +158,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                                 <template x-for="(p, j) in row.participants" :key="j">
                                                     <button
                                                         type="button"
-                                                        class="relative hover:z-10 w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-[#2E325C] text-white text-xs font-bold ring-2 ring-white hover:ring-[#C2A36B] hover:scale-110 transition-all cursor-pointer flex-shrink-0"
+                                                        class="relative hover:z-10 w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-[#2E325C] text-white text-xs font-bold ring-2 ring-white hover:ring-[#2D92CE] hover:scale-110 transition-all cursor-pointer flex-shrink-0"
                                                         @click="openParticipant(p)"
                                                         :title="p.name"
                                                     >
@@ -175,7 +175,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                         <td class="py-2" data-label="Очки">
                                             <button
                                                 type="button"
-                                                class="text-[#2D92CE] hover:text-[#C2A36B] hover:underline transition-colors cursor-pointer font-semibold"
+                                                class="text-[#2D92CE] hover:text-[#2D92CE] hover:underline transition-colors cursor-pointer font-semibold"
                                                 @click="openRegattas(row)"
                                                 x-text="row.total_points"
                                             ></button>

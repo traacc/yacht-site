@@ -81,7 +81,7 @@
                                     <td class="py-3 text-left">
                                         <button
                                             type="button"
-                                            class="text-brand-dark hover:text-[#C2A36B] hover:underline transition-colors cursor-pointer font-medium text-left"
+                                            class="text-brand-dark hover:text-[#2D92CE] hover:underline transition-colors cursor-pointer font-medium text-left"
                                             @click="openTeam({{ Js::from($row['team']) }})"
                                         >{{ $row['name'] }}</button>
                                     </td>
@@ -91,7 +91,7 @@
                                     <td class="py-3 px-3 text-center">
                                         <button
                                             type="button"
-                                            class="font-bold text-brand-blue hover:text-[#C2A36B] hover:underline transition-colors cursor-pointer"
+                                            class="font-bold text-brand-blue hover:text-[#2D92CE] hover:underline transition-colors cursor-pointer"
                                             @click="openScores({{ Js::from($scoresData) }})"
                                         >{{ $row['total'] }}</button>
                                     </td>
