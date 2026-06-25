@@ -11,6 +11,7 @@ use App\Mail\SendLoginCredentials;
 use App\Mail\SendRegattaEntryPassword;
 use App\Models\Regatta;
 use App\Models\RegattaEntryCrew;
+use App\Models\Scopes\OwnedScope;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
@@ -257,6 +258,32 @@ class JoinRegattaModal extends Component
         $this->newYachtName = trim($name);
         $this->newYachtVfps = '';
         $this->resetErrorBag(['yachtId', 'newYachtName']);
+    }
+
+    /** Существует ли яхта с таким названием (без учёта регистра, любой владелец). */
+    private function yachtNameExists(string $name): bool
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return false;
+        }
+
+        return Yacht::withoutGlobalScope(OwnedScope::class)
+            ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
+            ->exists();
+    }
+
+    /** Существует ли яхта с таким номером паруса (любой владелец). */
+    private function yachtVfpsExists(string $vfps): bool
+    {
+        $vfps = trim($vfps);
+        if ($vfps === '') {
+            return false;
+        }
+
+        return Yacht::withoutGlobalScope(OwnedScope::class)
+            ->where('vfps_number', $vfps)
+            ->exists();
     }
 
     /** Сбросить выбор/создание яхты — вернуться к поиску по списку. */
@@ -781,8 +808,16 @@ class JoinRegattaModal extends Component
         }
 
         if ($this->yachtMode === 'create') {
-            $rules['newYachtName'] = ['required', 'string', 'max:255'];
-            $rules['newYachtVfps'] = ['required', 'string', 'max:255'];
+            $rules['newYachtName'] = ['required', 'string', 'max:255', function (string $attribute, mixed $value, \Closure $fail): void {
+                if ($this->yachtNameExists((string) $value)) {
+                    $fail('Яхта с таким названием уже существует — выберите её из списка.');
+                }
+            }];
+            $rules['newYachtVfps'] = ['required', 'string', 'max:255', function (string $attribute, mixed $value, \Closure $fail): void {
+                if ($this->yachtVfpsExists((string) $value)) {
+                    $fail('Яхта с таким номером паруса уже существует — выберите её из списка.');
+                }
+            }];
         } else {
             $rules['yachtId'] = ['required', 'string', 'uuid'];
         }
