@@ -50,15 +50,10 @@
                 <div class="overflow-x-auto p-3 md:p-6 bg-white">
                     <table class="w-full text-sm md:text-base">
                         <thead>
-                            <tr class="text-brand-dark">
-                                <th></th>
-                                <th></th>
-                                <th class="pb-1 px-3 text-center text-brand-gray-light font-normal text-xs md:text-sm a-font" colspan="{{ count($regattas) }}">Этапы</th>
-                                <th></th>
-                            </tr>
                             <tr class="text-lg md:text-2xl text-brand-dark border-b border-brand-border">
                                 <th class="pb-2 text-center font-medium w-10 md:w-16 a-font"></th>
                                 <th class="pb-2 text-left font-medium a-font">Команда</th>
+                                <th class="pb-2 text-left font-medium a-font">Всего этапов</th>
                                 @foreach($regattas as $key => $regatta)
                                     <th class="pb-2 px-3 text-center font-medium a-font whitespace-nowrap">
                                         <a href="{{ route('competition-details', $regatta['external_id']) }}"
@@ -84,11 +79,9 @@
                                             @click="openTeam({{ Js::from($row['team']) }})"
                                         >{{ $row['name'] }}</button>
                                     </td>
-                                    @foreach($regattas as $regatta)
-                                        <td class="py-3 px-3 text-center">
-                                            {{ $row['points'][$regatta['id']] !== null ? $row['points'][$regatta['id']] : '—' }}
-                                        </td>
-                                    @endforeach
+                                    <td class="py-3 px-3 text-center">
+                                        {{ $regattas->count() }}
+                                    </td>
                                     <td class="py-3 px-3 text-center font-bold text-brand-blue">{{ $row['total'] }}</td>
                                 </tr>
                             @endforeach
