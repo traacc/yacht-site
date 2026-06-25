@@ -54,17 +54,6 @@
                                 <th class="pb-2 text-center font-medium w-10 md:w-16 a-font"></th>
                                 <th class="pb-2 text-left font-medium a-font">Команда</th>
                                 <th class="pb-2 text-left font-medium a-font">Всего этапов</th>
-                                @foreach($regattas as $key => $regatta)
-                                    <th class="pb-2 px-3 text-center font-medium a-font whitespace-nowrap">
-                                        <a href="{{ route('competition-details', $regatta['external_id']) }}"
-                                           class="hover:text-brand-blue hover:underline">
-                                            {{ $key + 1 }}
-                                        </a>
-                                        @if($regatta['date'])
-                                            <div class="text-xs text-brand-gray-light font-normal">{{ $regatta['date'] }}</div>
-                                        @endif
-                                    </th>
-                                @endforeach
                                 <th class="pb-2 px-3 text-center font-medium a-font">Очки</th>
                             </tr>
                         </thead>
