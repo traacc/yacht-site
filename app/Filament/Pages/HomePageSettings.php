@@ -16,6 +16,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
@@ -112,6 +113,12 @@ class HomePageSettings extends Page
             // Режим обновления сайта
             'maintenance_mode' => (bool) $settings->get('home.maintenance_mode', false),
             'maintenance_message' => $settings->get('home.maintenance_message', 'Сайт в процессе обновления'),
+            // Всплывающий баннер
+            'banner_enabled' => (bool) $settings->get('home.banner_enabled', false),
+            'banner_title' => $settings->get('home.banner_title', ''),
+            'banner_text' => $settings->get('home.banner_text', ''),
+            'banner_button_text' => $settings->get('home.banner_button_text', ''),
+            'banner_button_url' => $settings->get('home.banner_button_url', ''),
         ]);
     }
 
@@ -179,6 +186,49 @@ class HomePageSettings extends Page
                             ->maxLength(255)
                             ->visible(fn ($get) => (bool) $get('maintenance_mode'))
                             ->rules(['nullable', 'string', 'max:255']),
+                    ]),
+
+                // ── Всплывающий баннер ────────────────────────
+                Section::make('Всплывающий баннер')
+                    ->description('Всплывающее окно для посетителей главной страницы. Показывается гостям один раз. Если выключено — баннер не отображается.')
+                    ->schema([
+                        Toggle::make('banner_enabled')
+                            ->label('Показывать баннер')
+                            ->helperText('Включите, чтобы показывать всплывающий баннер гостям сайта.')
+                            ->default(false)
+                            ->live(),
+
+                        TextInput::make('banner_title')
+                            ->label('Заголовок')
+                            ->placeholder('Хотите гоняться с нами?')
+                            ->maxLength(255)
+                            ->visible(fn ($get) => (bool) $get('banner_enabled'))
+                            ->rules(['nullable', 'string', 'max:255']),
+
+                        Textarea::make('banner_text')
+                            ->label('Текст')
+                            ->placeholder('Краткое описание для посетителя')
+                            ->rows(3)
+                            ->maxLength(1000)
+                            ->visible(fn ($get) => (bool) $get('banner_enabled'))
+                            ->rules(['nullable', 'string', 'max:1000']),
+
+                        Grid::make(2)
+                            ->visible(fn ($get) => (bool) $get('banner_enabled'))
+                            ->schema([
+                                TextInput::make('banner_button_text')
+                                    ->label('Текст на кнопке')
+                                    ->placeholder('Подробнее')
+                                    ->maxLength(255)
+                                    ->rules(['nullable', 'string', 'max:255']),
+
+                                TextInput::make('banner_button_url')
+                                    ->label('Ссылка на кнопке')
+                                    ->placeholder('https://example.com')
+                                    ->url()
+                                    ->maxLength(2048)
+                                    ->rules(['nullable', 'url', 'max:2048']),
+                            ]),
                     ]),
 
                 // ── Hero-фон главной страницы ─────────────────
@@ -513,6 +563,11 @@ class HomePageSettings extends Page
             'data.gallery_sort' => ['required', 'in:manual,newest,oldest'],
             'data.maintenance_mode' => ['boolean'],
             'data.maintenance_message' => ['nullable', 'string', 'max:255'],
+            'data.banner_enabled' => ['boolean'],
+            'data.banner_title' => ['nullable', 'string', 'max:255'],
+            'data.banner_text' => ['nullable', 'string', 'max:1000'],
+            'data.banner_button_text' => ['nullable', 'string', 'max:255'],
+            'data.banner_button_url' => ['nullable', 'url', 'max:2048'],
         ]);
 
         /** @var SettingsService $settings */
@@ -588,6 +643,13 @@ class HomePageSettings extends Page
             trim((string) ($data['maintenance_message'] ?? '')) ?: 'Сайт в процессе обновления',
             'home',
         );
+
+        // Всплывающий баннер
+        $settings->set('home.banner_enabled', (bool) ($data['banner_enabled'] ?? false), 'home');
+        $settings->set('home.banner_title', trim((string) ($data['banner_title'] ?? '')) ?: null, 'home');
+        $settings->set('home.banner_text', trim((string) ($data['banner_text'] ?? '')) ?: null, 'home');
+        $settings->set('home.banner_button_text', trim((string) ($data['banner_button_text'] ?? '')) ?: null, 'home');
+        $settings->set('home.banner_button_url', trim((string) ($data['banner_button_url'] ?? '')) ?: null, 'home');
 
         $settings->forgetGroup('home');
 
