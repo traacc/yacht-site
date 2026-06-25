@@ -12,16 +12,22 @@
     x-data="{
         teamModal: false,
         teamModalData: null,
+        scoresModal: false,
+        scoresModalData: null,
         openTeam(team) {
             this.teamModalData = team;
             this.teamModal = true;
+        },
+        openScores(data) {
+            this.scoresModalData = data;
+            this.scoresModal = true;
         },
         initials(name) {
             if (!name) return '?';
             return name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
         }
     }"
-    @keydown.escape.window="teamModal = false"
+    @keydown.escape.window="teamModal = false; scoresModal = false"
 >
     <x-ratings-tabs :tabs="[
         'team' => ['label' => 'Командный рейтинг', 'url' => route('ratings')],
@@ -59,6 +65,17 @@
                         </thead>
                         <tbody class="divide-y font-medium">
                             @foreach($serie['standings']['standings'] as $row)
+                                @php
+                                    $scoresData = [
+                                        'name' => $row['name'],
+                                        'total' => $row['total'],
+                                        'regattas' => collect($regattas)->map(fn ($r) => [
+                                            'name'   => $r['name'],
+                                            'date'   => $r['date'],
+                                            'points' => $row['points'][$r['id']] ?? null,
+                                        ])->values()->all(),
+                                    ];
+                                @endphp
                                 <tr class="border-b border-brand-border">
                                     <td class="py-3 text-center">{{ $row['rank'] }}</td>
                                     <td class="py-3 text-left">
@@ -71,7 +88,13 @@
                                     <td class="py-3 px-3 text-center">
                                         {{ count($regattas) }}
                                     </td>
-                                    <td class="py-3 px-3 text-center font-bold text-brand-blue">{{ $row['total'] }}</td>
+                                    <td class="py-3 px-3 text-center">
+                                        <button
+                                            type="button"
+                                            class="font-bold text-brand-blue hover:text-[#C2A36B] hover:underline transition-colors cursor-pointer"
+                                            @click="openScores({{ Js::from($scoresData) }})"
+                                        >{{ $row['total'] }}</button>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -169,6 +192,73 @@
                         <template x-if="!teamModalData.members || teamModalData.members.length === 0">
                             <p class="text-gray-400 text-sm">Состав команды не указан</p>
                         </template>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    {{-- ─── Модальное окно: Очки по регатам ─── --}}
+    <div
+        x-show="scoresModal"
+        x-transition:enter="ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 z-50 flex items-center justify-center px-4"
+        style="display:none"
+    >
+        <div class="absolute inset-0 bg-black/50" @click="scoresModal = false"></div>
+
+        <div
+            x-show="scoresModal"
+            x-transition:enter="ease-out duration-200"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="ease-in duration-150"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            class="relative z-10 bg-white shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+        >
+            <template x-if="scoresModalData">
+                <div>
+                    <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#EAEAEA]">
+                        <h2 class="font-display text-2xl text-[#2E325C] a-font" x-text="scoresModalData.name"></h2>
+                        <button
+                            type="button"
+                            class="text-gray-400 hover:text-gray-600 transition-colors"
+                            @click="scoresModal = false"
+                            aria-label="Закрыть"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="px-6 py-4">
+                        <h3 class="font-semibold text-[#2E325C] mb-3">Очки по регатам</h3>
+                        <div class="divide-y divide-[#EAEAEA]">
+                            <template x-for="(regatta, idx) in scoresModalData.regattas" :key="idx">
+                                <div class="py-3 flex items-center justify-between gap-4">
+                                    <div>
+                                        <div class="font-medium text-[#2E325C]" x-text="regatta.name"></div>
+                                        <div class="text-xs text-gray-500" x-show="regatta.date" x-text="regatta.date"></div>
+                                    </div>
+                                    <span
+                                        class="font-bold text-brand-blue text-right flex-shrink-0"
+                                        x-text="regatta.points !== null ? regatta.points : '—'"
+                                    ></span>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="flex items-center justify-between gap-4 mt-4 pt-4 border-t border-[#EAEAEA]">
+                            <span class="font-semibold text-[#2E325C]">Всего</span>
+                            <span class="font-bold text-[#2E325C] text-lg" x-text="scoresModalData.total"></span>
+                        </div>
                     </div>
                 </div>
             </template>
