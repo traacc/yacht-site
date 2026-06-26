@@ -156,19 +156,32 @@ class TelegramService
 
     /**
      * Формирует подпись: заголовок, краткий текст и ссылка на полную новость.
+     *
+     * Telegram считает длину по видимому тексту (после разбора HTML), в
+     * UTF-16. Поэтому бюджет на тело новости считаем по видимым символам с
+     * запасом под многоточие и возможные эмодзи.
      */
     private function caption(News $news, int $limit): string
     {
-        $url   = route('news-details', $news);
-        $title = '<b>' . e($news->title) . '</b>';
-        $link  = '<a href="' . e($url) . '">Читать полностью →</a>';
+        $url      = route('news-details', $news);
+        $title    = trim((string) $news->title);
+        $linkText = 'Читать полностью →';
 
-        // Запас под заголовок, ссылку и переносы строк.
-        $reserved = mb_strlen(strip_tags($title)) + mb_strlen('Читать полностью →') + 4;
-        $bodyText = $this->plainContent($news);
-        $body     = e(Str::limit($bodyText, max(0, $limit - $reserved)));
+        // Видимая длина фиксированных частей: заголовок + ссылка + два «\n\n».
+        $fixed  = mb_strlen($title) + mb_strlen($linkText) + 4;
+        // Запас (16): многоточие Str::limit + расхождение код-поинтов и UTF-16.
+        $budget = $limit - $fixed - 16;
 
-        return trim($title . "\n\n" . $body . "\n\n" . $link);
+        $body = $this->plainContent($news);
+        $body = $budget > 0 ? Str::limit($body, $budget, '…') : '';
+
+        $parts = array_filter([
+            '<b>' . e($title) . '</b>',
+            $body !== '' ? e($body) : null,
+            '<a href="' . e($url) . '">' . e($linkText) . '</a>',
+        ]);
+
+        return implode("\n\n", $parts);
     }
 
     /**
