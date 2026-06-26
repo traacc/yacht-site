@@ -52,6 +52,18 @@ class PaymentRegistry extends Model
             : null;
     }
 
+    /** Команда, к которой относится платёж (напрямую или через заявку). */
+    public function payableTeam(): ?Team
+    {
+        $payable = $this->payable;
+
+        return match (true) {
+            $payable instanceof Team         => $payable,
+            $payable instanceof RegattaEntry => $payable->team,
+            default                          => null,
+        };
+    }
+
     /** Человекочитаемое описание связанной модели (источника платежа). */
     public function payableLabel(): string
     {

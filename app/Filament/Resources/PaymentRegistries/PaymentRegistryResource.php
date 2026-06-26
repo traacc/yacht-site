@@ -113,17 +113,18 @@ class PaymentRegistryResource extends Resource
                     ->label('Статус оплаты')
                     ->badge()
                     ->sortable(),
+                TextColumn::make('team')
+                    ->label('Команда')
+                    ->getStateUsing(fn (PaymentRegistry $record): ?string => $record->payableTeam()?->name)
+                    ->placeholder('—')
+                    ->searchable(false)
+                    ->toggleable(),
                 TextColumn::make('payable')
                     ->label('Источник')
                     ->getStateUsing(fn (PaymentRegistry $record): string => $record->payableLabel())
                     ->placeholder('—')
                     ->toggleable(),
-                TextColumn::make('document')
-                    ->label('Документ')
-                    ->formatStateUsing(fn ($state) => $state ? 'Прикреплён' : '—')
-                    ->url(fn (PaymentRegistry $record) => $record->document_url, shouldOpenInNewTab: true)
-                    ->color(fn ($state) => $state ? 'primary' : 'gray')
-                    ->toggleable(),
+                
                 TextColumn::make('created_at')
                     ->label('Создан')
                     ->dateTime('d.m.Y H:i')
