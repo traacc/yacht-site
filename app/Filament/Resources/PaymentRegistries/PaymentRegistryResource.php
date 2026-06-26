@@ -7,12 +7,15 @@ namespace App\Filament\Resources\PaymentRegistries;
 use App\Enums\PaymentStatus;
 use App\Filament\Resources\PaymentRegistries\Pages\ManagePaymentRegistries;
 use App\Models\PaymentRegistry;
+use App\Models\RegattaEntry;
+use App\Models\Team;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\MorphToSelect;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -65,6 +68,22 @@ class PaymentRegistryResource extends Resource
                     ->options(PaymentStatus::class)
                     ->default(PaymentStatus::Pending)
                     ->required(),
+                MorphToSelect::make('payable')
+                    ->label('Источник платежа')
+                    ->types([
+                        MorphToSelect\Type::make(Team::class)
+                            ->label('Команда (годовой сбор)')
+                            ->titleAttribute('name'),
+                        MorphToSelect\Type::make(RegattaEntry::class)
+                            ->label('Заявка на регату')
+                            ->getOptionLabelFromRecordUsing(
+                                fn (RegattaEntry $record): string => trim(
+                                    ($record->team?->name ?? '—') . ' — ' . ($record->regatta?->name ?? '—')
+                                )
+                            ),
+                    ])
+                    ->searchable()
+                    ->columnSpanFull(),
                 FileUpload::make('document')
                     ->label('Документ')
                     ->disk('public')

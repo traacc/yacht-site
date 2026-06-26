@@ -65,6 +65,7 @@ class PaymentRegistry extends Model
             $payable instanceof RegattaEntry => 'Заявка: '
                 . ($payable->team?->name ?? '—')
                 . ' — ' . ($payable->regatta?->name ?? '—'),
+            $payable instanceof Team => 'Команда: ' . ($payable->name ?? '—'),
             default => class_basename($payable) . ' #' . $payable->getKey(),
         };
     }
