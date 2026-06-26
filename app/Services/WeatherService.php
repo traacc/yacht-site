@@ -14,16 +14,15 @@ class WeatherService
 
     public function getWeather(float $lat, float $lon): array|null
     {
-        return Cache::remember("weather:{$lat}:{$lon}", now()->addMinutes(240), function () use ($lat, $lon) {
+        return Cache::remember("weather:current:{$lat}:{$lon}", now()->addMinutes(30), function () use ($lat, $lon) {
             try {
                 $response = Http::timeout(self::TIMEOUT_SECONDS)
                     ->retry(2, 1000, throw: false)
                     ->get('https://api.open-meteo.com/v1/forecast', [
-                        'latitude'       => $lat,
-                        'longitude'      => $lon,
-                        'hourly'          => 'temperature_2m,wind_speed_10m,wind_direction_10m',
+                        'latitude'        => $lat,
+                        'longitude'       => $lon,
+                        'current'         => 'temperature_2m,wind_speed_10m,wind_direction_10m',
                         'wind_speed_unit' => 'ms',
-                        'forecast_days'   => '14',
                     ]);
 
                 if ($response->failed()) {

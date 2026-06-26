@@ -8,10 +8,6 @@ use App\Services\WeatherService;
 use App\Services\YandexMapService;
 use Livewire\Component;
 
-use DateTime;
-
-use Illuminate\Support\Facades\Log;
-
 class HomeClosestRegatta extends Component
 {
     public function render(WeatherService $weather, YandexMapService $map, SettingsService $settings): \Illuminate\View\View
@@ -28,24 +24,10 @@ class HomeClosestRegatta extends Component
         $temp = null;
         $windSpeed = null;
         $windDirection = null;
-        if ($currentWeather && isset($currentWeather['hourly'])) {
-            $times = $currentWeather['hourly']['time'];
-            $hourly = array_combine($times, $currentWeather['hourly']['temperature_2m']);
-            $windSpeeds = isset($currentWeather['hourly']['wind_speed_10m'])
-                ? array_combine($times, $currentWeather['hourly']['wind_speed_10m'])
-                : [];
-            $windDirections = isset($currentWeather['hourly']['wind_direction_10m'])
-                ? array_combine($times, $currentWeather['hourly']['wind_direction_10m'])
-                : [];
-
-            $date = $regatta?->date_start;
-            $datetime = (new DateTime($date))
-                ->setTime(12, 0)
-                ->format('Y-m-d\TH:i');
-
-            $temp = $hourly[$datetime] ?? null;
-            $windSpeed = $windSpeeds[$datetime] ?? null;
-            $windDirection = $windDirections[$datetime] ?? null;
+        if ($currentWeather && isset($currentWeather['current'])) {
+            $temp = $currentWeather['current']['temperature_2m'] ?? null;
+            $windSpeed = $currentWeather['current']['wind_speed_10m'] ?? null;
+            $windDirection = $currentWeather['current']['wind_direction_10m'] ?? null;
         }
         $mapUrl = $regatta?->coordinates
             ? $map->makeUrl(
