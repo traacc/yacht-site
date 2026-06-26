@@ -76,13 +76,13 @@ class PaymentRegistryResource extends Resource
                             ->titleAttribute('name'),
                         MorphToSelect\Type::make(RegattaEntry::class)
                             ->label('Заявка на регату')
+                            ->titleAttribute('id')
                             ->getOptionLabelFromRecordUsing(
                                 fn (RegattaEntry $record): string => trim(
                                     ($record->team?->name ?? '—') . ' — ' . ($record->regatta?->name ?? '—')
                                 )
                             ),
                     ])
-                    ->searchable()
                     ->columnSpanFull(),
                 FileUpload::make('document')
                     ->label('Документ')
