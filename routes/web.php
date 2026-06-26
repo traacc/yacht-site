@@ -342,17 +342,8 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         : null;
 
     $temp = '—';
-    if ($currentWeather && isset($currentWeather['hourly'])) {
-        $hourly = array_combine(
-            $currentWeather['hourly']['time'],
-            $currentWeather['hourly']['temperature_2m']
-        );
-
-        $date = $regatta?->date_start;
-        $datetime = (new DateTime($date))
-            ->setTime(12, 0)
-            ->format('Y-m-d\TH:i');
-        $temp = $hourly[$datetime] ?? '—';
+    if ($currentWeather && isset($currentWeather['current'])) {
+        $temp = $currentWeather['current']['temperature_2m'] ?? '—';
     }
 
     // Проверяем, является ли текущий юзер участником уже заявленной команды
