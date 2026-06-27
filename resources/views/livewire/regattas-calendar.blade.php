@@ -25,11 +25,23 @@
                     </svg>
                     Скачать календарь
                 </a>
-                {{-- Легенда --}}
+                {{-- Легенда (кликабельная — фильтрует регаты по статусу) --}}
                 <div class="flex items-center gap-4 text-[#2E325C]">
-                    <span class="flex items-center gap-1.5 text-xs md:text-base"><span class="size-2 md:size-4 rounded-full bg-[#157949] inline-block"></span>Состоявшиеся</span>
-                    <span class="flex items-center gap-1.5 text-xs md:text-base"><span class="size-2 md:size-4 rounded-full bg-[#C2A36B] inline-block"></span>Ближайшие</span>
-                    <span class="flex items-center gap-1.5 text-xs md:text-base"><span class="size-2 md:size-4 rounded-full bg-[#C6C6C6] inline-block"></span>Планируемые</span>
+                    <button type="button" @click="toggleStatus('finished')"
+                        :class="isStatusActive('finished') ? '' : (activeStatuses.length ? 'opacity-40' : '')"
+                        class="flex items-center gap-1.5 text-xs md:text-base cursor-pointer transition-opacity">
+                        <span class="size-2 md:size-4 rounded-full bg-[#157949] inline-block"></span>Состоявшиеся
+                    </button>
+                    <button type="button" @click="toggleStatus('closest')"
+                        :class="isStatusActive('closest') ? '' : (activeStatuses.length ? 'opacity-40' : '')"
+                        class="flex items-center gap-1.5 text-xs md:text-base cursor-pointer transition-opacity">
+                        <span class="size-2 md:size-4 rounded-full bg-[#C2A36B] inline-block"></span>Ближайшие
+                    </button>
+                    <button type="button" @click="toggleStatus('upcoming')"
+                        :class="isStatusActive('upcoming') ? '' : (activeStatuses.length ? 'opacity-40' : '')"
+                        class="flex items-center gap-1.5 text-xs md:text-base cursor-pointer transition-opacity">
+                        <span class="size-2 md:size-4 rounded-full bg-[#C6C6C6] inline-block"></span>Планируемые
+                    </button>
                 </div>
                 {{-- Выбор года --}}
                     @if ($showSelector)
@@ -77,7 +89,8 @@
                             </h3>
                             <div class="space-y-3">
                                 @foreach ($month['events'] as $event)
-                                    <div class="flex gap-2 py-4 border-b border-b-[#EAEAEA] last:border-b-0">
+                                    <div x-show="isEventVisible('{{ $event['status'] }}')"
+                                        class="flex gap-2 py-4 border-b border-b-[#EAEAEA] last:border-b-0">
                                         <div>
                                             <span class="size-4 rounded-full block mt-0.5
                                                 {{ $event['status'] === 'cancelled' ? 'bg-[#a12f15]' : '' }}
@@ -114,6 +127,9 @@
 
                                 @if (empty($month['events']))
                                     <div class="text-[#C6C6C6] text-sm py-4 text-center">Нет регат</div>
+                                @else
+                                    <div x-show="!monthHasVisible({{ json_encode(array_column($month['events'], 'status')) }})"
+                                         class="text-[#C6C6C6] text-sm py-4 text-center">Нет регат по фильтру</div>
                                 @endif
                             </div>
                         </div>
@@ -158,6 +174,31 @@ function regattaCalendar() {
         dragging: false,
         dragStartX: 0,
         dragStartOffset: 0,
+
+        // --- Фильтр по статусу (легенда) ---
+        activeStatuses: [],
+
+        toggleStatus(status) {
+            const idx = this.activeStatuses.indexOf(status);
+            if (idx === -1) {
+                this.activeStatuses.push(status);
+            } else {
+                this.activeStatuses.splice(idx, 1);
+            }
+        },
+
+        isStatusActive(status) {
+            return this.activeStatuses.includes(status);
+        },
+
+        isEventVisible(status) {
+            return this.activeStatuses.length === 0 || this.activeStatuses.includes(status);
+        },
+
+        monthHasVisible(statuses) {
+            if (this.activeStatuses.length === 0) return true;
+            return statuses.some(s => this.activeStatuses.includes(s));
+        },
 
         get maxOffset() {
             return Math.max(0, 12 - this.visible);
