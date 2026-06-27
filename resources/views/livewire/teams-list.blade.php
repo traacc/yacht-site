@@ -181,8 +181,12 @@
                         <tbody class="divide-y text-center font-medium text-sm md:text-base">
                             <template x-if="activeTeam?.members?.length">
                                 <template x-for="(member, i) in activeTeam.members" :key="i">
-                                    <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
-                                        <td data-label="Участник" class="py-3" x-text="member.name"></td>
+                                    <tr
+                                        class="hover:bg-white transition-colors border-b border-[#EAEAEA]"
+                                        :class="member.id ? 'cursor-pointer' : ''"
+                                        @click="member.id && Livewire.dispatch('open-user-card', { userId: member.id })"
+                                    >
+                                        <td data-label="Участник" class="py-3" :class="member.id ? 'text-[#2D92CE] hover:underline' : ''" x-text="member.name"></td>
                                         <td data-label="Дата рождения" class="py-3" x-text="member.birthday"></td>
                                         <td data-label="Разряд" class="py-3" x-text="member.category"></td>
                                     </tr>

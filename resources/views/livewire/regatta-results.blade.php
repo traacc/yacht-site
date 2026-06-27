@@ -499,16 +499,33 @@
                                     'font-bold' => $isCaptain,
                                 ])>
                                     <td data-label="Участник" class="py-3">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-full overflow-hidden bg-[#2E325C] text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
-                                                @if(!empty($member['avatar']))
-                                                    <img src="{{ $member['avatar'] }}" alt="{{ $member['name'] }}" class="w-full h-full object-cover">
-                                                @else
-                                                    <span>{{ \Illuminate\Support\Str::upper(collect(preg_split('/\s+/', trim($member['name'])))->filter()->take(2)->map(fn ($w) => mb_substr($w, 0, 1))->implode('')) ?: '?' }}</span>
-                                                @endif
+                                        @if(!empty($member['id']))
+                                            <button
+                                                type="button"
+                                                wire:click="$dispatch('open-user-card', { userId: '{{ $member['id'] }}' })"
+                                                class="flex items-center gap-3 text-left hover:text-[#2D92CE] transition-colors cursor-pointer group"
+                                            >
+                                                <div class="w-8 h-8 rounded-full overflow-hidden bg-[#2E325C] text-white flex items-center justify-center text-sm font-bold flex-shrink-0 group-hover:ring-2 group-hover:ring-[#2D92CE] transition-all">
+                                                    @if(!empty($member['avatar']))
+                                                        <img src="{{ $member['avatar'] }}" alt="{{ $member['name'] }}" class="w-full h-full object-cover">
+                                                    @else
+                                                        <span>{{ \Illuminate\Support\Str::upper(collect(preg_split('/\s+/', trim($member['name'])))->filter()->take(2)->map(fn ($w) => mb_substr($w, 0, 1))->implode('')) ?: '?' }}</span>
+                                                    @endif
+                                                </div>
+                                                <span class="group-hover:underline">{{ $member['name'] }}</span>
+                                            </button>
+                                        @else
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-full overflow-hidden bg-[#2E325C] text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                                    @if(!empty($member['avatar']))
+                                                        <img src="{{ $member['avatar'] }}" alt="{{ $member['name'] }}" class="w-full h-full object-cover">
+                                                    @else
+                                                        <span>{{ \Illuminate\Support\Str::upper(collect(preg_split('/\s+/', trim($member['name'])))->filter()->take(2)->map(fn ($w) => mb_substr($w, 0, 1))->implode('')) ?: '?' }}</span>
+                                                    @endif
+                                                </div>
+                                                <span>{{ $member['name'] }}</span>
                                             </div>
-                                            <span>{{ $member['name'] }}</span>
-                                        </div>
+                                        @endif
                                     </td>
                                     <td data-label="Дата рождения" class="py-3">{{ $member['birthday'] }}</td>
                                     <td data-label="Разряд" class="py-3">{{ $member['rank'] }}</td>

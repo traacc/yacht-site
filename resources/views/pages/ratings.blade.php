@@ -159,7 +159,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                                     <button
                                                         type="button"
                                                         class="relative hover:z-10 w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-[#2E325C] text-white text-xs font-bold ring-2 ring-white hover:ring-[#2D92CE] hover:scale-110 transition-all cursor-pointer flex-shrink-0"
-                                                        @click="openParticipant(p)"
+                                                        @click="p.id ? Livewire.dispatch('open-user-card', { userId: p.id }) : openParticipant(p)"
                                                         :title="p.name"
                                                     >
                                                         <template x-if="p.avatar">

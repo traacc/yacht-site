@@ -72,6 +72,7 @@ class TeamsList extends Component
             'rating' => $team->teamRatings->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first()?->rank_position ?? '—',
             'participation_count' => $team->regattaEntries->filter(fn ($e) => $e->regatta?->date_start?->isPast())->count(),
             'members' => $team->activeMembers->map(fn ($m) => [
+                'id' => $m->id,
                 'name' => $m->name,
                 'birthday' => $m->birth_date?->format('d.m.Y') ?? '',
                 'category' => $m->sport_category?->getLabel() ?? '',

@@ -591,6 +591,7 @@ Route::get('/ratings', function () {
         ->ranked()
         ->get()
         ->map(fn ($r) => [
+            'id' => $r->user?->id,
             'name' => $r->user?->name ?? '—',
             'total_points' => (float) $r->total_points,
             'birthday' => $r->user?->birth_date?->format('d.m.Y') ?? '—',

@@ -74,6 +74,7 @@
 <x-footer />
 <livewire:auth.login-modal />
 <livewire:join-regatta-modal />
+<livewire:user-card-modal />
 <livewire:cookie-consent />
 
 </body>
