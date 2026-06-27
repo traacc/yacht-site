@@ -32,7 +32,7 @@
                     </div>
                     <div class="min-w-0">
                         <h4 class="a-font text-xl md:text-2xl leading-tight">{{ $user['name'] }}</h4>
-                        <div class="text-sm text-white/70 mt-1">Участник № {{ $user['number'] }}</div>
+                        <!--<div class="text-sm text-white/70 mt-1">Участник № {{ $user['number'] }}</div>-->
                     </div>
                 </div>
 
