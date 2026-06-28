@@ -245,7 +245,7 @@
             <div class="container mx-auto sm:px-6 py-4 bg-[#F8F8F8]">
                 @if($regatta)
                     <div class="flex items-center justify-between mb-6">
-                        <h2 class="section-title a-font">Результаты регат</h2>
+                        <h2 class="section-title a-font">Результаты</h2>
                         @if($regatta->results->first())
                             <a href="{{ route('regatta.results.pdf', $regatta) }}" target="_blank" class="text-[#2E325C] text-lg font-semibold gap-2 items-center hidden md:flex cursor-pointer">
                                 <img src="{{ asset('images/icons/download.svg') }}" alt="">
