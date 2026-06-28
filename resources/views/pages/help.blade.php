@@ -162,7 +162,7 @@
     {{-- ===== Таб: Для пользователей (FAQ) ===== --}}
     <div x-show="activeTab === 'users'" x-cloak>
         <section class="container mx-auto pb-12">
-            @if(!empty($faq))
+            @if($faq->isNotEmpty())
             <div class="px-3 divide-y divide-gray-200" x-data="{ open: null }">
                 @foreach($faq as $index => $item)
                 <div class="py-4">

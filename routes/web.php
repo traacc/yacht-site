@@ -10,6 +10,7 @@ use App\Actions\RegattaResult\GenerateRegattaResultPdfAction;
 use App\Actions\Team\GenerateTeamHistoryPdfAction;
 use App\Actions\Voting\CastVoteAction;
 use App\Enums\VotingStatus;
+use App\Models\Faq;
 use App\Models\Gallery;
 use App\Models\Help;
 use App\Models\HelpCategory;
@@ -46,7 +47,7 @@ Route::get('/', function () {
     $galleryPhotos = app(SettingsService::class)->getGalleryPhotos();
 
     // FAQ для главной страницы
-    $faq = app(SettingsService::class)->get('home.faq', []);
+    $faq = Faq::active()->ordered()->get();
 
     // Партнёры ассоциации (логотипы из настроек главной)
     $sponsors = collect((array) app(SettingsService::class)->get('home.sponsors', []))
@@ -737,8 +738,8 @@ Route::get('/help', function () {
 
     $beforeNote = app(SettingsService::class)->get('help.before_note', '');
 
-    // FAQ для вкладки «Для пользователей» (берём те же вопросы, что и на главной)
-    $faq = app(SettingsService::class)->get('home.faq', []);
+    // FAQ для вкладки «Для пользователей» (те же вопросы, что и на главной)
+    $faq = Faq::active()->ordered()->get();
 
     return view('pages.help', compact('categories', 'defaultCategory', 'beforeNote', 'faq'));
 })->name('help');

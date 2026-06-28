@@ -459,7 +459,7 @@ function sponsorsSlider() {
 @endif
 
 {{-- ===== FAQ ===== --}}
-@if(!empty($faq))
+@if($faq->isNotEmpty())
 <section class="py-12 bg-white">
     <div class="container mx-auto">
         <h2 class="section-title a-font mb-8">Часто задаваемые вопросы</h2>
