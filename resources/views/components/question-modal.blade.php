@@ -35,7 +35,7 @@
                 submitted: false,
                 loading: false,
                 error: '',
-                successMessage: 'Спасибо! Ваш вопрос отправлен администрации. Мы ответим вам в ближайшее время.',
+                successMessage: 'Спасибо! Ваш вопрос успешно отправлен. Мы ответим вам в ближайшее время.',
 
                 async submitForm() {
                     this.error = '';
