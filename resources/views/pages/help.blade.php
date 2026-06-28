@@ -4,10 +4,12 @@
 <main x-data="{
     help_modal_open: false,
     activeItem: null,
-    activeTab: 'owners',
+    activeTab: window.location.hash === '#users' ? 'users' : 'owners',
     activeCategory: @js($defaultCategory),
     categories: @js($categories)
-}" class="main">
+}"
+    x-on:switch-help-tab.window="activeTab = $event.detail.tab"
+    class="main">
     <section class="md:py-12 py-4 reggata-list">
         <div class="container mx-auto">
             <h2 class="section-title a-font text-5xl">Помощь</h2>
