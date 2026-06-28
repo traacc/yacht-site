@@ -1007,7 +1007,7 @@ class JoinRegattaModal extends Component
                         'approval_status' => 'approved',
                     ]);
                 } else {
-                    $yacht = Yacht::findOrFail($this->yachtId);
+                    $yacht = Yacht::withoutGlobalScope(OwnedScope::class)->findOrFail($this->yachtId);
                 }
 
                 // 6. Подаём заявку от имени организатора команды (проверка прав на подачу)
