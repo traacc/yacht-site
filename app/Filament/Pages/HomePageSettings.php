@@ -15,6 +15,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -81,8 +82,17 @@ class HomePageSettings extends Page
             ->filter(fn ($v) => is_string($v) && $v !== '')
             ->first();
 
+        // E-mail'ы администраторов для уведомлений о новых заявках на регату
+        $regattaEntryEmails = collect((array) $settings->get('home.regatta_entry_emails', []))
+            ->flatten()
+            ->filter(fn ($v) => is_string($v) && $v !== '')
+            ->values()
+            ->all();
+
         // Заполняем форму через fill() — это запускает afterStateHydrated на FileUpload
         $this->form->fill([
+            // E-mail'ы для уведомлений о заявках на регату
+            'regatta_entry_emails' => $regattaEntryEmails,
             // TOP-3 команд
             'top_team_1' => $teams[0]['id'] ?? null,
             'top_team_1_points' => $teams[0]['points'] ?? null,
@@ -182,6 +192,18 @@ class HomePageSettings extends Page
                             ->maxLength(255)
                             ->visible(fn ($get) => (bool) $get('maintenance_mode'))
                             ->rules(['nullable', 'string', 'max:255']),
+                    ]),
+
+                // ── Уведомления о заявках на регату ───────────
+                Section::make('Заявки на регату')
+                    ->description('E-mail-адреса администраторов, на которые отправляются уведомления о новых заявках на участие в регате. Можно указать несколько адресов.')
+                    ->schema([
+                        TagsInput::make('regatta_entry_emails')
+                            ->label('E-mail для заявок на регату')
+                            ->placeholder('admin@example.com')
+                            ->helperText('Введите адрес и нажмите Enter. Если список пуст — уведомления не отправляются.')
+                            ->nestedRecursiveRules(['email'])
+                            ->columnSpanFull(),
                     ]),
 
                 // ── Всплывающий баннер ────────────────────────
@@ -538,6 +560,8 @@ class HomePageSettings extends Page
             'data.banner_text' => ['nullable', 'string', 'max:1000'],
             'data.banner_button_text' => ['nullable', 'string', 'max:255'],
             'data.banner_button_url' => ['nullable', 'url', 'max:2048'],
+            'data.regatta_entry_emails' => ['nullable', 'array'],
+            'data.regatta_entry_emails.*' => ['email'],
         ]);
 
         /** @var SettingsService $settings */
@@ -612,6 +636,17 @@ class HomePageSettings extends Page
         $settings->set('home.banner_text', trim((string) ($data['banner_text'] ?? '')) ?: null, 'home');
         $settings->set('home.banner_button_text', trim((string) ($data['banner_button_text'] ?? '')) ?: null, 'home');
         $settings->set('home.banner_button_url', trim((string) ($data['banner_button_url'] ?? '')) ?: null, 'home');
+
+        // E-mail'ы администраторов для уведомлений о заявках на регату
+        $regattaEntryEmails = collect((array) ($data['regatta_entry_emails'] ?? []))
+            ->flatten()
+            ->map(fn ($v) => trim((string) $v))
+            ->filter(fn ($v) => $v !== '')
+            ->unique()
+            ->values()
+            ->all();
+
+        $settings->set('home.regatta_entry_emails', $regattaEntryEmails, 'home');
 
         $settings->forgetGroup('home');
 

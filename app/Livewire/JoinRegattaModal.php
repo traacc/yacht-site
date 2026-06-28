@@ -7,6 +7,7 @@ use App\Enums\CreationSource;
 use App\Enums\SportCategory;
 use App\Enums\TeamMemberRole;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
+use App\Mail\RegattaEntrySubmitted;
 use App\Mail\SendLoginCredentials;
 use App\Mail\SendRegattaEntryPassword;
 use App\Models\Regatta;
@@ -1068,6 +1069,23 @@ class JoinRegattaModal extends Component
 
         if ($missingRequired) {
             $entry->update(['documents_complete' => false]);
+        }
+
+        // Уведомляем администраторов о новой заявке на регату.
+        $adminEmails = collect((array) app(\App\Services\SettingsService::class)->get('home.regatta_entry_emails', []))
+            ->flatten()
+            ->map(fn ($v) => trim((string) $v))
+            ->filter(fn ($v) => $v !== '')
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($adminEmails !== []) {
+            try {
+                Mail::to($adminEmails)->send(new RegattaEntrySubmitted($entry));
+            } catch (\Exception $e) {
+                report($e);
+            }
         }
 
         // Отправляем пароль заявки на почту капитану (кроме «технических» адресов).

@@ -25,6 +25,7 @@
                         <a href="{{ route('regulations') }}"  class="block px-4 py-2 text-gray-700">Технический регламент яхт</a>
                         <a href="{{ route('decisions') }}"  class="block px-4 py-2 text-gray-700">Решения общего собрания</a></li>
                         <a href="{{ route('votings') }}"  class="block px-4 py-2 text-gray-700">Голосования</a></li>
+                        <button type="button" @click="open = false; isQuestionModalOpen = true" class="block w-full text-left px-4 py-2 text-gray-700 cursor-pointer">Задать вопрос</button>
                     </div>
                 </div>
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
@@ -208,6 +209,7 @@
                             <a href="{{ route('regulations') }}"  class="block px-4 py-2 text-sm">Технический регламент яхт</a>
                             <a href="{{ route('decisions') }}"  class="block px-4 py-2 text-sm">Решения общего собрания</a></li>
                             <a href="{{ route('votings') }}"  class="block px-4 py-2 text-sm">Голосования</a></li>
+                            <button type="button" @click="mobileOpen = false; isQuestionModalOpen = true" class="block w-full text-left px-4 py-2 text-sm cursor-pointer">Задать вопрос</button>
                         </div>
                     </div>
                     <div x-data="{ open: false }" class="relative">
