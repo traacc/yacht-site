@@ -4,6 +4,7 @@
 <main x-data="{
     help_modal_open: false,
     activeItem: null,
+    activeTab: 'owners',
     activeCategory: @js($defaultCategory),
     categories: @js($categories)
 }" class="main">
@@ -12,6 +13,25 @@
             <h2 class="section-title a-font text-5xl">Помощь</h2>
         </div>
     </section>
+
+    {{-- Табы --}}
+    <section class="container mx-auto mb-8">
+        <div class="flex flex-wrap gap-2 border-b border-gray-200">
+            <button @click="activeTab = 'owners'"
+                    :class="activeTab === 'owners' ? 'text-[#2D92CE] border-b-2 border-[#2D92CE]' : 'text-[#2E325C] border-b-2 border-transparent hover:text-[#2D92CE]'"
+                    class="px-4 py-3 text-lg font-semibold transition-colors cursor-pointer -mb-px">
+                Для владельцев яхт
+            </button>
+            <button @click="activeTab = 'users'"
+                    :class="activeTab === 'users' ? 'text-[#2D92CE] border-b-2 border-[#2D92CE]' : 'text-[#2E325C] border-b-2 border-transparent hover:text-[#2D92CE]'"
+                    class="px-4 py-3 text-lg font-semibold transition-colors cursor-pointer -mb-px">
+                Для пользователей
+            </button>
+        </div>
+    </section>
+
+    {{-- ===== Таб: Для владельцев яхт ===== --}}
+    <div x-show="activeTab === 'owners'" x-cloak>
     @if($beforeNote)
     <section class="container mx-auto pb-4">
         <div class="prose max-w-none">{!! $beforeNote !!}</div>
@@ -134,6 +154,46 @@
             </div>
         </div>
     </div>
+    </div>
+    {{-- ===== /Таб: Для владельцев яхт ===== --}}
+
+    {{-- ===== Таб: Для пользователей (FAQ) ===== --}}
+    <div x-show="activeTab === 'users'" x-cloak>
+        <section class="container mx-auto pb-12">
+            @if(!empty($faq))
+            <div class="px-3 divide-y divide-gray-200" x-data="{ open: null }">
+                @foreach($faq as $index => $item)
+                <div class="py-4">
+                    <button
+                        @click="open === {{ $index }} ? open = null : open = {{ $index }}"
+                        class="flex justify-between items-center w-full text-left gap-4 cursor-pointer border-b pb-5 border-gray-200"
+                    >
+                        <span class="text-lg font-semibold text-[#2E325C] pr-4">{{ $item['question'] }}</span>
+                        <svg
+                            class="w-5 h-5 shrink-0 text-[#2D92CE] transition-transform duration-300"
+                            :class="open === {{ $index }} ? 'rotate-180' : ''"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div
+                        x-show="open === {{ $index }}"
+                        x-collapse
+                        x-cloak
+                    >
+                        <div class="pt-4 text-brand-gray leading-relaxed prose prose-sm max-w-none">
+                            {!! $item['answer'] !!}
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            @else
+            <p class="text-[#2E325C]">Вопросы появятся позже.</p>
+            @endif
+        </section>
+    </div>
+    {{-- ===== /Таб: Для пользователей (FAQ) ===== --}}
 </main>
 
 

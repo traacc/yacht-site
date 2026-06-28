@@ -737,7 +737,10 @@ Route::get('/help', function () {
 
     $beforeNote = app(SettingsService::class)->get('help.before_note', '');
 
-    return view('pages.help', compact('categories', 'defaultCategory', 'beforeNote'));
+    // FAQ для вкладки «Для пользователей» (берём те же вопросы, что и на главной)
+    $faq = app(SettingsService::class)->get('home.faq', []);
+
+    return view('pages.help', compact('categories', 'defaultCategory', 'beforeNote', 'faq'));
 })->name('help');
 Route::get('/news', function () {
     $news = News::published()

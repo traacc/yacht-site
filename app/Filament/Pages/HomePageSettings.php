@@ -14,7 +14,6 @@ use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -66,7 +65,6 @@ class HomePageSettings extends Page
 
         $teams = $settings->get('home.top_teams', []);
         $participants = $settings->get('home.top_participants', []);
-        $faq = $settings->get('home.faq', []);
         $sponsors = $settings->get('home.sponsors', []);
 
         // Нормализуем gallery_photos в индексированный массив строк
@@ -99,8 +97,6 @@ class HomePageSettings extends Page
             'top_participant_2_points' => $participants[1]['points'] ?? null,
             'top_participant_3' => $participants[2]['id'] ?? null,
             'top_participant_3_points' => $participants[2]['points'] ?? null,
-            // FAQ
-            'faq' => $faq,
             // Спонсоры / партнёры
             'sponsors' => $sponsors,
             // Галерея
@@ -495,32 +491,6 @@ class HomePageSettings extends Page
                         ]),
                     ]),
 
-                // ── FAQ ──────────────────────────────────────
-                Section::make('FAQ')
-                    ->description('Добавьте вопросы и ответы для блока «Часто задаваемые вопросы» на главной странице. Перетаскивайте записи для изменения порядка отображения.')
-                    ->schema([
-                        Repeater::make('faq')
-                            ->label('Вопросы и ответы')
-                            ->addActionLabel('Добавить вопрос')
-                            ->reorderable()
-                            ->collapsible()
-                            ->defaultItems(0)
-                            ->schema([
-                                TextInput::make('question')
-                                    ->label('Вопрос')
-                                    ->placeholder('Введите вопрос')
-                                    ->required()
-                                    ->maxLength(500)
-                                    ->rules(['required', 'string', 'max:500']),
-
-                                RichEditor::make('answer')
-                                    ->label('Ответ')
-                                    ->placeholder('Введите развёрнутый ответ')
-                                    ->required()
-                                    ->columnSpanFull()
-                                    ->rules(['required']),
-                            ]),
-                    ]),
             ]);
 
     }
@@ -584,14 +554,6 @@ class HomePageSettings extends Page
             ['id' => $data['top_participant_2'], 'points' => $data['top_participant_2_points']],
             ['id' => $data['top_participant_3'], 'points' => $data['top_participant_3_points']],
         ], 'home');
-
-        // FAQ: фильтруем пустые записи и сохраняем
-        $faq = collect((array) ($data['faq'] ?? []))
-            ->filter(fn (array $item) => ! empty($item['question']) && ! empty($item['answer']))
-            ->values()
-            ->all();
-
-        $settings->set('home.faq', $faq, 'home');
 
         // Спонсоры: оставляем только записи с загруженным логотипом
         $sponsors = collect((array) ($data['sponsors'] ?? []))
