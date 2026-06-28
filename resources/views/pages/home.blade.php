@@ -496,4 +496,20 @@ function sponsorsSlider() {
 </section>
 @endif
 
+{{-- ===== Задать вопрос администрации ===== --}}
+<section class="py-12 bg-brand-light">
+    <div class="container mx-auto">
+        <div class="bg-white px-6 py-10 md:px-12 md:py-12 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+            <div>
+                <h2 class="section-title a-font mb-2">Не нашли ответ на свой вопрос?</h2>
+                <p class="text-brand-gray text-sm md:text-base">Задайте вопрос нам — мы ответим вам в ближайшее время.</p>
+            </div>
+            <button @click="isQuestionModalOpen = true"
+                    class="shrink-0 bg-[#2D92CE] text-white px-8 py-4 font-semibold hover:bg-[#2D92CE]/90 transition-colors">
+                Задать вопрос
+            </button>
+        </div>
+    </div>
+</section>
+
 </x-public-layout>

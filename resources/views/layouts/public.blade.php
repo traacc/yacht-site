@@ -22,7 +22,7 @@
     <meta name="yandex-verification" content="4bd7f3f3aecedff0" />
     <meta name="google-site-verification" content="A8qH64mGazrMuvqwvvGCQvLR5xkkqBGqa7Unkg39JSs" />
 </head>
-<body class="font-sans bg-white text-[#2E325C] antialiased" x-data="{isRequestModalOpen: false }">
+<body class="font-sans bg-white text-[#2E325C] antialiased" x-data="{isRequestModalOpen: false, isQuestionModalOpen: false }">
 
 <x-nav />
 
@@ -71,6 +71,7 @@
 
 {{ $slot }}
 <x-request-modal></x-request-modal>
+<x-question-modal></x-question-modal>
 <x-footer />
 <livewire:auth.login-modal />
 <livewire:join-regatta-modal />

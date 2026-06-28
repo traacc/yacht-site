@@ -23,6 +23,7 @@ use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\TeamRating;
 use App\Models\User;
+use App\Models\UserQuestion;
 use App\Models\Vote;
 use App\Models\Voting;
 use App\Models\Yacht;
@@ -785,6 +786,24 @@ Route::post('/feedback', function (Request $request) {
 
     return back()->with('feedback_sent', true);
 })->name('feedback.submit');
+
+// Вопрос администрации от зарегистрированного пользователя (модальное окно на главной)
+Route::post('/questions', function (Request $request) {
+    $validated = $request->validate([
+        'question' => ['required', 'string', 'max:2000'],
+    ]);
+
+    UserQuestion::create([
+        'user_id' => auth()->id(),
+        'question' => $validated['question'],
+    ]);
+
+    if ($request->wantsJson()) {
+        return response()->json(['message' => 'Спасибо! Ваш вопрос отправлен администрации.']);
+    }
+
+    return back()->with('question_sent', true);
+})->middleware('auth')->name('questions.store');
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth'])
