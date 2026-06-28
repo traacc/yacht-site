@@ -81,6 +81,8 @@ class ManageRegattaResults extends ManageRecords
                         return;
                     }
 
+                    RegattaResultResource::recalculateRatings($result);
+
                     $body = "Импортировано: {$importResult['imported']}, пропущено: {$importResult['skipped']}";
                     if (! empty($importResult['errors'])) {
                         $body .= "\n\nОшибки:\n" . implode("\n", $importResult['errors']);

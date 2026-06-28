@@ -13,6 +13,7 @@ use App\Models\RegattaResult;
 use App\Models\RegattaResultItem;
 use App\Models\Team;
 use App\Models\Yacht;
+use App\Services\RatingCalculator;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -832,6 +833,22 @@ class RegattaResultResource extends Resource
     }
 
     /**
+     * Пересчитывает командный и личный рейтинг сезона по результатам регаты.
+     * Вызывается после любого изменения результатов (правка таблицей, импорт),
+     * чтобы рейтинги всегда соответствовали актуальным местам и очкам.
+     */
+    public static function recalculateRatings(RegattaResult $record): void
+    {
+        $record->loadMissing('regatta.season');
+
+        if ($record->regatta?->season === null) {
+            return;
+        }
+
+        app(RatingCalculator::class)->recalculateAfterRegatta($record->regatta);
+    }
+
+    /**
      * Нормализует ввод очков: запятую как десятичный разделитель приводит к точке
      * (привычный ввод в русской раскладке: «2,5» → «2.5»). Нечисловые значения
      * (DNF, DSQ, прочерк) возвращаются без изменений.
@@ -979,6 +996,7 @@ class RegattaResultResource extends Resource
                     ->after(function (RegattaResult $record, array $data): void {
                         self::saveRaceResults($record, $data);
                         self::recomputeItemTotals($record);
+                        self::recalculateRatings($record);
                     }),
                 Action::make('publish')
                     ->label('Опубликовать')
