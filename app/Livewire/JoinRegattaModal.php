@@ -1134,6 +1134,7 @@ class JoinRegattaModal extends Component
         $takenIds = $this->takenYachtIds();
 
         return Yacht::query()
+            ->withoutGlobalScope(OwnedScope::class)
             ->orderBy('name')
             ->get()
             ->map(function (Yacht $y) use ($takenIds): Yacht {
