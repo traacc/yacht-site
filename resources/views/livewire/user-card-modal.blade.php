@@ -17,7 +17,7 @@
             >
                 <button
                     wire:click="closeModal"
-                    class="absolute top-3 right-4 text-2xl font-bold leading-none text-brand-gray hover:text-brand-dark transition-colors cursor-pointer z-10"
+                    class="absolute top-3 right-4 text-2xl font-bold leading-none text-white transition-colors cursor-pointer z-10"
                     aria-label="Закрыть"
                 >&times;</button>
 
