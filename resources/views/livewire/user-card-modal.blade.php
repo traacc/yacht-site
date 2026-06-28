@@ -1,19 +1,27 @@
 {{--
     Карточка пользователя.
     Управляется через Livewire ($isOpen / $user). Alpine — только для закрытия по Esc/клику вне окна.
+
+    Карточка может открываться поверх другой модалки. Чтобы закрытие карточки не
+    закрывало нижнее окно, события Esc и клика «перехватываются» на этом окне:
+      - Esc ловится в фазе capture со stopPropagation — не доходит до .window-листенера
+        нижней модалки;
+      - любой клик внутри оверлея останавливается (stopPropagation) и не доходит до
+        document, где живёт @click.outside нижней модалки; закрытие — только по клику
+        на фон (target === currentTarget).
 --}}
 <div>
     @if($isOpen && $user)
         <div
             class="fixed inset-0 z-[60] flex md:items-center md:justify-center p-4 bg-black/50 overflow-y-auto"
-            @keydown.escape.window="$wire.closeModal()"
+            @keydown.escape.window.capture.stop="$wire.closeModal()"
+            @click="$event.stopPropagation(); if ($event.target === $event.currentTarget) $wire.closeModal()"
         >
             <div
                 class="relative w-full max-w-[90vw] md:max-w-[480px] bg-white shadow-xl"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 scale-95"
                 x-transition:enter-end="opacity-100 scale-100"
-                @click.outside="$wire.closeModal()"
             >
                 <button
                     wire:click="closeModal"
