@@ -49,10 +49,6 @@
 
 </div>
 
-
-{{-- ===== РЕЗУЛЬТАТЫ РЕГАТ ===== --}}
-<livewire:regatta-results mode="home" />
-
 {{-- ===== БЛИЖАЙШИЕ ДНИ РОЖДЕНИЯ ===== --}}
 @if($birthdays->isNotEmpty())
 <section class="py-12 bg-white">
@@ -84,6 +80,11 @@
     </div>
 </section>
 @endif
+
+{{-- ===== РЕЗУЛЬТАТЫ РЕГАТ ===== --}}
+<livewire:regatta-results mode="home" />
+
+
 
 {{-- ===== НОВОСТИ ===== --}}
 {{-- @livewire('news.list') --}}
