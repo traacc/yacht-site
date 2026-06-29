@@ -571,6 +571,7 @@ Route::get('/ratings', function () {
                 'members' => $r->team?->activeMembers
                     ?->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
                     ->map(fn ($m) => [
+                        'id' => $m->id,
                         'name' => $m->name,
                         'birthday' => $m->birth_date?->format('d.m.Y') ?? '—',
                         'category' => $m->sport_category?->getLabel() ?? '—',

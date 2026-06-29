@@ -432,7 +432,7 @@
                                                     <span>{{ $position + 1 }}</span>
                                                 </div>
                                             </td>
-                                            <td class="py-2" data-label="Участник">{{ $participant->name ?: $participant->name }}</td>
+                                            <td class="py-2" data-label="Участник"><x-user-name-link :id="$participant->id" :name="$participant->name" /></td>
                                             <td class="py-2" data-label="Очки">{{ $points }}</td>
                                         </tr>
                                         @endforeach

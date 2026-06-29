@@ -96,7 +96,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                                 <template x-if="team.members && team.members.length > 0">
                                                     <div class="flex items-center md:justify-center -space-x-2">
                                                         <template x-for="(member, idx) in team.members" :key="idx">
-                                                            <div @click="openTeam(team)"
+                                                            <div @click.stop="member.id ? Livewire.dispatch('open-user-card', { userId: member.id }) : openTeam(team)"
                                                                 class="relative hover:z-10 w-8 h-8 rounded-full overflow-hidden flex items-center cursor-pointer justify-center bg-[#2E325C] text-white text-[10px] font-bold flex-shrink-0 ring-2 ring-white transition-transform hover:scale-110"
                                                                 :title="member.name"
                                                             >
@@ -278,7 +278,11 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                             <div class="divide-y divide-[#EAEAEA]">
                                 <template x-for="(member, idx) in teamModalData.members" :key="idx">
                                     <div class="py-3 flex items-center justify-between gap-4">
-                                        <div class="flex items-center gap-3">
+                                        <div
+                                            class="flex items-center gap-3 group"
+                                            :class="member.id ? 'cursor-pointer' : ''"
+                                            @click="member.id && Livewire.dispatch('open-user-card', { userId: member.id })"
+                                        >
                                             <div class="w-8 h-8 rounded-full overflow-hidden bg-[#2E325C] text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
                                                 <template x-if="member.avatar">
                                                     <img :src="member.avatar" :alt="member.name" class="w-full h-full object-cover">
@@ -287,7 +291,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                                     <span x-text="initials(member.name)"></span>
                                                 </template>
                                             </div>
-                                            <span class="font-medium text-[#2E325C]" x-text="member.name"></span>
+                                            <span class="font-medium text-[#2E325C]" :class="member.id ? 'group-hover:underline' : ''" x-text="member.name"></span>
                                         </div>
                                         <div class="text-right text-sm text-gray-500">
                                             <div x-show="member.category && member.category !== '—'" x-text="member.category"></div>

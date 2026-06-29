@@ -59,7 +59,9 @@
             @foreach($birthdays as $person)
             <div class="flex items-center justify-between gap-4 bg-[#F8F8F8] p-4 shadow-xs hover:shadow-md transition-shadow">
                 <div>
-                    <div class="font-semibold text-[#2E325C] text-lg">{{ $person->name }}</div>
+                    <div class="font-semibold text-lg">
+                        <button type="button" class="text-[#2E325C] hover:text-[#2D92CE] hover:underline cursor-pointer text-left" @click="Livewire.dispatch('open-user-card', { userId: '{{ $person->id }}' })">{{ $person->name }}</button>
+                    </div>
                     <div class="text-brand-gray text-sm">
                         {{ $person->nextBirthday?->locale('ru')->translatedFormat('d F') ?? '—' }}
                         @if($person->birth_date && $person->nextBirthday)
