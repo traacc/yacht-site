@@ -3,8 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'Регаты CarterPro' }}</title>
-    <meta name="description" content="{{ $description ?? 'Календарь гонок, рейтинги, правила и новости парусного спорта. Официальный сайт CarterPro: регистрация на гонки!' }}">
+    @php
+        $metaTitle = $title ?? 'Регаты CarterPro';
+        $metaDescription = $description ?? 'Календарь гонок, рейтинги, правила и новости парусного спорта. Официальный сайт CarterPro: регистрация на гонки!';
+        $metaImage = $ogImage ?? asset('favicon.jpg');
+    @endphp
+    <title>{{ $metaTitle }}</title>
+    <meta name="description" content="{{ $metaDescription }}">
+
+    {{-- Open Graph --}}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="CarterPro">
+    <meta property="og:title" content="{{ $metaTitle }}">
+    <meta property="og:description" content="{{ $metaDescription }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:image" content="{{ $metaImage }}">
+    <meta property="og:locale" content="ru_RU">
+
+    {{-- Twitter Card --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $metaTitle }}">
+    <meta name="twitter:description" content="{{ $metaDescription }}">
+    <meta name="twitter:image" content="{{ $metaImage }}">
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @livewireStyles
