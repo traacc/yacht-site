@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Jobs\PublishNewsToTelegram;
 use App\Models\News;
+use App\Services\SettingsService;
 
 /**
  * Отслеживает события новости.
@@ -22,6 +23,10 @@ class NewsObserver
     public function saved(News $news): void
     {
         if ($news->published_to_tg || ! $news->isPublished()) {
+            return;
+        }
+
+        if (! app(SettingsService::class)->get('home.telegram_autopublish', true)) {
             return;
         }
 

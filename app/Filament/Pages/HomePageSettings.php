@@ -93,6 +93,8 @@ class HomePageSettings extends Page
         $this->form->fill([
             // E-mail'ы для уведомлений о заявках на регату
             'regatta_entry_emails' => $regattaEntryEmails,
+            // Автопубликация новостей в Telegram
+            'telegram_autopublish' => (bool) $settings->get('home.telegram_autopublish', true),
             // TOP-3 команд
             'top_team_1' => $teams[0]['id'] ?? null,
             'top_team_1_points' => $teams[0]['points'] ?? null,
@@ -204,6 +206,16 @@ class HomePageSettings extends Page
                             ->helperText('Введите адрес и нажмите Enter. Если список пуст — уведомления не отправляются.')
                             ->nestedRecursiveRules(['email'])
                             ->columnSpanFull(),
+                    ]),
+
+                // ── Публикация новостей в Telegram ────────────
+                Section::make('Публикация в Telegram')
+                    ->description('Если включено — новости автоматически публикуются в Telegram-канал при наступлении даты публикации. Если выключено — посты в Telegram не создаются.')
+                    ->schema([
+                        Toggle::make('telegram_autopublish')
+                            ->label('Автопубликация новостей в Telegram')
+                            ->helperText('Отключите, чтобы временно приостановить автопостинг новостей в канал.')
+                            ->default(true),
                     ]),
 
                 // ── Всплывающий баннер ────────────────────────
@@ -562,6 +574,7 @@ class HomePageSettings extends Page
             'data.banner_button_url' => ['nullable', 'url', 'max:2048'],
             'data.regatta_entry_emails' => ['nullable', 'array'],
             'data.regatta_entry_emails.*' => ['email'],
+            'data.telegram_autopublish' => ['boolean'],
         ]);
 
         /** @var SettingsService $settings */
@@ -647,6 +660,9 @@ class HomePageSettings extends Page
             ->all();
 
         $settings->set('home.regatta_entry_emails', $regattaEntryEmails, 'home');
+
+        // Автопубликация новостей в Telegram
+        $settings->set('home.telegram_autopublish', (bool) ($data['telegram_autopublish'] ?? true), 'home');
 
         $settings->forgetGroup('home');
 

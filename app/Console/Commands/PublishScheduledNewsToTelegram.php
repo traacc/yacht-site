@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use App\Jobs\PublishNewsToTelegram;
 use App\Models\News;
+use App\Services\SettingsService;
 use Illuminate\Console\Command;
 
 class PublishScheduledNewsToTelegram extends Command
@@ -14,8 +15,12 @@ class PublishScheduledNewsToTelegram extends Command
 
     protected $description = 'Публикует в Telegram новости, у которых наступила дата публикации и которые ещё не были отправлены.';
 
-    public function handle(): int
+    public function handle(SettingsService $settings): int
     {
+        if (! $settings->get('home.telegram_autopublish', true)) {
+            return self::SUCCESS;
+        }
+
         $news = News::query()
             ->published()
             ->where('published_to_tg', false)
