@@ -62,7 +62,14 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                         <tr class="border-t text-[10px]  text-sm lg:text-2xl">
                             <td data-label="Название" class="py-2 text-center" x-text="yacht.name"></td>
                             <td data-label="Парус №" class="py-2 text-center" x-text="yacht.vfps_number"></td>
-                            <td data-label="Капитан" class="py-2 text-center" x-text="yacht.owner?.name || '—'"></td>
+                            <td data-label="Капитан" class="py-2 text-center">
+                                <template x-if="yacht.owner?.id && yacht.owner?.name && yacht.owner.name !== '—'">
+                                    <button type="button" class="text-[#2D92CE] hover:underline cursor-pointer" @click="Livewire.dispatch('open-user-card', { userId: yacht.owner.id })" x-text="yacht.owner.name"></button>
+                                </template>
+                                <template x-if="!(yacht.owner?.id && yacht.owner?.name && yacht.owner.name !== '—')">
+                                    <span x-text="yacht.owner?.name || '—'"></span>
+                                </template>
+                            </td>
                             <!--<td data-label="Балл ORC" class="py-2 text-center">—</td>
                             <td data-label="Сертификат ORC" class="py-2 text-center">
                                 <template x-if="yacht.has_orc_cert">

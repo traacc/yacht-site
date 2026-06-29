@@ -117,7 +117,7 @@
                                             <button class="text-[#2D92CE] font-medium underline hover:no-underline md:no-underline md:text-current cursor-pointer" wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})">{{ $result->team?->name ?? '—' }}</button>
                                             <span class="md:hidden"><br>({{ $result->yacht?->name ?? '—' }})</span>
                                         </td>
-                                        <td data-label="Рулевой" class="py-3 hidden md:table-cell">{{ $captainMaps[$regatta->id][$result->team_id] ?? '—' }}</td>
+                                        <td data-label="Рулевой" class="py-3 hidden md:table-cell"><x-user-name-link :id="$captainMaps[$regatta->id][$result->team_id]['id'] ?? null" :name="$captainMaps[$regatta->id][$result->team_id]['name'] ?? null" /></td>
                                         <td data-label="Экипаж" class="py-3 hidden md:table-cell">
                                             @if(!empty($crew))
                                                 <button
@@ -211,7 +211,7 @@
                                             <button class="text-[#2D92CE] font-medium underline md:no-underline md:text-current hover:no-underline cursor-pointer" wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})">{{ $result->team?->name ?? '—' }}</button>
                                             <span class="md:hidden"><br>({{ $result->yacht?->name ?? '—' }})</span>
                                         </td>
-                                        <td class="py-3  hidden md:table-cell">{{ $captainMap[$result->team_id] ?? '—' }}</td>
+                                        <td class="py-3  hidden md:table-cell"><x-user-name-link :id="$captainMap[$result->team_id]['id'] ?? null" :name="$captainMap[$result->team_id]['name'] ?? null" /></td>
                                         <td class="py-3 hidden md:table-cell">
                                             
                                             @if(!empty($crew))
@@ -323,7 +323,7 @@
                                                     <button class="text-[#2D92CE] font-medium underline hover:no-underline md:no-underline md:text-current cursor-pointer" wire:click="openTeamModal('{{ $result->team->id }}', '{{ addslashes($result->team->name) }}', {{ json_encode($crew) }})">{{ $result->team?->name ?? '—' }}</button>
                                                     <span class="md:hidden"><br>({{ $result->yacht?->name ?? '—' }})</span>
                                                 </td>
-                                                <td data-label="Рулевой" class="py-3 hidden md:table-cell">{{ $captainMap[$result->team_id] ?? '—' }}</td>
+                                                <td data-label="Рулевой" class="py-3 hidden md:table-cell"><x-user-name-link :id="$captainMap[$result->team_id]['id'] ?? null" :name="$captainMap[$result->team_id]['name'] ?? null" /></td>
                                                 <td data-label="Яхта" class="py-3 hidden md:table-cell">{{ $result->yacht?->name ?? '—' }}</td>
                                                 <td data-label="Парус №" class="py-3 hidden md:table-cell">{{ $result->yacht?->vfps_number ?? '—' }}</td>
                                                 <td data-label="Участники" class="py-3 hidden md:table-cell">

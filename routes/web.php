@@ -473,6 +473,7 @@ Route::get('/yachts', function () {
         'name' => $yacht->name,
         'vfps_number' => $yacht->vfps_number,
         'owner' => [
+            'id' => $yacht->user?->id,
             'name' => $yacht->user?->short_name ?? '—',
             'phone' => $yacht->user?->phone ?? '—',
             'email' => $yacht->user?->email ?? '—',
@@ -561,6 +562,7 @@ Route::get('/ratings', function () {
                 'total_points' => (float) $r->total_points,
                 'rank' => $r->rank_position,
                 'captain' => $r->team?->organizer?->name ?? '—',
+                'captain_id' => $r->team?->organizer?->id,
                 'captain_avatar' => $r->team?->organizer?->photo_url ? asset('storage/'.$r->team->organizer->photo_url) : null,
                 'yacht' => $yacht
                     ? trim($yacht->name.($yacht->vfps_number ? ' ('.$yacht->vfps_number.')' : ''))

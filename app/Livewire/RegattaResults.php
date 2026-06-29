@@ -217,10 +217,11 @@ class RegattaResults extends Component
     }
 
     /**
-     * Строит карту капитанов: team_id → имя капитана (участник экипажа с ролью 'captain').
+     * Строит карту капитанов: team_id → ['id' => ?string, 'name' => ?string]
+     * (участник экипажа с ролью 'captain').
      *
-     * @param  array<string, array<int, array{name: string, role: ?string}>>  $crewMap
-     * @return array<string, ?string>
+     * @param  array<string, array<int, array{id: ?string, name: string, role: ?string}>>  $crewMap
+     * @return array<string, array{id: ?string, name: ?string}>
      */
     protected function buildCaptainMap(array $crewMap): array
     {
@@ -228,7 +229,10 @@ class RegattaResults extends Component
         foreach ($crewMap as $teamId => $members) {
             foreach ($members as $member) {
                 if (($member['role'] ?? null) === 'captain') {
-                    $captainMap[$teamId] = $member['name'] ?: null;
+                    $captainMap[$teamId] = [
+                        'id'   => $member['id'] ?? null,
+                        'name' => $member['name'] ?: null,
+                    ];
                     break;
                 }
             }
