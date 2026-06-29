@@ -143,7 +143,7 @@ class VkService
     {
         $params = [
             'owner_id'   => '-' . $this->group(),
-            'from_group' => 0,
+            'from_group' => 1,
             'message'    => $message,
         ];
 
