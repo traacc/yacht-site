@@ -95,6 +95,8 @@ class HomePageSettings extends Page
             'regatta_entry_emails' => $regattaEntryEmails,
             // Автопубликация новостей в Telegram
             'telegram_autopublish' => (bool) $settings->get('home.telegram_autopublish', true),
+            // Автопубликация новостей в VK
+            'vk_autopublish' => (bool) $settings->get('home.vk_autopublish', true),
             // TOP-3 команд
             'top_team_1' => $teams[0]['id'] ?? null,
             'top_team_1_points' => $teams[0]['points'] ?? null,
@@ -215,6 +217,16 @@ class HomePageSettings extends Page
                         Toggle::make('telegram_autopublish')
                             ->label('Автопубликация новостей в Telegram')
                             ->helperText('Отключите, чтобы временно приостановить автопостинг новостей в канал.')
+                            ->default(true),
+                    ]),
+
+                // ── Публикация новостей в VK ──────────────────
+                Section::make('Публикация в VK')
+                    ->description('Если включено — новости автоматически публикуются в сообщество VK при наступлении даты публикации. Если выключено — посты в VK не создаются.')
+                    ->schema([
+                        Toggle::make('vk_autopublish')
+                            ->label('Автопубликация новостей в VK')
+                            ->helperText('Отключите, чтобы временно приостановить автопостинг новостей в сообщество.')
                             ->default(true),
                     ]),
 
@@ -575,6 +587,7 @@ class HomePageSettings extends Page
             'data.regatta_entry_emails' => ['nullable', 'array'],
             'data.regatta_entry_emails.*' => ['email'],
             'data.telegram_autopublish' => ['boolean'],
+            'data.vk_autopublish' => ['boolean'],
         ]);
 
         /** @var SettingsService $settings */
@@ -663,6 +676,9 @@ class HomePageSettings extends Page
 
         // Автопубликация новостей в Telegram
         $settings->set('home.telegram_autopublish', (bool) ($data['telegram_autopublish'] ?? true), 'home');
+
+        // Автопубликация новостей в VK
+        $settings->set('home.vk_autopublish', (bool) ($data['vk_autopublish'] ?? true), 'home');
 
         $settings->forgetGroup('home');
 

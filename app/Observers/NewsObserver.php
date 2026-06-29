@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Jobs\PublishNewsToTelegram;
+use App\Jobs\PublishNewsToVk;
 use App\Models\News;
 use App\Services\SettingsService;
 
@@ -15,21 +16,25 @@ class NewsObserver
 {
     /**
      * После сохранения новости: если она уже опубликована и ещё не была
-     * отправлена в Telegram — ставим задачу на публикацию в канал.
+     * отправлена в Telegram / VK — ставим задачи на публикацию в соцсети.
      *
-     * Новости с будущей датой публикации подхватит плановая команда
-     * news:publish-to-telegram, когда наступит published_at.
+     * Новости с будущей датой публикации подхватят плановые команды
+     * news:publish-to-telegram и news:publish-to-vk, когда наступит published_at.
      */
     public function saved(News $news): void
     {
-        if ($news->published_to_tg || ! $news->isPublished()) {
+        if (! $news->isPublished()) {
             return;
         }
 
-        if (! app(SettingsService::class)->get('home.telegram_autopublish', true)) {
-            return;
+        $settings = app(SettingsService::class);
+
+        if (! $news->published_to_tg && $settings->get('home.telegram_autopublish', true)) {
+            PublishNewsToTelegram::dispatch($news->id);
         }
 
-        PublishNewsToTelegram::dispatch($news->id);
+        if (! $news->published_to_vk && $settings->get('home.vk_autopublish', true)) {
+            PublishNewsToVk::dispatch($news->id);
+        }
     }
 }

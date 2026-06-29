@@ -56,4 +56,15 @@ return [
         //   socks5://user:pass@host:1080  или  http://host:3128
         'proxy'     => env('TELEGRAM_PROXY'),
     ],
+
+    'vk' => [
+        // Ключ доступа сообщества или пользователя со scope wall,photos.
+        'access_token' => env('VK_ACCESS_TOKEN'),
+        // ID сообщества (положительное число, без минуса).
+        'group_id'     => env('VK_GROUP_ID'),
+        // Версия VK API.
+        'api_version'  => env('VK_API_VERSION', '5.199'),
+        // Прокси для VK API (если требуется): socks5://... или http://...
+        'proxy'        => env('VK_PROXY'),
+    ],
 ];

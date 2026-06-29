@@ -4,8 +4,10 @@ namespace App\Filament\Resources\News;
 
 use App\Filament\Resources\News\Pages\ManageNews;
 use App\Jobs\PublishNewsToTelegram;
+use App\Jobs\PublishNewsToVk;
 use App\Models\News;
 use App\Services\TelegramService;
+use App\Services\VkService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -117,6 +119,9 @@ class NewsResource extends Resource
                 IconColumn::make('published_to_tg')
                     ->label('В Telegram')
                     ->boolean(),
+                IconColumn::make('published_to_vk')
+                    ->label('В VK')
+                    ->boolean(),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
                 TrashedFilter::make(),
@@ -159,6 +164,45 @@ class NewsResource extends Resource
                             ->success()
                             ->title('Поставлено в очередь')
                             ->body('Новость будет отправлена в Telegram в ближайшее время.')
+                            ->send();
+                    }),
+                Action::make('publishToVk')
+                    ->label('В VK')
+                    ->icon('heroicon-o-paper-airplane')
+                    ->color('info')
+                    ->requiresConfirmation()
+                    ->modalHeading('Опубликовать в VK')
+                    ->modalDescription(fn (News $record): string => $record->published_to_vk
+                        ? 'Эта новость уже была отправлена в VK. Отправить ещё раз?'
+                        : 'Отправить новость в сообщество VK?')
+                    ->modalSubmitActionLabel('Отправить')
+                    ->action(function (News $record): void {
+                        if (! $record->isPublished()) {
+                            Notification::make()
+                                ->warning()
+                                ->title('Новость ещё не опубликована')
+                                ->body('Сначала задайте дату публикации не в будущем — иначе ссылка на новость не откроется.')
+                                ->send();
+
+                            return;
+                        }
+
+                        if (! app(VkService::class)->isConfigured()) {
+                            Notification::make()
+                                ->warning()
+                                ->title('VK не настроен')
+                                ->body('Не заданы VK_ACCESS_TOKEN и/или VK_GROUP_ID.')
+                                ->send();
+
+                            return;
+                        }
+
+                        PublishNewsToVk::dispatch($record->id, force: true);
+
+                        Notification::make()
+                            ->success()
+                            ->title('Поставлено в очередь')
+                            ->body('Новость будет отправлена в VK в ближайшее время.')
                             ->send();
                     }),
                 EditAction::make()->modalHeading('Редактировать новость'),

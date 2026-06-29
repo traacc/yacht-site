@@ -24,6 +24,7 @@ class News extends Model implements HasMedia
         'cover_image_url',
         'cover_object_position',
         'published_to_tg',
+        'published_to_vk',
         'published_at',
     ];
 
@@ -40,6 +41,7 @@ class News extends Model implements HasMedia
     {
         return [
             'published_to_tg' => 'boolean',
+            'published_to_vk' => 'boolean',
             'published_at'    => 'datetime',
         ];
     }
