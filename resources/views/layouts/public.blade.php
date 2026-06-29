@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Регаты CarterPro' }}</title>
-    @isset($description)
-        <meta name="description" content="{{ $description }}">
-    @endisset
+    <meta name="description" content="{{ $description ?? 'Календарь гонок, рейтинги, правила и новости парусного спорта. Официальный сайт CarterPro: регистрация на гонки!' }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @livewireStyles
