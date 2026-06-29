@@ -3,8 +3,11 @@
 namespace App\Filament\Resources\News;
 
 use App\Filament\Resources\News\Pages\ManageNews;
+use App\Jobs\PublishNewsToTelegram;
 use App\Models\News;
+use App\Services\TelegramService;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -19,8 +22,10 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
@@ -109,11 +114,53 @@ class NewsResource extends Resource
                     ->label('Дата публикации')
                     ->dateTime()->dateTime('d M Y')
                     ->sortable(),
+                IconColumn::make('published_to_tg')
+                    ->label('В Telegram')
+                    ->boolean(),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                Action::make('publishToTelegram')
+                    ->label('В Telegram')
+                    ->icon('heroicon-o-paper-airplane')
+                    ->color('info')
+                    ->requiresConfirmation()
+                    ->modalHeading('Опубликовать в Telegram')
+                    ->modalDescription(fn (News $record): string => $record->published_to_tg
+                        ? 'Эта новость уже была отправлена в Telegram. Отправить ещё раз?'
+                        : 'Отправить новость в Telegram-канал?')
+                    ->modalSubmitActionLabel('Отправить')
+                    ->action(function (News $record): void {
+                        if (! $record->isPublished()) {
+                            Notification::make()
+                                ->warning()
+                                ->title('Новость ещё не опубликована')
+                                ->body('Сначала задайте дату публикации не в будущем — иначе ссылка на новость не откроется.')
+                                ->send();
+
+                            return;
+                        }
+
+                        if (! app(TelegramService::class)->isConfigured()) {
+                            Notification::make()
+                                ->warning()
+                                ->title('Telegram не настроен')
+                                ->body('Не заданы TELEGRAM_BOT_TOKEN и/или TELEGRAM_CHAT_ID.')
+                                ->send();
+
+                            return;
+                        }
+
+                        PublishNewsToTelegram::dispatch($record->id, force: true);
+
+                        Notification::make()
+                            ->success()
+                            ->title('Поставлено в очередь')
+                            ->body('Новость будет отправлена в Telegram в ближайшее время.')
+                            ->send();
+                    }),
                 EditAction::make()->modalHeading('Редактировать новость'),
                 DeleteAction::make(),
                 ForceDeleteAction::make(),
