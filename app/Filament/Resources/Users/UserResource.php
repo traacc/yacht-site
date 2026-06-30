@@ -170,6 +170,12 @@ class UserResource extends Resource
                     ->options(\App\Enums\SystemRole::class)
                     ->default(\App\Enums\SystemRole::User->value)
                     ->required(),
+                Select::make('creation_source')
+                    ->label('Источник добавления')
+                    ->placeholder('Выберите источник')
+                    ->options(\App\Enums\CreationSource::class)
+                    ->default(\App\Enums\CreationSource::Admin->value)
+                    ->required(),
                 Toggle::make('is_banned')
                     ->label('Забанен'),
                 Textarea::make('ban_reason')
