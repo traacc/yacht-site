@@ -59,6 +59,31 @@ class SettingsService
     }
 
     // ──────────────────────────────────────────────
+    // Уведомления администраторам
+    // ──────────────────────────────────────────────
+
+    /**
+     * E-mail'ы администраторов для системных уведомлений
+     * (заявки на регату, регистрация команд / яхт / пользователей).
+     *
+     * @return list<string>
+     */
+    public function adminNotificationEmails(): array
+    {
+        // Обратная совместимость: ранее список хранился в home.regatta_entry_emails.
+        $raw = $this->get('home.admin_notification_emails', null)
+            ?? $this->get('home.regatta_entry_emails', []);
+
+        return collect((array) $raw)
+            ->flatten()
+            ->map(fn ($v) => trim((string) $v))
+            ->filter(fn ($v) => $v !== '')
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    // ──────────────────────────────────────────────
     // Галерея главной страницы
     // ──────────────────────────────────────────────
 

@@ -39,10 +39,23 @@ class ManageTeams extends ManageRecords
                     // иначе Filament повторно сохранит relationship-данные из Repeater.
                     unset($data['teamMembers']);
 
-                    return app(\App\Actions\Team\CreateTeamAction::class)->handle(
+                    $team = app(\App\Actions\Team\CreateTeamAction::class)->handle(
                         $data,
                         auth()->user(),
                     );
+
+                    // Уведомляем администраторов о регистрации новой команды пользователем.
+                    $adminEmails = app(\App\Services\SettingsService::class)->adminNotificationEmails();
+                    if ($adminEmails !== []) {
+                        try {
+                            \Illuminate\Support\Facades\Mail::to($adminEmails)
+                                ->send(new \App\Mail\TeamRegistered($team));
+                        } catch (\Exception $e) {
+                            report($e);
+                        }
+                    }
+
+                    return $team;
                 })->createAnother(false)->successNotification(
                 Notification::make()
                     ->success()

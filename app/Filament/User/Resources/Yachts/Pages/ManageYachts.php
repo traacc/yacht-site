@@ -83,6 +83,17 @@ class ManageYachts extends ManageRecords
 
                     YachtResource::syncRentals($record, $rentals);
 
+                    // Уведомляем администраторов о регистрации новой яхты пользователем.
+                    $adminEmails = app(\App\Services\SettingsService::class)->adminNotificationEmails();
+                    if ($adminEmails !== []) {
+                        try {
+                            \Illuminate\Support\Facades\Mail::to($adminEmails)
+                                ->send(new \App\Mail\YachtRegistered($record));
+                        } catch (\Exception $e) {
+                            report($e);
+                        }
+                    }
+
                     return $record;
                 })
                 ->after(function (): void {

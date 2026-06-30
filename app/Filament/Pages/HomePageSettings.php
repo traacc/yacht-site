@@ -82,17 +82,13 @@ class HomePageSettings extends Page
             ->filter(fn ($v) => is_string($v) && $v !== '')
             ->first();
 
-        // E-mail'ы администраторов для уведомлений о новых заявках на регату
-        $regattaEntryEmails = collect((array) $settings->get('home.regatta_entry_emails', []))
-            ->flatten()
-            ->filter(fn ($v) => is_string($v) && $v !== '')
-            ->values()
-            ->all();
+        // E-mail'ы администраторов для системных уведомлений
+        $adminEmails = $settings->adminNotificationEmails();
 
         // Заполняем форму через fill() — это запускает afterStateHydrated на FileUpload
         $this->form->fill([
-            // E-mail'ы для уведомлений о заявках на регату
-            'regatta_entry_emails' => $regattaEntryEmails,
+            // E-mail'ы администраторов для уведомлений
+            'admin_notification_emails' => $adminEmails,
             // Автопубликация новостей в Telegram
             'telegram_autopublish' => (bool) $settings->get('home.telegram_autopublish', true),
             // Автопубликация новостей в VK
@@ -198,12 +194,12 @@ class HomePageSettings extends Page
                             ->rules(['nullable', 'string', 'max:255']),
                     ]),
 
-                // ── Уведомления о заявках на регату ───────────
-                Section::make('Заявки на регату')
-                    ->description('E-mail-адреса администраторов, на которые отправляются уведомления о новых заявках на участие в регате. Можно указать несколько адресов.')
+                // ── Уведомления администраторам ───────────────
+                Section::make('Уведомления администраторам')
+                    ->description('E-mail-адреса администраторов, на которые отправляются системные уведомления: новые заявки на регату, регистрация команд, яхт и пользователей. Можно указать несколько адресов.')
                     ->schema([
-                        TagsInput::make('regatta_entry_emails')
-                            ->label('E-mail для заявок на регату')
+                        TagsInput::make('admin_notification_emails')
+                            ->label('E-mail администраторов')
                             ->placeholder('admin@example.com')
                             ->helperText('Введите адрес и нажмите Enter. Если список пуст — уведомления не отправляются.')
                             ->nestedRecursiveRules(['email'])
@@ -584,8 +580,8 @@ class HomePageSettings extends Page
             'data.banner_text' => ['nullable', 'string', 'max:1000'],
             'data.banner_button_text' => ['nullable', 'string', 'max:255'],
             'data.banner_button_url' => ['nullable', 'url', 'max:2048'],
-            'data.regatta_entry_emails' => ['nullable', 'array'],
-            'data.regatta_entry_emails.*' => ['email'],
+            'data.admin_notification_emails' => ['nullable', 'array'],
+            'data.admin_notification_emails.*' => ['email'],
             'data.telegram_autopublish' => ['boolean'],
             'data.vk_autopublish' => ['boolean'],
         ]);
@@ -663,8 +659,8 @@ class HomePageSettings extends Page
         $settings->set('home.banner_button_text', trim((string) ($data['banner_button_text'] ?? '')) ?: null, 'home');
         $settings->set('home.banner_button_url', trim((string) ($data['banner_button_url'] ?? '')) ?: null, 'home');
 
-        // E-mail'ы администраторов для уведомлений о заявках на регату
-        $regattaEntryEmails = collect((array) ($data['regatta_entry_emails'] ?? []))
+        // E-mail'ы администраторов для системных уведомлений
+        $adminEmails = collect((array) ($data['admin_notification_emails'] ?? []))
             ->flatten()
             ->map(fn ($v) => trim((string) $v))
             ->filter(fn ($v) => $v !== '')
@@ -672,7 +668,7 @@ class HomePageSettings extends Page
             ->values()
             ->all();
 
-        $settings->set('home.regatta_entry_emails', $regattaEntryEmails, 'home');
+        $settings->set('home.admin_notification_emails', $adminEmails, 'home');
 
         // Автопубликация новостей в Telegram
         $settings->set('home.telegram_autopublish', (bool) ($data['telegram_autopublish'] ?? true), 'home');

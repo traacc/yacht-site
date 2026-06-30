@@ -5,7 +5,9 @@ namespace App\Livewire\Auth;
 use App\Enums\CreationSource;
 use App\Enums\SportCategory;
 use App\Mail\SendLoginCredentials;
+use App\Mail\UserRegistered;
 use App\Models\User;
+use App\Services\SettingsService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -159,6 +161,16 @@ class LoginModal extends Component
             'password'       => $this->password,
             'creation_source' => CreationSource::Registration,
         ]);
+
+        // Уведомляем администраторов о регистрации нового пользователя.
+        $adminEmails = app(SettingsService::class)->adminNotificationEmails();
+        if ($adminEmails !== []) {
+            try {
+                Mail::to($adminEmails)->send(new UserRegistered($user));
+            } catch (\Exception $e) {
+                report($e);
+            }
+        }
 
         // 2. Автоматически входим в систему
         Auth::login($user);

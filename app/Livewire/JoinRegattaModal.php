@@ -1072,13 +1072,7 @@ class JoinRegattaModal extends Component
         }
 
         // Уведомляем администраторов о новой заявке на регату.
-        $adminEmails = collect((array) app(\App\Services\SettingsService::class)->get('home.regatta_entry_emails', []))
-            ->flatten()
-            ->map(fn ($v) => trim((string) $v))
-            ->filter(fn ($v) => $v !== '')
-            ->unique()
-            ->values()
-            ->all();
+        $adminEmails = app(\App\Services\SettingsService::class)->adminNotificationEmails();
 
         if ($adminEmails !== []) {
             try {
