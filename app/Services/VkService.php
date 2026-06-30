@@ -82,7 +82,7 @@ class VkService
             'client_id'     => $this->appId(),
             'redirect_uri'  => $redirectUri,
             'display'       => 'page',
-            'scope'         => 'wall,photos,groups,offline',
+            'scope'         => 'wall,photos,groups',
             'response_type' => 'code',
             'v'             => $this->version(),
         ]);
