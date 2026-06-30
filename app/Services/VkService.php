@@ -6,6 +6,7 @@ use App\Models\News;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -13,7 +14,7 @@ use Illuminate\Support\Str;
 
 class VkService
 {
-    // Через прокси соединение с API бывает медленным.
+    // Через прокси и при загрузке картинки соединение бывает медленным.
     private const TIMEOUT_SECONDS = 25;
     private const CONNECT_TIMEOUT_SECONDS = 8;
 
@@ -56,9 +57,8 @@ class VkService
 
     /**
      * Публикует новость на стене сообщества VK.
-     * Обложку прикрепляем ссылкой: wall.post принимает в attachments один
-     * внешний URL, поэтому отдельная загрузка фото (photos.*) не нужна —
-     * VK сам подтянет изображение по публичному адресу с сайта.
+     * Если есть обложка — сначала загружает фото и прикрепляет его к посту,
+     * иначе отправляет только текст со ссылкой.
      */
     public function publishNews(News $news): bool
     {
@@ -70,7 +70,70 @@ class VkService
             return false;
         }
 
-        return $this->wallPost($this->caption($news), $this->coverUrl($news), $news);
+        $coverPath  = $this->coverPath($news);
+        $attachment = $coverPath !== null ? $this->uploadWallPhoto($coverPath, $news) : null;
+
+        return $this->wallPost($this->caption($news), $attachment, $news);
+    }
+
+    /**
+     * Загружает обложку на стену сообщества и возвращает строку вложения
+     * вида «photo{owner_id}_{id}» для wall.post, либо null при неудаче
+     * (тогда новость уйдёт текстом со ссылкой).
+     */
+    private function uploadWallPhoto(string $coverPath, News $news): ?string
+    {
+        // 1. Получаем адрес сервера для загрузки.
+        $server = $this->apiCall('photos.getWallUploadServer', [
+            'group_id' => $this->group(),
+        ], $news);
+
+        if ($server === null || empty($server['upload_url'])) {
+            return null;
+        }
+
+        // 2. Загружаем файл картинки на полученный сервер (multipart).
+        $contents = Storage::disk('public')->get($coverPath);
+
+        try {
+            $uploaded = $this->baseRequest()
+                ->attach('photo', $contents, basename($coverPath))
+                ->post($server['upload_url'])
+                ->json();
+        } catch (ConnectionException | RequestException $e) {
+            Log::warning('VK photo upload connection failed', [
+                'news_id' => $news->id,
+                'error'   => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        // Пустой массив фото (строка «[]») означает, что загрузить не удалось.
+        if (! is_array($uploaded) || empty($uploaded['photo']) || $uploaded['photo'] === '[]') {
+            Log::warning('VK photo upload returned no photo', [
+                'news_id'  => $news->id,
+                'response' => $uploaded,
+            ]);
+
+            return null;
+        }
+
+        // 3. Сохраняем загруженное фото в сообществе.
+        $saved = $this->apiCall('photos.saveWallPhoto', [
+            'group_id' => $this->group(),
+            'server'   => $uploaded['server'],
+            'photo'    => $uploaded['photo'],
+            'hash'     => $uploaded['hash'],
+        ], $news);
+
+        if ($saved === null || empty($saved[0])) {
+            return null;
+        }
+
+        $photo = $saved[0];
+
+        return 'photo' . $photo['owner_id'] . '_' . $photo['id'];
     }
 
     /**
@@ -185,20 +248,17 @@ class VkService
     }
 
     /**
-     * Публичный URL обложки для прикрепления к посту через attachments.
+     * Относительный путь к обложке на публичном диске, если файл существует.
      * Если файла нет локально — вернётся null, и новость уйдёт текстом со ссылкой.
-     *
-     * URL должен быть доступен извне (VK скачивает картинку по нему), поэтому
-     * на локальной разработке без публичного домена превью может не появиться.
      */
-    private function coverUrl(News $news): ?string
+    private function coverPath(News $news): ?string
     {
         if (empty($news->cover_image_url)) {
             return null;
         }
 
         return Storage::disk('public')->exists($news->cover_image_url)
-            ? Storage::disk('public')->url($news->cover_image_url)
+            ? $news->cover_image_url
             : null;
     }
 }
