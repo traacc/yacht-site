@@ -101,6 +101,8 @@ class UserCardModal extends Component
         return RegattaEntry::query()
             ->where('status', 'approved')
             ->whereHas('crew.teamMember', fn ($q) => $q->where('user_id', $user->id))
+            // Только активные и прошедшие регаты (уже начавшиеся), без предстоящих.
+            ->whereHas('regatta', fn ($q) => $q->where('date_start', '<=', now()))
             ->distinct()
             ->count('regatta_id');
     }
