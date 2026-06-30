@@ -7,6 +7,7 @@ namespace App\Filament\Pages;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Services\SettingsService;
 use App\Services\SitemapGenerator;
+use App\Services\VkService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TagsInput;
@@ -65,6 +66,15 @@ class SiteSettings extends Page
             // Автопубликация новостей в VK
             'vk_autopublish' => (bool) $settings->get('home.vk_autopublish', true),
         ]);
+
+        // Результат OAuth-входа во ВКонтакте (после возврата с callback).
+        if ($message = session('vk_success')) {
+            Notification::make()->title('ВКонтакте')->body($message)->success()->send();
+        }
+
+        if ($message = session('vk_error')) {
+            Notification::make()->title('ВКонтакте')->body($message)->danger()->send();
+        }
     }
 
     /**
@@ -157,12 +167,31 @@ class SiteSettings extends Page
 
                 // ── Публикация новостей в VK ──────────────────
                 Section::make('Публикация в VK')
-                    ->description('Если включено — новости автоматически публикуются в сообщество VK при наступлении даты публикации. Если выключено — посты в VK не создаются.')
+                    ->description(function (): string {
+                        $status = app(VkService::class)->hasToken()
+                            ? 'Статус: подключено.'
+                            : 'Статус: не подключено.';
+
+                        return 'Если включено — новости автоматически публикуются в сообщество VK при наступлении даты публикации. '
+                            . 'Для постинга на стене нужен вход администратора сообщества — нажмите «Подключить VK». '
+                            . $status;
+                    })
                     ->schema([
                         Toggle::make('vk_autopublish')
                             ->label('Автопубликация новостей в VK')
                             ->helperText('Отключите, чтобы временно приостановить автопостинг новостей в сообщество.')
                             ->default(true),
+
+                        Actions::make([
+                            Action::make('connectVk')
+                                ->label(fn (): string => app(VkService::class)->hasToken()
+                                    ? 'Переподключить VK'
+                                    : 'Подключить VK')
+                                ->icon('heroicon-o-arrow-right-on-rectangle')
+                                ->color(fn (): string => app(VkService::class)->hasToken() ? 'gray' : 'info')
+                                ->url(fn (): string => route('vk.connect'))
+                                ->disabled(fn (): bool => ! app(VkService::class)->isOAuthConfigured()),
+                        ]),
                     ]),
 
             ]);
