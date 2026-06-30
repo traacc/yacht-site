@@ -13,7 +13,7 @@
 <div>
     @if($isOpen && $user)
         <div
-            class="fixed inset-0 z-[60] flex md:items-center md:justify-center p-4 bg-black/50 overflow-y-auto"
+            class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 overflow-y-auto"
             @keydown.escape.window.capture.stop="$wire.closeModal()"
             @click="$event.stopPropagation(); if ($event.target === $event.currentTarget) $wire.closeModal()"
         >
