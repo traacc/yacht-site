@@ -257,7 +257,47 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                         </div>
                     </template>
                 </div>
-                
+
+                {{-- Interior Gallery --}}
+                <div class="mb-8" x-show="selectedYacht.interior_gallery && selectedYacht.interior_gallery.length > 0"
+                     x-data="{ activeIndex: null }">
+                    <h3 class="text-3xl a-font mb-6">Галерея интерьера</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <template x-for="(img, idx) in selectedYacht.interior_gallery" :key="idx">
+                            <div class="relative overflow-hidden cursor-pointer group aspect-square"
+                                 @click="activeIndex = idx">
+                                <img :src="img.thumbnail || img.url" :alt="img.name"
+                                     class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110">
+                                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
+                                    <span class="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-4xl font-light">+</span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    {{-- Lightbox --}}
+                    <template x-teleport="body">
+                        <div x-show="activeIndex !== null"
+                             x-cloak
+                             @keydown.window.escape="activeIndex = null"
+                             style="position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); padding: 1rem;"
+                             @click.self="activeIndex = null">
+                            <button @click="activeIndex = null"
+                                    class="absolute top-4 right-4 text-white text-4xl font-bold hover:opacity-70 transition-opacity">
+                                {!! file_get_contents(public_path('images/icons/close.svg')) !!}
+                            </button>
+                            <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.interior_gallery.length - 1"
+                                    class="absolute left-4 top-1/2 -translate-y-1/2 text-white text-5xl hover:opacity-70 transition-opacity">‹</button>
+                            <img :src="selectedYacht.interior_gallery[activeIndex]?.url"
+                                 :alt="selectedYacht.interior_gallery[activeIndex]?.name"
+                                 class="max-w-full max-h-[85vh] object-contain mx-auto">
+                            <button @click="activeIndex = activeIndex < selectedYacht.interior_gallery.length - 1 ? activeIndex + 1 : 0"
+                                    class="absolute right-4 top-1/2 -translate-y-1/2 text-white text-5xl hover:opacity-70 transition-opacity">›</button>
+                            <div class="absolute bottom-4 text-white text-sm" x-text="`${activeIndex + 1} / ${selectedYacht.interior_gallery.length}`"></div>
+                        </div>
+                    </template>
+                </div>
+
                 <div class="mb-8" x-show="selectedYacht.documents.length > 0">
                     <h3 class="text-3xl a-font mb-6">Документы</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

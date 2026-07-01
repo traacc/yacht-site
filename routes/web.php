@@ -531,6 +531,11 @@ Route::get('/yachts', function () {
             'thumbnail' => $media->getUrl('thumb'),
             'name' => $media->name,
         ])->values()->toArray(),
+        'interior_gallery' => $yacht->getMedia('interior_gallery')->map(fn ($media) => [
+            'url' => $media->getUrl(),
+            'thumbnail' => $media->getUrl('thumb'),
+            'name' => $media->name,
+        ])->values()->toArray(),
         'params' => [
             ['label' => 'Класс',       'value' => $yacht->class ?? 'Carter 30'],
             ['label' => 'Парус №',     'value' => $yacht->vfps_number],

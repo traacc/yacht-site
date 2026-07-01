@@ -248,6 +248,17 @@ class YachtResource extends Resource
                     ->disk('public')
                     ->visibility('public')
                     ->columnSpanFull(),
+                SpatieMediaLibraryFileUpload::make('interior_gallery')
+                    ->label('Галерея интерьера')
+                    ->collection('interior_gallery')
+                    ->multiple()
+                    ->reorderable()
+                    ->image()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->imageEditor()
+                    ->disk('public')
+                    ->visibility('public')
+                    ->columnSpanFull(),
                 // ── Обязательные документы ──────────────────
                 /*
                 Repeater::make('required_documents')

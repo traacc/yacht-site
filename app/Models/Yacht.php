@@ -110,6 +110,9 @@ class Yacht extends Model implements HasMedia
     {
         $this->addMediaCollection('gallery')
              ->useDisk('public');
+
+        $this->addMediaCollection('interior_gallery')
+             ->useDisk('public');
     }
 
     public function registerMediaConversions(\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
