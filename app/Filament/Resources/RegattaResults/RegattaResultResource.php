@@ -575,13 +575,35 @@ class RegattaResultResource extends Resource
                 TextInput::make("race_{$i}_position")
                     ->label($race->name . ' · место')
                     //->numeric()
-                    // Запрещаем одиночный ноль и любой минус.
-                    ->rule(static function () {
-                        return static function (string $attribute, $value, \Closure $fail): void {
+                    // Запрещаем одиночный ноль и любой минус, а также одинаковые
+                    // места у разных участников в пределах одной гонки.
+                    ->rule(function (Get $get) use ($i) {
+                        return function (string $attribute, $value, \Closure $fail) use ($get, $i): void {
                             $value = trim((string) $value);
 
                             if ($value === '0' || str_contains($value, '-')) {
                                 $fail('Недопустимое значение');
+
+                                return;
+                            }
+
+                            // Уникальность проверяем только для числовых мест —
+                            // нечисловые статусы (DNF, DSQ, DNS, прочерк) могут
+                            // повторяться у нескольких участников.
+                            if ($value === '' || ! is_numeric($value)) {
+                                return;
+                            }
+
+                            // $get('../../items') — всё состояние репитера (все строки).
+                            $occurrences = 0;
+                            foreach ($get('../../items') ?? [] as $row) {
+                                if (trim((string) ($row["race_{$i}_position"] ?? '')) === $value) {
+                                    $occurrences++;
+                                }
+                            }
+
+                            if ($occurrences > 1) {
+                                $fail('Это место уже занято в этой гонке');
                             }
                         };
                     })
