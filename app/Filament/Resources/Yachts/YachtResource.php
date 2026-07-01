@@ -19,6 +19,7 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -167,6 +168,49 @@ class YachtResource extends Resource
                     ])
                     ->default('pending')
                     ->required(),
+
+                // ── Аренда яхты ──
+                Placeholder::make('Аренда')->columnSpanFull(),
+                Toggle::make('for_rent')
+                    ->label('Сдаётся в аренду')
+                    ->helperText('Включите, чтобы указать регаты и стоимость аренды яхты.')
+                    ->live()
+                    ->columnSpanFull(),
+                Repeater::make('rentals')
+                    ->label('Периоды аренды и стоимость')
+                    ->columnSpanFull()
+                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => (bool) $get('for_rent'))
+                    ->addActionLabel('Добавить период')
+                    ->defaultItems(1)
+                    ->collapsible()
+                    ->itemLabel(fn (array $state): ?string => static::rentalItemLabel($state))
+                    ->schema([
+                        DatePicker::make('date_start')
+                            ->label('Дата начала')
+                            ->native(false)
+                            ->required()
+                            ->beforeOrEqual('date_end'),
+                        DatePicker::make('date_end')
+                            ->label('Дата окончания')
+                            ->native(false)
+                            ->required()
+                            ->afterOrEqual('date_start'),
+                        TextInput::make('price_event')
+                            ->label('Цена за день, мероприятия, ₽')
+                            ->placeholder('Например, 50000')
+                            ->helperText('Стоимость аренды за один день для мероприятий.')
+                            ->numeric()
+                            ->minValue(0)
+                            ->required(),
+                        TextInput::make('price_pro')
+                            ->label('Цена за день, профкоманды, ₽')
+                            ->placeholder('Например, 70000')
+                            ->helperText('Стоимость аренды за один день для профессиональных команд.')
+                            ->numeric()
+                            ->minValue(0)
+                            ->required(),
+                    ])
+                    ->columns(2),
                 /*
                 Repeater::make('past_regattas')
                     ->label('Прошедшие соревнования')
@@ -377,13 +421,23 @@ class YachtResource extends Resource
                         $data = $record->toArray();
                         $data['required_documents'] = $sync->load($record, $requiredDocs);
                         $data['extra_documents']    = $sync->loadExtra($record, $requiredDocTypes);
+                        $data['rentals'] = $record->rentals()
+                            ->get()
+                            ->map(fn (\App\Models\YachtRental $rental): array => [
+                                'date_start'  => $rental->date_start?->toDateString(),
+                                'date_end'    => $rental->date_end?->toDateString(),
+                                'price_event' => $rental->price_event,
+                                'price_pro'   => $rental->price_pro,
+                            ])
+                            ->toArray();
 
                         $form->fill($data);
                     })
                     ->using(function (Yacht $record, array $data): Yacht {
                         $requiredDocs = $data['required_documents'] ?? [];
                         $extraDocs    = $data['extra_documents'] ?? [];
-                        unset($data['required_documents'], $data['extra_documents']);
+                        $rentals      = $data['rentals'] ?? [];
+                        unset($data['required_documents'], $data['extra_documents'], $data['rentals']);
 
                         $record->update($data);
 
@@ -395,6 +449,8 @@ class YachtResource extends Resource
                         $requiredDocTypes = array_column(ManageYachts::getRequiredDocuments(), 'doc_type');
                         $activeExtraTypes = array_filter(array_column($extraDocs, 'doc_type'));
                         $sync->pruneOrphanedDocTypes($record, $requiredDocTypes, $activeExtraTypes);
+
+                        static::syncRentals($record, $rentals);
 
                         return $record;
                     }),
@@ -445,5 +501,64 @@ class YachtResource extends Resource
             ->first(fn (\App\Models\YachtDocumentType $t) => $t->key === $docType);
 
         return $model?->label ?? ($state['title'] ?? null);
+    }
+
+    /**
+     * Читаемая метка строки аренды в Repeater: «01.07.2026 — 10.07.2026 · 50 000 ₽/день».
+     */
+    public static function rentalItemLabel(array $state): ?string
+    {
+        $start = $state['date_start'] ?? null;
+        $end   = $state['date_end'] ?? null;
+
+        if (! $start && ! $end) {
+            return 'Новый период';
+        }
+
+        $formatDate = static fn (?string $date): ?string => $date
+            ? \Illuminate\Support\Carbon::parse($date)->format('d.m.Y')
+            : null;
+
+        $range = trim(implode(' — ', array_filter([$formatDate($start), $formatDate($end)])));
+
+        $price = $state['price_event'] ?? null;
+
+        return $price !== null && $price !== ''
+            ? $range . ' · ' . number_format((float) $price, 0, '.', ' ') . ' ₽/день'
+            : $range;
+    }
+
+    /**
+     * Синхронизирует периоды аренды яхты с переданными строками формы.
+     * Полностью пересоздаёт записи, т.к. у периодов нет естественного ключа.
+     *
+     * @param  array<int, array{date_start?: string, date_end?: string, price_event?: mixed, price_pro?: mixed}>  $rentals
+     */
+    public static function syncRentals(Yacht $yacht, array $rentals): void
+    {
+        // Если яхта не сдаётся — очищаем все периоды аренды.
+        if (! $yacht->for_rent) {
+            $yacht->rentals()->delete();
+
+            return;
+        }
+
+        $yacht->rentals()->delete();
+
+        foreach ($rentals as $rental) {
+            $start = $rental['date_start'] ?? null;
+            $end   = $rental['date_end'] ?? null;
+
+            if (! $start || ! $end) {
+                continue;
+            }
+
+            $yacht->rentals()->create([
+                'date_start'  => $start,
+                'date_end'    => $end,
+                'price_event' => $rental['price_event'] ?? null,
+                'price_pro'   => $rental['price_pro'] ?? null,
+            ]);
+        }
     }
 }

@@ -123,8 +123,9 @@ class ManageYachts extends ManageRecords
                 ->using(function (array $data, string $model): Yacht {
                     $requiredDocs = $data['required_documents'] ?? [];
                     $extraDocs = $data['extra_documents'] ?? [];
+                    $rentals = $data['rentals'] ?? [];
                     $selectedYachtId = $data['selected_yacht_id'] ?? null;
-                    unset($data['required_documents'], $data['extra_documents'], $data['yacht_search'], $data['selected_yacht_id']);
+                    unset($data['required_documents'], $data['extra_documents'], $data['rentals'], $data['yacht_search'], $data['selected_yacht_id']);
 
                     // Если выбрана яхта из базы — обновляем её.
                     // Иначе ищем существующую по номеру ВФПС и перезаписываем,
@@ -160,6 +161,8 @@ class ManageYachts extends ManageRecords
                     $sync = app(SyncDocumentFilesAction::class);
                     $sync->execute($record, $requiredDocs);
                     $sync->execute($record, $extraDocs);
+
+                    YachtResource::syncRentals($record, $rentals);
 
                     return $record;
                 }),
