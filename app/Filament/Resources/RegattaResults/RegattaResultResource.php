@@ -520,11 +520,12 @@ class RegattaResultResource extends Resource
             TableColumn::make('Команда'),
             //TableColumn::make('Не участвовали')->markAsRequired(false),
             TableColumn::make('Участники')->markAsRequired(false),
-            TableColumn::make('Место / Очки')->markAsRequired(false),
         ];
         foreach ($raceEvents as $race) {
             $columns[] = TableColumn::make($race->name . ' · место / очки')->markAsRequired(false);
         }
+        // Итог (место / очки) — в конце, после колонок гонок.
+        $columns[] = TableColumn::make('Место / Очки')->markAsRequired(false);
 
         $fields = [
             Select::make('yacht_id')
@@ -568,56 +569,6 @@ class RegattaResultResource extends Resource
                     $get('team_id'),
                     $get('yacht_id'),
                 )),
-
-            Group::make([
-                // По умолчанию итог считается автоматически из результатов гонок
-                // (см. recomputeItemTotals). Если пользователь правит поле вручную —
-                // ставим флаг *_overridden, и авторасчёт это значение больше не трогает.
-                // Очистка поля снимает флаг и возвращает авторасчёт.
-                TextInput::make('final_position')
-                    ->label('Место')
-                    // Пометка ручного ввода: жёлтый хинт «Вручную» + рамка, иначе серый «Авто».
-                    ->hint(fn (Get $get): string => $get('final_position_overridden') ? 'Вручную' : 'Авто')
-                    ->hintColor(fn (Get $get): string => $get('final_position_overridden') ? 'warning' : 'gray')
-                    ->extraInputAttributes(fn (Get $get): array => $get('final_position_overridden')
-                        ? ['class' => 'ring-1 ring-amber-400']
-                        : [])
-                    ->live(onBlur: true)
-                    ->afterStateUpdated(fn ($state, Set $set) => $set('final_position_overridden', filled($state)))
-                    ->suffixAction(self::resetToAutoAction('final_position', 'final_position_overridden'))
-                    ->rule(static function () {
-                        return static function (string $attribute, $value, \Closure $fail): void {
-                            $value = trim((string) $value);
-
-                            if ($value === '0' || str_contains($value, '-')) {
-                                $fail('Недопустимое значение');
-                            }
-                        };
-                    })
-                    ->dehydrated(),
-
-                Hidden::make('final_position_overridden')
-                    ->dehydrated(),
-
-                TextInput::make('total_points')
-                    ->label('Очки')
-                    ->hint(fn (Get $get): string => $get('total_points_overridden') ? 'Вручную' : 'Авто')
-                    ->hintColor(fn (Get $get): string => $get('total_points_overridden') ? 'warning' : 'gray')
-                    ->extraInputAttributes(fn (Get $get): array => $get('total_points_overridden')
-                        ? ['class' => 'ring-1 ring-amber-400']
-                        : [])
-                    ->live(onBlur: true)
-                    ->afterStateUpdated(fn ($state, Set $set) => $set('total_points_overridden', filled($state)))
-                    ->suffixAction(self::resetToAutoAction('total_points', 'total_points_overridden'))
-                    // Колонка NOT NULL: relationship-репитер сохраняет строки до пересчёта,
-                    // поэтому пустое значение приводим к 0 (сумму проставит recomputeItemTotals).
-                    // Запятую в десятичной дроби приводим к точке (ввод в русской раскладке).
-                    ->dehydrateStateUsing(fn ($state) => filled($state) ? self::normalizePoints($state) : 0)
-                    ->dehydrated(),
-
-                Hidden::make('total_points_overridden')
-                    ->dehydrated(),
-            ]),
         ];
         foreach ($raceEvents as $i => $race) {
             $fields[] = Group::make([
@@ -641,6 +592,57 @@ class RegattaResultResource extends Resource
                     ->nullable(),
             ]);
         }
+
+        // Итог (место / очки) — в конце, после полей гонок.
+        $fields[] = Group::make([
+            // По умолчанию итог считается автоматически из результатов гонок
+            // (см. recomputeItemTotals). Если пользователь правит поле вручную —
+            // ставим флаг *_overridden, и авторасчёт это значение больше не трогает.
+            // Очистка поля снимает флаг и возвращает авторасчёт.
+            TextInput::make('final_position')
+                ->label('Место')
+                // Пометка ручного ввода: жёлтый хинт «Вручную» + рамка, иначе серый «Авто».
+                ->hint(fn (Get $get): string => $get('final_position_overridden') ? 'Вручную' : 'Авто')
+                ->hintColor(fn (Get $get): string => $get('final_position_overridden') ? 'warning' : 'gray')
+                ->extraInputAttributes(fn (Get $get): array => $get('final_position_overridden')
+                    ? ['class' => 'ring-1 ring-amber-400']
+                    : [])
+                ->live(onBlur: true)
+                ->afterStateUpdated(fn ($state, Set $set) => $set('final_position_overridden', filled($state)))
+                ->suffixAction(self::resetToAutoAction('final_position', 'final_position_overridden'))
+                ->rule(static function () {
+                    return static function (string $attribute, $value, \Closure $fail): void {
+                        $value = trim((string) $value);
+
+                        if ($value === '0' || str_contains($value, '-')) {
+                            $fail('Недопустимое значение');
+                        }
+                    };
+                })
+                ->dehydrated(),
+
+            Hidden::make('final_position_overridden')
+                ->dehydrated(),
+
+            TextInput::make('total_points')
+                ->label('Очки')
+                ->hint(fn (Get $get): string => $get('total_points_overridden') ? 'Вручную' : 'Авто')
+                ->hintColor(fn (Get $get): string => $get('total_points_overridden') ? 'warning' : 'gray')
+                ->extraInputAttributes(fn (Get $get): array => $get('total_points_overridden')
+                    ? ['class' => 'ring-1 ring-amber-400']
+                    : [])
+                ->live(onBlur: true)
+                ->afterStateUpdated(fn ($state, Set $set) => $set('total_points_overridden', filled($state)))
+                ->suffixAction(self::resetToAutoAction('total_points', 'total_points_overridden'))
+                // Колонка NOT NULL: relationship-репитер сохраняет строки до пересчёта,
+                // поэтому пустое значение приводим к 0 (сумму проставит recomputeItemTotals).
+                // Запятую в десятичной дроби приводим к точке (ввод в русской раскладке).
+                ->dehydrateStateUsing(fn ($state) => filled($state) ? self::normalizePoints($state) : 0)
+                ->dehydrated(),
+
+            Hidden::make('total_points_overridden')
+                ->dehydrated(),
+        ]);
 
         return Repeater::make('items')
             ->label('Результаты участников')
