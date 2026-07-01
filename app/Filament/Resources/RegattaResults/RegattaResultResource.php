@@ -492,7 +492,7 @@ class RegattaResultResource extends Resource
                 $name = $name !== '' ? $name : '—';
 
                 $role = match ($crew->role) {
-                    'captain' => ' (кап)',
+                    'captain' => ' (рулевой)',
                     'reserve' => ' (зап)',
                     default   => '',
                 };
