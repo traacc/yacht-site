@@ -486,6 +486,7 @@ class RegattaResultResource extends Resource
         $rows = $entry->crew()
             ->with('teamMember.user')
             ->get()
+            ->sortByDesc(fn ($crew): int => $crew->role === 'captain' ? 1 : 0)
             ->map(function ($crew): string {
                 $user = $crew->teamMember?->user;
                 $name = $user?->name;
