@@ -746,6 +746,12 @@ class RegattaResultResource extends Resource
         // Гонки, которые ещё существуют (могли удалить в блоке «Гонки регаты»).
         $existingEventIds = RegattaEvents::whereIn('id', $eventIds)->pluck('id')->flip();
 
+        // Число лодок — участники с командой. Нужно для очков за буквенные
+        // статусы (DNF, DSQ…): такие очки = число лодок + 1.
+        $boatCount = collect($data['items'] ?? [])
+            ->filter(fn ($row): bool => filled($row['team_id'] ?? null))
+            ->count();
+
         $skipped = [];
 
         foreach (($data['items'] ?? []) as $row) {
@@ -773,17 +779,14 @@ class RegattaResultResource extends Resource
                 }
 
                 $position = $row["race_{$i}_position"] ?? null;
-                // Запятую как десятичный разделитель приводим к точке (русская раскладка).
-                $points   = self::normalizePoints($row["race_{$i}_points"] ?? null);
+                $points   = $row["race_{$i}_points"] ?? null;
 
                 if (blank($position) && blank($points)) {
                     continue;
                 }
 
-                // Числовые очки округляем до десятых; нечисловые (DNF, DSQ…) — как есть.
-                if (filled($points) && is_numeric($points)) {
-                    $points = round((float) $points, 1);
-                }
+                // Выводим очки из места по правилам малых очков (см. deriveRacePoints).
+                $points = self::deriveRacePoints($position, $points, $boatCount);
 
                 RaceResult::updateOrCreate(
                     ['event_id' => $eventId, 'regatta_entry_id' => $entry->id],
@@ -902,6 +905,51 @@ class RegattaResultResource extends Resource
         $normalized = str_replace(',', '.', trim($value));
 
         return is_numeric($normalized) ? $normalized : $value;
+    }
+
+    /**
+     * Выводит очки гонки из места по правилам малых очков:
+     *  - очки не введены → очки = числовому месту;
+     *  - в месте любые буквы (DNF, DSQ, DNS…) → очки = число лодок + 1;
+     *  - место/текст в скобках (сброшенная гонка) → очки тоже в скобках
+     *    и не идут в общий зачёт: recomputeItemTotals суммирует только числовые
+     *    очки, а «(5)» нечисловое.
+     *
+     * Введённые вручную очки сохраняются как есть (числовые — округляются до
+     * десятых); скобки согласуются со скобками места.
+     */
+    public static function deriveRacePoints(mixed $position, mixed $points, int $boatCount): mixed
+    {
+        $position = trim((string) $position);
+        $points   = self::normalizePoints($points);
+        $points   = is_string($points) ? trim($points) : $points;
+
+        // Скобки в месте — признак «сброшенной» гонки (результат вне зачёта).
+        $isDiscard = str_starts_with($position, '(') && str_ends_with($position, ')');
+        $inner     = $isDiscard ? trim(substr($position, 1, -1)) : $position;
+
+        if (filled($points)) {
+            // Очки заданы вручную — убираем внешние скобки, чтобы согласовать их со скобками места.
+            $value = (string) $points;
+            if (str_starts_with($value, '(') && str_ends_with($value, ')')) {
+                $value = trim(substr($value, 1, -1));
+            }
+        } elseif ($inner === '') {
+            return null;
+        } elseif (is_numeric($inner)) {
+            // Очки не введены — берём числовое место.
+            $value = $inner;
+        } else {
+            // Любые буквы (DNF, DSQ…) — очки = число лодок + 1.
+            $value = (string) ($boatCount + 1);
+        }
+
+        // Числовые очки округляем до десятых; нечисловые (DNF…) — как есть.
+        if (is_numeric($value)) {
+            $value = (string) round((float) $value, 1);
+        }
+
+        return $isDiscard ? "({$value})" : $value;
     }
 
     /**
