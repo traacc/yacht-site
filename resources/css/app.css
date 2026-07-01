@@ -332,5 +332,7 @@
   .regatta-result-list .fi-fo-repeater-add {
     display: none;
   }
-
+  .fi-grid-col .fi-input-wrp {
+    background-color: #F8F8F8;
+  }
 }

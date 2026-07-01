@@ -164,6 +164,9 @@
 
   background-color: #F8F8F8;
 }
+.fi-grid-col .fi-input-wrp {
+  background-color: #F8F8F8;
+}
 .fi-input-wrp-content-ctn {
   border-radius: 0px;
   box-shadow: none;
