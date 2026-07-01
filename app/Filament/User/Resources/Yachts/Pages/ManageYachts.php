@@ -37,6 +37,8 @@ class ManageYachts extends ManageRecords
                 ->using(function (array $data, string $model): Yacht {
                     $docs = $data['required_documents'] ?? [];
                     $rentals = $data['rentals'] ?? [];
+                    $optionSync = app(\App\Actions\Yacht\SyncYachtOptionsAction::class);
+                    $optionSelections = $optionSync->extract($data);
                     $selectedYachtId = $data['selected_yacht_id'] ?? null;
                     unset($data['required_documents'], $data['rentals'], $data['yacht_search'], $data['selected_yacht_id']);
 
@@ -82,6 +84,7 @@ class ManageYachts extends ManageRecords
                     app(SyncDocumentFilesAction::class)->execute($record, $docs);
 
                     YachtResource::syncRentals($record, $rentals);
+                    $optionSync->execute($record, $optionSelections);
 
                     // Уведомляем администраторов о регистрации новой яхты пользователем.
                     $adminEmails = app(\App\Services\SettingsService::class)->adminNotificationEmails();

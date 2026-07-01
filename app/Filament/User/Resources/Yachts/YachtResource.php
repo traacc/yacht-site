@@ -178,6 +178,9 @@ class YachtResource extends Resource
                 TextInput::make('current_mass_kg')->label('Масса яхты')->placeholder('Введите массу яхты')->numeric(),
                 TextInput::make('reg_place')->label('Место регистрации')->placeholder('Введите место регистрации'),
 
+                Placeholder::make('Опции')->columnSpanFull(),
+                ...app(\App\Actions\Yacht\SyncYachtOptionsAction::class)->formComponents(),
+
                 // ── Аренда яхты ──
                 Placeholder::make('Аренда')->columnSpanFull(),
                 Toggle::make('for_rent')
@@ -420,6 +423,7 @@ class YachtResource extends Resource
                         $data = $record->toArray();
                         $data['required_documents'] = app(\App\Actions\Document\SyncDocumentFilesAction::class)
                             ->load($record, ManageYachts::getRequiredDocuments());
+                        $data += app(\App\Actions\Yacht\SyncYachtOptionsAction::class)->load($record);
                         $data['rentals'] = $record->rentals()
                             ->get()
                             ->map(fn (\App\Models\YachtRental $rental): array => [
@@ -432,8 +436,10 @@ class YachtResource extends Resource
                         $form->fill($data);
                     })
                     ->using(function (Yacht $record, array $data): Yacht {
-                        $docs    = $data['required_documents'] ?? [];
-                        $rentals = $data['rentals'] ?? [];
+                        $docs       = $data['required_documents'] ?? [];
+                        $rentals    = $data['rentals'] ?? [];
+                        $optionSync = app(\App\Actions\Yacht\SyncYachtOptionsAction::class);
+                        $optionSelections = $optionSync->extract($data);
                         unset($data['required_documents'], $data['rentals'], $data['yacht_search']);
 
                         $record->update($data);
@@ -442,6 +448,7 @@ class YachtResource extends Resource
                             ->execute($record, $docs);
 
                         static::syncRentals($record, $rentals);
+                        $optionSync->execute($record, $optionSelections);
 
                         return $record;
                     }),

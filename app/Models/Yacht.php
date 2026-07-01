@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -100,6 +101,17 @@ class Yacht extends Model implements HasMedia
     public function documents(): MorphMany
     {
         return $this->morphMany(Document::class, 'documentable');
+    }
+
+    /**
+     * Выбранные значения опций яхты (например «Дакрон» для опции «Тип паруса»).
+     * Список опций и их значений задаёт администратор; на яхте выбирается
+     * не более одного значения на каждую опцию.
+     */
+    public function optionValues(): BelongsToMany
+    {
+        return $this->belongsToMany(YachtOptionValue::class, 'yacht_option_selections')
+            ->withPivot('yacht_option_id');
     }
 
     // ──────────────────────────────────────────────

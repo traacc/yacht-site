@@ -169,6 +169,9 @@ class YachtResource extends Resource
                     ->default('pending')
                     ->required(),
 
+                Placeholder::make('Опции')->columnSpanFull(),
+                ...app(\App\Actions\Yacht\SyncYachtOptionsAction::class)->formComponents(),
+
                 // ── Аренда яхты ──
                 Placeholder::make('Аренда')->columnSpanFull(),
                 Toggle::make('for_rent')
@@ -432,6 +435,7 @@ class YachtResource extends Resource
                         $data = $record->toArray();
                         $data['required_documents'] = $sync->load($record, $requiredDocs);
                         $data['extra_documents']    = $sync->loadExtra($record, $requiredDocTypes);
+                        $data += app(\App\Actions\Yacht\SyncYachtOptionsAction::class)->load($record);
                         $data['rentals'] = $record->rentals()
                             ->get()
                             ->map(fn (\App\Models\YachtRental $rental): array => [
@@ -448,6 +452,8 @@ class YachtResource extends Resource
                         $requiredDocs = $data['required_documents'] ?? [];
                         $extraDocs    = $data['extra_documents'] ?? [];
                         $rentals      = $data['rentals'] ?? [];
+                        $optionSync   = app(\App\Actions\Yacht\SyncYachtOptionsAction::class);
+                        $optionSelections = $optionSync->extract($data);
                         unset($data['required_documents'], $data['extra_documents'], $data['rentals']);
 
                         $record->update($data);
@@ -462,6 +468,7 @@ class YachtResource extends Resource
                         $sync->pruneOrphanedDocTypes($record, $requiredDocTypes, $activeExtraTypes);
 
                         static::syncRentals($record, $rentals);
+                        $optionSync->execute($record, $optionSelections);
 
                         return $record;
                     }),

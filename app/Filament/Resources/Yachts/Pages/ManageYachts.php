@@ -8,6 +8,7 @@ use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\Yacht\UpdateYachtRequiredDocumentsAction;
 use App\Exports\YachtExport;
 use App\Filament\Resources\YachtDocumentTypeResource;
+use App\Filament\Resources\YachtOptionResource;
 use App\Filament\Resources\Yachts\YachtResource;
 use App\Imports\YachtImport;
 use App\Models\Yacht;
@@ -41,6 +42,11 @@ class ManageYachts extends ManageRecords
                 ->icon('heroicon-o-document-text')
                 ->color('white')
                 ->url(fn () => YachtDocumentTypeResource::getUrl()),
+            Action::make('optionSettings')
+                ->label('Опции')
+                ->icon('heroicon-o-tag')
+                ->color('white')
+                ->url(fn () => YachtOptionResource::getUrl()),
             Action::make('export')
                 ->label('Экспорт в Excel')
                 ->icon('heroicon-o-arrow-down-tray')
@@ -124,6 +130,8 @@ class ManageYachts extends ManageRecords
                     $requiredDocs = $data['required_documents'] ?? [];
                     $extraDocs = $data['extra_documents'] ?? [];
                     $rentals = $data['rentals'] ?? [];
+                    $optionSync = app(\App\Actions\Yacht\SyncYachtOptionsAction::class);
+                    $optionSelections = $optionSync->extract($data);
                     $selectedYachtId = $data['selected_yacht_id'] ?? null;
                     unset($data['required_documents'], $data['extra_documents'], $data['rentals'], $data['yacht_search'], $data['selected_yacht_id']);
 
@@ -163,6 +171,7 @@ class ManageYachts extends ManageRecords
                     $sync->execute($record, $extraDocs);
 
                     YachtResource::syncRentals($record, $rentals);
+                    $optionSync->execute($record, $optionSelections);
 
                     return $record;
                 }),
