@@ -218,102 +218,112 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                     </table>
                 </div>
 
-                {{-- Gallery --}}
-                <div class="mb-8" x-show="selectedYacht.gallery && selectedYacht.gallery.length > 0"
-                     x-data="{ activeIndex: 0, lightboxOpen: false }">
-                    <h3 class="text-3xl a-font mb-6">Галерея</h3>
+                {{-- Galleries --}}
+                <div class="mb-8"
+                     x-show="(selectedYacht.gallery && selectedYacht.gallery.length > 0) || (selectedYacht.interior_gallery && selectedYacht.interior_gallery.length > 0)"
+                     x-data="{ galleryTab: selectedYacht.gallery && selectedYacht.gallery.length > 0 ? 'exterior' : 'interior' }">
+                    <div class="flex gap-8 mb-6">
+                        <button type="button" @click="galleryTab = 'exterior'"
+                                x-show="selectedYacht.gallery && selectedYacht.gallery.length > 0"
+                                :class="galleryTab === 'exterior' ? 'text-white bg-[#2D92CE]' : 'bg-[#F8F8F8]'"
+                                class="text-lg p-3 font-medium -mb-px transition-colors">Экстерьер</button>
+                        <button type="button" @click="galleryTab = 'interior'"
+                                x-show="selectedYacht.interior_gallery && selectedYacht.interior_gallery.length > 0"
+                                :class="galleryTab === 'interior' ? 'text-white bg-[#2D92CE]' : 'bg-[#F8F8F8]'"
+                                class="text-lg p-3 font-medium -mb-px transition-colors">Интерьер</button>
+                    </div>
 
-                    <div class="relative mb-4">
-                        <img :src="selectedYacht.gallery[activeIndex]?.url" :alt="selectedYacht.gallery[activeIndex]?.name"
-                             class="w-full aspect-video object-cover cursor-pointer" @click="lightboxOpen = true">
-                        <template x-if="selectedYacht.gallery.length > 1">
-                            <div>
+                    {{-- Gallery --}}
+                    <div x-show="galleryTab === 'exterior'" x-data="{ activeIndex: 0, lightboxOpen: false }">
+                        <div class="relative mb-4">
+                            <img :src="selectedYacht.gallery[activeIndex]?.url" :alt="selectedYacht.gallery[activeIndex]?.name"
+                                 class="w-full aspect-video object-cover cursor-pointer" @click="lightboxOpen = true">
+                            <template x-if="selectedYacht.gallery.length > 1">
+                                <div>
+                                    <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.gallery.length - 1"
+                                            class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors">‹</button>
+                                    <button @click="activeIndex = activeIndex < selectedYacht.gallery.length - 1 ? activeIndex + 1 : 0"
+                                            class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors">›</button>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="flex gap-2 overflow-x-auto pb-1" x-show="selectedYacht.gallery.length > 1">
+                            <template x-for="(img, idx) in selectedYacht.gallery" :key="idx">
+                                <img :src="img.thumbnail || img.url" :alt="img.name" @click="activeIndex = idx"
+                                     :class="idx === activeIndex ? 'ring-2 ring-[#2D92CE] opacity-100' : 'opacity-60 hover:opacity-100'"
+                                     class="w-20 h-20 object-cover cursor-pointer shrink-0 transition-opacity">
+                            </template>
+                        </div>
+
+                        {{-- Lightbox --}}
+                        <template x-teleport="body">
+                            <div x-show="lightboxOpen"
+                                 x-cloak
+                                 @keydown.window.escape="lightboxOpen = false"
+                                 style="position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); padding: 1rem;"
+                                 @click.self="lightboxOpen = false">
+                                <button @click="lightboxOpen = false"
+                                        class="absolute top-4 right-4 text-white text-4xl font-bold hover:opacity-70 transition-opacity">
+                                    {!! file_get_contents(public_path('images/icons/close.svg')) !!}
+                                </button>
                                 <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.gallery.length - 1"
-                                        class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors">‹</button>
+                                        class="absolute left-4 top-1/2 -translate-y-1/2 text-white text-5xl hover:opacity-70 transition-opacity">‹</button>
+                                <img :src="selectedYacht.gallery[activeIndex]?.url"
+                                     :alt="selectedYacht.gallery[activeIndex]?.name"
+                                     class="max-w-full max-h-[85vh] object-contain mx-auto">
                                 <button @click="activeIndex = activeIndex < selectedYacht.gallery.length - 1 ? activeIndex + 1 : 0"
-                                        class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors">›</button>
+                                        class="absolute right-4 top-1/2 -translate-y-1/2 text-white text-5xl hover:opacity-70 transition-opacity">›</button>
+                                <div class="absolute bottom-4 text-white text-sm" x-text="`${activeIndex + 1} / ${selectedYacht.gallery.length}`"></div>
                             </div>
                         </template>
                     </div>
 
-                    <div class="flex gap-2 overflow-x-auto pb-1" x-show="selectedYacht.gallery.length > 1">
-                        <template x-for="(img, idx) in selectedYacht.gallery" :key="idx">
-                            <img :src="img.thumbnail || img.url" :alt="img.name" @click="activeIndex = idx"
-                                 :class="idx === activeIndex ? 'ring-2 ring-[#2D92CE] opacity-100' : 'opacity-60 hover:opacity-100'"
-                                 class="w-20 h-20 object-cover cursor-pointer shrink-0 transition-opacity">
-                        </template>
-                    </div>
-
-                    {{-- Lightbox --}}
-                    <template x-teleport="body">
-                        <div x-show="lightboxOpen"
-                             x-cloak
-                             @keydown.window.escape="lightboxOpen = false"
-                             style="position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); padding: 1rem;"
-                             @click.self="lightboxOpen = false">
-                            <button @click="lightboxOpen = false"
-                                    class="absolute top-4 right-4 text-white text-4xl font-bold hover:opacity-70 transition-opacity">
-                                {!! file_get_contents(public_path('images/icons/close.svg')) !!}
-                            </button>
-                            <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.gallery.length - 1"
-                                    class="absolute left-4 top-1/2 -translate-y-1/2 text-white text-5xl hover:opacity-70 transition-opacity">‹</button>
-                            <img :src="selectedYacht.gallery[activeIndex]?.url"
-                                 :alt="selectedYacht.gallery[activeIndex]?.name"
-                                 class="max-w-full max-h-[85vh] object-contain mx-auto">
-                            <button @click="activeIndex = activeIndex < selectedYacht.gallery.length - 1 ? activeIndex + 1 : 0"
-                                    class="absolute right-4 top-1/2 -translate-y-1/2 text-white text-5xl hover:opacity-70 transition-opacity">›</button>
-                            <div class="absolute bottom-4 text-white text-sm" x-text="`${activeIndex + 1} / ${selectedYacht.gallery.length}`"></div>
+                    {{-- Interior Gallery --}}
+                    <div x-show="galleryTab === 'interior'" x-data="{ activeIndex: 0, lightboxOpen: false }">
+                        <div class="relative mb-4">
+                            <img :src="selectedYacht.interior_gallery[activeIndex]?.url" :alt="selectedYacht.interior_gallery[activeIndex]?.name"
+                                 class="w-full aspect-video object-cover cursor-pointer" @click="lightboxOpen = true">
+                            <template x-if="selectedYacht.interior_gallery.length > 1">
+                                <div>
+                                    <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.interior_gallery.length - 1"
+                                            class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors">‹</button>
+                                    <button @click="activeIndex = activeIndex < selectedYacht.interior_gallery.length - 1 ? activeIndex + 1 : 0"
+                                            class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors">›</button>
+                                </div>
+                            </template>
                         </div>
-                    </template>
-                </div>
 
-                {{-- Interior Gallery --}}
-                <div class="mb-8" x-show="selectedYacht.interior_gallery && selectedYacht.interior_gallery.length > 0"
-                     x-data="{ activeIndex: 0, lightboxOpen: false }">
-                    <h3 class="text-3xl a-font mb-6">Галерея интерьера</h3>
+                        <div class="flex gap-2 overflow-x-auto pb-1" x-show="selectedYacht.interior_gallery.length > 1">
+                            <template x-for="(img, idx) in selectedYacht.interior_gallery" :key="idx">
+                                <img :src="img.thumbnail || img.url" :alt="img.name" @click="activeIndex = idx"
+                                     :class="idx === activeIndex ? 'ring-2 ring-[#2D92CE] opacity-100' : 'opacity-60 hover:opacity-100'"
+                                     class="w-20 h-20 object-cover cursor-pointer shrink-0 transition-opacity">
+                            </template>
+                        </div>
 
-                    <div class="relative mb-4">
-                        <img :src="selectedYacht.interior_gallery[activeIndex]?.url" :alt="selectedYacht.interior_gallery[activeIndex]?.name"
-                             class="w-full aspect-video object-cover cursor-pointer" @click="lightboxOpen = true">
-                        <template x-if="selectedYacht.interior_gallery.length > 1">
-                            <div>
+                        {{-- Lightbox --}}
+                        <template x-teleport="body">
+                            <div x-show="lightboxOpen"
+                                 x-cloak
+                                 @keydown.window.escape="lightboxOpen = false"
+                                 style="position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); padding: 1rem;"
+                                 @click.self="lightboxOpen = false">
+                                <button @click="lightboxOpen = false"
+                                        class="absolute top-4 right-4 text-white text-4xl font-bold hover:opacity-70 transition-opacity">
+                                    {!! file_get_contents(public_path('images/icons/close.svg')) !!}
+                                </button>
                                 <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.interior_gallery.length - 1"
-                                        class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors">‹</button>
+                                        class="absolute left-4 top-1/2 -translate-y-1/2 text-white text-5xl hover:opacity-70 transition-opacity">‹</button>
+                                <img :src="selectedYacht.interior_gallery[activeIndex]?.url"
+                                     :alt="selectedYacht.interior_gallery[activeIndex]?.name"
+                                     class="max-w-full max-h-[85vh] object-contain mx-auto">
                                 <button @click="activeIndex = activeIndex < selectedYacht.interior_gallery.length - 1 ? activeIndex + 1 : 0"
-                                        class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors">›</button>
+                                        class="absolute right-4 top-1/2 -translate-y-1/2 text-white text-5xl hover:opacity-70 transition-opacity">›</button>
+                                <div class="absolute bottom-4 text-white text-sm" x-text="`${activeIndex + 1} / ${selectedYacht.interior_gallery.length}`"></div>
                             </div>
                         </template>
                     </div>
-
-                    <div class="flex gap-2 overflow-x-auto pb-1" x-show="selectedYacht.interior_gallery.length > 1">
-                        <template x-for="(img, idx) in selectedYacht.interior_gallery" :key="idx">
-                            <img :src="img.thumbnail || img.url" :alt="img.name" @click="activeIndex = idx"
-                                 :class="idx === activeIndex ? 'ring-2 ring-[#2D92CE] opacity-100' : 'opacity-60 hover:opacity-100'"
-                                 class="w-20 h-20 object-cover cursor-pointer shrink-0 transition-opacity">
-                        </template>
-                    </div>
-
-                    {{-- Lightbox --}}
-                    <template x-teleport="body">
-                        <div x-show="lightboxOpen"
-                             x-cloak
-                             @keydown.window.escape="lightboxOpen = false"
-                             style="position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); padding: 1rem;"
-                             @click.self="lightboxOpen = false">
-                            <button @click="lightboxOpen = false"
-                                    class="absolute top-4 right-4 text-white text-4xl font-bold hover:opacity-70 transition-opacity">
-                                {!! file_get_contents(public_path('images/icons/close.svg')) !!}
-                            </button>
-                            <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.interior_gallery.length - 1"
-                                    class="absolute left-4 top-1/2 -translate-y-1/2 text-white text-5xl hover:opacity-70 transition-opacity">‹</button>
-                            <img :src="selectedYacht.interior_gallery[activeIndex]?.url"
-                                 :alt="selectedYacht.interior_gallery[activeIndex]?.name"
-                                 class="max-w-full max-h-[85vh] object-contain mx-auto">
-                            <button @click="activeIndex = activeIndex < selectedYacht.interior_gallery.length - 1 ? activeIndex + 1 : 0"
-                                    class="absolute right-4 top-1/2 -translate-y-1/2 text-white text-5xl hover:opacity-70 transition-opacity">›</button>
-                            <div class="absolute bottom-4 text-white text-sm" x-text="`${activeIndex + 1} / ${selectedYacht.interior_gallery.length}`"></div>
-                        </div>
-                    </template>
                 </div>
 
                 <div class="mb-8" x-show="selectedYacht.documents.length > 0">
