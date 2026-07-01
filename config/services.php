@@ -58,9 +58,7 @@ return [
     ],
 
     'vk' => [
-        // Пользовательский токен админа сообщества (scope wall,photos).
-        // Заполняется автоматически через кнопку «Подключить VK» в админке;
-        // значение из .env используется как запасной вариант.
+        // Ключ доступа сообщества или пользователя со scope wall,photos.
         'access_token' => env('VK_ACCESS_TOKEN'),
         // ID сообщества (положительное число, без минуса).
         'group_id'     => env('VK_GROUP_ID'),
@@ -68,9 +66,5 @@ return [
         'api_version'  => env('VK_API_VERSION', '5.199'),
         // Прокси для VK API (если требуется): socks5://... или http://...
         'proxy'        => env('VK_PROXY'),
-        // Данные Standalone-приложения VK для OAuth («Подключить VK»).
-        // ID и защищённый ключ берутся со страницы приложения vk.com/apps?act=manage.
-        'app_id'       => env('VK_APP_ID'),
-        'app_secret'   => env('VK_APP_SECRET'),
     ],
 ];

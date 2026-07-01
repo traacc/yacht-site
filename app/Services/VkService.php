@@ -30,97 +30,9 @@ class VkService
         // Значения по умолчанию берём из config/services.php.
     }
 
-    // Ключ настройки, в который сохраняется токен, полученный через «Подключить VK».
-    public const TOKEN_SETTING_KEY = 'home.vk_access_token';
-
     private function token(): ?string
     {
-        if (! empty($this->accessToken)) {
-            return $this->accessToken;
-        }
-
-        // Приоритет у токена, полученного через OAuth и сохранённого в настройках;
-        // значение из .env — запасной вариант для ручной конфигурации.
-        $stored = app(SettingsService::class)->get(self::TOKEN_SETTING_KEY);
-
-        return ! empty($stored) ? $stored : config('services.vk.access_token');
-    }
-
-    private function appId(): ?string
-    {
-        return config('services.vk.app_id');
-    }
-
-    private function appSecret(): ?string
-    {
-        return config('services.vk.app_secret');
-    }
-
-    /**
-     * Готово ли приложение к OAuth-входу («Подключить VK»).
-     */
-    public function isOAuthConfigured(): bool
-    {
-        return ! empty($this->appId()) && ! empty($this->appSecret());
-    }
-
-    /**
-     * Есть ли уже сохранённый токен доступа.
-     */
-    public function hasToken(): bool
-    {
-        return ! empty($this->token());
-    }
-
-    /**
-     * URL страницы авторизации VK для получения кода (Authorization Code Flow).
-     * scope offline делает выданный токен бессрочным.
-     */
-    public function authorizeUrl(string $redirectUri): string
-    {
-        return 'https://oauth.vk.com/authorize?' . http_build_query([
-            'client_id'     => $this->appId(),
-            'redirect_uri'  => $redirectUri,
-            'display'       => 'page',
-            'scope'         => 'wall,photos,groups',
-            'response_type' => 'code',
-            'v'             => $this->version(),
-        ]);
-    }
-
-    /**
-     * Обменивает код авторизации на токен доступа. Возвращает токен или null.
-     * redirect_uri должен в точности совпадать с использованным в authorizeUrl().
-     */
-    public function exchangeCodeForToken(string $code, string $redirectUri): ?string
-    {
-        try {
-            $response = $this->baseRequest()->get('https://oauth.vk.com/access_token', [
-                'client_id'     => $this->appId(),
-                'client_secret' => $this->appSecret(),
-                'redirect_uri'  => $redirectUri,
-                'code'          => $code,
-            ]);
-
-            $token = $response->json('access_token');
-
-            if ($response->successful() && ! empty($token)) {
-                return $token;
-            }
-
-            Log::warning('VK OAuth token exchange failed', [
-                'status' => $response->status(),
-                'body'   => $response->body(),
-            ]);
-
-            return null;
-        } catch (ConnectionException | RequestException $e) {
-            Log::warning('VK OAuth token exchange connection failed', [
-                'error' => $e->getMessage(),
-            ]);
-
-            return null;
-        }
+        return $this->accessToken ?? config('services.vk.access_token');
     }
 
     private function group(): ?string

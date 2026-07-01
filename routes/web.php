@@ -816,10 +816,4 @@ Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
 
-// OAuth-вход во ВКонтакте для автопостинга новостей (кнопка «Подключить VK»).
-Route::middleware('auth')->prefix('admin/vk')->name('vk.')->group(function () {
-    Route::get('connect', [\App\Http\Controllers\VkAuthController::class, 'connect'])->name('connect');
-    Route::get('callback', [\App\Http\Controllers\VkAuthController::class, 'callback'])->name('callback');
-});
-
 require __DIR__.'/auth.php';
