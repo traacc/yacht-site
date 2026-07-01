@@ -186,25 +186,35 @@ class YachtResource extends Resource
                     ->live()
                     ->columnSpanFull(),
                 Repeater::make('rentals')
-                    ->label('Стоимость аренды по регатам')
+                    ->label('Периоды аренды и стоимость')
                     ->columnSpanFull()
                     ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => (bool) $get('for_rent'))
-                    ->addActionLabel('Добавить регату')
+                    ->addActionLabel('Добавить период')
                     ->defaultItems(1)
                     ->collapsible()
                     ->itemLabel(fn (array $state): ?string => static::rentalItemLabel($state))
                     ->schema([
-                        Select::make('regatta_id')
-                            ->label('Регата')
-                            ->placeholder('Выберите регату')
-                            ->options(fn (): array => static::rentableRegattaOptions())
-                            ->getOptionLabelUsing(fn ($value): ?string => \App\Models\Regatta::find($value)?->name)
-                            ->searchable()
+                        DatePicker::make('date_start')
+                            ->label('Дата начала')
+                            ->native(false)
                             ->required()
-                            ->distinct(),
-                        TextInput::make('price')
-                            ->label('Стоимость аренды, ₽')
+                            ->beforeOrEqual('date_end'),
+                        DatePicker::make('date_end')
+                            ->label('Дата окончания')
+                            ->native(false)
+                            ->required()
+                            ->afterOrEqual('date_start'),
+                        TextInput::make('price_event')
+                            ->label('Цена за день, мероприятия, ₽')
                             ->placeholder('Например, 50000')
+                            ->helperText('Стоимость аренды за один день для мероприятий.')
+                            ->numeric()
+                            ->minValue(0)
+                            ->required(),
+                        TextInput::make('price_pro')
+                            ->label('Цена за день, профкоманды, ₽')
+                            ->placeholder('Например, 70000')
+                            ->helperText('Стоимость аренды за один день для профессиональных команд.')
                             ->numeric()
                             ->minValue(0)
                             ->required(),
@@ -402,8 +412,10 @@ class YachtResource extends Resource
                         $data['rentals'] = $record->rentals()
                             ->get()
                             ->map(fn (\App\Models\YachtRental $rental): array => [
-                                'regatta_id' => $rental->regatta_id,
-                                'price'      => $rental->price,
+                                'date_start'  => $rental->date_start?->toDateString(),
+                                'date_end'    => $rental->date_end?->toDateString(),
+                                'price_event' => $rental->price_event,
+                                'price_pro'   => $rental->price_pro,
                             ])
                             ->toArray();
                         $form->fill($data);
@@ -497,76 +509,62 @@ class YachtResource extends Resource
     }
 
     /**
-     * Регаты, доступные для выставления яхты в аренду:
-     * активные и предстоящие (без завершённых/отменённых/перенесённых).
-     *
-     * @return array<string, string>
-     */
-    public static function rentableRegattaOptions(): array
-    {
-        return \App\Models\Regatta::query()
-            ->activeAndClosest()
-            ->get()
-            ->mapWithKeys(fn (\App\Models\Regatta $regatta): array => [
-                $regatta->id => trim($regatta->name . ' (' . $regatta->dateRange() . ')'),
-            ])
-            ->toArray();
-    }
-
-    /**
-     * Читаемая метка строки аренды в Repeater: «Регата — 50 000 ₽».
+     * Читаемая метка строки аренды в Repeater: «01.07.2026 — 10.07.2026 · 50 000 ₽/день».
      */
     public static function rentalItemLabel(array $state): ?string
     {
-        $regattaId = $state['regatta_id'] ?? null;
+        $start = $state['date_start'] ?? null;
+        $end   = $state['date_end'] ?? null;
 
-        if (! $regattaId) {
-            return 'Новая запись';
+        if (! $start && ! $end) {
+            return 'Новый период';
         }
 
-        $label = \App\Models\Regatta::find($regattaId)?->name ?? 'Регата';
-        $price = $state['price'] ?? null;
+        $formatDate = static fn (?string $date): ?string => $date
+            ? \Illuminate\Support\Carbon::parse($date)->format('d.m.Y')
+            : null;
+
+        $range = trim(implode(' — ', array_filter([$formatDate($start), $formatDate($end)])));
+
+        $price = $state['price_event'] ?? null;
 
         return $price !== null && $price !== ''
-            ? $label . ' — ' . number_format((float) $price, 0, '.', ' ') . ' ₽'
-            : $label;
+            ? $range . ' · ' . number_format((float) $price, 0, '.', ' ') . ' ₽/день'
+            : $range;
     }
 
     /**
-     * Синхронизирует предложения аренды яхты с переданными строками формы.
-     * Удаляет снятые регаты, обновляет цены и добавляет новые.
+     * Синхронизирует периоды аренды яхты с переданными строками формы.
+     * Полностью пересоздаёт записи, т.к. у периодов нет естественного ключа.
      *
-     * @param  array<int, array{regatta_id?: string, price?: mixed}>  $rentals
+     * @param  array<int, array{date_start?: string, date_end?: string, price_event?: mixed, price_pro?: mixed}>  $rentals
      */
     public static function syncRentals(Yacht $yacht, array $rentals): void
     {
-        // Если яхта не сдаётся — очищаем все предложения аренды.
+        // Если яхта не сдаётся — очищаем все периоды аренды.
         if (! $yacht->for_rent) {
             $yacht->rentals()->delete();
 
             return;
         }
 
-        $keepRegattaIds = [];
+        $yacht->rentals()->delete();
 
         foreach ($rentals as $rental) {
-            $regattaId = $rental['regatta_id'] ?? null;
+            $start = $rental['date_start'] ?? null;
+            $end   = $rental['date_end'] ?? null;
 
-            if (! $regattaId) {
+            if (! $start || ! $end) {
                 continue;
             }
 
-            $yacht->rentals()->updateOrCreate(
-                ['regatta_id' => $regattaId],
-                ['price' => $rental['price'] ?? null],
-            );
-
-            $keepRegattaIds[] = $regattaId;
+            $yacht->rentals()->create([
+                'date_start'  => $start,
+                'date_end'    => $end,
+                'price_event' => $rental['price_event'] ?? null,
+                'price_pro'   => $rental['price_pro'] ?? null,
+            ]);
         }
-
-        $yacht->rentals()
-            ->whereNotIn('regatta_id', $keepRegattaIds)
-            ->delete();
     }
 
     /**

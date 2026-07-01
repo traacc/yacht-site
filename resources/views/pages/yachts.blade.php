@@ -351,17 +351,17 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                         <table class="w-full border-collapse bg-[#F8F8F8]">
                             <thead>
                                 <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
-                                    <th class="pt-2 pb-2 text-center font-medium a-font">Регата</th>
-                                    <th class="pt-2 pb-2 text-center font-medium a-font">Дата</th>
-                                    <th class="pt-2 pb-2 text-center font-medium a-font">Стоимость аренды</th>
+                                    <th class="pt-2 pb-2 text-center font-medium a-font">Период</th>
+                                    <th class="pt-2 pb-2 text-center font-medium a-font">Мероприятия</th>
+                                    <th class="pt-2 pb-2 text-center font-medium a-font">Профкоманды</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y text-center font-medium">
                                 <template x-for="(r, i) in selectedYacht.rentals" :key="i">
                                     <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
-                                        <td data-label="Регата" class="py-3" x-text="r.regatta"></td>
-                                        <td data-label="Дата" class="py-3" x-text="r.date_event"></td>
-                                        <td data-label="Стоимость аренды" class="py-3 font-semibold text-[#2D92CE]" x-text="r.price"></td>
+                                        <td data-label="Период" class="py-3" x-text="r.date_range"></td>
+                                        <td data-label="Мероприятия" class="py-3 font-semibold text-[#2D92CE]" x-text="r.price_event"></td>
+                                        <td data-label="Профкоманды" class="py-3 font-semibold text-[#2D92CE]" x-text="r.price_pro"></td>
                                     </tr>
                                 </template>
                             </tbody>

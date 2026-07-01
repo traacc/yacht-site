@@ -463,7 +463,7 @@ Route::get('/team/{team}/download-history', function (Team $team) {
 })->name('team.history.pdf');
 Route::view('/teams', 'pages.teams')->name('teams');
 Route::get('/yachts', function () {
-    $yachts = Yacht::with(['user', 'documents', 'regattaEntries.regatta', 'regattaEntries.team', 'rentals.regatta'])
+    $yachts = Yacht::with(['user', 'documents', 'regattaEntries.regatta', 'regattaEntries.team', 'rentals'])
         ->where('approval_status', 'approved')
         ->orderBy('name')
         ->paginate(250);
@@ -514,10 +514,14 @@ Route::get('/yachts', function () {
         'for_rent' => (bool) $yacht->for_rent,
         'rentals' => $yacht->for_rent
             ? $yacht->rentals->map(fn ($rental) => [
-                'regatta' => $rental->regatta?->name ?? '—',
-                'date_event' => $rental->regatta?->dateRange() ?? '—',
-                'price' => $rental->price !== null
-                    ? number_format((float) $rental->price, 0, '.', ' ').' ₽'
+                'date_range' => $rental->date_start && $rental->date_end
+                    ? $rental->date_start->format('d.m.Y').' — '.$rental->date_end->format('d.m.Y')
+                    : '—',
+                'price_event' => $rental->price_event !== null
+                    ? number_format((float) $rental->price_event, 0, '.', ' ').' ₽/день'
+                    : 'по запросу',
+                'price_pro' => $rental->price_pro !== null
+                    ? number_format((float) $rental->price_pro, 0, '.', ' ').' ₽/день'
                     : 'по запросу',
             ])->values()->toArray()
             : [],

@@ -15,14 +15,19 @@ class YachtRental extends Model
 
     protected $fillable = [
         'yacht_id',
-        'regatta_id',
-        'price',
+        'date_start',
+        'date_end',
+        'price_event',
+        'price_pro',
     ];
 
     protected function casts(): array
     {
         return [
-            'price' => 'decimal:2',
+            'date_start'  => 'date',
+            'date_end'    => 'date',
+            'price_event' => 'decimal:2',
+            'price_pro'   => 'decimal:2',
         ];
     }
 
@@ -33,10 +38,5 @@ class YachtRental extends Model
     public function yacht(): BelongsTo
     {
         return $this->belongsTo(Yacht::class);
-    }
-
-    public function regatta(): BelongsTo
-    {
-        return $this->belongsTo(Regatta::class);
     }
 }
