@@ -632,12 +632,34 @@ class RegattaResultResource extends Resource
                 ->live(onBlur: true)
                 ->afterStateUpdated(fn ($state, Set $set) => $set('final_position_overridden', filled($state)))
                 ->suffixAction(self::resetToAutoAction('final_position', 'final_position_overridden'))
-                ->rule(static function () {
-                    return static function (string $attribute, $value, \Closure $fail): void {
+                ->rule(function (Get $get) {
+                    return function (string $attribute, $value, \Closure $fail) use ($get): void {
                         $value = trim((string) $value);
 
                         if ($value === '0' || str_contains($value, '-')) {
                             $fail('Недопустимое значение');
+
+                            return;
+                        }
+
+                        // Уникальность итогового места проверяем только для мест,
+                        // введённых вручную: авторасчёт намеренно допускает ничьи
+                        // (равные суммы очков → одно место, 1-2-2-4, см.
+                        // recomputeItemTotals). Нечисловые значения не проверяем.
+                        if (! $get('final_position_overridden') || $value === '' || ! is_numeric($value)) {
+                            return;
+                        }
+
+                        // $get('../../items') — всё состояние репитера (все строки).
+                        $occurrences = 0;
+                        foreach ($get('../../items') ?? [] as $row) {
+                            if (trim((string) ($row['final_position'] ?? '')) === $value) {
+                                $occurrences++;
+                            }
+                        }
+
+                        if ($occurrences > 1) {
+                            $fail('Это итоговое место уже занято');
                         }
                     };
                 })
