@@ -140,6 +140,14 @@ class Regatta extends Model
         return $this->hasMany(RegattaEvents::class)->orderBy('event_datetime');
     }
 
+    /** Мероприятия расписания регаты (регистрация, открытие, брифинг и т.п.) */
+    public function scheduleEvents(): HasMany
+    {
+        return $this->hasMany(RegattaScheduleEvent::class)
+                    ->orderBy('sort_order')
+                    ->orderBy('event_datetime');
+    }
+
     public function entries(): HasMany
     {
         return $this->hasMany(RegattaEntry::class);

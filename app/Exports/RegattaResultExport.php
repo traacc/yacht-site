@@ -72,12 +72,12 @@ class RegattaResultExport
             ->orderByRaw('CAST(final_position AS UNSIGNED)')
             ->get();
 
-        // ── Гонки регаты (event_type = race), упорядоченные по дате ──────────
+        // ── Гонки регаты, упорядоченные по дате ──────────
         // Результаты отдельных гонок (race_results) привязаны к RegattaEntry,
         // а не к RegattaResultItem, поэтому номера колонок выводим из событий
         // регаты, а данные подтягиваем через заявку команды.
         $raceEvents = $regatta
-            ? $regatta->races()->where('event_type', 'race')->get()
+            ? $regatta->races()->get()
             : collect();
 
         $this->raceNumberByEvent = [];

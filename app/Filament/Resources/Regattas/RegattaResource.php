@@ -291,22 +291,16 @@ class RegattaResource extends Resource
                     ->visible(fn (Get $get): bool => (bool) $get('is_postponed'))
                     ->required(fn (Get $get): bool => (bool) $get('is_postponed')),
 
-                Repeater::make('regatta_events')
-                    ->relationship('races')
+                Repeater::make('schedule_events')
+                    ->relationship('scheduleEvents')
                     ->label('Расписание регаты')
+                    ->helperText('Мероприятия регаты: регистрация, открытие, брифинги и т.п. Гонки задаются в результатах регаты.')
                     ->defaultItems(0)
                     ->reorderable()
+                    ->orderColumn('sort_order')
                     ->schema([
                         TextInput::make('name')
                             ->label('Событие')
-                            ->required(),
-                        Select::make('event_type')
-                            ->label('Тип')
-                            ->options([
-                                'schedule' => 'Расписание',
-                                'race'     => 'Гонка',
-                            ])
-                            ->default('schedule')
                             ->required(),
                         DateTimePicker::make('event_datetime')
                             ->label('Время')
@@ -318,7 +312,7 @@ class RegattaResource extends Resource
                     ->itemLabel(fn (array $state, int $index): ?string => (! empty($state['event_datetime']) && ! empty($state['name']))
                         ? ($index + 1) . ". {$state['event_datetime']} — {$state['name']}"
                         : ($index + 1) . '. Новое событие')
-                    ->columns(4)
+                    ->columns(3)
                     ->columnSpanFull()
                     ->addActionLabel('Добавить пункт расписания')
                     ->collapsible(),

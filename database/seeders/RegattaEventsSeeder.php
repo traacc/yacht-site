@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\Regatta;
 use App\Models\RegattaEvents;
+use App\Models\RegattaScheduleEvent;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -33,8 +34,7 @@ class RegattaEventsSeeder extends Seeder
             ];
 
             foreach ($scheduleEvents as $i => $event) {
-                RegattaEvents::factory()
-                    ->schedule()
+                RegattaScheduleEvent::factory()
                     ->forRegatta($regatta)
                     ->create([
                         'name'        => $event['name'],
@@ -46,6 +46,7 @@ class RegattaEventsSeeder extends Seeder
                         'event_datetime' => $regatta->date_start
                         ->copy()
                         ->setTimeFromTimeString($event['time']),
+                        'sort_order' => $i,
                     ]);
             }
 
@@ -56,7 +57,6 @@ class RegattaEventsSeeder extends Seeder
                 $raceDayOffset = (int) ceil($raceNum / max($regatta->race_days_count ?? 1, 1));
 
                 RegattaEvents::factory()
-                    ->race()
                     ->forRegatta($regatta)
                     ->create([
                         'name'        => "Гонка №{$raceNum}",

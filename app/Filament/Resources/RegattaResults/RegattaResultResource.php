@@ -413,7 +413,6 @@ class RegattaResultResource extends Resource
 
         return RegattaEvents::query()
             ->where('regatta_id', $regattaId)
-            ->where('event_type', 'race')
             ->orderBy('event_datetime')
             ->orderBy('name')
             ->get()
@@ -422,7 +421,7 @@ class RegattaResultResource extends Resource
 
     /**
      * Управление гонками регаты (добавить / изменить / удалить) прямо из окна таблицы.
-     * Сохраняется через relationship regattaRaces (RegattaEvents типа race).
+     * Сохраняется через relationship regattaRaces (RegattaEvents).
      */
     public static function racesManagerSchema(): Section
     {
@@ -448,12 +447,6 @@ class RegattaResultResource extends Resource
                             ->seconds(false)
                             ->nullable(),
                     ])
-                    // Новые события создаём именно как гонку (по умолчанию в БД — schedule).
-                    ->mutateRelationshipDataBeforeCreateUsing(function (array $data): array {
-                        $data['event_type'] = 'race';
-
-                        return $data;
-                    })
                     // На создании результата кэш «существующих гонок» строится во время
                     // валидации, когда у новой записи ещё нет regatta_id (он проставляется
                     // только после создания). С пустым кэшом Filament не находит уже

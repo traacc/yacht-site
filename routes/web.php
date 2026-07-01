@@ -384,8 +384,9 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
             ])->values()->toArray(),
     ])->values()->toArray();
 
-    // Расписание: группируем события (races) по дням
-    $scheduleDays = $regatta->races
+    // Расписание: мероприятия регаты + гонки, сгруппированные по дням
+    $scheduleDays = $regatta->scheduleEvents
+        ->concat($regatta->races)
         ->sortBy('event_datetime') // 1. Гарантируем хронологический порядок событий
         ->groupBy(function ($event) {
             // 2. Используем isoFormat для поддержки русского языка (Carbon)

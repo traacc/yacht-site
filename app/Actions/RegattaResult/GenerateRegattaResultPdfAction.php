@@ -28,9 +28,9 @@ final class GenerateRegattaResultPdfAction
             ->sortBy(fn ($item) => is_numeric($item->final_position) ? (int) $item->final_position : PHP_INT_MAX)
             ->values();
 
-        // ── Гонки регаты (event_type = race) → порядковые номера 1..N ──────────
+        // ── Гонки регаты → порядковые номера 1..N ──────────
         $raceEvents = $regatta
-            ? $regatta->races()->where('event_type', 'race')->get()
+            ? $regatta->races()->get()
             : collect();
 
         $raceNumberByEvent = [];

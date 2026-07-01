@@ -6,9 +6,13 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class RegattaEvents extends Model
+/**
+ * Мероприятие расписания регаты (регистрация, открытие, брифинг и т.п.).
+ *
+ * В отличие от гонок ({@see RegattaEvents}) не имеет результатов.
+ */
+class RegattaScheduleEvent extends Model
 {
     use HasFactory, HasUuids;
 
@@ -17,12 +21,14 @@ class RegattaEvents extends Model
         'name',
         'description',
         'event_datetime',
+        'sort_order',
     ];
 
     protected function casts(): array
     {
         return [
-            'event_datetime'   => 'datetime',
+            'event_datetime' => 'datetime',
+            'sort_order'     => 'integer',
         ];
     }
 
@@ -33,10 +39,5 @@ class RegattaEvents extends Model
     public function regatta(): BelongsTo
     {
         return $this->belongsTo(Regatta::class);
-    }
-
-    public function results(): HasMany
-    {
-        return $this->hasMany(RaceResult::class)->orderBy('position');
     }
 }

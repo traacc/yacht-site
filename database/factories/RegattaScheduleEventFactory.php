@@ -3,25 +3,26 @@
 namespace Database\Factories;
 
 use App\Models\Regatta;
-use App\Models\RegattaEvents;
+use App\Models\RegattaScheduleEvent;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends Factory<RegattaEventsFactory>
+ * @extends Factory<RegattaScheduleEvent>
  */
-class RegattaEventsFactory extends Factory
+class RegattaScheduleEventFactory extends Factory
 {
-    protected $model = RegattaEvents::class;
+    protected $model = RegattaScheduleEvent::class;
 
     public function definition(): array
     {
         return [
-            'id' => (string) Str::uuid(),
-            'regatta_id' => Regatta::factory(),
-            'name' => $this->faker->sentence(3),
-            'description' => $this->faker->optional()->paragraph(),
+            'id'             => (string) Str::uuid(),
+            'regatta_id'     => Regatta::factory(),
+            'name'           => $this->faker->sentence(3),
+            'description'    => $this->faker->optional()->paragraph(),
             'event_datetime' => $this->faker->optional()->dateTimeBetween('now', '+1 year'),
+            'sort_order'     => 0,
         ];
     }
 
