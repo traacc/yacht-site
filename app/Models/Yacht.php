@@ -41,6 +41,7 @@ class Yacht extends Model implements HasMedia
         'owner_photo',
 
         'past_regattas',
+        'suitable_for',
     ];
 
     protected function casts(): array
@@ -48,6 +49,7 @@ class Yacht extends Model implements HasMedia
         return [
             'current_mass_kg' => 'decimal:2',
             'past_regattas'   => 'array',
+            'suitable_for'    => 'array',
             'for_rent'        => 'boolean',
         ];
     }

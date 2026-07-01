@@ -240,6 +240,18 @@ class YachtResource extends Resource
                     ])
                     ->columns(3),
                 */
+                Repeater::make('suitable_for')
+                    ->label('Для чего подходит яхта')
+                    ->columnSpanFull()
+                    ->addActionLabel('Добавить значение')
+                    ->reorderable()
+                    ->defaultItems(0)
+                    ->simple(
+                        TextInput::make('value')
+                            ->label('Значение')
+                            ->placeholder('Например: соревнования')
+                            ->required(),
+                    ),
                 SpatieMediaLibraryFileUpload::make('gallery')
                     ->label('Галерея')
                     ->collection('gallery')
