@@ -645,7 +645,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                 </div>
                 <div class="mb-5">
                     <label class="block text-brand-gray mb-2">Дата</label>
-                    <input type="date" x-model="rentalForm.desired_date"
+                    <input type="date" x-model="rentalForm.desired_date" readonly
                            class="w-full bg-[#F8F8F8] border-none px-4 py-4">
                 </div>
                 <div class="mb-6">
