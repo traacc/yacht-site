@@ -75,7 +75,7 @@ class YachtOptionResource extends Resource
                     ->required()
                     ->unique(table: 'yacht_options', column: 'key', ignoreRecord: true)
                     ->helperText('Уникальный строковый идентификатор. Только латиница, цифры и подчёркивание.')
-                    ->regex('/^[a-z][a-z0-9_]+$/')
+                    ->regex('/^[a-z0-9_]+$/')
                     ->maxLength(100),
 
                 Repeater::make('values')
@@ -90,7 +90,7 @@ class YachtOptionResource extends Resource
                     ->schema([
                         TextInput::make('label')
                             ->label('Название')
-                            ->placeholder('Дакрон')
+                            ->placeholder('Название')
                             ->required()
                             ->maxLength(255)
                             ->live(onBlur: true)
@@ -98,9 +98,9 @@ class YachtOptionResource extends Resource
 
                         TextInput::make('key')
                             ->label('Ключ')
-                            ->placeholder('dacron')
+                            ->placeholder('key')
                             ->required()
-                            ->regex('/^[a-z][a-z0-9_]+$/')
+                            ->regex('/^[a-z0-9_]+$/')
                             ->maxLength(100),
 
                         TextInput::make('sort_order')
