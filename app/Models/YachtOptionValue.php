@@ -31,6 +31,12 @@ class YachtOptionValue extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saved(fn () => YachtOption::flushCache());
+        static::deleted(fn () => YachtOption::flushCache());
+    }
+
     public function option(): BelongsTo
     {
         return $this->belongsTo(YachtOption::class, 'yacht_option_id');
