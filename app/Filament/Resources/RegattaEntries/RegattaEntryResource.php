@@ -31,6 +31,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -434,10 +435,18 @@ class RegattaEntryResource extends Resource
             ->stackedOnMobile()
             ->emptyStateHeading('Записей пока нет')
             ->filters([
+                SelectFilter::make('regatta_id')
+                    ->label('Регата')
+                    ->relationship(
+                        'regatta',
+                        'name',
+                        modifyQueryUsing: fn (Builder $query) => $query->orderBy('date_start'),
+                    )
+                    ->searchable(),
                 SelectFilter::make('source')
                     ->label('Источник')
                     ->options(\App\Enums\RegattaEntrySource::class),
-            ])
+            ], layout: FiltersLayout::AboveContent)
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать заявку на регату')
                     ->mountUsing(function (Schema $form, RegattaEntry $record): void {
