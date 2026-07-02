@@ -554,10 +554,15 @@ Route::get('/yachts', function () {
             ['label' => 'Место регистрации',      'value' => $yacht->reg_place ?? '—'],
             ['label' => 'Масса',   'value' => $yacht->current_mass_kg ?? '—'],
         ],
-        'options' => $yacht->optionValues->map(fn ($value) => [
-            'label' => $value->option->label,
-            'value' => $value->label,
-        ])->values()->toArray(),
+        'options' => $yacht->optionValues
+            ->sortBy([
+                fn ($value) => $value->option->sort_order,
+                fn ($value) => $value->option->label,
+            ])
+            ->map(fn ($value) => [
+                'label' => $value->option->label,
+                'value' => $value->label,
+            ])->values()->toArray(),
         'suitable_for' => $yacht->suitable_for ?? [],
     ])->values()->toJson();
 
