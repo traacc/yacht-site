@@ -26,13 +26,46 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
             return a.name.localeCompare(b.name, 'ru');
         });
     },
+    rentalForm: { name: '', phone: '', desired_date: '', comment: '' },
+    rentalLoading: false,
+    rentalSubmitted: false,
+    rentalError: '',
     openYachtModal(yacht) {
         this.selectedYacht = yacht;
         this.yacht_modal_open = true;
     },
-    openRentalModal() {
+    openRentalModal(date = null) {
+        this.rentalForm = { name: '', phone: '', desired_date: date || '', comment: '' };
+        this.rentalSubmitted = false;
+        this.rentalError = '';
         this.yacht_modal_open = false;
         this.rental_modal_open = true;
+    },
+    async submitRental() {
+        this.rentalError = '';
+        this.rentalLoading = true;
+        try {
+            const url = '{{ url('yachts') }}/' + this.selectedYacht.id + '/rental-request';
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+                body: JSON.stringify(this.rentalForm),
+            });
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.message || 'Произошла ошибка при отправке.');
+            }
+            this.rentalSubmitted = true;
+            this.rentalForm = { name: '', phone: '', desired_date: '', comment: '' };
+        } catch (err) {
+            this.rentalError = err.message || 'Произошла ошибка при отправке. Попробуйте позже.';
+        } finally {
+            this.rentalLoading = false;
+        }
     }
 }" class="main">
     <section class="md:py-12 py-4 reggata-list">
@@ -467,6 +500,93 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             </tbody>
                         </table>
                     </div>
+
+                    {{-- Календарь доступности яхты --}}
+                    <div class="mt-8 bg-[#F8F8F8] p-4 md:p-6"
+                        x-data="{
+                            calMonth: 0,
+                            calYear: 2026,
+                            weekdays: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+                            monthNames: ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
+                            init() {
+                                const rentals = (selectedYacht.rentals || []).filter(r => r.start);
+                                let d = new Date();
+                                if (rentals.length) {
+                                    d = rentals.map(r => new Date(r.start + 'T00:00:00')).sort((a, b) => a - b)[0];
+                                }
+                                this.calMonth = d.getMonth();
+                                this.calYear = d.getFullYear();
+                            },
+                            get monthLabel() { return this.monthNames[this.calMonth] + ' ' + this.calYear; },
+                            prevMonth() {
+                                if (this.calMonth === 0) { this.calMonth = 11; this.calYear--; }
+                                else { this.calMonth--; }
+                            },
+                            nextMonth() {
+                                if (this.calMonth === 11) { this.calMonth = 0; this.calYear++; }
+                                else { this.calMonth++; }
+                            },
+                            statusFor(dateStr) {
+                                for (const r of (selectedYacht.rentals || [])) {
+                                    if (r.start && r.end && dateStr >= r.start && dateStr <= r.end) {
+                                        return r.has_price ? 'free' : 'request';
+                                    }
+                                }
+                                return 'busy';
+                            },
+                            get days() {
+                                const first = new Date(this.calYear, this.calMonth, 1);
+                                let lead = (first.getDay() + 6) % 7;
+                                const inMonth = new Date(this.calYear, this.calMonth + 1, 0).getDate();
+                                const prevDays = new Date(this.calYear, this.calMonth, 0).getDate();
+                                const cells = [];
+                                for (let i = lead - 1; i >= 0; i--) cells.push({ day: prevDays - i, current: false });
+                                for (let d = 1; d <= inMonth; d++) {
+                                    const dateStr = this.calYear + '-' + String(this.calMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+                                    cells.push({ day: d, current: true, date: dateStr, status: this.statusFor(dateStr) });
+                                }
+                                let next = 1;
+                                while (cells.length % 7 !== 0) cells.push({ day: next++, current: false });
+                                return cells;
+                            },
+                            cellClass(cell) {
+                                if (!cell.current) return 'text-[#C6C6C6]';
+                                if (cell.status === 'free') return 'bg-[#BAD5C6] text-[#2E325C] cursor-pointer hover:brightness-95';
+                                if (cell.status === 'request') return 'bg-[#EAE1CB] text-[#2E325C] cursor-pointer hover:brightness-95';
+                                return 'bg-[#F4C9C6] text-[#2E325C] cursor-default';
+                            },
+                            selectDay(cell) {
+                                if (!cell.current || cell.status === 'busy') return;
+                                openRentalModal(cell.date);
+                            }
+                        }">
+                        <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+                            <h6 class="a-font text-xl md:text-2xl text-[#2E325C]" x-text="monthLabel"></h6>
+                            <div class="flex items-center gap-4 flex-wrap text-sm">
+                                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#BAD5C6] inline-block"></span> Свободно</span>
+                                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#F4C9C6] inline-block"></span> Занято</span>
+                                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#EAE1CB] inline-block"></span> По запросу</span>
+                                <div class="flex items-center gap-1">
+                                    <button type="button" @click="prevMonth()" class="w-8 h-8 flex items-center justify-center text-[#2D92CE] text-xl hover:bg-white transition-colors">‹</button>
+                                    <button type="button" @click="nextMonth()" class="w-8 h-8 flex items-center justify-center text-[#2D92CE] text-xl hover:bg-white transition-colors">›</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-7 mb-1">
+                            <template x-for="wd in weekdays" :key="wd">
+                                <div class="text-center font-semibold text-[#2E325C] py-2" x-text="wd"></div>
+                            </template>
+                        </div>
+                        <div class="grid grid-cols-7 gap-px bg-[#EAEAEA] border border-[#EAEAEA]">
+                            <template x-for="(cell, i) in days" :key="i">
+                                <div class="h-12 md:h-16 flex items-center justify-center transition-all"
+                                     :class="cellClass(cell)"
+                                     @click="selectDay(cell)"
+                                     x-text="cell.day"></div>
+                            </template>
+                        </div>
+                    </div>
+
                     <div class="flex justify-end mt-6">
                         <button type="button" @click="openRentalModal()"
                                 class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-3 px-6 font-semibold transition-colors">
@@ -488,40 +608,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
             class="relative p-4 md:p-8 w-full max-w-[820px] max-h-[90vh] overflow-y-auto bg-white"
             x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95"
-            x-transition:enter-end="opacity-100 scale-100"
-            x-data="{
-                loading: false,
-                submitted: false,
-                error: '',
-                form: { name: '', phone: '', desired_date: '', comment: '' },
-                async submitRental() {
-                    this.error = '';
-                    this.loading = true;
-                    try {
-                        const url = '{{ url('yachts') }}/' + selectedYacht.id + '/rental-request';
-                        const response = await fetch(url, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            },
-                            body: JSON.stringify(this.form),
-                        });
-                        if (!response.ok) {
-                            const data = await response.json().catch(() => ({}));
-                            throw new Error(data.message || 'Произошла ошибка при отправке.');
-                        }
-                        this.submitted = true;
-                        this.form = { name: '', phone: '', desired_date: '', comment: '' };
-                    } catch (err) {
-                        this.error = err.message || 'Произошла ошибка при отправке. Попробуйте позже.';
-                    } finally {
-                        this.loading = false;
-                    }
-                }
-            }"
-            @close-rental.window="rental_modal_open = false; submitted = false; error = ''">
+            x-transition:enter-end="opacity-100 scale-100">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="a-font text-2xl md:text-4xl text-[#2E325C]">Запрос аренды</h3>
                 <button type="button" @click="rental_modal_open = false" class="text-2xl font-bold">
@@ -530,38 +617,38 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
             </div>
 
             {{-- Успех --}}
-            <div x-show="submitted" x-cloak
+            <div x-show="rentalSubmitted" x-cloak
                  class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 mb-4" role="alert">
                 <span class="block">Спасибо! Ваш запрос на аренду отправлен. Мы свяжемся с вами в ближайшее время.</span>
             </div>
 
             {{-- Ошибка --}}
-            <div x-show="error" x-cloak
+            <div x-show="rentalError" x-cloak
                  class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 mb-4" role="alert">
-                <span class="block" x-text="error"></span>
+                <span class="block" x-text="rentalError"></span>
             </div>
 
-            <form @submit.prevent="submitRental()" x-show="!submitted">
+            <form @submit.prevent="submitRental()" x-show="!rentalSubmitted">
                 <div class="mb-5">
                     <label class="block text-brand-gray mb-2">Имя</label>
-                    <input type="text" x-model="form.name" required maxlength="255"
+                    <input type="text" x-model="rentalForm.name" required maxlength="255"
                            placeholder="Введите имя"
                            class="w-full bg-[#F8F8F8] border-none px-4 py-4">
                 </div>
                 <div class="mb-5">
                     <label class="block text-brand-gray mb-2">Телефон</label>
-                    <input type="tel" x-model="form.phone" required maxlength="20"
+                    <input type="tel" x-model="rentalForm.phone" required maxlength="20"
                            x-mask="+7 (999) 999-99-99" placeholder="+ 7 (000)-000-00-00"
                            class="w-full bg-[#F8F8F8] border-none px-4 py-4">
                 </div>
                 <div class="mb-5">
                     <label class="block text-brand-gray mb-2">Дата</label>
-                    <input type="date" x-model="form.desired_date"
+                    <input type="date" x-model="rentalForm.desired_date"
                            class="w-full bg-[#F8F8F8] border-none px-4 py-4">
                 </div>
                 <div class="mb-6">
                     <label class="block text-brand-gray mb-2">Комментарий</label>
-                    <textarea x-model="form.comment" maxlength="2000" rows="4"
+                    <textarea x-model="rentalForm.comment" maxlength="2000" rows="4"
                               placeholder="Введите комментарий"
                               class="w-full bg-[#F8F8F8] border-none px-4 py-4 resize-none"></textarea>
                 </div>
@@ -580,9 +667,9 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <button type="submit" :disabled="loading"
+                    <button type="submit" :disabled="rentalLoading"
                             class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-4 font-semibold transition-colors"
-                            x-text="loading ? 'Отправка...' : 'Отправить запрос'"></button>
+                            x-text="rentalLoading ? 'Отправка...' : 'Отправить запрос'"></button>
                     <button type="button" @click="rental_modal_open = false"
                             class="bg-[#F8F8F8] text-[#2E325C] hover:bg-[#EAEAEA] py-4 font-semibold transition-colors">
                         Отменить

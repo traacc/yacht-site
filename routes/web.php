@@ -518,6 +518,9 @@ Route::get('/yachts', function () {
                 'date_range' => $rental->date_start && $rental->date_end
                     ? $rental->date_start->format('d.m.Y').' — '.$rental->date_end->format('d.m.Y')
                     : '—',
+                'start' => $rental->date_start?->format('Y-m-d'),
+                'end' => $rental->date_end?->format('Y-m-d'),
+                'has_price' => $rental->price_event !== null || $rental->price_pro !== null,
                 'price_event' => $rental->price_event !== null
                     ? number_format((float) $rental->price_event, 0, '.', ' ').' ₽/день'
                     : 'по запросу',
