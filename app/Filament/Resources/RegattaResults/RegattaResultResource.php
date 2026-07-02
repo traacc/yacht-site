@@ -522,10 +522,10 @@ class RegattaResultResource extends Resource
             TableColumn::make('Участники')->markAsRequired(false),
         ];
         foreach ($raceEvents as $race) {
-            $columns[] = TableColumn::make($race->name . ' · место / очки')->markAsRequired(false);
+            $columns[] = TableColumn::make(new HtmlString(e($race->name) . ' · место<br>очки'))->markAsRequired(false);
         }
         // Итог (место / очки) — в конце, после колонок гонок.
-        $columns[] = TableColumn::make('Место / Очки')->markAsRequired(false);
+        $columns[] = TableColumn::make(new HtmlString('Место<br>Очки'))->markAsRequired(false);
 
         $fields = [
             Select::make('yacht_id')
