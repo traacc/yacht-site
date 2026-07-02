@@ -16,6 +16,7 @@ use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
+use App\Filament\Forms\Components\RentalCalendar;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -179,41 +180,11 @@ class YachtResource extends Resource
                     ->helperText('Включите, чтобы указать регаты и стоимость аренды яхты.')
                     ->live()
                     ->columnSpanFull(),
-                Repeater::make('rentals')
-                    ->label('Периоды аренды и стоимость')
+                RentalCalendar::make('rentals')
+                    ->label('Периоды аренды')
+                    ->helperText('Отметьте периоды аренды на календаре и укажите стоимость.')
                     ->columnSpanFull()
-                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => (bool) $get('for_rent'))
-                    ->addActionLabel('Добавить период')
-                    ->defaultItems(1)
-                    ->collapsible()
-                    ->itemLabel(fn (array $state): ?string => static::rentalItemLabel($state))
-                    ->schema([
-                        DatePicker::make('date_start')
-                            ->label('Дата начала')
-                            ->native(false)
-                            ->required()
-                            ->beforeOrEqual('date_end'),
-                        DatePicker::make('date_end')
-                            ->label('Дата окончания')
-                            ->native(false)
-                            ->required()
-                            ->afterOrEqual('date_start'),
-                        TextInput::make('price_event')
-                            ->label('Цена за день, мероприятия, ₽')
-                            ->placeholder('Например, 50000')
-                            ->helperText('Стоимость аренды за один день для мероприятий.')
-                            ->numeric()
-                            ->minValue(0)
-                            ->required(),
-                        TextInput::make('price_pro')
-                            ->label('Цена за день, профкоманды, ₽')
-                            ->placeholder('Например, 70000')
-                            ->helperText('Стоимость аренды за один день для профессиональных команд.')
-                            ->numeric()
-                            ->minValue(0)
-                            ->required(),
-                    ])
-                    ->columns(2),
+                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => (bool) $get('for_rent')),
                 /*
                 Repeater::make('past_regattas')
                     ->label('Прошедшие соревнования')
@@ -531,31 +502,6 @@ class YachtResource extends Resource
             ->first(fn (\App\Models\YachtDocumentType $t) => $t->key === $docType);
 
         return $model?->label ?? ($state['title'] ?? null);
-    }
-
-    /**
-     * Читаемая метка строки аренды в Repeater: «01.07.2026 — 10.07.2026 · 50 000 ₽/день».
-     */
-    public static function rentalItemLabel(array $state): ?string
-    {
-        $start = $state['date_start'] ?? null;
-        $end   = $state['date_end'] ?? null;
-
-        if (! $start && ! $end) {
-            return 'Новый период';
-        }
-
-        $formatDate = static fn (?string $date): ?string => $date
-            ? \Illuminate\Support\Carbon::parse($date)->format('d.m.Y')
-            : null;
-
-        $range = trim(implode(' — ', array_filter([$formatDate($start), $formatDate($end)])));
-
-        $price = $state['price_event'] ?? null;
-
-        return $price !== null && $price !== ''
-            ? $range . ' · ' . number_format((float) $price, 0, '.', ' ') . ' ₽/день'
-            : $range;
     }
 
     /**
