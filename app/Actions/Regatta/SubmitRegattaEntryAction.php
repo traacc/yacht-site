@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Regatta;
 
 use App\Enums\PaymentStatus;
+use App\Enums\RegattaEntrySource;
 use App\Enums\TeamMemberRole;
 use App\Exceptions\InsufficientTeamRoleException;
 use App\Models\Regatta;
@@ -62,6 +63,7 @@ final class SubmitRegattaEntryAction
             'team_id'        => $team->id,
             'yacht_id'       => $yacht->id,
             'status'         => 'approved',
+            'source'         => RegattaEntrySource::QuickRequest,
             'submitted_at'   => now(),
             // Сбор за участие отмечается участником только если регата его требует
             'fee_paid'       => $regatta->entry_fee_required ? $feePaid : false,

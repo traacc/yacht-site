@@ -31,6 +31,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -413,6 +414,12 @@ class RegattaEntryResource extends Resource
                         ->exists())
                     ->sortable()
                     ->toggleable(),
+                TextColumn::make('source')
+                    ->label('Источник')
+                    ->badge()
+                    ->formatStateUsing(fn (\App\Enums\RegattaEntrySource $state): string => $state->label())
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -426,7 +433,11 @@ class RegattaEntryResource extends Resource
             ])
             ->stackedOnMobile()
             ->emptyStateHeading('Записей пока нет')
-            ->filters([])
+            ->filters([
+                SelectFilter::make('source')
+                    ->label('Источник')
+                    ->options(\App\Enums\RegattaEntrySource::class),
+            ])
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать заявку на регату')
                     ->mountUsing(function (Schema $form, RegattaEntry $record): void {

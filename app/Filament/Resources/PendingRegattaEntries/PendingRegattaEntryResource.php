@@ -79,6 +79,10 @@ class PendingRegattaEntryResource extends Resource
             TextEntry::make('yacht.name')
                 ->label('Яхта')
                 ->placeholder('—'),
+            TextEntry::make('source')
+                ->label('Источник')
+                ->badge()
+                ->formatStateUsing(fn (\App\Enums\RegattaEntrySource $state): string => $state->label()),
             TextEntry::make('created_at')
                 ->label('Дата подачи')
                 ->dateTime('d.m.Y H:i'),
@@ -202,6 +206,11 @@ class PendingRegattaEntryResource extends Resource
                     ->tooltip(fn (RegattaEntry $record): ?string => $record->hasMissingDocuments()
                         ? 'Поданы не все обязательные документы'
                         : null),
+                TextColumn::make('source')
+                    ->label('Источник')
+                    ->badge()
+                    ->formatStateUsing(fn (\App\Enums\RegattaEntrySource $state): string => $state->label())
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->label('Подана')
                     ->dateTime('d M Y'),

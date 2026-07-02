@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RegattaEntrySource;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,7 @@ class RegattaEntry extends Model
         'team_id',
         'yacht_id',
         'status',
+        'source',
         'documents_complete',
         'fee_paid',
         'submitted_at',
@@ -35,6 +37,7 @@ class RegattaEntry extends Model
             'entry_password'     => 'hashed',
             'documents_complete' => 'boolean',
             'fee_paid'           => 'boolean',
+            'source'             => RegattaEntrySource::class,
         ];
     }
 

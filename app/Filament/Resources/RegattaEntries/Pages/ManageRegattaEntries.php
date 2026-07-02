@@ -6,6 +6,7 @@ namespace App\Filament\Resources\RegattaEntries\Pages;
 
 use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\RegattaEntry\UpdateRegattaEntryRequiredDocumentsAction;
+use App\Enums\RegattaEntrySource;
 use App\Filament\Resources\RegattaEntries\RegattaEntryResource;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
@@ -139,6 +140,8 @@ class ManageRegattaEntries extends ManageRecords
                     $requiredDocs = $data['required_documents'] ?? [];
                     $crew = $data['crew'] ?? [];
                     unset($data['required_documents'], $data['crew']);
+
+                    $data['source'] = RegattaEntrySource::Admin->value;
 
                     // Проверка дубликата до записи в БД
                     /** @var RegattaEntry $model */

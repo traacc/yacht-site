@@ -6,6 +6,7 @@ namespace App\Filament\User\Resources\RegattaEntries\Pages;
 
 use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\RegattaEntry\UpdateRegattaEntryRequiredDocumentsAction;
+use App\Enums\RegattaEntrySource;
 use App\Filament\User\Resources\RegattaEntries\RegattaEntryResource;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
@@ -51,6 +52,7 @@ class ManageRegattaEntries extends ManageRecords
                     unset($data['required_documents'], $data['crew']);
 
                     $data['status'] = 'pending';
+                    $data['source'] = RegattaEntrySource::PersonalCabinet->value;
                     $data['documents_complete'] = RegattaEntryResource::documentsComplete($docs);
 
                     // Проверка дубликата до записи в БД
