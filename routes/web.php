@@ -805,6 +805,30 @@ Route::post('/feedback', function (Request $request) {
     return back()->with('feedback_sent', true);
 })->name('feedback.submit');
 
+// Запрос на аренду яхты (модальное окно на странице каталога яхт)
+Route::post('/yachts/{yacht}/rental-request', function (Request $request, Yacht $yacht) {
+    abort_unless($yacht->for_rent, 404);
+
+    $validated = $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'phone' => ['required', 'string', 'max:20'],
+        'desired_date' => ['nullable', 'date'],
+        'comment' => ['nullable', 'string', 'max:2000'],
+    ]);
+
+    app(\App\Actions\YachtRental\SubmitYachtRentalRequestAction::class)->handle(
+        $yacht,
+        $validated,
+        auth()->id()
+    );
+
+    if ($request->wantsJson()) {
+        return response()->json(['message' => 'Спасибо! Ваш запрос на аренду отправлен.']);
+    }
+
+    return back()->with('rental_request_sent', true);
+})->name('yacht-rental.request');
+
 // Вопрос администрации от зарегистрированного пользователя (модальное окно на главной)
 Route::post('/questions', function (Request $request) {
     $validated = $request->validate([

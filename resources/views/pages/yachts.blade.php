@@ -9,6 +9,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
 
 <main x-data="{
     yacht_modal_open: false,
+    rental_modal_open: false,
     selectedYacht: null,
     yachtsData: {{ $yachtsJson }},
     search: '',
@@ -28,6 +29,10 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
     openYachtModal(yacht) {
         this.selectedYacht = yacht;
         this.yacht_modal_open = true;
+    },
+    openRentalModal() {
+        this.yacht_modal_open = false;
+        this.rental_modal_open = true;
     }
 }" class="main">
     <section class="md:py-12 py-4 reggata-list">
@@ -462,10 +467,130 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             </tbody>
                         </table>
                     </div>
+                    <div class="flex justify-end mt-6">
+                        <button type="button" @click="openRentalModal()"
+                                class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-3 px-6 font-semibold transition-colors">
+                            Запросить аренду →
+                        </button>
+                    </div>
                 </div>
             </div>
             </template>
         </div>
+    </div>
+
+    {{-- Модальное окно: запрос аренды яхты --}}
+    <div x-show="rental_modal_open"
+        x-cloak
+        class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 team-modal">
+        <template x-if="selectedYacht">
+        <div @click.away="rental_modal_open = false"
+            class="relative p-4 md:p-8 w-full max-w-[820px] max-h-[90vh] overflow-y-auto bg-white"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-data="{
+                loading: false,
+                submitted: false,
+                error: '',
+                form: { name: '', phone: '', desired_date: '', comment: '' },
+                async submitRental() {
+                    this.error = '';
+                    this.loading = true;
+                    try {
+                        const url = '{{ url('yachts') }}/' + selectedYacht.id + '/rental-request';
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            },
+                            body: JSON.stringify(this.form),
+                        });
+                        if (!response.ok) {
+                            const data = await response.json().catch(() => ({}));
+                            throw new Error(data.message || 'Произошла ошибка при отправке.');
+                        }
+                        this.submitted = true;
+                        this.form = { name: '', phone: '', desired_date: '', comment: '' };
+                    } catch (err) {
+                        this.error = err.message || 'Произошла ошибка при отправке. Попробуйте позже.';
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }"
+            @close-rental.window="rental_modal_open = false; submitted = false; error = ''">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="a-font text-2xl md:text-4xl text-[#2E325C]">Запрос аренды</h3>
+                <button type="button" @click="rental_modal_open = false" class="text-2xl font-bold">
+                    {!! file_get_contents(public_path('images/icons/close.svg')) !!}
+                </button>
+            </div>
+
+            {{-- Успех --}}
+            <div x-show="submitted" x-cloak
+                 class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 mb-4" role="alert">
+                <span class="block">Спасибо! Ваш запрос на аренду отправлен. Мы свяжемся с вами в ближайшее время.</span>
+            </div>
+
+            {{-- Ошибка --}}
+            <div x-show="error" x-cloak
+                 class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 mb-4" role="alert">
+                <span class="block" x-text="error"></span>
+            </div>
+
+            <form @submit.prevent="submitRental()" x-show="!submitted">
+                <div class="mb-5">
+                    <label class="block text-brand-gray mb-2">Имя</label>
+                    <input type="text" x-model="form.name" required maxlength="255"
+                           placeholder="Введите имя"
+                           class="w-full bg-[#F8F8F8] border-none px-4 py-4">
+                </div>
+                <div class="mb-5">
+                    <label class="block text-brand-gray mb-2">Телефон</label>
+                    <input type="tel" x-model="form.phone" required maxlength="20"
+                           x-mask="+7 (999) 999-99-99" placeholder="+ 7 (000)-000-00-00"
+                           class="w-full bg-[#F8F8F8] border-none px-4 py-4">
+                </div>
+                <div class="mb-5">
+                    <label class="block text-brand-gray mb-2">Дата</label>
+                    <input type="date" x-model="form.desired_date"
+                           class="w-full bg-[#F8F8F8] border-none px-4 py-4">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-brand-gray mb-2">Комментарий</label>
+                    <textarea x-model="form.comment" maxlength="2000" rows="4"
+                              placeholder="Введите комментарий"
+                              class="w-full bg-[#F8F8F8] border-none px-4 py-4 resize-none"></textarea>
+                </div>
+
+                {{-- Стоимость аренды --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"
+                     x-show="selectedYacht.rentals && selectedYacht.rentals.length > 0">
+                    <div class="bg-[#F8F8F8] p-5">
+                        <div class="text-brand-gray mb-2">Для мероприятий</div>
+                        <div class="text-2xl md:text-3xl font-bold text-[#2E325C]" x-text="selectedYacht.rentals[0]?.price_event"></div>
+                    </div>
+                    <div class="bg-[#F8F8F8] p-5">
+                        <div class="text-brand-gray mb-2">Для профессиональных команд</div>
+                        <div class="text-2xl md:text-3xl font-bold text-[#2E325C]" x-text="selectedYacht.rentals[0]?.price_pro"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button type="submit" :disabled="loading"
+                            class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-4 font-semibold transition-colors"
+                            x-text="loading ? 'Отправка...' : 'Отправить запрос'"></button>
+                    <button type="button" @click="rental_modal_open = false"
+                            class="bg-[#F8F8F8] text-[#2E325C] hover:bg-[#EAEAEA] py-4 font-semibold transition-colors">
+                        Отменить
+                    </button>
+                </div>
+            </form>
+        </div>
+        </template>
     </div>
 
 </main>
