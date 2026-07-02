@@ -464,7 +464,7 @@ Route::get('/team/{team}/download-history', function (Team $team) {
 })->name('team.history.pdf');
 Route::view('/teams', 'pages.teams')->name('teams');
 Route::get('/yachts', function () {
-    $yachts = Yacht::with(['user', 'documents', 'regattaEntries.regatta', 'regattaEntries.team', 'rentals'])
+    $yachts = Yacht::with(['user', 'documents', 'regattaEntries.regatta', 'regattaEntries.team', 'rentals', 'optionValues.option'])
         ->where('approval_status', 'approved')
         ->orderBy('name')
         ->paginate(250);
@@ -543,6 +543,10 @@ Route::get('/yachts', function () {
             ['label' => 'Место регистрации',      'value' => $yacht->reg_place ?? '—'],
             ['label' => 'Масса',   'value' => $yacht->current_mass_kg ?? '—'],
         ],
+        'options' => $yacht->optionValues->map(fn ($value) => [
+            'label' => $value->option->label,
+            'value' => $value->label,
+        ])->values()->toArray(),
     ])->values()->toJson();
 
     return view('pages.yachts', compact('yachts', 'yachtsJson'));

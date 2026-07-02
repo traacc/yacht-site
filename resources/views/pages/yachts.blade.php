@@ -218,6 +218,18 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                     </table>
                 </div>
 
+                <div class="mb-8" x-show="selectedYacht.options && selectedYacht.options.length > 0">
+                    <h3 class="text-3xl a-font mb-6">Опции яхты</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2 bg-[#F8F8F8] p-6">
+                        <template x-for="(o, i) in selectedYacht.options" :key="i">
+                            <div class="flex">
+                                <span class="font-semibold py-2 w-64" x-text="o.label + ':'"></span>
+                                <span class="py-2" x-text="o.value"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
                 {{-- Galleries --}}
                 <div class="mb-8"
                      x-show="(selectedYacht.gallery && selectedYacht.gallery.length > 0) || (selectedYacht.interior_gallery && selectedYacht.interior_gallery.length > 0)"
