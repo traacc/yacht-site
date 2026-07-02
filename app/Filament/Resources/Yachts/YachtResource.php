@@ -224,7 +224,7 @@ class YachtResource extends Resource
                             ->required(),
                     ),
                 SpatieMediaLibraryFileUpload::make('gallery')
-                    ->label('Галерея')
+                    ->label('Галерея экстерьера')
                     ->collection('gallery')
                     ->multiple()
                     ->reorderable()
@@ -233,6 +233,7 @@ class YachtResource extends Resource
                     ->imageEditor()
                     ->disk('public')
                     ->visibility('public')
+                    ->panelLayout('grid')
                     ->columnSpanFull(),
                 SpatieMediaLibraryFileUpload::make('interior_gallery')
                     ->label('Галерея интерьера')
@@ -244,6 +245,7 @@ class YachtResource extends Resource
                     ->imageEditor()
                     ->disk('public')
                     ->visibility('public')
+                    ->panelLayout('grid')
                     ->columnSpanFull(),
                 // ── Обязательные документы ──────────────────
                 /*
