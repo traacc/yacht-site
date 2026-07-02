@@ -235,7 +235,93 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                         </table>
                     </div>
                 </div>
-
+                {{-- Календарь доступности яхты --}}
+                <h3 class="text-3xl a-font">Доступность</h3>
+                <p>Нажмите на свободную дату для оформления заявки.</p>
+                <div class="mt-8 bg-[#F8F8F8] p-4 md:p-6"
+                    x-data="{
+                        calMonth: 0,
+                        calYear: 2026,
+                        weekdays: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+                        monthNames: ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
+                        init() {
+                            const rentals = (selectedYacht.rentals || []).filter(r => r.start);
+                            let d = new Date();
+                            if (rentals.length) {
+                                d = rentals.map(r => new Date(r.start + 'T00:00:00')).sort((a, b) => a - b)[0];
+                            }
+                            this.calMonth = d.getMonth();
+                            this.calYear = d.getFullYear();
+                        },
+                        get monthLabel() { return this.monthNames[this.calMonth] + ' ' + this.calYear; },
+                        prevMonth() {
+                            if (this.calMonth === 0) { this.calMonth = 11; this.calYear--; }
+                            else { this.calMonth--; }
+                        },
+                        nextMonth() {
+                            if (this.calMonth === 11) { this.calMonth = 0; this.calYear++; }
+                            else { this.calMonth++; }
+                        },
+                        statusFor(dateStr) {
+                            for (const r of (selectedYacht.rentals || [])) {
+                                if (r.start && r.end && dateStr >= r.start && dateStr <= r.end) {
+                                    return r.has_price ? 'free' : 'request';
+                                }
+                            }
+                            return 'busy';
+                        },
+                        get days() {
+                            const first = new Date(this.calYear, this.calMonth, 1);
+                            let lead = (first.getDay() + 6) % 7;
+                            const inMonth = new Date(this.calYear, this.calMonth + 1, 0).getDate();
+                            const prevDays = new Date(this.calYear, this.calMonth, 0).getDate();
+                            const cells = [];
+                            for (let i = lead - 1; i >= 0; i--) cells.push({ day: prevDays - i, current: false });
+                            for (let d = 1; d <= inMonth; d++) {
+                                const dateStr = this.calYear + '-' + String(this.calMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+                                cells.push({ day: d, current: true, date: dateStr, status: this.statusFor(dateStr) });
+                            }
+                            let next = 1;
+                            while (cells.length % 7 !== 0) cells.push({ day: next++, current: false });
+                            return cells;
+                        },
+                        cellClass(cell) {
+                            if (!cell.current) return 'text-[#C6C6C6]';
+                            if (cell.status === 'free') return 'bg-[#BAD5C6] text-[#2E325C] cursor-pointer hover:brightness-95';
+                            if (cell.status === 'request') return 'bg-[#EAE1CB] text-[#2E325C] cursor-pointer hover:brightness-95';
+                            return 'bg-[#F4C9C6] text-[#2E325C] cursor-default';
+                        },
+                        selectDay(cell) {
+                            if (!cell.current || cell.status === 'busy') return;
+                            openRentalModal(cell.date);
+                        }
+                    }">
+                    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+                        <h6 class="a-font text-xl md:text-2xl text-[#2E325C]" x-text="monthLabel"></h6>
+                        <div class="flex items-center gap-4 flex-wrap text-sm">
+                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#BAD5C6] inline-block"></span> Свободно</span>
+                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#F4C9C6] inline-block"></span> Занято</span>
+                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#EAE1CB] inline-block"></span> По запросу</span>
+                            <div class="flex items-center gap-1">
+                                <button type="button" @click="prevMonth()" class="w-8 h-8 flex items-center justify-center text-[#2D92CE] text-xl hover:bg-white transition-colors">‹</button>
+                                <button type="button" @click="nextMonth()" class="w-8 h-8 flex items-center justify-center text-[#2D92CE] text-xl hover:bg-white transition-colors">›</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-7 mb-1">
+                        <template x-for="wd in weekdays" :key="wd">
+                            <div class="text-center font-semibold text-[#2E325C] py-2" x-text="wd"></div>
+                        </template>
+                    </div>
+                    <div class="grid grid-cols-7 gap-px bg-[#EAEAEA] border border-[#EAEAEA]">
+                        <template x-for="(cell, i) in days" :key="i">
+                            <div class="h-12 md:h-16 flex items-center justify-center transition-all"
+                                    :class="cellClass(cell)"
+                                    @click="selectDay(cell)"
+                                    x-text="cell.day"></div>
+                        </template>
+                    </div>
+                </div>
                 <h3 class="text-3xl a-font mb-6">Параметры яхты</h3>
                 <div class="overflow-y-auto relative custom-scroll mb-8">
                     <table class="w-full border-collapse bg-[#F8F8F8]">
@@ -500,99 +586,14 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             </tbody>
                         </table>
                     </div>
-
-                    {{-- Календарь доступности яхты --}}
-                    <div class="mt-8 bg-[#F8F8F8] p-4 md:p-6"
-                        x-data="{
-                            calMonth: 0,
-                            calYear: 2026,
-                            weekdays: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
-                            monthNames: ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
-                            init() {
-                                const rentals = (selectedYacht.rentals || []).filter(r => r.start);
-                                let d = new Date();
-                                if (rentals.length) {
-                                    d = rentals.map(r => new Date(r.start + 'T00:00:00')).sort((a, b) => a - b)[0];
-                                }
-                                this.calMonth = d.getMonth();
-                                this.calYear = d.getFullYear();
-                            },
-                            get monthLabel() { return this.monthNames[this.calMonth] + ' ' + this.calYear; },
-                            prevMonth() {
-                                if (this.calMonth === 0) { this.calMonth = 11; this.calYear--; }
-                                else { this.calMonth--; }
-                            },
-                            nextMonth() {
-                                if (this.calMonth === 11) { this.calMonth = 0; this.calYear++; }
-                                else { this.calMonth++; }
-                            },
-                            statusFor(dateStr) {
-                                for (const r of (selectedYacht.rentals || [])) {
-                                    if (r.start && r.end && dateStr >= r.start && dateStr <= r.end) {
-                                        return r.has_price ? 'free' : 'request';
-                                    }
-                                }
-                                return 'busy';
-                            },
-                            get days() {
-                                const first = new Date(this.calYear, this.calMonth, 1);
-                                let lead = (first.getDay() + 6) % 7;
-                                const inMonth = new Date(this.calYear, this.calMonth + 1, 0).getDate();
-                                const prevDays = new Date(this.calYear, this.calMonth, 0).getDate();
-                                const cells = [];
-                                for (let i = lead - 1; i >= 0; i--) cells.push({ day: prevDays - i, current: false });
-                                for (let d = 1; d <= inMonth; d++) {
-                                    const dateStr = this.calYear + '-' + String(this.calMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-                                    cells.push({ day: d, current: true, date: dateStr, status: this.statusFor(dateStr) });
-                                }
-                                let next = 1;
-                                while (cells.length % 7 !== 0) cells.push({ day: next++, current: false });
-                                return cells;
-                            },
-                            cellClass(cell) {
-                                if (!cell.current) return 'text-[#C6C6C6]';
-                                if (cell.status === 'free') return 'bg-[#BAD5C6] text-[#2E325C] cursor-pointer hover:brightness-95';
-                                if (cell.status === 'request') return 'bg-[#EAE1CB] text-[#2E325C] cursor-pointer hover:brightness-95';
-                                return 'bg-[#F4C9C6] text-[#2E325C] cursor-default';
-                            },
-                            selectDay(cell) {
-                                if (!cell.current || cell.status === 'busy') return;
-                                openRentalModal(cell.date);
-                            }
-                        }">
-                        <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-                            <h6 class="a-font text-xl md:text-2xl text-[#2E325C]" x-text="monthLabel"></h6>
-                            <div class="flex items-center gap-4 flex-wrap text-sm">
-                                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#BAD5C6] inline-block"></span> Свободно</span>
-                                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#F4C9C6] inline-block"></span> Занято</span>
-                                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#EAE1CB] inline-block"></span> По запросу</span>
-                                <div class="flex items-center gap-1">
-                                    <button type="button" @click="prevMonth()" class="w-8 h-8 flex items-center justify-center text-[#2D92CE] text-xl hover:bg-white transition-colors">‹</button>
-                                    <button type="button" @click="nextMonth()" class="w-8 h-8 flex items-center justify-center text-[#2D92CE] text-xl hover:bg-white transition-colors">›</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-7 mb-1">
-                            <template x-for="wd in weekdays" :key="wd">
-                                <div class="text-center font-semibold text-[#2E325C] py-2" x-text="wd"></div>
-                            </template>
-                        </div>
-                        <div class="grid grid-cols-7 gap-px bg-[#EAEAEA] border border-[#EAEAEA]">
-                            <template x-for="(cell, i) in days" :key="i">
-                                <div class="h-12 md:h-16 flex items-center justify-center transition-all"
-                                     :class="cellClass(cell)"
-                                     @click="selectDay(cell)"
-                                     x-text="cell.day"></div>
-                            </template>
-                        </div>
-                    </div>
-
+                    <!--
                     <div class="flex justify-end mt-6">
                         <button type="button" @click="openRentalModal()"
                                 class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-3 px-6 font-semibold transition-colors">
                             Запросить аренду →
                         </button>
                     </div>
+                    -->
                 </div>
             </div>
             </template>
