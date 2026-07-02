@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\RentalRequestStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +20,7 @@ class YachtRentalRequest extends Model
         'phone',
         'desired_date',
         'comment',
+        'status',
         'source',
         'user_id',
     ];
@@ -27,7 +29,13 @@ class YachtRentalRequest extends Model
     {
         return [
             'desired_date' => 'date',
+            'status'       => RentalRequestStatus::class,
         ];
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === RentalRequestStatus::Pending;
     }
 
     // ──────────────────────────────────────────────

@@ -99,6 +99,12 @@ class Yacht extends Model implements HasMedia
         return $this->hasMany(YachtRental::class);
     }
 
+    /** Запросы на аренду яхты от пользователей */
+    public function rentalRequests(): HasMany
+    {
+        return $this->hasMany(YachtRentalRequest::class);
+    }
+
     /** Документы (ORC-сертификаты, технические паспорта) */
     public function documents(): MorphMany
     {

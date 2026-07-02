@@ -263,6 +263,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             else { this.calMonth++; }
                         },
                         statusFor(dateStr) {
+                            if ((selectedYacht.booked_dates || []).includes(dateStr)) return 'busy';
                             for (const r of (selectedYacht.rentals || [])) {
                                 if (r.start && r.end && dateStr >= r.start && dateStr <= r.end) {
                                     return r.has_price ? 'free' : 'request';

@@ -464,7 +464,10 @@ Route::get('/team/{team}/download-history', function (Team $team) {
 })->name('team.history.pdf');
 Route::view('/teams', 'pages.teams')->name('teams');
 Route::get('/yachts', function () {
-    $yachts = Yacht::with(['user', 'documents', 'regattaEntries.regatta', 'regattaEntries.team', 'rentals', 'optionValues.option'])
+    $yachts = Yacht::with([
+        'user', 'documents', 'regattaEntries.regatta', 'regattaEntries.team', 'rentals', 'optionValues.option',
+        'rentalRequests' => fn ($query) => $query->where('status', \App\Enums\RentalRequestStatus::Approved)->whereNotNull('desired_date'),
+    ])
         ->where('approval_status', 'approved')
         ->orderBy('name')
         ->paginate(250);
@@ -528,6 +531,11 @@ Route::get('/yachts', function () {
                     ? number_format((float) $rental->price_pro, 0, '.', ' ').' ₽/день'
                     : 'по запросу',
             ])->values()->toArray()
+            : [],
+        // Даты одобренных заявок на аренду — помечаются в календаре как «Занято»
+        'booked_dates' => $yacht->for_rent
+            ? $yacht->rentalRequests->map(fn ($request) => $request->desired_date?->format('Y-m-d'))
+                ->filter()->unique()->values()->toArray()
             : [],
         'gallery' => $yacht->getMedia('gallery')->map(fn ($media) => [
             'url' => $media->getUrl(),
