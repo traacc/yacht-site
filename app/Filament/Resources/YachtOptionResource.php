@@ -79,7 +79,7 @@ class YachtOptionResource extends Resource
                     ->maxLength(100),
 
                 Repeater::make('values')
-                    ->relationship()
+                    ->relationship(modifyQueryUsing: fn ($query) => $query->orderBy('sort_order')->orderBy('label'))
                     ->label('Значения')
                     ->helperText('Варианты, из которых можно будет выбрать значение этой опции на странице яхты.')
                     ->addActionLabel('Добавить значение')
