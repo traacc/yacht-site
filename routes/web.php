@@ -547,6 +547,7 @@ Route::get('/yachts', function () {
             'label' => $value->option->label,
             'value' => $value->label,
         ])->values()->toArray(),
+        'suitable_for' => $yacht->suitable_for ?? [],
     ])->values()->toJson();
 
     return view('pages.yachts', compact('yachts', 'yachtsJson'));

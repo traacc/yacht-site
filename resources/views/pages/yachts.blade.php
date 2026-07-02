@@ -230,6 +230,21 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                     </div>
                 </div>
 
+                <div class="mb-8" x-show="selectedYacht.suitable_for && selectedYacht.suitable_for.length > 0">
+                    <h3 class="text-3xl a-font">Для чего подходит яхта</h3>
+                    <div class="flex flex-col gap-3 p-6 pl-0">
+                        <template x-for="(item, i) in selectedYacht.suitable_for" :key="i">
+                            <div class="flex items-center gap-3">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="shrink-0" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="3" y="3" width="18" height="18" rx="0" stroke="#2E325C" stroke-width="1"/>
+                                    <path d="M7 12l3 3 7-7" stroke="#2D92CE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <span x-text="item"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
                 {{-- Galleries --}}
                 <div class="mb-8"
                      x-show="(selectedYacht.gallery && selectedYacht.gallery.length > 0) || (selectedYacht.interior_gallery && selectedYacht.interior_gallery.length > 0)"
