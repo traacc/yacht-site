@@ -300,6 +300,7 @@ Route::get('/regattas/entries', function () {
     // Все заявки по каждой регате (любой статус), сгруппированные по регате.
     $regattas = Regatta::query()
         ->whereHas('entries')
+        ->where('date_end', '>=', now()->format('Y-m-d'))
         ->with([
             'entries' => fn ($q) => $q->orderBy('submitted_at'),
             'entries.team.organizer',
@@ -307,7 +308,7 @@ Route::get('/regattas/entries', function () {
             'entries.crew.teamMember.user',
             'season',
         ])
-        ->orderBy('date_start', 'desc')
+        ->orderBy('date_start', 'asc')
         ->get();
 
     return view('pages.regatta-entries', compact('regattas'));
