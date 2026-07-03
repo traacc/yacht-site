@@ -607,6 +607,20 @@ class RegattaResultResource extends Resource
                             }
                         };
                     })
+                    // Очки подставляем сразу после ввода места по тем же правилам,
+                    // что и при сохранении (deriveRacePoints): числовое место → те же
+                    // очки, буквенный статус (DNF/DSQ…) → число лодок + 1, скобки —
+                    // сброшенная гонка. Существующие очки игнорируем (передаём null),
+                    // чтобы правка места пересчитывала очки.
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(function ($state, Get $get, Set $set) use ($i): void {
+                        // Число лодок — участники с командой (как в saveRaceResults).
+                        $boatCount = collect($get('../../items') ?? [])
+                            ->filter(fn ($row): bool => filled($row['team_id'] ?? null))
+                            ->count();
+
+                        $set("race_{$i}_points", self::deriveRacePoints($state, null, $boatCount));
+                    })
                     ->nullable(),
                 TextInput::make("race_{$i}_points")
                     ->label($race->name . ' · очки')
