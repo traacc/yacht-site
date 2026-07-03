@@ -916,7 +916,7 @@ class RegattaResultResource extends Resource
      *    очки, а «(5)» нечисловое.
      *
      * Введённые вручную очки сохраняются как есть (числовые — округляются до
-     * десятых); скобки согласуются со скобками места.
+     * десятых); скобки у очков (как и скобки места) помечают сброшенную гонку.
      */
     public static function deriveRacePoints(mixed $position, mixed $points, int $boatCount): mixed
     {
@@ -929,10 +929,12 @@ class RegattaResultResource extends Resource
         $inner     = $isDiscard ? trim(substr($position, 1, -1)) : $position;
 
         if (filled($points)) {
-            // Очки заданы вручную — убираем внешние скобки, чтобы согласовать их со скобками места.
+            // Очки заданы вручную — снимаем внешние скобки, но сам факт скобок
+            // тоже считаем признаком сброшенной гонки (наравне со скобками места).
             $value = (string) $points;
             if (str_starts_with($value, '(') && str_ends_with($value, ')')) {
-                $value = trim(substr($value, 1, -1));
+                $value     = trim(substr($value, 1, -1));
+                $isDiscard = true;
             }
         } elseif ($inner === '') {
             return null;
