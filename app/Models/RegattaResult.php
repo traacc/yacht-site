@@ -40,7 +40,10 @@ class RegattaResult extends Model
 
     public function items(): HasMany
     {
-        return $this->hasMany(RegattaResultItem::class)->orderBy('final_position');
+        // final_position — строковая колонка (может быть пустой/нечисловой),
+        // поэтому сортируем как число: пустые/NULL в конец, остальные по возрастанию.
+        return $this->hasMany(RegattaResultItem::class)
+            ->orderByRaw("(final_position IS NULL OR final_position = ''), CAST(final_position AS UNSIGNED)");
     }
 
     /**
