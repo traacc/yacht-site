@@ -66,7 +66,12 @@
                                 <th class="pb-2 text-center font-medium w-10 md:w-16 a-font"></th>
                                 <th class="pb-2 text-left font-medium a-font">Команда</th>
                                 @foreach($regattas as $i => $r)
-                                    <th class="pb-2 px-2 text-center font-medium a-font" title="{{ $r['name'] }}">{{ $i + 1 }}</th>
+                                    <th class="pb-2 px-2 text-center font-medium a-font" title="{{ $r['name'] }}">
+                                        <div>{{ $i + 1 }}</div>
+                                        @if($r['date'])
+                                            <div class="text-xs text-brand-gray-light font-normal whitespace-nowrap">{{ $r['date'] }}</div>
+                                        @endif
+                                    </th>
                                 @endforeach
                                 <th class="pb-2 px-3 text-center font-medium a-font">Очки</th>
                             </tr>
