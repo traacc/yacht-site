@@ -721,7 +721,13 @@ class RegattaResultResource extends Resource
             ->label('Результаты участников')
             ->relationship('items')
             // Горизонтальный скролл — при многих гонках таблица шире экрана (см. theme.css).
-            ->extraAttributes(['class' => 'fi-scrollable-table-repeater'])
+            // wire:loading.class — прелоадер: после правки поля «место»/«очки»
+            // (live onBlur) очки пересчитываются на сервере; на время запроса
+            // таблица тускнеет и блокируется, показывая, что идёт обработка.
+            ->extraAttributes([
+                'class'              => 'fi-scrollable-table-repeater',
+                'wire:loading.class' => 'opacity-50 pointer-events-none transition-opacity duration-200',
+            ])
             ->table($columns)
             ->schema($fields)
             // ->relationship() ставит dehydrated(false); возвращаем true, чтобы строки
