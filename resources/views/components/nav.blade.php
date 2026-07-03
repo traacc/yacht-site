@@ -43,7 +43,7 @@
                         <a href="{{ route('competitions') }}"  class="block px-4 py-2 text-gray-700">Календарь</a>
                         <a href="{{ route('competitions') }}#results"  class="block px-4 py-2 text-gray-700">Результаты</a>
                         @endif
-                        <a href="{{ route('series-results') }}" class="block px-4 py-2 text-gray-700">Серии</a>
+                        <a href="{{ route('series-results', ['desc' => 1]) }}" class="block px-4 py-2 text-gray-700">Серии</a>
                         <a href="{{ route('regatta-entries') }}" class="block w-full text-left px-4 py-2 text-gray-700">Заявки</a>
                     </div>
                 </div>
@@ -226,7 +226,7 @@
                             <a href="{{ route('competitions') }}"  class="block px-4 py-2 text-sm">Календарь</a>
                             <a href="{{ route('competitions') }}#results"  class="block px-4 py-2 text-sm">Результаты</a>
                             @endif
-                            <a href="{{ route('series-results') }}" class="block px-4 py-2 text-sm">Серии</a>
+                            <a href="{{ route('series-results', ['desc' => 1]) }}" class="block px-4 py-2 text-sm">Серии</a>
                             <a href="{{ route('regatta-entries') }}" class="block w-full text-left px-4 py-2 text-sm">Заявки</a>
                         </div>
                     </div>
