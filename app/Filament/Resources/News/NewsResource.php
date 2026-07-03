@@ -191,7 +191,7 @@ class NewsResource extends Resource
                             Notification::make()
                                 ->warning()
                                 ->title('VK не настроен')
-                                ->body('Не заданы VK_ACCESS_TOKEN и/или VK_GROUP_ID.')
+                                ->body('Не заданы данные VK ID (VK_CLIENT_ID / VK_CLIENT_SECRET / VK_REFRESH_TOKEN) и/или VK_GROUP_ID.')
                                 ->send();
 
                             return;

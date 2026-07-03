@@ -3,10 +3,11 @@
 namespace App\Services;
 
 use App\Models\News;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
-use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -21,18 +22,35 @@ class VkService
     // VK позволяет очень длинные посты; ограничиваем тело новости разумным запасом.
     private const TEXT_LIMIT = 4000;
 
+    // Эндпоинт VK ID для обмена refresh-токена на access-токен.
+    private const TOKEN_ENDPOINT = 'https://id.vk.com/oauth2/auth';
+
+    // Ключи в таблице settings (группа «vk»), где хранится ротируемый токен.
+    private const SETTING_ACCESS_TOKEN = 'vk.access_token';
+    private const SETTING_ACCESS_EXPIRES = 'vk.access_token_expires_at';
+    private const SETTING_REFRESH_TOKEN = 'vk.refresh_token';
+
     public function __construct(
         private readonly ?string $accessToken = null,
         private readonly ?string $groupId = null,
         private readonly ?string $apiVersion = null,
         private readonly ?string $proxy = null,
+        private ?SettingsService $settings = null,
     ) {
         // Значения по умолчанию берём из config/services.php.
     }
 
-    private function token(): ?string
+    private function settings(): SettingsService
     {
-        return $this->accessToken ?? config('services.vk.access_token');
+        return $this->settings ??= app(SettingsService::class);
+    }
+
+    /**
+     * Статический access token (в обход refresh-flow), если он задан вручную.
+     */
+    private function staticToken(): ?string
+    {
+        return $this->accessToken ?? config('services.vk.access_token') ?: null;
     }
 
     private function group(): ?string
@@ -52,7 +70,18 @@ class VkService
 
     public function isConfigured(): bool
     {
-        return ! empty($this->token()) && ! empty($this->group());
+        if (empty($this->group())) {
+            return false;
+        }
+
+        // Либо задан статический токен, либо есть всё для refresh-flow.
+        if (! empty($this->staticToken())) {
+            return true;
+        }
+
+        return ! empty(config('services.vk.client_id'))
+            && ! empty(config('services.vk.client_secret'))
+            && ! empty($this->currentRefreshToken());
     }
 
     /**
@@ -75,6 +104,144 @@ class VkService
 
         return $this->wallPost($this->caption($news), $attachment, $news);
     }
+
+    // ──────────────────────────────────────────────
+    // Access token (VK ID, refresh-token flow)
+    // ──────────────────────────────────────────────
+
+    /**
+     * Возвращает действующий access token: статический (если задан) либо
+     * полученный/обновлённый по refresh-токену.
+     */
+    private function accessToken(News $news): ?string
+    {
+        $static = $this->staticToken();
+
+        if (! empty($static)) {
+            return $static;
+        }
+
+        return $this->accessTokenViaRefresh($news);
+    }
+
+    /**
+     * Отдаёт кэшированный access token, а при истечении срока — обновляет его.
+     * Обновление сериализуется блокировкой, чтобы параллельные процессы не
+     * ротировали refresh-токен дважды (второй раз он уже недействителен).
+     */
+    private function accessTokenViaRefresh(News $news): ?string
+    {
+        if (($token = $this->cachedAccessToken()) !== null) {
+            return $token;
+        }
+
+        $lock = Cache::lock('vk:token-refresh', 20);
+
+        try {
+            $lock->block(15);
+        } catch (LockTimeoutException) {
+            // Токен обновляет другой процесс — берём то, что уже сохранено.
+            return $this->cachedAccessToken();
+        }
+
+        try {
+            // Повторная проверка: токен мог обновить сосед, пока мы ждали.
+            return $this->cachedAccessToken() ?? $this->refreshAccessToken($news);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * Действующий access token из настроек либо null, если он истёк
+     * (запас 60 секунд на выполнение запросов).
+     */
+    private function cachedAccessToken(): ?string
+    {
+        $token     = $this->settings()->get(self::SETTING_ACCESS_TOKEN);
+        $expiresAt = (int) $this->settings()->get(self::SETTING_ACCESS_EXPIRES, 0);
+
+        return (! empty($token) && $expiresAt > time() + 60) ? (string) $token : null;
+    }
+
+    /**
+     * Обменивает refresh-токен на новый access-токен и сохраняет обновлённые
+     * значения (включая новый refresh-токен — VK ротирует его при каждом обмене).
+     */
+    private function refreshAccessToken(News $news): ?string
+    {
+        $refreshToken = $this->currentRefreshToken();
+
+        if (empty($refreshToken)) {
+            Log::warning('VK refresh token is not configured', ['news_id' => $news->id]);
+
+            return null;
+        }
+
+        $params = [
+            'grant_type'    => 'refresh_token',
+            'refresh_token' => $refreshToken,
+            'client_id'     => config('services.vk.client_id'),
+            'client_secret' => config('services.vk.client_secret'),
+        ];
+
+        // device_id требуется некоторым приложениям VK ID — передаём, если задан.
+        if (! empty($deviceId = config('services.vk.device_id'))) {
+            $params['device_id'] = $deviceId;
+        }
+
+        try {
+            $response = $this->baseRequest()->asForm()->post(self::TOKEN_ENDPOINT, $params);
+        } catch (ConnectionException | RequestException $e) {
+            Log::warning('VK token refresh connection failed', [
+                'news_id' => $news->id,
+                'error'   => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        $json = $response->json();
+
+        if (! $response->successful() || ! is_array($json) || empty($json['access_token'])) {
+            Log::warning('VK token refresh failed', [
+                'news_id' => $news->id,
+                'status'  => $response->status(),
+                'body'    => $response->body(),
+            ]);
+
+            return null;
+        }
+
+        $accessToken = (string) $json['access_token'];
+        $expiresIn   = (int) ($json['expires_in'] ?? 3600);
+
+        $this->settings()->set(self::SETTING_ACCESS_TOKEN, $accessToken, 'vk');
+        $this->settings()->set(self::SETTING_ACCESS_EXPIRES, time() + $expiresIn, 'vk');
+        // Сохраняем новый refresh-токен: без этого следующее обновление упадёт.
+        $this->settings()->set(self::SETTING_REFRESH_TOKEN, (string) ($json['refresh_token'] ?? $refreshToken), 'vk');
+
+        return $accessToken;
+    }
+
+    /**
+     * Актуальный refresh-токен: сначала из настроек (ротируемый),
+     * затем стартовое значение из конфига/.env.
+     */
+    private function currentRefreshToken(): ?string
+    {
+        $stored = $this->settings()->get(self::SETTING_REFRESH_TOKEN);
+
+        if (! empty($stored)) {
+            return (string) $stored;
+        }
+
+        return config('services.vk.refresh_token') ?: null;
+    }
+
+    // ──────────────────────────────────────────────
+    // Публикация
+    // ──────────────────────────────────────────────
 
     /**
      * Загружает обложку на стену сообщества и возвращает строку вложения
@@ -180,13 +347,26 @@ class VkService
     /**
      * Вызывает метод VK API и единообразно обрабатывает ответ/ошибки.
      * Возвращает содержимое ключа «response» либо null при ошибке.
+     * При ошибке авторизации (код 5) один раз сбрасывает access-токен и
+     * повторяет запрос — на случай, если токен протух между вызовами.
      *
      * @param  array<string, mixed>  $params
      * @return array<mixed>|null
      */
-    private function apiCall(string $method, array $params, News $news): ?array
+    private function apiCall(string $method, array $params, News $news, bool $allowRetry = true): ?array
     {
-        $params['access_token'] = $this->token();
+        $token = $this->accessToken($news);
+
+        if ($token === null) {
+            Log::warning('VK access token unavailable', [
+                'news_id' => $news->id,
+                'method'  => $method,
+            ]);
+
+            return null;
+        }
+
+        $params['access_token'] = $token;
         $params['v']            = $this->version();
 
         try {
@@ -195,6 +375,17 @@ class VkService
 
             if ($response->successful() && is_array($json) && array_key_exists('response', $json)) {
                 return (array) $json['response'];
+            }
+
+            // Код 5 — «User authorization failed»: токен протух. Сбрасываем кэш
+            // и повторяем один раз (только если работаем через refresh-flow).
+            if ($allowRetry
+                && ($json['error']['error_code'] ?? null) === 5
+                && empty($this->staticToken())
+            ) {
+                $this->settings()->set(self::SETTING_ACCESS_EXPIRES, 0, 'vk');
+
+                return $this->apiCall($method, $params, $news, allowRetry: false);
             }
 
             Log::warning('VK API responded with error', [

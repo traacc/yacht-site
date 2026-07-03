@@ -58,13 +58,22 @@ return [
     ],
 
     'vk' => [
-        // Ключ доступа сообщества или пользователя со scope wall,photos.
-        'access_token' => env('VK_ACCESS_TOKEN'),
+        // Приложение VK ID (настройки приложения на id.vk.com).
+        'client_id'     => env('VK_CLIENT_ID'),
+        'client_secret' => env('VK_CLIENT_SECRET'),
+        // Стартовый refresh-токен. VK ротирует его при каждом обновлении,
+        // поэтому актуальное значение хранится в таблице settings (группа vk),
+        // а это — значение для «холодного» старта.
+        'refresh_token' => env('VK_REFRESH_TOKEN'),
+        // device_id из VK ID (если требуется вашим приложением).
+        'device_id'     => env('VK_DEVICE_ID'),
+        // Необязательный статический access token в обход refresh-flow.
+        'access_token'  => env('VK_ACCESS_TOKEN'),
         // ID сообщества (положительное число, без минуса).
-        'group_id'     => env('VK_GROUP_ID'),
+        'group_id'      => env('VK_GROUP_ID'),
         // Версия VK API.
-        'api_version'  => env('VK_API_VERSION', '5.199'),
+        'api_version'   => env('VK_API_VERSION', '5.199'),
         // Прокси для VK API (если требуется): socks5://... или http://...
-        'proxy'        => env('VK_PROXY'),
+        'proxy'         => env('VK_PROXY'),
     ],
 ];
