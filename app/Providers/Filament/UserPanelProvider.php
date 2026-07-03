@@ -40,6 +40,8 @@ class UserPanelProvider extends PanelProvider
             ->profile(\App\Filament\User\Pages\EditProfile::class, isSimple: false) 
             ->darkMode(false)
             ->favicon(asset('favicon.jpg?v=4'))
+            ->brandLogo(asset('images/logo.svg'))
+            ->brandLogoHeight('2rem')
             ->colors([
                 'primary' => Color::Blue,
             ])
