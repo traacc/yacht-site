@@ -823,6 +823,14 @@ class RegattaResultResource extends Resource
                 $points   = $row["race_{$i}_points"] ?? null;
 
                 if (blank($position) && blank($points)) {
+                    // Оба поля очищены — удаляем ранее сохранённый результат гонки,
+                    // иначе строка просто пропускается и старое значение остаётся
+                    // в БД (при повторном открытии таблицы подгружается обратно).
+                    RaceResult::query()
+                        ->where('event_id', $eventId)
+                        ->where('regatta_entry_id', $entry->id)
+                        ->delete();
+
                     continue;
                 }
 
