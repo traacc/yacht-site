@@ -14,6 +14,8 @@
         teamModalData: null,
         scoresModal: false,
         scoresModalData: null,
+        resultModal: false,
+        resultModalData: null,
         openTeam(team) {
             this.teamModalData = team;
             this.teamModal = true;
@@ -22,12 +24,16 @@
             this.scoresModalData = data;
             this.scoresModal = true;
         },
+        openResult(data) {
+            this.resultModalData = data;
+            this.resultModal = true;
+        },
         initials(name) {
             if (!name) return '?';
             return name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
         }
     }"
-    @keydown.escape.window="teamModal = false; scoresModal = false"
+    @keydown.escape.window="teamModal = false; scoresModal = false; resultModal = false"
 >
     <x-ratings-tabs :tabs="[
         'team' => ['label' => 'Командный рейтинг', 'url' => route('ratings')],
@@ -88,9 +94,23 @@
                                         >{{ $row['name'] }}</button>
                                     </td>
                                     @foreach($regattas as $r)
+                                        @php
+                                            $resultData = isset($row['points'][$r['id']]) ? [
+                                                'team'    => $row['name'],
+                                                'regatta' => $r['name'],
+                                                'date'    => $r['date'],
+                                                'place'   => $row['places'][$r['id']] ?? null,
+                                                'points'  => $row['points'][$r['id']],
+                                                'url'     => route('competition-details', $r['id']),
+                                            ] : null;
+                                        @endphp
                                         <td class="py-3 px-2 text-center">
-                                            @if(isset($row['points'][$r['id']]))
-                                                <a href="{{ route('competition-details', $r['id']) }}" class="hover:text-brand-blue hover:underline transition-colors">{{ $row['points'][$r['id']] }}</a>
+                                            @if($resultData)
+                                                <button
+                                                    type="button"
+                                                    class="font-bold text-brand-blue hover:text-[#2D92CE] hover:underline transition-colors cursor-pointer"
+                                                    @click="openResult({{ Js::from($resultData) }})"
+                                                >{{ $row['points'][$r['id']] }}</button>
                                             @else
                                                 —
                                             @endif
@@ -267,6 +287,71 @@
                             <span class="font-semibold text-[#2E325C]">Всего</span>
                             <span class="font-bold text-[#2E325C] text-lg" x-text="scoresModalData.total"></span>
                         </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    {{-- ─── Модальное окно: Результат команды в регате ─── --}}
+    <div
+        x-show="resultModal"
+        x-transition:enter="ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 z-50 flex items-center justify-center px-4"
+        style="display:none"
+    >
+        <div class="absolute inset-0 bg-black/50" @click="resultModal = false"></div>
+
+        <div
+            x-show="resultModal"
+            x-transition:enter="ease-out duration-200"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="ease-in duration-150"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            class="relative z-10 bg-white shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+        >
+            <template x-if="resultModalData">
+                <div>
+                    <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#EAEAEA]">
+                        <h2 class="font-display text-2xl text-[#2E325C] a-font" x-text="resultModalData.regatta"></h2>
+                        <button
+                            type="button"
+                            class="text-gray-400 hover:text-gray-600 transition-colors"
+                            @click="resultModal = false"
+                            aria-label="Закрыть"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="px-6 py-4">
+                        <div class="text-xs text-gray-500 mb-4" x-show="resultModalData.date" x-text="resultModalData.date"></div>
+                        <div class="font-semibold text-[#2E325C] mb-3" x-text="resultModalData.team"></div>
+
+                        <div class="flex items-center gap-4">
+                            <div class="bg-brand-light rounded-xl px-4 py-2 text-center flex-1">
+                                <div class="text-xs text-gray-500 mb-1">Место</div>
+                                <div class="font-bold text-[#2E325C] text-lg" x-text="resultModalData.place !== null ? resultModalData.place : '—'"></div>
+                            </div>
+                            <div class="bg-brand-light rounded-xl px-4 py-2 text-center flex-1">
+                                <div class="text-xs text-gray-500 mb-1">Очки</div>
+                                <div class="font-bold text-brand-blue text-lg" x-text="resultModalData.points"></div>
+                            </div>
+                        </div>
+
+                        <a
+                            :href="resultModalData.url"
+                            class="mt-4 inline-flex items-center gap-1 text-brand-blue hover:text-[#2D92CE] hover:underline transition-colors text-sm font-medium"
+                        >Подробнее о регате</a>
                     </div>
                 </div>
             </template>

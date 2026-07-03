@@ -107,7 +107,7 @@ class RatingCalculator
      *
      * @return array{
      *     regattas: array<int, array{id:string, external_id:int, name:string, date:?string}>,
-     *     standings: array<int, array{rank:int, name:string, points:array<string,?float>, total:float}>
+     *     standings: array<int, array{rank:int, name:string, points:array<string,?float>, places:array<string,?int>, total:float}>
      * }
      */
     public function seriesTeamStandings(Series $series): array
@@ -160,9 +160,11 @@ class RatingCalculator
                 'team_id' => $teamId,
                 'name'    => $teamNames[$teamId] ?? '—',
                 'points'  => [],
+                'places'  => [],
                 'total'   => 0.0,
             ];
             $byTeam[$teamId]['points'][$item->regatta_id] = ($byTeam[$teamId]['points'][$item->regatta_id] ?? 0) + $score;
+            $byTeam[$teamId]['places'][$item->regatta_id] = (int) $item->final_position;
             $byTeam[$teamId]['total'] += $score;
         }
 
@@ -176,6 +178,11 @@ class RatingCalculator
                 'points'  => collect($regattas)
                     ->mapWithKeys(fn ($r) => [
                         $r['id'] => isset($row['points'][$r['id']]) ? round($row['points'][$r['id']], 3) : null,
+                    ])
+                    ->all(),
+                'places'  => collect($regattas)
+                    ->mapWithKeys(fn ($r) => [
+                        $r['id'] => $row['places'][$r['id']] ?? null,
                     ])
                     ->all(),
                 'total'   => round($row['total'], 3),
