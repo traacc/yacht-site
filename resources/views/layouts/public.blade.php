@@ -95,6 +95,7 @@
 <livewire:auth.login-modal />
 <livewire:join-regatta-modal />
 <livewire:user-card-modal />
+<livewire:team-card-modal />
 <livewire:cookie-consent />
 
 </body>

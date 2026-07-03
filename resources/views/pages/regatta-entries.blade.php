@@ -85,7 +85,18 @@
                             @foreach($regatta->entries as $index => $entry)
                                 <tr class="hover:bg-gray-50 transition-colors border-b border-brand-border">
                                     <td class="py-3">{{ $index + 1 }}</td>
-                                    <td class="py-3">{{ $entry->yacht?->name ?? '—' }}</td>
+                                    <td class="py-3">
+                                        @if($entry->yacht && $entry->team)
+                                            <button type="button"
+                                                    onclick="Livewire.dispatch('open-team-card', { teamId: '{{ $entry->team->id }}' })"
+                                                    class="text-[#2D92CE] hover:underline cursor-pointer"
+                                                    title="Информация о команде">
+                                                {{ $entry->yacht->name }}
+                                            </button>
+                                        @else
+                                            {{ $entry->yacht?->name ?? '—' }}
+                                        @endif
+                                    </td>
                                     <!--<td class="py-3 hidden md:table-cell">{{ $entry->team?->name ?? '—' }}</td>-->
                                     <td class="py-3 hidden md:table-cell">{{ $entry->crew->firstWhere('role', 'captain')?->teamMember?->user?->short_name ?? '—' }}</td>
                                     <td class="py-3 hidden md:table-cell">
@@ -93,14 +104,16 @@
                                             <div class="flex items-center justify-center -space-x-2">
                                                 @foreach($entry->crew as $crewMember)
                                                     @php $user = $crewMember->teamMember?->user; @endphp
-                                                    <div class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-[#2E325C] text-white text-[10px] font-bold flex-shrink-0 ring-2 {{ $crewMember->role === 'captain' ? 'ring-[#2D92CE]' : 'ring-white' }}"
+                                                    <{{ $user ? 'button' : 'div' }}
+                                                         @if($user) type="button" onclick="Livewire.dispatch('open-user-card', { userId: '{{ $user->id }}' })" @endif
+                                                         class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-[#2E325C] text-white text-[10px] font-bold flex-shrink-0 ring-2 {{ $crewMember->role === 'captain' ? 'ring-[#2D92CE]' : 'ring-white' }} {{ $user ? 'cursor-pointer hover:ring-[#2D92CE] transition-all' : '' }}"
                                                          title="{{ $user?->short_name ?? $user?->name }}">
                                                         @if($user?->photo_url)
                                                             <img src="{{ asset('storage/'.$user->photo_url) }}" alt="{{ $user?->short_name }}" class="w-full h-full object-cover">
                                                         @else
                                                             <span>{{ $initials($user?->name) }}</span>
                                                         @endif
-                                                    </div>
+                                                    </{{ $user ? 'button' : 'div' }}>
                                                 @endforeach
                                             </div>
                                         @else
