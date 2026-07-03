@@ -29,6 +29,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
@@ -515,6 +516,12 @@ class RegattaResultResource extends Resource
         $regattaId  = $record->regatta_id;
         $raceEvents = self::raceEventsFor($record);
 
+        // Признак «поле заблокировано»: тумблер «Заблокировать заполненные поля»
+        // вверху формы включён И в поле уже есть значение. Пустые поля остаются
+        // доступными — можно дозаполнять новые результаты, не рискуя задеть старые.
+        $isLocked = fn (string $field): \Closure =>
+            fn (Get $get): bool => (bool) $get('../../lock_filled') && filled($get($field));
+
         $columns = [
             TableColumn::make('Яхта')->markAsRequired(false),
             TableColumn::make('Команда'),
@@ -621,10 +628,16 @@ class RegattaResultResource extends Resource
 
                         $set("race_{$i}_points", self::deriveRacePoints($state, null, $boatCount));
                     })
+                    // Заблокированное поле оставляем dehydrated, чтобы уже введённое
+                    // значение не потерялось при сохранении формы.
+                    ->disabled($isLocked("race_{$i}_position"))
+                    ->dehydrated(true)
                     ->nullable(),
                 TextInput::make("race_{$i}_points")
                     ->label($race->name . ' · очки')
                     //->numeric()
+                    ->disabled($isLocked("race_{$i}_points"))
+                    ->dehydrated(true)
                     ->nullable(),
             ]);
         }
@@ -646,6 +659,7 @@ class RegattaResultResource extends Resource
                 ->live(onBlur: true)
                 ->afterStateUpdated(fn ($state, Set $set) => $set('final_position_overridden', filled($state)))
                 ->suffixAction(self::resetToAutoAction('final_position', 'final_position_overridden'))
+                ->disabled($isLocked('final_position'))
                 ->rule(function (Get $get) {
                     return function (string $attribute, $value, \Closure $fail) use ($get): void {
                         $value = trim((string) $value);
@@ -692,6 +706,7 @@ class RegattaResultResource extends Resource
                 ->live(onBlur: true)
                 ->afterStateUpdated(fn ($state, Set $set) => $set('total_points_overridden', filled($state)))
                 ->suffixAction(self::resetToAutoAction('total_points', 'total_points_overridden'))
+                ->disabled($isLocked('total_points'))
                 // Колонка NOT NULL: relationship-репитер сохраняет строки до пересчёта,
                 // поэтому пустое значение приводим к 0 (сумму проставит recomputeItemTotals).
                 // Запятую в десятичной дроби приводим к точке (ввод в русской раскладке).
@@ -1091,6 +1106,15 @@ class RegattaResultResource extends Resource
                             self::createEntryAction($record->regatta_id),
                         ]),
                         self::racesManagerSchema(),
+                        // Защита от случайной правки: при включении все поля таблицы,
+                        // где уже есть значение, становятся недоступны для ввода.
+                        // Пустые поля остаются доступными для новых результатов.
+                        Toggle::make('lock_filled')
+                            ->label('Заблокировать заполненные поля')
+                            ->helperText('Уже введённые значения нельзя изменить; пустые поля остаются доступными.')
+                            ->default(false)
+                            ->live()
+                            ->dehydrated(false),
                         // Фиксируем соответствие колонок гонок их id (для корректного сохранения).
                         Hidden::make('race_event_ids')
                             ->dehydrated(true)
