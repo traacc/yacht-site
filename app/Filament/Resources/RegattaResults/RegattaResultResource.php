@@ -1111,7 +1111,7 @@ class RegattaResultResource extends Resource
                         Actions::make([
                             self::createEntryAction($record->regatta_id),
                         ]),
-                        self::racesManagerSchema(),
+                        //self::racesManagerSchema(),
                         // Защита от случайной правки: при включении все поля таблицы,
                         // где уже есть значение, становятся недоступны для ввода.
                         // Пустые поля остаются доступными для новых результатов.
