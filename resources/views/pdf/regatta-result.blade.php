@@ -119,11 +119,21 @@
 
         .race-head .race-pos,
         .race-cell .race-pos {
+            box-sizing: border-box;
+            height: 15px;
+            line-height: 9px;
             padding: 3px 3px;
+        }
+
+        .race-cell .race-pos {
+            font-weight: bold;
         }
 
         .race-head .race-pts,
         .race-cell .race-pts {
+            box-sizing: border-box;
+            height: 15px;
+            line-height: 9px;
             padding: 3px 3px;
             background-color: #daf2d0;
             border-top: 1px solid #c2e0b3;
