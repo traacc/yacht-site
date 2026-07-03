@@ -102,7 +102,7 @@
                                                 'place'   => $row['places'][$r['id']] ?? null,
                                                 'points'  => $row['points'][$r['id']],
                                                 'races'   => $row['races'][$r['id']] ?? [],
-                                                'url'     => route('competition-details', $r['id']),
+                                                'url'     => route('competition-details', $r['external_id']),
                                             ] : null;
                                         @endphp
                                         <td class="py-3 px-2 text-center">
