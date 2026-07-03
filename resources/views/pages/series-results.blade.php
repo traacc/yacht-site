@@ -50,9 +50,6 @@
                         <h2 class="section-title a-font">
                             <a href="{{ $serie['url'] }}" class="hover:text-brand-blue hover:underline transition-colors">{{ $serie['name'] }}</a>
                         </h2>
-                        @if($serie['description'])
-                            <p class="text-brand-gray-light mt-1">{{ $serie['description'] }}</p>
-                        @endif
                     </div>
                     @if($serie['season'])
                         <span class="text-brand-dark text-lg font-semibold">Сезон {{ $serie['season'] }}</span>
