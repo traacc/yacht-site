@@ -89,7 +89,11 @@
                                     </td>
                                     @foreach($regattas as $r)
                                         <td class="py-3 px-2 text-center">
-                                            {{ $row['points'][$r['id']] ?? '—' }}
+                                            @if(isset($row['points'][$r['id']]))
+                                                <a href="{{ route('competition-details', $r['id']) }}" class="hover:text-brand-blue hover:underline transition-colors">{{ $row['points'][$r['id']] }}</a>
+                                            @else
+                                                —
+                                            @endif
                                         </td>
                                     @endforeach
                                     <td class="py-3 px-3 text-center">
