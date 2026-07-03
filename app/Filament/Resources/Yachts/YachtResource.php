@@ -131,7 +131,11 @@ class YachtResource extends Resource
                 TextInput::make('vfps_number')
                     ->label('Номер на парусе')
                     ->placeholder('Введите номер на парусе')
-                    ->required(),
+                    ->required()
+                    ->unique(ignoreRecord: true)
+                    ->validationMessages([
+                        'unique' => 'Яхта с таким номером на парусе уже зарегистрирована.',
+                    ]),
                 Select::make('user_id')
                     ->label('Пользователь')
                     ->relationship('user', 'name')
