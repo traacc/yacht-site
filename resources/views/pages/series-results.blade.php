@@ -59,7 +59,9 @@
                             <tr class="text-lg md:text-2xl text-brand-dark border-b border-brand-border">
                                 <th class="pb-2 text-center font-medium w-10 md:w-16 a-font"></th>
                                 <th class="pb-2 text-left font-medium a-font">Команда</th>
-                                <th class="pb-2 text-center font-medium a-font">Всего этапов</th>
+                                @foreach($regattas as $i => $r)
+                                    <th class="pb-2 px-2 text-center font-medium a-font" title="{{ $r['name'] }}">{{ $i + 1 }}</th>
+                                @endforeach
                                 <th class="pb-2 px-3 text-center font-medium a-font">Очки</th>
                             </tr>
                         </thead>
@@ -85,9 +87,11 @@
                                             @click="openTeam({{ Js::from($row['team']) }})"
                                         >{{ $row['name'] }}</button>
                                     </td>
-                                    <td class="py-3 px-3 text-center">
-                                        {{ count($regattas) }}
-                                    </td>
+                                    @foreach($regattas as $r)
+                                        <td class="py-3 px-2 text-center">
+                                            {{ $row['points'][$r['id']] ?? '—' }}
+                                        </td>
+                                    @endforeach
                                     <td class="py-3 px-3 text-center">
                                         <button
                                             type="button"
