@@ -1166,7 +1166,16 @@ class RegattaResultResource extends Resource
                     }),
             ])
             ->recordActions([
-                EditAction::make()->modalHeading('Редактировать результат регаты'),
+                EditAction::make()
+                    ->modalHeading('Редактировать результат регаты')
+                    // После удаления/добавления участника в форме число лодок и
+                    // состав меняются — пересчитываем очки гонок (DNF/DSQ… =
+                    // число лодок + 1), итоги и места участников и рейтинги сезона.
+                    ->after(function (RegattaResult $record): void {
+                        self::recomputeRacePoints($record);
+                        self::recomputeItemTotals($record);
+                        self::recalculateRatings($record);
+                    }),
                 EditAction::make('edit_table')
                     ->label('Редактировать таблицей')
                     ->icon(Heroicon::TableCells)
@@ -1194,6 +1203,10 @@ class RegattaResultResource extends Resource
                     ])
                     ->after(function (RegattaResult $record, array $data): void {
                         self::saveRaceResults($record, $data);
+                        // После удаления участника число лодок меняется — очки за
+                        // буквенные статусы (DNF, DSQ…) = «число лодок + 1» надо
+                        // пересчитать (saveRaceResults сохраняет старые очки как есть).
+                        self::recomputeRacePoints($record);
                         self::recomputeItemTotals($record);
                         self::recalculateRatings($record);
                     }),
