@@ -10,6 +10,7 @@ use App\Models\TeamMember;
 use App\Observers\NewsObserver;
 use App\Observers\PaymentRegistryObserver;
 use App\Observers\RegattaEntryFeeObserver;
+use App\Observers\RegattaEntryResultObserver;
 use App\Observers\TeamMemberObserver;
 use App\Policies\TeamPolicy;
 use Filament\Notifications\Notification;
@@ -39,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
         TeamMember::observe(TeamMemberObserver::class);
         News::observe(NewsObserver::class);
         RegattaEntry::observe(RegattaEntryFeeObserver::class);
+        RegattaEntry::observe(RegattaEntryResultObserver::class);
         PaymentRegistry::observe(PaymentRegistryObserver::class);
 
         Notification::configureUsing(function (Notification $notification): void {

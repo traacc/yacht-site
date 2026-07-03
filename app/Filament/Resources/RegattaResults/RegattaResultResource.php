@@ -925,6 +925,57 @@ class RegattaResultResource extends Resource
     }
 
     /**
+     * Пересчитывает очки гонок регаты, зависящие от числа лодок.
+     *
+     * По правилам малых очков очки за буквенные статусы (DNF, DSQ, DNS…) равны
+     * «число лодок + 1». При изменении состава участников (например, удалении
+     * заявки) число лодок меняется — такие очки надо пересчитать. Числовые места
+     * дают очки, равные месту, и от числа лодок не зависят — их не трогаем.
+     * Скобки (сброшенная гонка) сохраняются логикой deriveRacePoints.
+     *
+     * Число лодок берём как в saveRaceResults — участники таблицы с командой.
+     */
+    public static function recomputeRacePoints(RegattaResult $record): void
+    {
+        $eventIds = self::raceEventsForRegatta($record->regatta_id)->pluck('id');
+
+        if ($eventIds->isEmpty()) {
+            return;
+        }
+
+        $record->loadMissing('items');
+
+        $boatCount = $record->items
+            ->filter(fn (RegattaResultItem $item): bool => filled($item->team_id))
+            ->count();
+
+        $results = RaceResult::query()
+            ->whereIn('event_id', $eventIds)
+            ->get();
+
+        foreach ($results as $result) {
+            // Пересчитываем только буквенные статусы — они зависят от числа лодок.
+            // Скобки (сброшенная гонка) снимаем для проверки на число.
+            $position = trim((string) $result->position);
+            $inner    = (str_starts_with($position, '(') && str_ends_with($position, ')'))
+                ? trim(substr($position, 1, -1))
+                : $position;
+
+            if ($inner === '' || is_numeric($inner)) {
+                continue;
+            }
+
+            // Пере-выводим очки от нового числа лодок (points = null → пересчёт).
+            $points = self::deriveRacePoints($result->position, null, $boatCount);
+
+            if ((string) $result->points !== (string) $points) {
+                $result->points = $points;
+                $result->save();
+            }
+        }
+    }
+
+    /**
      * Пересчитывает командный и личный рейтинг сезона по результатам регаты.
      * Вызывается после любого изменения результатов (правка таблицей, импорт),
      * чтобы рейтинги всегда соответствовали актуальным местам и очкам.
