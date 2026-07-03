@@ -107,7 +107,7 @@ class RatingCalculator
      *
      * @return array{
      *     regattas: array<int, array{id:string, external_id:int, name:string, date:?string}>,
-     *     standings: array<int, array{rank:int, name:string, points:array<string,?float>, places:array<string,?int>, total:float}>
+     *     standings: array<int, array{rank:int, name:string, points:array<string,?float>, places:array<string,?int>, races:array<string,array>, total:float}>
      * }
      */
     public function seriesTeamStandings(Series $series): array
@@ -149,6 +149,56 @@ class RatingCalculator
 
         $teamNames = Team::whereIn('id', $items->pluck('team_id')->unique())->pluck('name', 'id');
 
+        // Результаты по отдельным гонкам — для детализации в карточке команды.
+        // Логика повторяет GenerateRegattaResultPdfAction: гонки регаты нумеруются
+        // по порядку старта, результат команды в гонке достаётся через её заявку.
+        $teamIds = $items->pluck('team_id')->unique()->values();
+        $regattaIds = collect($regattas)->pluck('id');
+
+        $racesByRegatta = Regatta::query()
+            ->whereIn('id', $regattaIds)
+            ->with(['races' => fn ($q) => $q->orderBy('event_datetime')])
+            ->get()
+            ->keyBy('id');
+
+        $entriesByRegatta = RegattaEntry::query()
+            ->whereIn('regatta_id', $regattaIds)
+            ->whereIn('team_id', $teamIds)
+            ->with('raceResults')
+            ->orderByRaw("status = 'approved' ASC")
+            ->get()
+            ->groupBy('regatta_id');
+
+        $raceBreakdown = [];
+        foreach ($regattaIds as $regattaId) {
+            $raceEvents = $racesByRegatta->get($regattaId)?->races ?? collect();
+            if ($raceEvents->isEmpty()) {
+                continue;
+            }
+
+            $entriesByTeam = $entriesByRegatta->get($regattaId, collect())->keyBy('team_id');
+
+            foreach ($teamIds as $teamId) {
+                $entry = $entriesByTeam->get($teamId);
+                if (! $entry) {
+                    continue;
+                }
+
+                $raceResultsByEvent = $entry->raceResults->keyBy('event_id');
+
+                $raceBreakdown[$teamId][$regattaId] = $raceEvents->values()
+                    ->map(fn ($event, $i) => [
+                        'number'       => $i + 1,
+                        'name'         => $event->name,
+                        'date'         => $event->event_datetime?->format('d.m.Y H:i'),
+                        'position'     => $raceResultsByEvent->get($event->id)?->position,
+                        'points'       => $raceResultsByEvent->get($event->id)?->points,
+                        'penalty_code' => $raceResultsByEvent->get($event->id)?->penalty_code,
+                    ])
+                    ->all();
+            }
+        }
+
         // Суммируем очки по командам, сохраняя разбивку по регатам.
         $byTeam = [];
         foreach ($items as $item) {
@@ -183,6 +233,11 @@ class RatingCalculator
                 'places'  => collect($regattas)
                     ->mapWithKeys(fn ($r) => [
                         $r['id'] => $row['places'][$r['id']] ?? null,
+                    ])
+                    ->all(),
+                'races'   => collect($regattas)
+                    ->mapWithKeys(fn ($r) => [
+                        $r['id'] => $raceBreakdown[$row['team_id']][$r['id']] ?? [],
                     ])
                     ->all(),
                 'total'   => round($row['total'], 3),

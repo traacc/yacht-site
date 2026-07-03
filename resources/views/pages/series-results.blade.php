@@ -101,6 +101,7 @@
                                                 'date'    => $r['date'],
                                                 'place'   => $row['places'][$r['id']] ?? null,
                                                 'points'  => $row['points'][$r['id']],
+                                                'races'   => $row['races'][$r['id']] ?? [],
                                                 'url'     => route('competition-details', $r['id']),
                                             ] : null;
                                         @endphp
@@ -347,6 +348,26 @@
                                 <div class="font-bold text-brand-blue text-lg" x-text="resultModalData.points"></div>
                             </div>
                         </div>
+
+                        <template x-if="resultModalData.races && resultModalData.races.length > 0">
+                            <div class="mt-4 pt-4 border-t border-[#EAEAEA]">
+                                <h3 class="font-semibold text-[#2E325C] mb-3">Результаты по гонкам</h3>
+                                <div class="divide-y divide-[#EAEAEA]">
+                                    <template x-for="race in resultModalData.races" :key="race.number">
+                                        <div class="py-2 flex items-center justify-between gap-4">
+                                            <div>
+                                                <div class="font-medium text-[#2E325C]" x-text="'Гонка ' + race.number + (race.name ? ' — ' + race.name : '')"></div>
+                                                <div class="text-xs text-gray-500" x-show="race.date" x-text="race.date"></div>
+                                            </div>
+                                            <div class="text-right flex-shrink-0">
+                                                <div class="font-bold text-[#2E325C]" x-text="race.penalty_code ? race.penalty_code : (race.position !== null ? race.position : '—')"></div>
+                                                <div class="text-xs text-gray-500" x-show="race.points !== null" x-text="race.points + ' очк.'"></div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
 
                         <a
                             :href="resultModalData.url"
