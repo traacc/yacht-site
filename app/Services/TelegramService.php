@@ -165,7 +165,7 @@ class TelegramService
     {
         $url      = route('news-details', $news);
         $title    = trim((string) $news->title);
-        $linkText = 'Читать полностью →';
+        $linkText = 'Читать полностью';
 
         // Видимая длина фиксированных частей: заголовок + ссылка + два «\n\n».
         $fixed  = mb_strlen($title) + mb_strlen($linkText) + 4;
