@@ -199,9 +199,9 @@
             @php($headRowspan = $raceCount > 0 ? 2 : 1)
             <tr>
                 <th rowspan="{{ $headRowspan }}" style="width: 28px;">Место</th>
-                <th rowspan="{{ $headRowspan }}" style="width: 40px;">Парус №</th>
                 <th rowspan="{{ $headRowspan }}" style="width: 90px;">Команда</th>
                 <th rowspan="{{ $headRowspan }}" style="width: 80px;">Яхта</th>
+                <th rowspan="{{ $headRowspan }}" style="width: 40px;">Парус №</th>
                 <th rowspan="{{ $headRowspan }}" style="width: 110px;">Экипаж</th>
                 <th rowspan="{{ $headRowspan }}" style="width: 58px;">Дата рождения</th>
                 <th rowspan="{{ $headRowspan }}" style="width: 42px;">Разряд</th>
@@ -226,10 +226,9 @@
                 @php($crew = $row['crew'])
                 <tr class="item-start" style="page-break-inside: avoid;">
                     <td class="pos-cell">{{ $row['position'] }}</td>
-                    <td>{{ $row['sail'] }}</td>
                     <td class="team-cell">{{ $row['team'] }}@if(!empty($row['not_participate'])) ({{ $row['not_participate'] }})@endif</td>
                     <td>{{ $row['yacht'] }}</td>
-
+                    <td>{{ $row['sail'] }}</td>
                     <td colspan="3" class="crew-cell">
                         <table class="crew-table">
                             @forelse($crew as $i => $member)
