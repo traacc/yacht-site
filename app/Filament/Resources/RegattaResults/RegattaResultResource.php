@@ -719,13 +719,17 @@ class RegattaResultResource extends Resource
 
         return Repeater::make('items')
             ->label('Результаты участников')
-            // Таблицу участников сортируем по очкам по возрастанию как число:
-            // total_points — строковая колонка, поэтому приводим к DECIMAL,
-            // иначе '10' окажется раньше '2'. reorder() снимает сортировку
-            // по final_position, заданную в связи RegattaResult::items().
+            // Таблицу участников сортируем сначала по очкам по возрастанию, затем
+            // по итоговому месту (важно для ручных мест: при равных очках строки
+            // упорядочиваются по final_position). Обе колонки строковые, поэтому
+            // приводим к числу — total_points к DECIMAL, final_position к UNSIGNED,
+            // иначе '10' окажется раньше '2'. Места без значения (NULL) — в конец.
+            // reorder() снимает сортировку по final_position, заданную в связи
+            // RegattaResult::items().
             ->relationship('items', modifyQueryUsing: fn (Builder $query) => $query
                 ->reorder()
-                ->orderByRaw('CAST(total_points AS DECIMAL(10,3)) ASC'))
+                ->orderByRaw('CAST(total_points AS DECIMAL(10,3)) ASC')
+                ->orderByRaw('final_position IS NULL, CAST(final_position AS UNSIGNED) ASC'))
             // Горизонтальный скролл — при многих гонках таблица шире экрана (см. theme.css).
             // wire:loading.class — прелоадер: после правки поля «место»/«очки»
             // (live onBlur) очки пересчитываются на сервере; на время запроса
