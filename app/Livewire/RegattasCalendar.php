@@ -75,10 +75,7 @@ class RegattasCalendar extends Component
                         'url' => route('competition-details', $r),
                         'has_documents' => $r->documents_count > 0,
                         'documents_url' => route('regatta.documents.download', $r),
-                        'can_join' => ! in_array($r->regatta_status, [
-                            \App\Enums\RegattaStatus::Finished,
-                            \App\Enums\RegattaStatus::Cancelled,
-                        ], true),
+                        'can_join' => $r->isOpenForRegistration(),
                     ])->values()->toArray()
                     : [],
             ];

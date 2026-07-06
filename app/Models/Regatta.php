@@ -286,6 +286,16 @@ class Regatta extends Model
         return $end && $end->isPast();
     }
 
+    /** Открыта ли регата для подачи заявок (не завершена, не отменена, не перенесена). */
+    public function isOpenForRegistration(): bool
+    {
+        return ! in_array($this->regatta_status, [
+            RegattaStatus::Finished,
+            RegattaStatus::Cancelled,
+            RegattaStatus::Postponed,
+        ], true);
+    }
+
     /**
      * Комбинирует date_start + time_start (дефолт 12:00).
      */

@@ -873,6 +873,14 @@ class JoinRegattaModal extends Component
         ]);
 
         $regatta = Regatta::findOrFail($this->regattaId);
+
+        // Заявки закрыты для завершённых, отменённых и перенесённых регат.
+        if (! $regatta->isOpenForRegistration()) {
+            $this->addError('regattaId', 'Регистрация на эту регату закрыта.');
+
+            return;
+        }
+
         //$password = Str::password(12);
         $password = 'Carter30pro';
 
