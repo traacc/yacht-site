@@ -72,6 +72,7 @@ class RegattasCalendar extends Component
                         'title' => $r->name,
                         'city' => $r->location,
                         'status' => $r->regatta_status->value,
+                        'postponed_to' => $r->postponed_to_date?->isoFormat('LL'),
                         'url' => route('competition-details', $r),
                         'has_documents' => $r->documents_count > 0,
                         'documents_url' => route('regatta.documents.download', $r),
