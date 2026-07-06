@@ -108,6 +108,21 @@
         {{-- ===== РЕЗУЛЬТАТЫ ===== --}}
         <livewire:regatta-results mode="show" :regatta-id="$regatta->id" />
 
+        {{-- Если у регаты есть результаты и опубликованная галерея — кнопка открывает
+             галерею, уже отфильтрованную по этой регате (см. ?regatta= в pages/gallery). --}}
+        @if($regatta->resultItems->isNotEmpty() && $hasRegattaGallery)
+            <section class="pb-10">
+                <div class="container mx-auto flex justify-center md:justify-start">
+                    <a href="{{ route('gallery') }}?regatta={{ $regatta->id }}"
+                       class="bg-brand-blue text-white py-2 px-6 hover:opacity-90 transition-colors text-lg font-semibold inline-flex items-center gap-3">
+                        Перейти в галлерею регаты →
+                    </a>
+                </div>
+            </section>
+        @endif
+
+
+
         {{-- ===== ДОКУМЕНТЫ РЕГАТЫ ===== --}}
         @if($documents->isNotEmpty())
             <section class="py-10">

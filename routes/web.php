@@ -406,6 +406,11 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
     // Документы
     $documents = $regatta->documents;
 
+    // Есть ли опубликованная галерея этой регаты — чтобы показать кнопку «Смотреть фото»
+    $hasRegattaGallery = Gallery::published()
+        ->where('regatta_id', $regatta->id)
+        ->exists();
+
     // Необходимые документы для участия в регате
     $requiredEntryDocuments = app(UpdateRegattaEntryRequiredDocumentsAction::class)
         ->getRequiredList();
@@ -442,7 +447,8 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'userIsEntered',
         'userIsInCrew',
         'temp',
-        'mapUrl'
+        'mapUrl',
+        'hasRegattaGallery'
     ));
 })->name('competition-details');
 Route::get('/regatta/{regatta}/download-documents', function (Regatta $regatta) {

@@ -4,6 +4,25 @@
 @php
     $years = $galleries->keys()->sortDesc()->values();
     $waterAreas = $galleries->flatten()->pluck('water_area')->filter()->unique()->values();
+
+    // Карта «год галереи» по её id — тем же способом, что и группировка выше,
+    // чтобы фильтр по регате мог автоматически переключить нужный год.
+    $galleryYears = $galleries->flatten()
+        ->mapWithKeys(fn ($g) => [$g->id => (string) ($g->season?->year ?? $g->date?->year ?? now()->year)]);
+
+    // Уникальные регаты, у которых есть альбомы, отсортированные по дате (свежие сверху).
+    $regattas = $galleries->flatten()
+        ->filter(fn ($g) => $g->regatta)
+        ->map(fn ($g) => $g->regatta)
+        ->unique('id')
+        ->sortByDesc('date_start')
+        ->values();
+
+    // Карта «id регаты → год», чтобы при выборе регаты выставить соответствующий год.
+    $regattaYears = $galleries->flatten()
+        ->filter(fn ($g) => $g->regatta)
+        ->mapWithKeys(fn ($g) => [$g->regatta->id => $galleryYears[$g->id]])
+        ->toArray();
 @endphp
 <main x-data="{
     gallery_modal_open: false,
@@ -15,20 +34,50 @@
     listTab: 'photo',
     selectedYear: '{{ $years->first() }}',
     selectedWater: '',
+    selectedRegatta: '',
+    regattaYears: {{ Js::from($regattaYears) }},
     touchStartX: 0,
     copied: false,
+    {{-- Собирает текущее состояние фильтров/альбома в query-строку, чтобы ссылку
+         можно было скопировать и позже открыть уже применённый фильтр. --}}
+    updateUrl() {
+        const params = new URLSearchParams();
+        if (this.gallery_modal_open && this.activeGallery) {
+            params.set('album', this.activeGallery.id);
+        }
+        if (this.selectedRegatta) {
+            params.set('regatta', this.selectedRegatta);
+        }
+        const qs = params.toString();
+        history.replaceState(null, '', '{{ route('gallery') }}' + (qs ? '?' + qs : ''));
+    },
+    {{-- Выбор регаты: подстраиваем год под регату, сбрасываем акваторию и пишем фильтр в URL. --}}
+    onRegattaChange() {
+        if (this.selectedRegatta && this.regattaYears[this.selectedRegatta]) {
+            this.selectedYear = this.regattaYears[this.selectedRegatta];
+            this.selectedWater = '';
+        }
+        this.updateUrl();
+    },
+    {{-- При загрузке страницы: если в URL есть ?regatta=<id>, применяем фильтр по регате. --}}
+    openFilterFromUrl() {
+        const regatta = new URLSearchParams(window.location.search).get('regatta');
+        if (!regatta) return;
+        this.selectedRegatta = regatta;
+        if (this.regattaYears[regatta]) this.selectedYear = this.regattaYears[regatta];
+    },
     {{-- Открывает альбом: проставляет состояние модалки и пишет id альбома в URL,
          чтобы текущую ссылку можно было скопировать/расшарить. --}}
     openAlbum(gallery) {
         this.activeGallery = gallery;
         this.activeTab = this.listTab;
         this.gallery_modal_open = true;
-        history.replaceState(null, '', '{{ route('gallery') }}?album=' + gallery.id);
+        this.updateUrl();
     },
-    {{-- Закрывает модалку альбома и убирает ?album из URL. --}}
+    {{-- Закрывает модалку альбома и убирает ?album из URL, сохраняя активный фильтр. --}}
     closeAlbum() {
         this.gallery_modal_open = false;
-        history.replaceState(null, '', '{{ route('gallery') }}');
+        this.updateUrl();
     },
     {{-- Копирует ссылку на альбом / вызывает нативный «Поделиться» на мобильных. --}}
     shareAlbum() {
@@ -84,7 +133,7 @@
         if (!container) return;
         container.scrollBy({ left: dir * 200, behavior: 'smooth' });
     },
-}" x-init="openAlbumFromUrl()" class="main">
+}" x-init="openFilterFromUrl(); openAlbumFromUrl()" class="main">
     <section class="md:py-12 py-4 reggata-list px-2 2xl:px-0">
         <div class="container mx-auto">
             <div class="flex justify-between mb-6 flex-col md:flex-row">
@@ -104,6 +153,15 @@
                             <option value="{{ $wa }}">{{ $wa }}</option>
                         @endforeach
                     </select>
+
+                    @if($regattas->isNotEmpty())
+                    <select x-model="selectedRegatta" @change="onRegattaChange()" name="regatta_filter" id="regatta_filter" class="team_filter">
+                        <option value="">Все регаты</option>
+                        @foreach($regattas as $regatta)
+                            <option value="{{ $regatta->id }}">{{ $regatta->name }}{{ isset($regattaYears[$regatta->id]) ? ' ('.$regattaYears[$regatta->id].')' : '' }}</option>
+                        @endforeach
+                    </select>
+                    @endif
                 </div>
             </div>
 
@@ -127,7 +185,7 @@
                 <div class="cursor-pointer group relative"
                      data-album-id="{{ $gallery->id }}"
                      data-album-year="{{ $year }}"
-                     x-show="listTab === 'photo' || {{ $gallery->videoLinks->isNotEmpty() ? 'true' : 'false' }}"
+                     x-show="(listTab === 'photo' || {{ $gallery->videoLinks->isNotEmpty() ? 'true' : 'false' }}) && (selectedRegatta === '' || selectedRegatta == '{{ $gallery->regatta?->id }}')"
                      @click="openAlbum({{ Js::from([
                          'id'          => $gallery->id,
                          'name'        => $gallery->name,
