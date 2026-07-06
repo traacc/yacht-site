@@ -1,13 +1,15 @@
 {{-- resources/views/livewire/regattas-calendar.blade.php --}}
-<style>
-    .slides   { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-    .page-dot { transition: width 0.3s ease, background-color 0.3s ease; }
-    .slider-dragging { transition: none !important; cursor: grabbing !important; user-select: none; }
-    .slider-grab    { cursor: grab; }
-    .slider-grab:active { cursor: grabbing; }
-</style>
-
+{{-- ВАЖНО: у Livewire-компонента должен быть ОДИН корневой элемент.
+     <style> и <script> держим ВНУТРИ корневого <div>, иначе Livewire
+     примет за корень первый тег (<style>) и не будет обновлять календарь. --}}
 <div x-data="regattaCalendar()" data-current-month="{{ now()->format('n') - 1 }}" class="py-12 bg-brand-light">
+    <style>
+        .slides   { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .page-dot { transition: width 0.3s ease, background-color 0.3s ease; }
+        .slider-dragging { transition: none !important; cursor: grabbing !important; user-select: none; }
+        .slider-grab    { cursor: grab; }
+        .slider-grab:active { cursor: grabbing; }
+    </style>
     <div class="">
         <div class="flex md:items-center justify-between mb-6 flex-col lg:flex-row gap-y-3">
             <h2 class="section-title a-font mb-4 md:mb-0">Календарь регат сезона</h2>
@@ -48,10 +50,9 @@
                 <div class="calendar-icon w-full md:w-auto">
                 
                     <div class="calendar-icon">
-                        <x-custom-select 
+                        <x-custom-select
                             name="season_year"
-                            :options="$years" 
-                            value="2026"
+                            :options="$years"
                             wire:model.live="year"
                         />
                     </div>
@@ -170,10 +171,9 @@
             </template>
         </div>
     </div>
-</div>
 
-{{-- Alpine-логика слайдера --}}
-<script>
+    {{-- Alpine-логика слайдера --}}
+    <script>
 function regattaCalendar() {
     return {
         visible: 5,
@@ -298,4 +298,5 @@ function regattaCalendar() {
         },
     }
 }
-</script>
+    </script>
+</div>

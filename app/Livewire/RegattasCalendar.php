@@ -32,9 +32,12 @@ class RegattasCalendar extends Component
     #[Computed]
     public function years(): array
     {
+        // Ключ === значение года, чтобы custom-select передавал в wire:model
+        // сам год, а не индекс элемента массива.
         return Season::query()
             ->orderByDesc('year')
             ->pluck('year')
+            ->mapWithKeys(fn ($year) => [$year => (string) $year])
             ->toArray();
     }
 
