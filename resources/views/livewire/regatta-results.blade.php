@@ -611,7 +611,7 @@
                     <table class="w-full bg-brand-light-bg overflow-auto">
                         <thead>
                             <tr class="md:text-2xl text-brand-dark border-b border-brand-border">
-                                <th class="pb-2 text-left font-medium a-font">Гонка</th>
+                                <th class="pb-2 text-center font-medium a-font">Гонка</th>
                                 <th class="pb-2 text-center font-medium a-font">Место</th>
                                 <th class="pb-2 text-center font-medium a-font">Очки</th>
                             </tr>
@@ -619,7 +619,7 @@
                         <tbody class="divide-y text-center font-medium text-sm md:text-base">
                             @forelse($activeRacesModal['races'] as $race)
                                 <tr class="hover:bg-white transition-colors border-b border-brand-border">
-                                    <td data-label="Гонка" class="py-3 text-left">{{ $race['name'] }}</td>
+                                    <td data-label="Гонка" class="py-3 text-center">{{ $race['name'] }}</td>
                                     <td data-label="Место" class="py-3">{{ $race['pos'] }}</td>
                                     <td data-label="Очки" class="py-3">{{ $race['pts'] !== null ? number_format((float) $race['pts'], 1, ',', ' ') : '—' }}</td>
                                 </tr>
@@ -632,9 +632,9 @@
                         @if($activeRacesModal['total'] !== null && $activeRacesModal['total'] !== '')
                             <tfoot>
                                 <tr class="border-t border-brand-border font-bold text-brand-dark">
-                                    <td class="py-3 text-left">Итого</td>
+                                    <td class="py-3 pl-2">Итого</td>
                                     <td class="py-3"></td>
-                                    <td class="py-3">{{ number_format((float) $activeRacesModal['total'], 1, ',', ' ') }}</td>
+                                    <td class="py-3 text-center">{{ number_format((float) $activeRacesModal['total'], 1, ',', ' ') }}</td>
                                 </tr>
                             </tfoot>
                         @endif
