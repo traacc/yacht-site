@@ -105,6 +105,9 @@
             </div>
         </section>
 
+        {{-- ===== РЕЗУЛЬТАТЫ ===== --}}
+        <livewire:regatta-results mode="show" :regatta-id="$regatta->id" />
+
         {{-- ===== ДОКУМЕНТЫ РЕГАТЫ ===== --}}
         @if($documents->isNotEmpty())
             <section class="py-10">
@@ -273,6 +276,7 @@
             </section>
         @endif
         {{-- ===== О РЕГАТЕ ===== --}}
+        <!--
         <section class="py-10">
             <div class="container mx-auto bg-brand-light-bg flex flex-col md:flex-row gap-10 items-center">
                 @if($regatta->background_image)
@@ -287,17 +291,7 @@
                 </div>
             </div>
         </section>
-
-
-        {{-- ===== РЕЗУЛЬТАТЫ ===== --}}
-        <livewire:regatta-results mode="show" :regatta-id="$regatta->id" />
-
-
-
-
-
-
-
+        -->
 
         {{-- ===== ЛОКАЦИЯ ===== --}}
         @if(!empty($regatta->coordinates))
