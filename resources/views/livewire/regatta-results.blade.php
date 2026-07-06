@@ -167,7 +167,7 @@
         @if($regatta && $regatta->regatta_status === \App\Enums\RegattaStatus::Finished)
             <section class="results mb-12">
                 <div class="container mx-auto bg-[#F8F8F8]">
-                    <div class="flex flex-col md:flex-row mb-6">
+                    <div class="flex flex-col md:flex-row mb-6 justify-between pt-4">
                         <div class="flex justify-between md:justify-start md:gap-4">
                             <h3 class="a-font text-lg md:text-3xl">Результаты</h3>
                             @if($regatta->results->first()?->isFinal())
@@ -181,7 +181,7 @@
                             @endif
                         </div>
                         @if($regatta->results->first())
-                            <a href="{{ route('regatta.results.pdf', $regatta) }}" target="_blank" class="text-[#2E325C] text-lg font-semibold flex gap-2 items-center cursor-pointer">
+                            <a href="{{ route('regatta.results.pdf', $regatta) }}" target="_blank" class="text-[#2E325C] text-lg my-auto md:my-0 mt-1 md:mt-0 font-semibold flex gap-2 items-center cursor-pointer">
                                 <img src="{{ asset('images/icons/download.svg') }}" alt="">
                                 <span>Скачать результаты PDF</span>
                             </a>
