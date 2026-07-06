@@ -112,7 +112,7 @@
             </div>
 
             {{-- Другие новости (сайдбар) --}}
-            <div class="aside max-w-0 md:max-w-[490px] flex-1">
+            <div class="aside max-w-full md:max-w-[490px] flex-1">
                 <h3 class="section-title a-font text-lg md:text-3xl mb-4 text-center">Другие новости</h3>
                 @if($otherNews->isNotEmpty())
                     <div class="col flex flex-col gap-8">
