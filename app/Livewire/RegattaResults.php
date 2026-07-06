@@ -40,6 +40,9 @@ class RegattaResults extends Component
     /** Данные активной команды для модального окна (null = закрыто) */
     public ?array $activeTeamModal = null;
 
+    /** Данные активной строки для модального окна результатов по гонкам (null = закрыто) */
+    public ?array $activeRacesModal = null;
+
     // ──────────────────────────────────────────────
     // Lifecycle
     // ──────────────────────────────────────────────
@@ -158,6 +161,31 @@ class RegattaResults extends Component
         $this->activeTeamModal = null;
     }
 
+    /**
+     * Открывает модальное окно с результатами команды по каждой гонке.
+     * Вызывается из шаблона через wire:click.
+     *
+     * @param  string       $teamName  Название команды
+     * @param  string|null  $yachtName Название яхты (для подзаголовка)
+     * @param  float|string $total     Итоговые очки
+     * @param  array        $races     Массив гонок [['num'=>..,'name'=>..,'pos'=>..,'pts'=>..], ...]
+     */
+    public function openRacesModal(string $teamName, ?string $yachtName, float|string|null $total, array $races): void
+    {
+        $this->activeRacesModal = [
+            'team_name'  => $teamName,
+            'yacht_name' => $yachtName,
+            'total'      => $total,
+            'races'      => $races,
+        ];
+    }
+
+    /** Закрывает модальное окно результатов по гонкам. */
+    public function closeRacesModal(): void
+    {
+        $this->activeRacesModal = null;
+    }
+
     // ──────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────
@@ -214,6 +242,89 @@ class RegattaResults extends Component
         }
 
         return $crewMap;
+    }
+
+    /**
+     * Строит карту результатов по гонкам: team_id → массив гонок с местом и очками.
+     * Порядок гонок соответствует их проведению (event_datetime), нумерация 1..N.
+     * Логика сбора повторяет GenerateRegattaResultPdfAction: связь через заявку
+     * команды (RegattaEntry) по team_id, приоритет у одобренной заявки.
+     *
+     * @return array<string, array<int, array{num:int, name:string, pos:string, pts:float|string|null}>>
+     */
+    protected function buildRacesMap(Regatta $regatta, Collection $resultItems): array
+    {
+        $teamIds = $resultItems->pluck('team_id')->filter()->unique()->values()->toArray();
+
+        if (empty($teamIds)) {
+            return [];
+        }
+
+        // Гонки регаты → порядковые номера 1..N
+        $raceEvents = $regatta->races()->get();
+
+        if ($raceEvents->isEmpty()) {
+            return [];
+        }
+
+        $raceMeta = [];
+        foreach ($raceEvents->values() as $i => $event) {
+            $raceMeta[$event->id] = [
+                'num'  => $i + 1,
+                'name' => $event->name ?: ('Гонка ' . ($i + 1)),
+            ];
+        }
+
+        // Заявки регаты, индексированные по команде (приоритет — approved).
+        $entriesByTeam = RegattaEntry::query()
+            ->where('regatta_id', $regatta->id)
+            ->whereIn('team_id', $teamIds)
+            ->with('raceResults')
+            ->orderByRaw("status = 'approved' ASC")
+            ->get()
+            ->keyBy('team_id');
+
+        $racesMap = [];
+        foreach ($teamIds as $teamId) {
+            $entry = $entriesByTeam->get($teamId);
+
+            if (! $entry) {
+                continue;
+            }
+
+            $resultsByEvent = $entry->raceResults->keyBy('event_id');
+
+            $races  = [];
+            $hasAny = false;
+
+            foreach ($raceMeta as $eventId => $meta) {
+                $rr = $resultsByEvent->get($eventId);
+
+                if ($rr) {
+                    $hasAny = true;
+                }
+
+                if ($rr && $rr->penalty_code) {
+                    $pos = mb_strtoupper($rr->penalty_code);
+                } else {
+                    $pos = $rr && $rr->position !== null ? (string) $rr->position : '—';
+                }
+
+                $races[] = [
+                    'num'  => $meta['num'],
+                    'name' => $meta['name'],
+                    'pos'  => $pos,
+                    'pts'  => $rr && $rr->points !== null ? $rr->points : null,
+                ];
+            }
+
+            // Показываем только команды, у которых есть хотя бы один результат гонки.
+            if ($hasAny) {
+                $racesMap[$teamId] = $races;
+            }
+        }
+
+        return $racesMap;
     }
 
     /**
@@ -280,6 +391,7 @@ class RegattaResults extends Component
 
         $crewMap    = $regatta ? $this->buildCrewMap($regatta, $resultItems) : [];
         $captainMap = $this->buildCaptainMap($crewMap);
+        $racesMap   = $regatta ? $this->buildRacesMap($regatta, $resultItems) : [];
 
         $topTeams        = collect();
         $topParticipants = collect();
@@ -308,24 +420,26 @@ class RegattaResults extends Component
                 ->values();
         }
 
-        return compact('regatta', 'resultItems', 'topTeams', 'topParticipants', 'crewMap', 'captainMap');
+        return compact('regatta', 'resultItems', 'topTeams', 'topParticipants', 'crewMap', 'captainMap', 'racesMap');
     }
 
     private function renderList(): array
     {
         $crewMaps    = [];
         $captainMaps = [];
+        $racesMaps   = [];
         $regattas    = $this->resolveRegattas();
 
-        $regattas->each(function ($r) use (&$crewMaps, &$captainMaps) {
+        $regattas->each(function ($r) use (&$crewMaps, &$captainMaps, &$racesMaps) {
             $resultItems = $r->results->flatMap->items ?? collect();
             $r->setRelation('resultItems', $resultItems);
             $crewMaps[$r->id]    = $this->buildCrewMap($r, $resultItems);
             $captainMaps[$r->id] = $this->buildCaptainMap($crewMaps[$r->id]);
+            $racesMaps[$r->id]   = $this->buildRacesMap($r, $resultItems);
         });
 
         $availableYears = $this->availableYears();
 
-        return compact('regattas', 'availableYears', 'crewMaps', 'captainMaps');
+        return compact('regattas', 'availableYears', 'crewMaps', 'captainMaps', 'racesMaps');
     }
 }

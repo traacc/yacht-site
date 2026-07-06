@@ -11,7 +11,7 @@
     Модальное окно управляется через Livewire ($activeTeamModal),
     Alpine используется только для CSS-анимации и закрытия по клику вне.
 --}}
-<div x-data="{ get modalOpen() { return {{ $activeTeamModal ? 'true' : 'false' }}; } }"
+<div x-data="{ get modalOpen() { return {{ ($activeTeamModal || $activeRacesModal) ? 'true' : 'false' }}; } }"
      x-effect="modalOpen ? document.body.classList.add('overflow-hidden') : document.body.classList.remove('overflow-hidden')">
 
     @if($mode === 'list')
@@ -129,7 +129,18 @@
                                                 <span class="text-brand-gray">0 <span class="hidden md:inline">участников</span></span>
                                             @endif
                                         </td>
-                                        <td data-label="Очки" class="py-3">{{ number_format($result->total_points, 1, ',', ' ') }}</td>
+                                        @php $races = $racesMaps[$regatta->id][$result->team_id] ?? []; @endphp
+                                        <td data-label="Очки" class="py-3">
+                                            @if(!empty($races))
+                                                <button
+                                                    wire:click="openRacesModal('{{ addslashes($result->team->name) }}', '{{ addslashes($result->yacht?->name ?? '') }}', '{{ $result->total_points }}', {{ json_encode($races) }})"
+                                                    class="text-[#2D92CE] font-medium underline hover:no-underline cursor-pointer bg-transparent border-0 p-0">
+                                                    {{ number_format($result->total_points, 1, ',', ' ') }}
+                                                </button>
+                                            @else
+                                                {{ number_format($result->total_points, 1, ',', ' ') }}
+                                            @endif
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
@@ -224,7 +235,18 @@
                                                 <span class="text-brand-gray">0 <span class="hidden md:inline">участников</span></span>
                                             @endif
                                         </td>
-                                        <td class="py-3">{{ number_format($result->total_points, 1, ',', ' ') }}</td>
+                                        @php $races = $racesMap[$result->team_id] ?? []; @endphp
+                                        <td class="py-3">
+                                            @if(!empty($races))
+                                                <button
+                                                    wire:click="openRacesModal('{{ addslashes($result->team->name) }}', '{{ addslashes($result->yacht?->name ?? '') }}', '{{ $result->total_points }}', {{ json_encode($races) }})"
+                                                    class="text-[#2D92CE] font-medium underline hover:no-underline cursor-pointer bg-transparent border-0 p-0">
+                                                    {{ number_format($result->total_points, 1, ',', ' ') }}
+                                                </button>
+                                            @else
+                                                {{ number_format($result->total_points, 1, ',', ' ') }}
+                                            @endif
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
@@ -338,7 +360,18 @@
                                                         <span class="text-brand-gray">0 <span class="hidden md:inline">участников</span></span>
                                                     @endif
                                                 </td>
-                                                <td data-label="Очки" class="py-3">{{ number_format($result->total_points, 1, ',', ' ') }}</td>
+                                                @php $races = $racesMap[$result->team_id] ?? []; @endphp
+                                                <td data-label="Очки" class="py-3">
+                                                    @if(!empty($races))
+                                                        <button
+                                                            wire:click="openRacesModal('{{ addslashes($result->team->name) }}', '{{ addslashes($result->yacht?->name ?? '') }}', '{{ $result->total_points }}', {{ json_encode($races) }})"
+                                                            class="text-[#2D92CE] font-medium underline hover:no-underline cursor-pointer bg-transparent border-0 p-0">
+                                                            {{ number_format($result->total_points, 1, ',', ' ') }}
+                                                        </button>
+                                                    @else
+                                                        {{ number_format($result->total_points, 1, ',', ' ') }}
+                                                    @endif
+                                                </td>
                                             </tr>
                                         @empty
                                             <tr>
@@ -536,6 +569,75 @@
                                 </tr>
                             @endforelse
                         </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- ===== МОДАЛЬНОЕ ОКНО: РЕЗУЛЬТАТЫ ПО ГОНКАМ ===== --}}
+    @if($activeRacesModal)
+        <div
+            class="fixed inset-0 z-50 flex md:items-center md:justify-center p-4 bg-black/50"
+            @keydown.escape.window="$wire.closeRacesModal()"
+        >
+            <div
+                class="relative md:p-6 p-3 w-full max-w-[90vw] md:max-w-[600px] bg-white"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
+                @click.outside="$wire.closeRacesModal()"
+            >
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h4 class="a-font text-lg md:text-3xl text-brand-dark">
+                            Результаты по гонкам: {{ $activeRacesModal['team_name'] }}
+                        </h4>
+                        @if(!empty($activeRacesModal['yacht_name']))
+                            <p class="text-brand-gray mt-1">{{ $activeRacesModal['yacht_name'] }}</p>
+                        @endif
+                    </div>
+                    <button
+                        wire:click="closeRacesModal"
+                        class="text-2xl font-bold leading-none text-brand-gray hover:text-brand-dark transition-colors ml-4 cursor-pointer"
+                        aria-label="Закрыть"
+                    >&times;</button>
+                </div>
+
+                <div class="overflow-x-auto max-h-[85vh]">
+                    <table class="w-full bg-brand-light-bg overflow-auto">
+                        <thead>
+                            <tr class="md:text-2xl text-brand-dark border-b border-brand-border">
+                                <th class="pb-2 text-left font-medium a-font">Гонка</th>
+                                <th class="pb-2 text-center font-medium a-font">Место</th>
+                                <th class="pb-2 text-center font-medium a-font">Очки</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y text-center font-medium text-sm md:text-base">
+                            @forelse($activeRacesModal['races'] as $race)
+                                <tr class="hover:bg-white transition-colors border-b border-brand-border">
+                                    <td data-label="Гонка" class="py-3 text-left">{{ $race['name'] }}</td>
+                                    <td data-label="Место" class="py-3">{{ $race['pos'] }}</td>
+                                    <td data-label="Очки" class="py-3">{{ $race['pts'] !== null ? number_format((float) $race['pts'], 1, ',', ' ') : '—' }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="py-6 text-brand-gray-light">Нет данных по гонкам</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                        @if($activeRacesModal['total'] !== null && $activeRacesModal['total'] !== '')
+                            <tfoot>
+                                <tr class="border-t border-brand-border font-bold text-brand-dark">
+                                    <td class="py-3 text-left">Итого</td>
+                                    <td class="py-3"></td>
+                                    <td class="py-3">{{ number_format((float) $activeRacesModal['total'], 1, ',', ' ') }}</td>
+                                </tr>
+                            </tfoot>
+                        @endif
                     </table>
                 </div>
             </div>
