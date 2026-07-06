@@ -14,8 +14,8 @@
                     </div>
                 @endif
 
-                <div class="text space-y-4 text-lg">
-                    {!! nl2br(e($news->content)) !!}
+                <div class="text prose max-w-none space-y-4 text-lg">
+                    {!! $news->content !!}
                 </div>
 
                 {{-- Галерея новости — изображения из медиа-коллекции 'gallery' --}}

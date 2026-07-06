@@ -32,8 +32,29 @@
                             <x-icon-2 name="weather" />
                             {{ $temp }}
                         </div>
+                        
                     </div>
-                    <p class="text-brand-gray text-lg">{{ $regatta->short_description }}</p>
+                    <div class="short-desc">
+                        <p class="text-brand-gray text-lg">{{ $regatta->short_description }}</p>
+                        <div class="flex flex-col pt-3 pb-6">
+                            <div>
+                                <strong class="text-brand-dark">Гоночных дней:</strong>
+                                <span>{{ $regatta->race_days_count }}</span>
+                            </div>
+                            <div>
+                                <strong class="text-brand-dark">Количество гонок:</strong>
+                                <span>{{ $regatta->races_count }}</span>
+                            </div>
+                            <div class="flex">
+                                <div>
+                                    <strong class="text-brand-dark">Призы:</strong>
+                                    <span>{{ $regatta->prizes }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
                     @if($documents->isNotEmpty())
                     <a href="{{ route('regatta.documents.download', $regatta) }}"
                         class="text-brand-navy text-l font-semibold hover:underline items-center gap-4 flex mt-6">
@@ -66,6 +87,13 @@
                             Подать заявку →
                         </button>
                     @endif
+                        <!--<div class="flex pb-6">
+                            <div>
+                                <strong class="text-brand-dark">Уровень регаты:</strong>
+                                <span></span>
+                            </div>
+                        </div>-->
+
                 </div>
                 @if($regatta->background_image)
                 <div class="pic max-w-[720px]">
@@ -255,30 +283,7 @@
                 <div class="info py-4">
                     <h2 class="section-title a-font text-brand-dark text-5xl mb-8">О регате</h2>
                     <p class="text-brand-gray font-medium text-lg mb-4">{!! $regatta->description !!}</p>
-                    <div class="bg-white p-4 text-brand-gray">
-                        <!--<div class="flex pb-6">
-                            <div>
-                                <strong class="text-brand-dark">Уровень регаты:</strong>
-                                <span></span>
-                            </div>
-                        </div>-->
-                        <div class="flex gap-16 pb-6">
-                            <div>
-                                <strong class="text-brand-dark">Гоночных дней:</strong>
-                                <span>{{ $regatta->race_days_count }}</span>
-                            </div>
-                            <div>
-                                <strong class="text-brand-dark">Количество гонок:</strong>
-                                <span>{{ $regatta->races_count }}</span>
-                            </div>
-                        </div>
-                        <div class="flex">
-                            <div>
-                                <strong class="text-brand-dark">Призы:</strong>
-                                <span>{{ $regatta->prizes }}</span>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
             </div>
         </section>
