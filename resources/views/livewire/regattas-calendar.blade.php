@@ -106,7 +106,7 @@
                                             @if ($event['status'] === 'postponed')
                                                 <span class="self-start inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-white bg-[#a19315]">
                                                     <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                                    Перенесена@if (!empty($event['postponed_to'])) на<br>{{ $event['postponed_to'] }}@endif
+                                                    Перенесена@if (!empty($event['postponed_to'])) на<br>{{ $event['postponed_to'] }}@elseif (!empty($event['postponed_note']))<br>{{ $event['postponed_note'] }}@endif
                                                 </span>
                                             @elseif ($event['status'] === 'cancelled')
                                                 <span class="self-start inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-white bg-[#a12f15]">

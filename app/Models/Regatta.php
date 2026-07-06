@@ -42,6 +42,7 @@ class Regatta extends Model
         'external_id',
         'regatta_status',
         'postponed_to_date',
+        'postponed_note',
         'postponed_to_regatta_id',
         'entry_required_documents',
     ];

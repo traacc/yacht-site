@@ -43,6 +43,7 @@ class RegattaService
             $snapshot = $regatta->replicate([
                 'regatta_status',
                 'postponed_to_date',
+                'postponed_note',
                 'postponed_to_regatta_id',
             ]);
             $snapshot->id                      = null; // HasUuids: сброс UUID — creating-хук сгенерирует новый

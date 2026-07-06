@@ -289,7 +289,20 @@ class RegattaResource extends Resource
                     ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100))
                     ->visible(fn (Get $get): bool => (bool) $get('is_postponed'))
-                    ->required(fn (Get $get): bool => (bool) $get('is_postponed')),
+                    // Нужно заполнить либо дату переноса, либо пояснение к нему.
+                    ->rules([
+                        fn (Get $get): \Closure => function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
+                            if ((bool) $get('is_postponed') && blank($value) && blank($get('postponed_note'))) {
+                                $fail('Укажите дату переноса или пояснение к переносу.');
+                            }
+                        },
+                    ]),
+
+                Textarea::make('postponed_note')
+                    ->label('Пояснение к переносу')
+                    ->helperText('Если новая дата пока не известна, укажите пояснение — оно будет показано вместо даты.')
+                    ->placeholder('Например: дата будет объявлена позже')
+                    ->visible(fn (Get $get): bool => (bool) $get('is_postponed')),
 
                 Repeater::make('schedule_events')
                     ->relationship('scheduleEvents')

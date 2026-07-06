@@ -34,6 +34,30 @@
                         </div>
                         
                     </div>
+                    @if($regatta->regatta_status === \App\Enums\RegattaStatus::Postponed)
+                        <div class="postponed-notice bg-[#fdf6d8] border-l-4 border-[#a19315] p-4 my-6">
+                            <div class="flex items-start gap-3">
+                                <svg class="w-6 h-6 shrink-0 text-[#a19315]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div>
+                                    @if($regatta->postponed_to_date)
+                                        <p class="text-brand-dark font-bold text-lg">Регата перенесена на {{ $regatta->postponed_to_date->isoFormat('LL') }}</p>
+                                        @if($regatta->postponedToRegatta)
+                                            <a href="{{ route('competition-details', $regatta->postponedToRegatta) }}"
+                                               class="inline-flex items-center gap-2 mt-2 text-brand-navy font-semibold hover:underline">
+                                                Перейти к регате на новую дату →
+                                            </a>
+                                        @endif
+                                    @elseif($regatta->postponed_note)
+                                        <p class="text-brand-dark font-bold text-lg">Регата перенесена</p>
+                                        <p class="text-brand-gray mt-1">{{ $regatta->postponed_note }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="short-desc">
                         <p class="text-brand-gray text-lg">{{ $regatta->short_description }}</p>
                         <div class="flex flex-col pt-3 pb-6">
