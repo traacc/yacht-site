@@ -3,7 +3,7 @@
 </x-breadcrumbs_page>
 <main class="main">
     <section class="py-12">
-        <div class="container mx-auto flex flex-col md:flex-row gap-12">
+        <div class="container mx-auto flex flex-col md:flex-row gap-12 justify-between">
             <div class="content max-w-[902px]">
                 <h2 class="section-title a-font text-5xl mb-4">{{ $news->title }}</h2>
                 <p class="date text-brand-gray-light mb-4">{{ $news->published_at->isoFormat('D MMMM Y') }}</p>
