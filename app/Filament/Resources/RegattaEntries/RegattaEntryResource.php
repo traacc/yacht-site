@@ -154,12 +154,6 @@ class RegattaEntryResource extends Resource
                     ->default('pending')
                     ->required()
                     ->columnSpanFull(),
-                Select::make('source')
-                    ->label('Источник добавления')
-                    ->placeholder('Выберите источник')
-                    ->options(\App\Enums\RegattaEntrySource::class)
-                    ->default(\App\Enums\RegattaEntrySource::Admin->value)
-                    ->required(),
                 // ── Экипаж ────────────────────────────
                 Repeater::make('crew')
                     ->label('Экипаж')
@@ -450,7 +444,11 @@ class RegattaEntryResource extends Resource
                     ->searchable(),
                 SelectFilter::make('source')
                     ->label('Источник')
-                    ->options(\App\Enums\RegattaEntrySource::class),
+                    ->options(
+                        collect(\App\Enums\RegattaEntrySource::cases())
+                            ->reject(fn ($case) => $case === \App\Enums\RegattaEntrySource::Unknown)
+                            ->mapWithKeys(fn ($case) => [$case->value => $case->getLabel()])
+                    ),
             ], layout: FiltersLayout::AboveContent)
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать заявку на регату')
