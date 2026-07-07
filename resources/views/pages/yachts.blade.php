@@ -269,7 +269,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                                     return r.has_price ? 'free' : 'request';
                                 }
                             }
-                            return 'busy';
+                            return 'none';
                         },
                         get days() {
                             const first = new Date(this.calYear, this.calMonth, 1);
@@ -290,10 +290,11 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             if (!cell.current) return 'text-[#C6C6C6]';
                             if (cell.status === 'free') return 'bg-[#BAD5C6] text-[#2E325C] cursor-pointer hover:brightness-95';
                             if (cell.status === 'request') return 'bg-[#EAE1CB] text-[#2E325C] cursor-pointer hover:brightness-95';
-                            return 'bg-[#F4C9C6] text-[#2E325C] cursor-default';
+                            if (cell.status === 'busy') return 'bg-[#F4C9C6] text-[#2E325C] cursor-default';
+                            return 'bg-white text-[#2E325C] cursor-default';
                         },
                         selectDay(cell) {
-                            if (!cell.current || cell.status === 'busy') return;
+                            if (!cell.current || cell.status !== 'free' && cell.status !== 'request') return;
                             openRentalModal(cell.date);
                         }
                     }">
