@@ -114,7 +114,7 @@
             x-transition:enter-start="opacity-0 scale-95"
             x-transition:enter-end="opacity-100 scale-100"
         >
-            <div class="info flex flex-col md:flex-row gap-6 mb-8">
+            <div class="info flex flex-col md:flex-row gap-6 mb-8 justify-between">
                 <div class="photo max-w-1/2 shrink-0 hidden md:block">
                     <img class="max-w-full" :src="activeTeam?.photo" alt="">
                 </div>
