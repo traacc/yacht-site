@@ -66,6 +66,35 @@ class TeamResource extends Resource
         return 'Мои команды';
     }
 
+    /**
+     * Бейдж на пункте меню «Мои команды» — число входящих приглашений
+     * сменить главную команду, ожидающих ответа текущего пользователя.
+     */
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::pendingInvitationsCount();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::pendingInvitationsCount() > 0 ? 'warning' : null;
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'Приглашения, ожидающие вашего ответа';
+    }
+
+    private static function pendingInvitationsCount(): int
+    {
+        return TeamMemberInvitation::query()
+            ->where('user_id', auth()->id())
+            ->where('status', TeamMemberInvitationStatus::Pending->value)
+            ->count();
+    }
+
     // ──────────────────────────────────────────────
     // Авторизация через TeamPolicy
     // ──────────────────────────────────────────────
