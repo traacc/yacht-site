@@ -162,6 +162,13 @@ class UserResource extends Resource
                     ->placeholder('Спортивный разряд')
                     ->options(SportCategory::class),
 
+                Textarea::make('about')
+                    ->label('О себе')
+                    ->placeholder('О себе')
+                    ->rows(4)
+                    ->maxLength(2000)
+                    ->columnSpanFull(),
+
 
 
                 Select::make('system_role')

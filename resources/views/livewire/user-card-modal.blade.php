@@ -61,6 +61,14 @@
                         </div>
                     </dl>
 
+                    {{-- О себе --}}
+                    @if(!empty($user['about']))
+                        <div>
+                            <div class="text-sm text-brand-gray-light mb-2">О себе</div>
+                            <p class="text-sm text-brand-dark whitespace-pre-line">{{ $user['about'] }}</p>
+                        </div>
+                    @endif
+
                     {{-- Главная команда --}}
                     <div>
                         <div class="text-sm text-brand-gray-light mb-2">Команда</div>

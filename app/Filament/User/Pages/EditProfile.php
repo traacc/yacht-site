@@ -7,6 +7,7 @@ use App\Enums\SportCategory;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -150,7 +151,12 @@ class EditProfile extends BaseEditProfile
                             ->label('Спортивный разряд')
                             ->options(SportCategory::class),
 
-
+                        Textarea::make('about')
+                            ->label('О себе')
+                            ->placeholder('О себе')
+                            ->rows(4)
+                            ->maxLength(2000)
+                            ->columnSpanFull(),
 
             ])->columns(2)->extraAttributes(['class' => 'profile_user_block']);
     }

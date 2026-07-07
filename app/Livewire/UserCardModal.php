@@ -42,6 +42,7 @@ class UserCardModal extends Component
             'number'      => $user->formatted_external_id,
             'birthday'    => $user->birth_date?->format('d.m.Y') ?? '—',
             'rank'        => $user->sport_category?->getLabel() ?? '—',
+            'about'       => $user->about,
             'team'        => $this->resolveMainTeam($user),
             'regattas'    => $this->resolveParticipationCount($user),
             'rating'      => $this->resolveRating($user),
