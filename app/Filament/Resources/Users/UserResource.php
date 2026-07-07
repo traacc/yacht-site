@@ -170,12 +170,6 @@ class UserResource extends Resource
                     ->options(\App\Enums\SystemRole::class)
                     ->default(\App\Enums\SystemRole::User->value)
                     ->required(),
-                Select::make('creation_source')
-                    ->label('Источник добавления')
-                    ->placeholder('Выберите источник')
-                    ->options(\App\Enums\CreationSource::class)
-                    ->default(\App\Enums\CreationSource::Admin->value)
-                    ->required(),
                 Toggle::make('is_banned')
                     ->label('Забанен'),
                 Textarea::make('ban_reason')
@@ -339,7 +333,11 @@ class UserResource extends Resource
                     ->options(SportCategory::class),
                 SelectFilter::make('creation_source')
                     ->label('Источник создания')
-                    ->options(\App\Enums\CreationSource::class),
+                    ->options(
+                        collect(\App\Enums\CreationSource::cases())
+                        ->reject(fn ($case) => $case === \App\Enums\CreationSource::Unknown)
+                        ->mapWithKeys(fn ($case) => [$case->value => $case->getLabel()])
+                    ),
                 TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->headerActions([
