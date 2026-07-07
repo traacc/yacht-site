@@ -13,10 +13,12 @@
                     @endif
                     <h2 class="section-title a-font text-brand-dark text-6xl py-6">{{ $regatta->name }}</h2>
                     <div class="space-y-1.5 text-brand-gray font-medium text-lg">
+                        @if($regatta->regatta_status != \App\Enums\RegattaStatus::Postponed)
                         <div class="flex items-center gap-2 pb-3">
                             <x-icon-2 name="calendar" />
                             {{ $regatta->dateRange() }}
                         </div>
+                        @endif
                         <div class="flex items-center gap-2 pb-3">
                             {!!  file_get_contents(public_path('images/icons/waves.svg')) !!}
                             @if($mapUrl)
