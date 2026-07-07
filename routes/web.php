@@ -520,6 +520,7 @@ Route::get('/yachts', function () {
             'team' => $entry->team?->name ?? '—',
             'date_registration' => $entry->submitted_at?->format('d.m.Y') ?? '—',
             'status' => $entry->status,
+            'regatta_finished' => $entry->regatta?->regatta_status === \App\Enums\RegattaStatus::Finished,
         ])->values()->toArray(),
         'participation_count' => $yacht->regattaEntries->count(),
         'for_rent' => (bool) $yacht->for_rent,

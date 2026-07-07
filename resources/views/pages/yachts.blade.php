@@ -510,11 +510,13 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                 </div>
 
                 <script>
-                    function participation_status(status) {
+                    function participation_status(status, regattaFinished) {
                         if (status === 'submitted') {
                             return '<div class="bg-[#A88C5833] px-3 py-1 text-[#A88C58] inline-block font-semibold max-w-[150px] w-full">Заявка подана</div>';
                         } else if (status === 'approved') {
-                            return '<div class="bg-[#2D92CE33] px-3 py-1 text-[#2D92CE] inline-block font-semibold max-w-[150px] w-full">Участвует</div>';
+                            return regattaFinished
+                                ? '<div class="bg-[#2D92CE33] px-3 py-1 text-[#2D92CE] inline-block font-semibold max-w-[150px] w-full">Участвовала</div>'
+                                : '<div class="bg-[#2D92CE33] px-3 py-1 text-[#2D92CE] inline-block font-semibold max-w-[150px] w-full">Участвует</div>';
                         } else if (status === 'completed' || status === 'finished') {
                             return '<div class="bg-[#15794933] px-3 py-1 text-[#157949] inline-block font-semibold max-w-[150px] w-full">Завершено</div>';
                         } else if (status === 'rejected') {
@@ -549,7 +551,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                                         <td data-label="Регата" class="py-3" x-text="p.regatta"></td>
                                         <td data-label="Дата" class="py-3" x-text="p.date_event"></td>
                                         <td data-label="Команда" class="py-3" x-text="p.team"></td>
-                                        <td data-label="Статус" class="py-3" x-html="participation_status(p.status)"></td>
+                                        <td data-label="Статус" class="py-3" x-html="participation_status(p.status, p.regatta_finished)"></td>
                                     </tr>
                                 </template>
                             </tbody>
@@ -568,7 +570,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                         <h5 class="a-font text-lg md:text-3xl">Аренда яхты</h5>
                         <div class="bg-[#2D92CE33] px-3 py-1 text-[#2D92CE] inline-block font-semibold">Доступна для аренды</div>
                     </div>
-                    <div class="overflow-y-auto max-h-[180px] relative custom-scroll responsive-table">
+                    <div class="overflow-y-auto relative custom-scroll responsive-table">
                         <table class="w-full border-collapse bg-[#F8F8F8]">
                             <thead>
                                 <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
