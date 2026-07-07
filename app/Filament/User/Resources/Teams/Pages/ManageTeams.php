@@ -169,7 +169,7 @@ class ManageTeams extends ManageRecords
             return Action::make('invitation_' . $invitation->getKey())
                 ->label("Приглашение: {$teamName}")
                 ->icon('heroicon-o-envelope')
-                ->color('warning')
+                ->color('white')
                 ->badge('новое')
                 ->modalHeading("Приглашение в команду «{$teamName}»")
                 ->modalSubmitActionLabel('Подтвердить')

@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace App\Filament\User\Resources\Teams;
 
+use App\Actions\Team\InviteMemberFromOtherTeamAction;
+use App\Enums\TeamMemberInvitationStatus;
 use App\Enums\TeamMemberRole;
 use App\Filament\User\Resources\Teams\Pages\ManageTeams;
 use App\Models\Team;
+use App\Models\TeamMember;
+use App\Models\TeamMemberInvitation;
 use App\Models\User;
 use App\Services\TeamRoleGuard;
 use BackedEnum;
+use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Validation\ValidationException;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -24,10 +30,10 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -37,6 +43,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\HtmlString;
 
 class TeamResource extends Resource
 {
@@ -177,6 +184,13 @@ class TeamResource extends Resource
                     // Участников нельзя удалять — только исключать (статус «Покинул команду»),
                     // чтобы сохранить историю участия.
                     ->deletable(false)
+                    // Если добавляют пользователя, который уже является постоянным участником
+                    // другой команды, его нельзя добавить напрямую — вместо создания записи
+                    // участия отправляется запрос на смену главной команды, который он должен
+                    // подтвердить (см. incomingInvitationActions в ManageTeams).
+                    ->mutateRelationshipDataBeforeCreateUsing(
+                        fn (array $data, $component): ?array => static::interceptPermanentMemberInvitation($data, $component),
+                    )
                     ->rules([
                         fn (): \Closure => function (string $attribute, mixed $value, \Closure $fail): void {
                             if (! is_array($value)) {
@@ -218,19 +232,9 @@ class TeamResource extends Resource
                                 name: 'user',
                                 titleAttribute: 'name',
                                 modifyQueryUsing: function (Builder $query, $component) {
-                                    // Текущая редактируемая команда (если есть) — её постоянных участников не исключаем
-                                    $currentTeamId = null;
-                                    $livewire = $component?->getLivewire();
-                                    if ($livewire && method_exists($livewire, 'getMountedTableActionRecord')) {
-                                        $currentTeamId = $livewire->getMountedTableActionRecord()?->getKey();
-                                    }
-
-                                    // Показываем пользователей, не являющихся постоянными участниками других команд,
-                                    // плюс самого создателя команды (он обязан быть в составе).
-                                    $query->where(function (Builder $q) use ($currentTeamId) {
-                                        $q->withoutPermanentInOtherTeams($currentTeamId)
-                                            ->orWhere('id', auth()->id());
-                                    });
+                                    // Постоянных участников других команд НЕ прячем: их можно выбрать,
+                                    // но при сохранении вместо прямого добавления будет отправлен
+                                    // запрос на смену главной команды (см. mutateRelationshipDataBeforeCreateUsing).
 
                                     // Исключаем пользователей, уже добавленных в других строках Repeater'а.
                                     // Важно: применяем как отдельный AND на верхнем уровне запроса,
@@ -256,9 +260,38 @@ class TeamResource extends Resource
                                     }
                                 },
                             )
+                            // К именам постоянных участников других команд добавляем пометку,
+                            // чтобы капитан видел, что выбор запустит процедуру приглашения.
+                            ->getOptionLabelFromRecordUsing(function (User $record, $livewire): string {
+                                $teamName = static::permanentElsewhereMap(
+                                    static::currentTeamId($livewire),
+                                )[$record->getKey()] ?? null;
+
+                                return $teamName !== null
+                                    ? "{$record->name} — уже в команде «{$teamName}»"
+                                    : (string) $record->name;
+                            })
+                            ->live()
                             ->searchable()
                             ->preload()
                             ->required(),
+                        // Предупреждение появляется, когда выбранный пользователь уже является
+                        // постоянным участником другой команды.
+                        Placeholder::make('permanent_elsewhere_warning')
+                            ->hiddenLabel()
+                            ->columnSpanFull()
+                            ->visible(fn (Get $get, $livewire): bool => isset(
+                                static::permanentElsewhereMap(static::currentTeamId($livewire))[$get('user_id')],
+                            ))
+                            ->content(function (Get $get, $livewire): string {
+                                $teamName = static::permanentElsewhereMap(
+                                    static::currentTeamId($livewire),
+                                )[$get('user_id')] ?? '';
+
+                                return "Этот пользователь уже является постоянным участником команды «{$teamName}». "
+                                    . 'При сохранении ему будет отправлен запрос на смену главной команды; '
+                                    . 'он станет участником вашей команды только после подтверждения.';
+                            }),
                         Select::make('role')
                             ->label('Роль')
                             ->options(collect(TeamMemberRole::cases())->mapWithKeys(
@@ -275,10 +308,37 @@ class TeamResource extends Resource
                             ->default('active')
                             ->selectablePlaceholder(false)
                             ->required(),
-                        Toggle::make('is_permanent')
-                            ->label('Постоянный участник')
+                        // Признак «постоянный участник» пользователю не показываем —
+                        // он управляется автоматически (создатель = постоянный, остальные
+                        // становятся постоянными только через подтверждённое приглашение).
+                        Hidden::make('is_permanent')
                             ->default(false),
                     ]),
+
+                // Пользователи, которым отправлено приглашение сменить главную команду
+                // и которые ещё не ответили. В составе участников они появятся только
+                // после подтверждения, поэтому показываем их отдельно.
+                Placeholder::make('pending_invitations')
+                    ->label('Отправленные приглашения')
+                    ->columnSpanFull()
+                    ->visible(fn (?Team $record): bool => $record !== null
+                        && TeamMemberInvitation::query()
+                            ->where('team_id', $record->getKey())
+                            ->where('status', TeamMemberInvitationStatus::Pending->value)
+                            ->exists())
+                    ->content(function (?Team $record): HtmlString {
+                        $lines = TeamMemberInvitation::query()
+                            ->with('user:id,name')
+                            ->where('team_id', $record->getKey())
+                            ->where('status', TeamMemberInvitationStatus::Pending->value)
+                            ->latest()
+                            ->get()
+                            ->map(fn (TeamMemberInvitation $invitation): string => e(
+                                ($invitation->user?->name ?? '—') . ' — ожидает подтверждения',
+                            ));
+
+                        return new HtmlString($lines->implode('<br>'));
+                    }),
 
                 Hidden::make('organizer_id')
                     ->default(fn () => auth()->id()),
@@ -424,6 +484,117 @@ class TeamResource extends Resource
         static::validateUniqueOrganizer($data);
 
         return $data;
+    }
+
+    /**
+     * ID редактируемой команды из смонтированного табличного действия (EditAction), либо null.
+     */
+    private static function currentTeamId($livewire): ?string
+    {
+        if ($livewire && method_exists($livewire, 'getMountedTableActionRecord')) {
+            return $livewire->getMountedTableActionRecord()?->getKey();
+        }
+
+        return null;
+    }
+
+    /**
+     * Карта [user_id => название главной команды] для пользователей, являющихся
+     * постоянными участниками какой-либо команды, кроме $exceptTeamId.
+     *
+     * Кэшируется в пределах запроса, чтобы не плодить запросы при отрисовке опций Select.
+     *
+     * @return array<string, string>
+     */
+    private static array $permanentElsewhereCache = [];
+
+    private static function permanentElsewhereMap(?string $exceptTeamId): array
+    {
+        $key = $exceptTeamId ?? 'null';
+
+        if (! array_key_exists($key, static::$permanentElsewhereCache)) {
+            static::$permanentElsewhereCache[$key] = TeamMember::query()
+                ->where('is_permanent', true)
+                ->when($exceptTeamId, fn (Builder $q): Builder => $q->where('team_id', '!=', $exceptTeamId))
+                ->with('team:id,name')
+                ->get()
+                ->keyBy('user_id')
+                ->map(fn (TeamMember $member): string => $member->team?->name ?? '')
+                ->all();
+        }
+
+        return static::$permanentElsewhereCache[$key];
+    }
+
+    /**
+     * Перехватывает добавление нового участника в Repeater.
+     *
+     * Если выбранный пользователь уже является постоянным участником другой команды,
+     * запись участия НЕ создаётся: вместо этого отправляется запрос на смену главной
+     * команды, который пользователь должен подтвердить. Возврат null сообщает Repeater'у
+     * пропустить создание строки (см. Repeater::saveRelationships).
+     */
+    private static function interceptPermanentMemberInvitation(array $data, $component): ?array
+    {
+        $userId = $data['user_id'] ?? null;
+
+        if (! $userId) {
+            return $data;
+        }
+
+        $team = $component->getRelationship()?->getParent();
+
+        if (! $team instanceof Team) {
+            return $data;
+        }
+
+        $isPermanentElsewhere = TeamMember::query()
+            ->where('user_id', $userId)
+            ->where('is_permanent', true)
+            ->where('team_id', '!=', $team->getKey())
+            ->exists();
+
+        if (! $isPermanentElsewhere) {
+            // Свободный пользователь (не постоянный ни в одной другой команде)
+            // добавляется сразу как постоянный участник этой команды.
+            $data['is_permanent'] = true;
+
+            return $data;
+        }
+
+        $user = User::query()->find($userId);
+
+        if ($user === null) {
+            return null;
+        }
+
+        try {
+            app(InviteMemberFromOtherTeamAction::class)->handle($team, $user, auth()->user());
+
+            Notification::make()
+                ->success()
+                ->title('Запрос отправлен')
+                ->body("Участнику «{$user->name}» отправлен запрос на смену главной команды. "
+                    . 'Он станет участником команды после подтверждения.')
+                ->send();
+        } catch (ValidationException $e) {
+            Notification::make()
+                ->warning()
+                ->title('Не удалось отправить запрос')
+                ->body(collect($e->errors())->flatten()->first() ?? $e->getMessage())
+                ->send();
+        } catch (\Throwable $e) {
+            report($e);
+
+            Notification::make()
+                ->warning()
+                ->title('Не удалось отправить запрос')
+                ->body("Участника «{$user->name}» не удалось пригласить.")
+                ->send();
+        }
+
+        // Строку участия не создаём — участник появится только после подтверждения.
+        return null;
     }
 
     /**
