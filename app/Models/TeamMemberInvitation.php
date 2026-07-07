@@ -81,11 +81,17 @@ class TeamMemberInvitation extends Model
     public function approve(): void
     {
         DB::transaction(function (): void {
-            // Снять «постоянный участник» с текущей главной команды
+            // Снять «постоянный участник» со старой главной команды и пометить,
+            // что участник её покинул (статус «left»). Целевую команду не трогаем —
+            // ниже она станет активной главной командой.
             TeamMember::query()
                 ->where('user_id', $this->user_id)
                 ->where('is_permanent', true)
-                ->update(['is_permanent' => false]);
+                ->where('team_id', '!=', $this->team_id)
+                ->update([
+                    'is_permanent' => false,
+                    'status'       => 'left',
+                ]);
 
             // Сделать участника активным постоянным членом целевой команды
             TeamMember::updateOrCreate(
