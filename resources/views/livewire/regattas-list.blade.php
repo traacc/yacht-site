@@ -65,9 +65,11 @@
                         <span class="text-[#E67E22] font-bold text-sm uppercase">Перенесена</span>
                     </div>
                     @endif
+                    @if ($regatta->regatta_status != \App\Enums\RegattaStatus::Postponed)
                     <div class="absolute bottom-0 left-0 bg-[#F8F8F8] text-[#2E325C] px-4 py-2  text-[10px] text-sm">
                         <span class="font-bold text-sm tracking-wide">{{ $regatta->dateRange() }}</span>
                     </div>
+                    @endif
                 </div>
 
                 <div class="md:px-6 md:pt-6 md:pb-7 p-2 space-y-4">
@@ -123,7 +125,7 @@
                         default => null,
                     })
                     <tr class="border-t">
-                        <td class="py-2 text-center">{{ $regatta->dateRange() }}</td>
+                        <td class="py-2 text-center">@if ($regatta->regatta_status != \App\Enums\RegattaStatus::Postponed) {{ $regatta->dateRange() }} @endif</td>
                         <td class="py-2 text-center text-brand-navy">
                             {{ $regatta->name }}
                             @if ($statusBadge)
