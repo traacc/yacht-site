@@ -154,7 +154,12 @@ class RegattaEntryResource extends Resource
                     ->default('pending')
                     ->required()
                     ->columnSpanFull(),
-
+                Select::make('source')
+                    ->label('Источник добавления')
+                    ->placeholder('Выберите источник')
+                    ->options(\App\Enums\RegattaEntrySource::class)
+                    ->default(\App\Enums\RegattaEntrySource::Admin->value)
+                    ->required(),
                 // ── Экипаж ────────────────────────────
                 Repeater::make('crew')
                     ->label('Экипаж')
