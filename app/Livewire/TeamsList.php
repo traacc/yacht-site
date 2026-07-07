@@ -75,6 +75,7 @@ class TeamsList extends Component
             'members' => $team->activeMembers->map(fn ($m) => [
                 'id' => $m->id,
                 'name' => $m->name,
+                'avatar' => $m->photo_url ? Storage::url($m->photo_url) : null,
                 'birthday' => $m->birth_date?->format('d.m.Y') ?? '',
                 'category' => $m->sport_category?->getLabel() ?? '',
             ])->values()->toArray(),

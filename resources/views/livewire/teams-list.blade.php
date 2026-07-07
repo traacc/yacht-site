@@ -176,7 +176,7 @@
                     <h5 class="a-font text-lg md:text-3xl">Состав команды</h5>
                     <a :href="activeTeam?.download_url" target="_blank" class="download flex gap-2 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> Скачать историю команды</a>
                 </div>
-                <div class="overflow-y-auto max-h-[180px] relative custom-scroll mb-8">
+                <div class="overflow-y-auto relative custom-scroll mb-8">
                     <table class="w-full border-collapse bg-[#F8F8F8]">
                         <thead>
                             <tr class="md:text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
@@ -190,10 +190,22 @@
                                 <template x-for="(member, i) in activeTeam.members" :key="i">
                                     <tr
                                         class="hover:bg-white transition-colors border-b border-[#EAEAEA]"
-                                        :class="member.id ? 'cursor-pointer' : ''"
+                                        :class="member.id ? 'cursor-pointer group' : ''"
                                         @click="member.id && Livewire.dispatch('open-user-card', { userId: member.id })"
                                     >
-                                        <td data-label="Участник" class="py-3" :class="member.id ? 'text-[#2D92CE] hover:underline' : ''" x-text="member.name"></td>
+                                        <td data-label="Участник" class="py-3">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-full overflow-hidden bg-[#2E325C] text-white flex items-center justify-center text-sm font-bold shrink-0">
+                                                    <template x-if="member.avatar">
+                                                        <img :src="member.avatar" :alt="member.name" class="w-full h-full object-cover">
+                                                    </template>
+                                                    <template x-if="!member.avatar">
+                                                        <span x-text="initials(member.name)"></span>
+                                                    </template>
+                                                </div>
+                                                <span :class="member.id ? 'text-[#2D92CE] group-hover:underline' : ''" x-text="member.name"></span>
+                                            </div>
+                                        </td>
                                         <td data-label="Дата рождения" class="py-3" x-text="member.birthday"></td>
                                         <td data-label="Разряд" class="py-3" x-text="member.category"></td>
                                     </tr>
@@ -315,6 +327,9 @@ function teamsApp() {
             if (!this.activeTeam?.participation) return [];
             if (!this.selectedYear) return this.activeTeam.participation;
             return this.activeTeam.participation.filter(p => p.year == this.selectedYear);
+        },
+        initials(name) {
+            return (name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || '?';
         }
     }
 }

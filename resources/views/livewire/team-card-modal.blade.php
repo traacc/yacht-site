@@ -94,8 +94,17 @@
                                                     <button
                                                         type="button"
                                                         wire:click="$dispatch('open-user-card', { userId: '{{ $member['id'] }}' })"
-                                                        class="text-[#2D92CE] hover:underline cursor-pointer text-left"
-                                                    >{{ $member['name'] }}</button>
+                                                        class="flex items-center gap-3 text-left hover:text-[#2D92CE] transition-colors cursor-pointer group"
+                                                    >
+                                                        <div class="w-8 h-8 rounded-full overflow-hidden bg-[#2E325C] text-white flex items-center justify-center text-sm font-bold flex-shrink-0 group-hover:ring-2 group-hover:ring-[#2D92CE] transition-all">
+                                                            @if(!empty($member['avatar']))
+                                                                <img src="{{ $member['avatar'] }}" alt="{{ $member['name'] }}" class="w-full h-full object-cover">
+                                                            @else
+                                                                <span>{{ \Illuminate\Support\Str::upper(collect(preg_split('/\s+/', trim($member['name'])))->filter()->take(2)->map(fn ($w) => mb_substr($w, 0, 1))->implode('')) ?: '?' }}</span>
+                                                            @endif
+                                                        </div>
+                                                        <span class="group-hover:underline">{{ $member['name'] }}</span>
+                                                    </button>
                                                 </td>
                                                 <td class="py-2 text-brand-dark">{{ $member['birthday'] }}</td>
                                                 <td class="py-2 text-brand-dark">{{ $member['category'] }}</td>
