@@ -205,6 +205,7 @@ class YachtResource extends Resource
                     ->imageEditor()
                     ->disk('public')
                     ->visibility('public')
+                    ->maxSize(512)
                     ->panelLayout('grid')
                     ->columnSpanFull(),
                 SpatieMediaLibraryFileUpload::make('interior_gallery')
@@ -217,6 +218,7 @@ class YachtResource extends Resource
                     ->imageEditor()
                     ->disk('public')
                     ->visibility('public')
+                    ->maxSize(512)
                     ->panelLayout('grid')
                     ->columnSpanFull(),
                 /*
