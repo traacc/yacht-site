@@ -11,6 +11,7 @@ use App\Models\RegattaEntry;
 use App\Models\RegattaEntryCrew;
 use BackedEnum;
 use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
@@ -387,6 +388,7 @@ class ArchivedRegattaEntryResource extends Resource
 
                         return $record;
                     }),
+                DeleteAction::make(),
             ])
             ->toolbarActions([]);
     }
