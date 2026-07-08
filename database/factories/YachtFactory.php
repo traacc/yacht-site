@@ -27,6 +27,8 @@ class YachtFactory extends Factory
             'project' => $this->faker->optional(0.7)->bothify('Proj-###'),
             'year' => $this->faker->optional(0.9)->numberBetween(1980, date('Y')),
             'reg_place' => $this->faker->optional(0.8)->city(),
+            'home_region' => $this->faker->optional(0.7)->city(),
+            'mooring_place' => $this->faker->optional(0.6)->streetName(),
             'current_mass_kg' => $this->faker->optional(0.7)->randomFloat(2, 500, 5000),
             //'for_rent' => $forRent,
             //'rent_price' => $forRent ? $this->faker->randomFloat(2, 50, 2000) : null,

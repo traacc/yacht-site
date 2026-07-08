@@ -117,6 +117,8 @@ class YachtResource extends Resource
                         $set('project', $yacht->project);
                         $set('year', $yacht->year);
                         $set('reg_place', $yacht->reg_place);
+                        $set('home_region', $yacht->home_region);
+                        $set('mooring_place', $yacht->mooring_place);
                         $set('current_mass_kg', $yacht->current_mass_kg);
                     }
                 }),
@@ -162,6 +164,12 @@ class YachtResource extends Resource
                 TextInput::make('reg_place')
                     ->label('Место регистрации')
                     ->placeholder('Место регистрации'),
+                TextInput::make('home_region')
+                    ->label('Регион базирования')
+                    ->placeholder('Регион базирования'),
+                TextInput::make('mooring_place')
+                    ->label('Место стоянки')
+                    ->placeholder('Место стоянки'),
 
                 Select::make('approval_status')
                     ->label('Статус одобрения')

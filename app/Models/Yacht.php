@@ -30,6 +30,8 @@ class Yacht extends Model implements HasMedia
         'project',
         'year',
         'reg_place',
+        'home_region',
+        'mooring_place',
         'sail_type',
         'current_mass_kg',
         'for_rent',

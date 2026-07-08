@@ -498,6 +498,8 @@ Route::get('/yachts', function () {
         'project' => $yacht->project ?? '—',
         'year' => $yacht->year ?? '—',
         'reg_place' => $yacht->reg_place ?? '—',
+        'home_region' => $yacht->home_region ?? '—',
+        'mooring_place' => $yacht->mooring_place ?? '—',
         'gims_number' => $yacht->gims_number ?? '—',
         'sail_type_label' => match ($yacht->sail_type) {
             'dacron' => 'Дакрон',
@@ -561,6 +563,8 @@ Route::get('/yachts', function () {
             ['label' => 'Парус №',     'value' => $yacht->vfps_number],
             ['label' => 'Год выпуска', 'value' => $yacht->year ?? '—'],
             ['label' => 'Место регистрации',      'value' => $yacht->reg_place ?? '—'],
+            ['label' => 'Регион базирования',      'value' => $yacht->home_region ?? '—'],
+            ['label' => 'Место стоянки',      'value' => $yacht->mooring_place ?? '—'],
             ['label' => 'Масса',   'value' => $yacht->current_mass_kg ?? '—'],
         ],
         'options' => $yacht->optionValues

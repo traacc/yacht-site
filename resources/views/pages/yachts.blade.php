@@ -211,6 +211,10 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                                 <td class="font-semibold py-2 w-64">Участие в регатах:</td>
                                 <td x-text="selectedYacht.participation_count + ' регат(ы)'"></td>
                             </tr>
+                            <tr>
+                                <td class="font-semibold py-2 w-64">Регион базирования:</td>
+                                <td x-text="selectedYacht.home_region"></td>
+                            </tr>
                         </table>
                         <table>
                             <tr>
@@ -231,6 +235,10 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             <tr>
                                 <td class="font-semibold py-2 w-64">Балл ORC:</td>
                                 <td>—</td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold py-2 w-64">Место стоянки:</td>
+                                <td x-text="selectedYacht.mooring_place"></td>
                             </tr>
                         </table>
                     </div>
