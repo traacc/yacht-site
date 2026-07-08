@@ -498,6 +498,7 @@ Route::get('/yachts', function () {
         'project' => $yacht->project ?? '—',
         'year' => $yacht->year ?? '—',
         'reg_place' => $yacht->reg_place ?? '—',
+        'gims_number' => $yacht->gims_number ?? '—',
         'sail_type_label' => match ($yacht->sail_type) {
             'dacron' => 'Дакрон',
             'laminate' => 'Ламинат',
