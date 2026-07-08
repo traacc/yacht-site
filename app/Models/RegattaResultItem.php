@@ -15,6 +15,12 @@ class RegattaResultItem extends Model
         'regatta_result_id',
         'team_id',
         'yacht_id',
+        // Денормализованный снапшот участника: сохраняется на случай удаления
+        // команды/яхты и её заявки, чтобы итоговая строка результата уцелела.
+        'team_name',
+        'yacht_name',
+        'sail_number',
+        'captain_name',
         'not_participate',
         'total_points',
         'final_position',
@@ -49,5 +55,28 @@ class RegattaResultItem extends Model
     public function yacht(): BelongsTo
     {
         return $this->belongsTo(Yacht::class);
+    }
+
+    // ──────────────────────────────────────────────
+    // Display accessors
+    //
+    // Отдают живую связь, а если команда/яхта удалены (или soft-deleted) —
+    // денормализованный снапшот. Так публичная таблица результатов продолжает
+    // показывать имя команды, яхту и парусный номер даже после удаления.
+    // ──────────────────────────────────────────────
+
+    public function getDisplayTeamNameAttribute(): ?string
+    {
+        return $this->team?->name ?? $this->team_name;
+    }
+
+    public function getDisplayYachtNameAttribute(): ?string
+    {
+        return $this->yacht?->name ?? $this->yacht_name;
+    }
+
+    public function getDisplaySailNumberAttribute(): ?string
+    {
+        return $this->yacht?->vfps_number ?? $this->sail_number;
     }
 }
