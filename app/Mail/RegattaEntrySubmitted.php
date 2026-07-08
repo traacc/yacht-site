@@ -18,7 +18,8 @@ class RegattaEntrySubmitted extends Mailable
         $this->entry->loadMissing(['regatta', 'team', 'yacht']);
 
         return $this
-            ->subject('Новая заявка на регату «' . $this->entry->regatta->name . '»')
+            ->subject('Важно: новая заявка на регату «' . $this->entry->regatta->name . '»')
+            ->priority(1)
             ->markdown('mail.regatta-entry-submitted');
     }
 }

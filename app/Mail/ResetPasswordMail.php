@@ -22,7 +22,8 @@ class ResetPasswordMail extends Mailable
         ]);
 
         return $this
-            ->subject('Восстановление пароля на сайте Carter Pro')
+            ->subject('Важно: восстановление пароля на сайте Carter Pro')
+            ->priority(1)
             ->markdown('mail.reset-password', [
                 'url' => $url,
                 'expire' => config('auth.passwords.'.config('auth.defaults.passwords').'.expire', 60),

@@ -16,7 +16,8 @@ class YachtRentalRequested extends Mailable
     public function build(): self
     {
         return $this
-            ->subject('Новый запрос на аренду яхты: ' . ($this->rentalRequest->yacht?->name ?? '—'))
+            ->subject('Важно: новый запрос на аренду яхты: ' . ($this->rentalRequest->yacht?->name ?? '—'))
+            ->priority(1)
             ->markdown('mail.yacht-rental-requested');
     }
 }
