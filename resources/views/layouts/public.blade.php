@@ -34,6 +34,7 @@
         [x-cloak] { display: none !important; }
         .nav-link { @apply text-sm font-medium text-gray-700 hover:text-brand-red transition-colors; }
     </style>
+    <meta name="mailru-verification" content="cfd9f51b9ce97857" />
     <link rel="preload" href="{{ Vite::asset('resources/fonts/TTLakesCondensed-DemiBold.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ Vite::asset('resources/fonts/Montserrat-Regular.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="shortcut icon" href="{{ asset('favicon.jpg?v=4') }}?v=2" type="image/svg+xml">
