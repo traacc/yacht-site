@@ -39,17 +39,37 @@ class RegattaEntryResultObserver
         RegattaStatus::Postponed,
     ];
 
+    /**
+     * До удаления — пока дочерние записи заявки ещё на месте.
+     *
+     * Экипаж (regatta_entry_crew) удаляется по FK ON DELETE CASCADE вместе с
+     * заявкой, поэтому снимок состава и результатов гонок нужно снять здесь, в
+     * `deleting`, а не в `deleted` (там дети уже вычищены базой).
+     */
+    public function deleting(RegattaEntry $entry): void
+    {
+        if ($this->isArchived($entry)) {
+            $this->freezeArchivedResults($entry);
+        }
+    }
+
+    /**
+     * После удаления — для «живых» регат пересчитываем оставшихся участников
+     * (заявка уже исключена, места и очки за буквенные статусы сдвигаются).
+     */
     public function deleted(RegattaEntry $entry): void
+    {
+        if (! $this->isArchived($entry)) {
+            $this->recomputeLiveResults($entry);
+        }
+    }
+
+    /** Считается ли регата архивной (итоги историчны и не пересчитываются). */
+    private function isArchived(RegattaEntry $entry): bool
     {
         $status = $entry->regatta?->regatta_status;
 
-        if ($status !== null && in_array($status, self::ARCHIVED_STATUSES, true)) {
-            $this->freezeArchivedResults($entry);
-
-            return;
-        }
-
-        $this->recomputeLiveResults($entry);
+        return $status !== null && in_array($status, self::ARCHIVED_STATUSES, true);
     }
 
     /**
@@ -61,11 +81,12 @@ class RegattaEntryResultObserver
             ->where('regatta_id', $entry->regatta_id)
             ->pluck('id');
 
-        $captainName = $entry->crew()
-            ->where('role', 'captain')
-            ->with('teamMember.user')
-            ->first()
-            ?->teamMember?->user?->name;
+        $entry->loadMissing('crew.teamMember.user', 'raceResults', 'regatta.races');
+
+        $crewSnapshot  = $this->buildCrewSnapshot($entry);
+        $raceBreakdown = $this->buildRaceBreakdown($entry);
+        $captainName   = collect($crewSnapshot)
+            ->firstWhere('role', 'captain')['name'] ?? null;
 
         RegattaResultItem::query()
             ->whereIn('regatta_result_id', $resultIds)
@@ -75,22 +96,105 @@ class RegattaEntryResultObserver
                 fn ($q) => $q->where('yacht_id', $entry->yacht_id),
             )
             ->get()
-            ->each(function (RegattaResultItem $item) use ($captainName): void {
+            ->each(function (RegattaResultItem $item) use ($captainName, $crewSnapshot, $raceBreakdown): void {
                 $item->forceFill([
                     // Перезаписываем снимок актуальными значениями на момент заморозки.
-                    'team_name'    => $item->team?->name ?? $item->team_name,
-                    'yacht_name'   => $item->yacht?->name ?? $item->yacht_name,
-                    'sail_number'  => $item->yacht?->vfps_number ?? $item->sail_number,
-                    'captain_name' => $captainName ?? $item->captain_name,
+                    'team_name'      => $item->team?->name ?? $item->team_name,
+                    'yacht_name'     => $item->yacht?->name ?? $item->yacht_name,
+                    'sail_number'    => $item->yacht?->vfps_number ?? $item->sail_number,
+                    'captain_name'   => $captainName ?? $item->captain_name,
+                    'crew_snapshot'  => $crewSnapshot ?: $item->crew_snapshot,
+                    'race_breakdown' => $raceBreakdown ?: $item->race_breakdown,
                     // Отвязываем от удаляемых сущностей — итоговые очки и место остаются.
-                    'team_id'      => null,
-                    'yacht_id'     => null,
+                    'team_id'        => null,
+                    'yacht_id'       => null,
                 ])->saveQuietly();
             });
 
         // Результаты гонок привязаны к удаляемой заявке и уже недостижимы —
-        // убираем, чтобы не осиротели (итоги команды хранит regatta_result_items).
+        // убираем, чтобы не осиротели (разбивку хранит race_breakdown строки).
         $entry->raceResults()->delete();
+    }
+
+    /**
+     * Снимок состава экипажа заявки. Формат совпадает с
+     * RegattaResults::buildCrewMap: капитан сверху, остальные по алфавиту.
+     *
+     * @return array<int, array{id: ?string, name: string, birthday: string, rank: string, avatar: ?string, role: ?string}>
+     */
+    private function buildCrewSnapshot(RegattaEntry $entry): array
+    {
+        $crew = $entry->crew
+            ->map(function ($c): array {
+                $user = $c->teamMember?->user;
+
+                return [
+                    'id'       => $user?->id,
+                    'name'     => $user?->name ?? '',
+                    'birthday' => $user?->birth_date?->format('d.m.Y') ?? '—',
+                    'rank'     => $user?->sport_category?->getLabel() ?? '—',
+                    'avatar'   => $user?->photo_url ? asset('storage/' . $user->photo_url) : null,
+                    'role'     => $c->role,
+                ];
+            })
+            ->sort(function (array $a, array $b): int {
+                $aCaptain = ($a['role'] ?? null) === 'captain';
+                $bCaptain = ($b['role'] ?? null) === 'captain';
+
+                if ($aCaptain !== $bCaptain) {
+                    return $aCaptain ? -1 : 1;
+                }
+
+                return strcoll($a['name'], $b['name']);
+            })
+            ->values()
+            ->all();
+
+        return $crew;
+    }
+
+    /**
+     * Снимок результатов по гонкам заявки. Формат совпадает с
+     * RegattaResults::buildRacesMap. Возвращает пустой массив, если у заявки
+     * нет ни одного результата гонки (модалку показывать не за что).
+     *
+     * @return array<int, array{num: int, name: string, pos: string, pts: float|string|null}>
+     */
+    private function buildRaceBreakdown(RegattaEntry $entry): array
+    {
+        $races = $entry->regatta?->races ?? collect();
+
+        if ($races->isEmpty()) {
+            return [];
+        }
+
+        $resultsByEvent = $entry->raceResults->keyBy('event_id');
+
+        $breakdown = [];
+        $hasAny    = false;
+
+        foreach ($races->values() as $i => $event) {
+            $rr = $resultsByEvent->get($event->id);
+
+            if ($rr) {
+                $hasAny = true;
+            }
+
+            if ($rr && $rr->penalty_code) {
+                $pos = mb_strtoupper($rr->penalty_code);
+            } else {
+                $pos = $rr && $rr->position !== null ? (string) $rr->position : '—';
+            }
+
+            $breakdown[] = [
+                'num'  => $i + 1,
+                'name' => $event->name ?: ('Гонка ' . ($i + 1)),
+                'pos'  => $pos,
+                'pts'  => $rr && $rr->points !== null ? $rr->points : null,
+            ];
+        }
+
+        return $hasAny ? $breakdown : [];
     }
 
     /**

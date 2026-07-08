@@ -21,6 +21,8 @@ class RegattaResultItem extends Model
         'yacht_name',
         'sail_number',
         'captain_name',
+        'crew_snapshot',
+        'race_breakdown',
         'not_participate',
         'total_points',
         'final_position',
@@ -35,6 +37,8 @@ class RegattaResultItem extends Model
             //'final_position' => 'integer',
             'total_points_overridden'   => 'boolean',
             'final_position_overridden' => 'boolean',
+            'crew_snapshot'             => 'array',
+            'race_breakdown'            => 'array',
         ];
     }
 

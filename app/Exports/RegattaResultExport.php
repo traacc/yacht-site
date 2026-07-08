@@ -225,14 +225,34 @@ class RegattaResultExport
         // Заявка команды на эту регату (источник экипажа и результатов гонок)
         $entry = $this->entriesByTeam->get($item->team_id);
 
-        // Collect crew members via RegattaEntry (капитан → основной состав → запас)
-        $crewMembers = collect();
+        // Экипаж: из живой заявки (капитан → основной состав → запас), а если
+        // команда удалена — из снапшота строки результата (crew_snapshot уже
+        // отсортирован капитан → остальные). Приводим к единому виду массивов.
         if ($entry) {
             $roleOrder = ['captain' => 0, 'main' => 1, 'reserve' => 2];
             $crewMembers = $entry->crew
                 ->sortBy(fn ($crew) => $roleOrder[$crew->role] ?? 9)
-                ->map(fn ($crew) => $crew->teamMember->user ?? null)
+                ->map(function ($crew) {
+                    $user = $crew->teamMember->user ?? null;
+
+                    return $user ? [
+                        'name'     => $user->name,
+                        'birth'    => $user->birth_date,               // Carbon|null
+                        'category' => $user->sport_category?->getLabel(),
+                    ] : null;
+                })
                 ->filter()
+                ->values();
+        } else {
+            $crewMembers = collect($item->crew_snapshot ?? [])
+                ->map(fn ($m) => [
+                    'name'     => $m['name'] ?? '',
+                    'birth'    => (! empty($m['birthday']) && $m['birthday'] !== '—')
+                        ? \Carbon\Carbon::createFromFormat('d.m.Y', $m['birthday'])
+                        : null,
+                    'category' => ($m['rank'] ?? null) === '—' ? null : ($m['rank'] ?? null),
+                ])
+                ->filter(fn ($m) => filled($m['name']))
                 ->values();
         }
 
@@ -283,16 +303,16 @@ class RegattaResultExport
         $sheet->getStyle("A{$startRow}")->applyFromArray($centerBold);
 
         // ── Sail number (номер ВФПС — он же парусный номер яхты) ─────────────
-        $sailNumber = optional($item->yacht)->vfps_number ?? '';
-        $sheet->setCellValue("B{$startRow}", $sailNumber);
+        // Через display-аксессоры: живая яхта, иначе снапшот удалённой.
+        $sheet->setCellValue("B{$startRow}", $item->display_sail_number ?? '');
         $sheet->getStyle("B{$startRow}")->applyFromArray($centerNormal);
 
         // ── Team name ─────────────────────────────────────────────────────────
-        $sheet->setCellValue("C{$startRow}", optional($item->team)->name ?? '');
+        $sheet->setCellValue("C{$startRow}", $item->display_team_name ?? '');
         $sheet->getStyle("C{$startRow}")->applyFromArray($centerBold);
 
         // ── Yacht name ───────────────────────────────────────────────────────
-        $sheet->setCellValue("D{$startRow}", optional($item->yacht)->name ?? '');
+        $sheet->setCellValue("D{$startRow}", $item->display_yacht_name ?? '');
         $sheet->getStyle("D{$startRow}")->applyFromArray($centerBold);
 
         // ── Race results ─────────────────────────────────────────────────────
@@ -300,6 +320,8 @@ class RegattaResultExport
         $raceResultsByEvent = $entry ? $entry->raceResults->keyBy('event_id') : collect();
         // Обратная карта: номер гонки (1..N) => event_id
         $eventByRaceNumber = array_flip($this->raceNumberByEvent);
+        // Фолбэк для удалённой команды: разбивка по гонкам из снапшота (по № гонки).
+        $breakdownByNum = collect($item->race_breakdown ?? [])->keyBy('num');
 
         // Collect points columns that are NOT discarded (the two worst are discarded)
         // The template formula sums only non-parenthesised columns — we replicate that logic.
@@ -316,13 +338,19 @@ class RegattaResultExport
             $raceResult = $eventId ? $raceResultsByEvent->get($eventId) : null;
 
             // Место: код пенальти (dns/dnf/dsq…) в нижнем регистре либо число
-            if ($raceResult && $raceResult->penalty_code) {
-                $posValue = mb_strtolower($raceResult->penalty_code);
+            if ($entry) {
+                if ($raceResult && $raceResult->penalty_code) {
+                    $posValue = mb_strtolower($raceResult->penalty_code);
+                } else {
+                    $posValue = $raceResult && $raceResult->position !== null
+                        ? $raceResult->position
+                        //: 'dns';
+                        : '-';
+                }
             } else {
-                $posValue = $raceResult && $raceResult->position !== null
-                    ? $raceResult->position
-                    //: 'dns';
-                    : '-';
+                // Удалённая команда — берём место из снапшота гонок.
+                $snap     = $breakdownByNum->get($raceNum);
+                $posValue = $snap ? ($snap['pos'] === '—' ? '-' : mb_strtolower((string) $snap['pos'])) : '-';
             }
 
             // Очки: при отсутствии результата начисляем N+1 (как DNS/DNF по правилам)
@@ -366,19 +394,18 @@ class RegattaResultExport
         $sheet->getStyle("T{$startRow}")->applyFromArray($centerBold);
 
         // ── Crew members ──────────────────────────────────────────────────────
-        foreach ($crewMembers as $index => $user) {
+        foreach ($crewMembers as $index => $member) {
             $crewRow  = $startRow + $index;
             $isCaptain = ($index === 0);
 
             // Name
-            $name = $user ? $user->name : '';
-            $sheet->setCellValue("E{$crewRow}", $name);
+            $sheet->setCellValue("E{$crewRow}", $member['name'] ?? '');
             $nameStyle = array_merge($leftSmall, ['font' => ['bold' => $isCaptain, 'size' => $isCaptain ? 8 : 6]]);
             $sheet->getStyle("E{$crewRow}")->applyFromArray($nameStyle);
 
             // Birthday
-            if ($user && $user->birth_date) {
-                $sheet->setCellValue("F{$crewRow}", \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($user->birth_date));
+            if (! empty($member['birth'])) {
+                $sheet->setCellValue("F{$crewRow}", \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($member['birth']));
                 $sheet->getStyle("F{$crewRow}")->getNumberFormat()->setFormatCode('DD.MM.YYYY');
             }
             $sheet->getStyle("F{$crewRow}")->applyFromArray([
@@ -388,7 +415,7 @@ class RegattaResultExport
             ]);
 
             // Sport category (enum SportCategory → читаемая метка: КМС, МС, …)
-            $sheet->setCellValue("G{$crewRow}", $user?->sport_category?->getLabel() ?? '');
+            $sheet->setCellValue("G{$crewRow}", $member['category'] ?? '');
             $sheet->getStyle("G{$crewRow}")->applyFromArray([
                 'font'      => ['size' => 6],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],

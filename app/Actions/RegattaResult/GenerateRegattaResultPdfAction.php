@@ -56,9 +56,10 @@ final class GenerateRegattaResultPdfAction
         $rows = $resultItems->map(function ($item) use ($entriesByTeam, $eventByRaceNumber, $raceCount) {
             $entry = $entriesByTeam->get($item->team_id);
 
-            // Экипаж: Рулевой → основной состав → запас, внутри роли — по алфавиту имени.
+            // Экипаж: из живой заявки, а если команда удалена — из снапшота строки
+            // результата (crew_snapshot заполняется при заморозке; уже отсортирован
+            // капитан → остальные по алфавиту).
             $roleOrder = ['captain' => 0, 'main' => 1, 'reserve' => 2];
-            $crew = collect();
             if ($entry) {
                 $crew = $entry->crew
                     ->sortBy(
@@ -78,38 +79,54 @@ final class GenerateRegattaResultPdfAction
                     })
                     ->filter()
                     ->values();
+            } else {
+                $crew = collect($item->crew_snapshot ?? [])
+                    ->map(fn ($m) => [
+                        'name'     => $m['name'] ?? '',
+                        'birth'    => ($m['birthday'] ?? null) === '—' ? null : ($m['birthday'] ?? null),
+                        'category' => ($m['rank'] ?? null) === '—' ? null : ($m['rank'] ?? null),
+                    ])
+                    ->filter(fn ($m) => filled($m['name']))
+                    ->values();
             }
 
-            // Результаты отдельных гонок индексируем по event_id.
+            // Результаты гонок: из заявки, иначе из снапшота (race_breakdown по № гонки).
             $raceResultsByEvent = $entry ? $entry->raceResults->keyBy('event_id') : collect();
+            $breakdownByNum     = collect($item->race_breakdown ?? [])->keyBy('num');
 
             $races = [];
             for ($raceNum = 1; $raceNum <= $raceCount; $raceNum++) {
-                $eventId    = $eventByRaceNumber[$raceNum] ?? null;
-                $raceResult = $eventId ? $raceResultsByEvent->get($eventId) : null;
+                if ($entry) {
+                    $eventId    = $eventByRaceNumber[$raceNum] ?? null;
+                    $raceResult = $eventId ? $raceResultsByEvent->get($eventId) : null;
 
-                // Место: код пенальти (dns/dnf/dsq…) либо число, иначе прочерк.
-                if ($raceResult && $raceResult->penalty_code) {
-                    $pos = mb_strtolower($raceResult->penalty_code);
+                    // Место: код пенальти (dns/dnf/dsq…) либо число, иначе прочерк.
+                    if ($raceResult && $raceResult->penalty_code) {
+                        $pos = mb_strtolower($raceResult->penalty_code);
+                    } else {
+                        $pos = $raceResult && $raceResult->position !== null
+                            ? $raceResult->position
+                            : '-';
+                    }
+
+                    $pts = $raceResult && $raceResult->points !== null
+                        ? $raceResult->points
+                        : null;
                 } else {
-                    $pos = $raceResult && $raceResult->position !== null
-                        ? $raceResult->position
-                        : '-';
+                    $snap = $breakdownByNum->get($raceNum);
+                    $pos  = $snap ? ($snap['pos'] === '—' ? '-' : mb_strtolower((string) $snap['pos'])) : '-';
+                    $pts  = $snap['pts'] ?? null;
                 }
-
-                $pts = $raceResult && $raceResult->points !== null
-                    ? $raceResult->points
-                    : null;
 
                 $races[$raceNum] = ['pos' => $pos, 'pts' => $pts];
             }
 
             return [
                 'position'  => $item->final_position,
-                'sail'      => optional($item->yacht)->vfps_number ?? '',
-                'team'      => optional($item->team)->name ?? '',
+                'sail'      => $item->display_sail_number ?? '',
+                'team'      => $item->display_team_name ?? '',
                 'not_participate' => $item->not_participate ?? '',
-                'yacht'     => optional($item->yacht)->name ?? '',
+                'yacht'     => $item->display_yacht_name ?? '',
                 'total'     => $item->total_points ?? 0,
                 'crew'      => $crew,
                 'races'     => $races,

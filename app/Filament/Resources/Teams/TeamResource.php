@@ -271,6 +271,7 @@ class TeamResource extends Resource
                 DeleteAction::make()
                     ->label('Удалить')
                     ->modalHeading('Удалить команду')
+                    ->modalDescription('Команда будет удалена вместе с её заявками на регаты, составами и рейтингами. Итоговые результаты завершённых регат сохранятся в архиве обезличенно (без ссылки на команду). Действие необратимо.')
                     ->hidden(false) // показывать и для уже удалённых записей
                     ->using(fn (Team $record, DeleteAction $action) => \App\Support\SafeDelete::single($record, $action, 'команду')),
                 ForceDeleteAction::make(),

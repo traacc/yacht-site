@@ -53,6 +53,21 @@ class Team extends Model implements HasMedia
 
     protected static function booted(): void
     {
+        // Жёсткое удаление команды: заявки на регаты защищены внешним ключом
+        // regatta_entries.team_id (restrictOnDelete), поэтому удаляем их заранее
+        // и по одной через Eloquent — чтобы сработал RegattaEntryResultObserver
+        // (для завершённых регат результаты «замораживаются», для живых —
+        // пересчитываются). Массовый ->delete() обошёл бы обсервер, поэтому
+        // используем поштучное удаление.
+        // Soft-delete (7-дневное окно восстановления) заявки не трогает.
+        static::deleting(function (self $team): void {
+            if (! $team->isForceDeleting()) {
+                return;
+            }
+
+            $team->regattaEntries()->get()->each->delete();
+        });
+
         static::creating(function (self $team) {
             if ($team->external_id === null) {
                 // Атомарно увеличиваем счетчик и забираем новое значение
