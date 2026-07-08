@@ -390,13 +390,13 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                     <div x-show="galleryTab === 'exterior'" x-data="{ activeIndex: 0, lightboxOpen: false }">
                         <div class="relative mb-4">
                             <img :src="selectedYacht.gallery[activeIndex]?.url" :alt="selectedYacht.gallery[activeIndex]?.name"
-                                 class="w-full aspect-video object-cover cursor-pointer" @click="lightboxOpen = true">
+                                 class="w-full aspect-video object-contain cursor-pointer" @click="lightboxOpen = true">
                             <template x-if="selectedYacht.gallery.length > 1">
                                 <div>
-                                    <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.gallery.length - 1"
-                                            class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors">‹</button>
-                                    <button @click="activeIndex = activeIndex < selectedYacht.gallery.length - 1 ? activeIndex + 1 : 0"
-                                            class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors">›</button>
+                                    <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.interior_gallery.length - 1"
+                                            class="absolute rounded-full left-2 top-1/2 -translate-y-1/2 bg-brand-blue hover:bg-brand-blue text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors pb-1.5">‹</button>
+                                    <button @click="activeIndex = activeIndex < selectedYacht.interior_gallery.length - 1 ? activeIndex + 1 : 0"
+                                            class="absolute rounded-full right-2 top-1/2 -translate-y-1/2 bg-brand-blue hover:bg-brand-blue text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors pb-1.5">›</button>
                                 </div>
                             </template>
                         </div>
@@ -436,13 +436,13 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                     <div x-show="galleryTab === 'interior'" x-data="{ activeIndex: 0, lightboxOpen: false }">
                         <div class="relative mb-4">
                             <img :src="selectedYacht.interior_gallery[activeIndex]?.url" :alt="selectedYacht.interior_gallery[activeIndex]?.name"
-                                 class="w-full aspect-video object-cover cursor-pointer" @click="lightboxOpen = true">
+                                 class="w-full aspect-video object-contain cursor-pointer" @click="lightboxOpen = true">
                             <template x-if="selectedYacht.interior_gallery.length > 1">
                                 <div>
                                     <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.interior_gallery.length - 1"
-                                            class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors">‹</button>
+                                            class="absolute rounded-full left-2 top-1/2 -translate-y-1/2 bg-brand-blue hover:bg-brand-blue text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors pb-1.5">‹</button>
                                     <button @click="activeIndex = activeIndex < selectedYacht.interior_gallery.length - 1 ? activeIndex + 1 : 0"
-                                            class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors">›</button>
+                                            class="absolute rounded-full right-2 top-1/2 -translate-y-1/2 bg-brand-blue hover:bg-brand-blue text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors pb-1.5">›</button>
                                 </div>
                             </template>
                         </div>
