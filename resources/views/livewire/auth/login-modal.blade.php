@@ -112,12 +112,12 @@
 
                 @if($resetLinkSent)
                     <div class="text-sm text-green-600 bg-green-50 p-3 rounded">
-                        Ссылка для восстановления пароля отправлена на ваш email.
-                        Перейдите по ней, чтобы задать новый пароль.
+                        Заявка на восстановление пароля отправлена администратору.
+                        Мы свяжемся с вами по указанным контактам.
                     </div>
                 @else
                     <p class="text-sm text-brand-gray-light">
-                        Укажите email, на который зарегистрирован аккаунт — мы вышлем ссылку для создания нового пароля.
+                        Укажите email и телефон, на которые зарегистрирован аккаунт — мы получим заявку и поможем восстановить доступ.
                     </p>
 
                     <div>
@@ -128,11 +128,20 @@
                         @enderror
                     </div>
 
+                    <div>
+                        <input type="tel" wire:model="phone" placeholder="+7 (___) ___-__-__"
+                               x-mask="+7 (999) 999-99-99"
+                               class="mt-1 block w-full border-0 border-b border-[#EAEAEA] sm:text-sm @error('phone') border-red-300 @enderror">
+                        @error('phone')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
+                    </div>
+
                     <div class="mt-5 sm:mt-6">
                         <button type="submit"
                                 wire:loading.attr="disabled"
                                 class="inline-flex w-full justify-center bg-[#2D92CE] px-3 py-2 text-sm font-semibold text-white shadow-xs focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50">
-                            <span wire:loading.remove wire:target="sendResetLink">Отправить ссылку</span>
+                            <span wire:loading.remove wire:target="sendResetLink">Отправить заявку</span>
                             <span wire:loading wire:target="sendResetLink">Отправляем...</span>
                         </button>
                     </div>

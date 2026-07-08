@@ -4,6 +4,7 @@ namespace App\Livewire\Auth;
 
 use App\Enums\CreationSource;
 use App\Enums\SportCategory;
+use App\Mail\PasswordResetRequested;
 use App\Mail\SendLoginCredentials;
 use App\Mail\UserRegistered;
 use App\Models\User;
@@ -11,7 +12,6 @@ use App\Services\SettingsService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Password as PasswordBroker;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
@@ -80,19 +80,26 @@ class LoginModal extends Component
     {
         $this->validate([
             'email' => ['required', 'email'],
+            'phone' => ['required', 'string'],
         ], attributes: [
             'email' => 'email',
+            'phone' => 'телефон',
         ]);
 
-        $status = PasswordBroker::sendResetLink(['email' => $this->email]);
-
-        if ($status === PasswordBroker::RESET_LINK_SENT) {
-            $this->resetLinkSent = true;
-
-            return;
+        // Отправляем заявку на восстановление пароля администраторам —
+        // они свяжутся с пользователем по указанным контактам.
+        $adminEmails = app(SettingsService::class)->adminNotificationEmails();
+        if ($adminEmails !== []) {
+            try {
+                Mail::to($adminEmails)->send(
+                    new PasswordResetRequested($this->email, $this->phone)
+                );
+            } catch (\Exception $e) {
+                report($e);
+            }
         }
 
-        $this->addError('email', __($status));
+        $this->resetLinkSent = true;
     }
 
 
