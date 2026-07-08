@@ -215,7 +215,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                         <table>
                             <tr>
                                 <td class="font-semibold py-2 w-64">Номер ГИМС:</td>
-                                <td x-text="selectedYacht.reg_place"></td>
+                                <td x-text="selectedYacht.gims_number"></td>
                             </tr>
                             <tr>
                                 <td class="font-semibold py-2 w-64">Сертификат ORC:</td>
