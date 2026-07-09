@@ -293,7 +293,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             if ((selectedYacht.booked_dates || []).includes(dateStr)) return 'busy';
                             for (const r of (selectedYacht.rentals || [])) {
                                 if (r.start && r.end && dateStr >= r.start && dateStr <= r.end) {
-                                    return r.has_price ? 'free' : 'request';
+                                    return 'free';
                                 }
                             }
                             return 'none';
@@ -319,7 +319,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             while (d <= end) {
                                 const s = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
                                 const st = this.statusFor(s);
-                                if (st !== 'free' && st !== 'request') return false;
+                                if (st !== 'free') return false;
                                 d.setDate(d.getDate() + 1);
                             }
                             return true;
@@ -341,19 +341,18 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             if (!cell.current) return 'text-[#C6C6C6]';
                             let base;
                             if (cell.status === 'free') base = 'bg-[#BAD5C6] text-[#2E325C] cursor-pointer hover:brightness-95';
-                            else if (cell.status === 'request') base = 'bg-[#EAE1CB] text-[#2E325C] cursor-pointer hover:brightness-95';
                             else if (cell.status === 'busy') base = 'bg-[#F4C9C6] text-[#2E325C] cursor-default';
                             else base = 'bg-white text-[#2E325C] cursor-default';
                             if (this.isSelected(cell)) base += ' ring-2 ring-inset ring-[#2D92CE] font-semibold';
                             return base;
                         },
                         hoverDay(cell) {
-                            if (cell.current && this.rangeStart && !this.rangeEnd && (cell.status === 'free' || cell.status === 'request')) {
+                            if (cell.current && this.rangeStart && !this.rangeEnd && cell.status === 'free') {
                                 this.hoverDate = cell.date;
                             }
                         },
                         selectDay(cell) {
-                            if (!cell.current || cell.status !== 'free' && cell.status !== 'request') return;
+                            if (!cell.current || cell.status !== 'free') return;
                             // Первый клик (или новый выбор после завершённого диапазона) — задаём начало
                             if (!this.rangeStart || this.rangeEnd) {
                                 this.rangeStart = cell.date;
@@ -384,7 +383,6 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                         <div class="flex items-center gap-4 flex-wrap text-sm">
                             <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#BAD5C6] inline-block"></span> Свободно</span>
                             <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#F4C9C6] inline-block"></span> Занято</span>
-                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#EAE1CB] inline-block"></span> Договорная цена</span>
                             <div class="flex items-center gap-1">
                                 <button type="button" @click="prevMonth()" class="w-8 h-8 flex items-center justify-center text-[#2D92CE] text-xl hover:bg-white transition-colors">‹</button>
                                 <button type="button" @click="nextMonth()" class="w-8 h-8 flex items-center justify-center text-[#2D92CE] text-xl hover:bg-white transition-colors">›</button>
