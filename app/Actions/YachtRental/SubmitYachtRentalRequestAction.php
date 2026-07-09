@@ -14,7 +14,7 @@ class SubmitYachtRentalRequestAction
     /**
      * Сохраняет запрос на аренду яхты и уведомляет администратора и владельца яхты.
      *
-     * @param  array{name: string, phone: string, desired_date?: string|null, comment?: string|null, source?: string|null}  $data
+     * @param  array{name: string, phone: string, desired_date?: string|null, desired_date_end?: string|null, comment?: string|null, source?: string|null}  $data
      */
     public function handle(Yacht $yacht, array $data, ?string $userId = null): YachtRentalRequest
     {
@@ -23,6 +23,7 @@ class SubmitYachtRentalRequestAction
             'name' => $data['name'],
             'phone' => $data['phone'],
             'desired_date' => $data['desired_date'] ?? null,
+            'desired_date_end' => $data['desired_date_end'] ?? null,
             'comment' => $data['comment'] ?? null,
             'source' => $data['source'] ?? request()->header('Referer', 'unknown'),
             'user_id' => $userId,

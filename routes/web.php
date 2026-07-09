@@ -541,6 +541,8 @@ Route::get('/yachts', function () {
                 'price_pro' => $rental->price_pro !== null
                     ? number_format((float) $rental->price_pro, 0, '.', ' ').' ₽/день'
                     : 'по запросу',
+                'price_event_raw' => $rental->price_event !== null ? (float) $rental->price_event : null,
+                'price_pro_raw'   => $rental->price_pro !== null ? (float) $rental->price_pro : null,
             ])->values()->toArray()
             : [],
         // Даты одобренных заявок на аренду — помечаются в календаре как «Занято»
@@ -842,6 +844,7 @@ Route::post('/yachts/{yacht}/rental-request', function (Request $request, Yacht 
         'name' => ['required', 'string', 'max:255'],
         'phone' => ['required', 'string', 'max:20'],
         'desired_date' => ['nullable', 'date'],
+        'desired_date_end' => ['nullable', 'date', 'after_or_equal:desired_date'],
         'comment' => ['nullable', 'string', 'max:2000'],
     ]);
 

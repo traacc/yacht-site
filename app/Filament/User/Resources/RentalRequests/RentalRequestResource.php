@@ -61,7 +61,12 @@ class RentalRequestResource extends Resource
                     ->copyable()
                     ->copyMessage('Телефон скопирован'),
                 TextColumn::make('desired_date')
-                    ->label('Желаемая дата')
+                    ->label('Дата (с)')
+                    ->date('d.m.Y')
+                    ->placeholder('—')
+                    ->sortable(),
+                TextColumn::make('desired_date_end')
+                    ->label('Дата (по)')
                     ->date('d.m.Y')
                     ->placeholder('—')
                     ->sortable(),

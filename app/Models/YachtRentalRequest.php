@@ -19,6 +19,7 @@ class YachtRentalRequest extends Model
         'name',
         'phone',
         'desired_date',
+        'desired_date_end',
         'comment',
         'status',
         'source',
@@ -28,8 +29,9 @@ class YachtRentalRequest extends Model
     protected function casts(): array
     {
         return [
-            'desired_date' => 'date',
-            'status'       => RentalRequestStatus::class,
+            'desired_date'     => 'date',
+            'desired_date_end' => 'date',
+            'status'           => RentalRequestStatus::class,
         ];
     }
 

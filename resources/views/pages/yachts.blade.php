@@ -26,7 +26,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
             return a.name.localeCompare(b.name, 'ru');
         });
     },
-    rentalForm: { name: '', phone: '', desired_date: '', comment: '' },
+    rentalForm: { name: '', phone: '', desired_date: '', desired_date_end: '', comment: '' },
     rentalLoading: false,
     rentalSubmitted: false,
     rentalError: '',
@@ -34,12 +34,25 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
         this.selectedYacht = yacht;
         this.yacht_modal_open = true;
     },
-    openRentalModal(date = null) {
-        this.rentalForm = { name: '', phone: '', desired_date: date || '', comment: '' };
+    openRentalModal(date = null, dateEnd = null) {
+        this.rentalForm = { name: '', phone: '', desired_date: date || '', desired_date_end: dateEnd || date || '', comment: '' };
         this.rentalSubmitted = false;
         this.rentalError = '';
         this.yacht_modal_open = false;
         this.rental_modal_open = true;
+    },
+    rentalDays() {
+        const s = this.rentalForm.desired_date;
+        const e = this.rentalForm.desired_date_end || s;
+        if (!s || !e) return 0;
+        const start = new Date(s + 'T00:00:00');
+        const end = new Date(e + 'T00:00:00');
+        const diff = Math.round((end - start) / 86400000) + 1;
+        return diff > 0 ? diff : 0;
+    },
+    rentalTotal(price) {
+        if (price === null || price === undefined) return null;
+        return new Intl.NumberFormat('ru-RU').format(price * this.rentalDays()) + ' ₽';
     },
     async submitRental() {
         this.rentalError = '';
@@ -60,7 +73,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                 throw new Error(data.message || 'Произошла ошибка при отправке.');
             }
             this.rentalSubmitted = true;
-            this.rentalForm = { name: '', phone: '', desired_date: '', comment: '' };
+            this.rentalForm = { name: '', phone: '', desired_date: '', desired_date_end: '', comment: '' };
         } catch (err) {
             this.rentalError = err.message || 'Произошла ошибка при отправке. Попробуйте позже.';
         } finally {
@@ -245,11 +258,14 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                 </div>
                 {{-- Календарь доступности яхты --}}
                 <h3 class="text-3xl a-font">Доступность</h3>
-                <p>Нажмите на свободную дату для оформления заявки.</p>
+                <p>Выберите даты начала и окончания аренды, кликнув по свободным дням.</p>
                 <div class="mt-8 bg-[#F8F8F8] p-4 md:p-6"
                     x-data="{
                         calMonth: 0,
                         calYear: 2026,
+                        rangeStart: null,
+                        rangeEnd: null,
+                        hoverDate: null,
                         weekdays: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
                         monthNames: ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
                         init() {
@@ -260,6 +276,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             }
                             this.calMonth = d.getMonth();
                             this.calYear = d.getFullYear();
+                            this.$watch('selectedYacht', () => { this.rangeStart = null; this.rangeEnd = null; this.hoverDate = null; });
                         },
                         get monthLabel() { return this.monthNames[this.calMonth] + ' ' + this.calYear; },
                         prevMonth() {
@@ -294,16 +311,69 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             while (cells.length % 7 !== 0) cells.push({ day: next++, current: false });
                             return cells;
                         },
+                        rangeValid(startStr, endStr) {
+                            let d = new Date(startStr + 'T00:00:00');
+                            const end = new Date(endStr + 'T00:00:00');
+                            while (d <= end) {
+                                const s = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                                const st = this.statusFor(s);
+                                if (st !== 'free' && st !== 'request') return false;
+                                d.setDate(d.getDate() + 1);
+                            }
+                            return true;
+                        },
+                        get effectiveEnd() {
+                            if (this.rangeEnd) return this.rangeEnd;
+                            if (this.rangeStart && this.hoverDate && this.hoverDate > this.rangeStart && this.rangeValid(this.rangeStart, this.hoverDate)) {
+                                return this.hoverDate;
+                            }
+                            return null;
+                        },
+                        isSelected(cell) {
+                            if (!cell.current || !this.rangeStart) return false;
+                            const end = this.effectiveEnd;
+                            if (!end) return cell.date === this.rangeStart;
+                            return cell.date >= this.rangeStart && cell.date <= end;
+                        },
                         cellClass(cell) {
                             if (!cell.current) return 'text-[#C6C6C6]';
-                            if (cell.status === 'free') return 'bg-[#BAD5C6] text-[#2E325C] cursor-pointer hover:brightness-95';
-                            if (cell.status === 'request') return 'bg-[#EAE1CB] text-[#2E325C] cursor-pointer hover:brightness-95';
-                            if (cell.status === 'busy') return 'bg-[#F4C9C6] text-[#2E325C] cursor-default';
-                            return 'bg-white text-[#2E325C] cursor-default';
+                            let base;
+                            if (cell.status === 'free') base = 'bg-[#BAD5C6] text-[#2E325C] cursor-pointer hover:brightness-95';
+                            else if (cell.status === 'request') base = 'bg-[#EAE1CB] text-[#2E325C] cursor-pointer hover:brightness-95';
+                            else if (cell.status === 'busy') base = 'bg-[#F4C9C6] text-[#2E325C] cursor-default';
+                            else base = 'bg-white text-[#2E325C] cursor-default';
+                            if (this.isSelected(cell)) base += ' ring-2 ring-inset ring-[#2D92CE] font-semibold';
+                            return base;
+                        },
+                        hoverDay(cell) {
+                            if (cell.current && this.rangeStart && !this.rangeEnd && (cell.status === 'free' || cell.status === 'request')) {
+                                this.hoverDate = cell.date;
+                            }
                         },
                         selectDay(cell) {
                             if (!cell.current || cell.status !== 'free' && cell.status !== 'request') return;
-                            openRentalModal(cell.date);
+                            // Первый клик (или новый выбор после завершённого диапазона) — задаём начало
+                            if (!this.rangeStart || this.rangeEnd) {
+                                this.rangeStart = cell.date;
+                                this.rangeEnd = null;
+                                this.hoverDate = null;
+                                return;
+                            }
+                            // Клик раньше начала — начинаем выбор заново с этой даты
+                            if (cell.date < this.rangeStart) {
+                                this.rangeStart = cell.date;
+                                this.rangeEnd = null;
+                                return;
+                            }
+                            // Внутри диапазона есть занятые/недоступные дни — начинаем заново
+                            if (cell.date !== this.rangeStart && !this.rangeValid(this.rangeStart, cell.date)) {
+                                this.rangeStart = cell.date;
+                                this.rangeEnd = null;
+                                return;
+                            }
+                            // Завершаем диапазон и открываем заявку
+                            this.rangeEnd = cell.date;
+                            openRentalModal(this.rangeStart, this.rangeEnd);
                         }
                     }">
                     <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
@@ -323,14 +393,18 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             <div class="text-center font-semibold text-[#2E325C] py-2" x-text="wd"></div>
                         </template>
                     </div>
-                    <div class="grid grid-cols-7 gap-px bg-[#EAEAEA] border border-[#EAEAEA]">
+                    <div class="grid grid-cols-7 gap-px bg-[#EAEAEA] border border-[#EAEAEA]" @mouseleave="hoverDate = null">
                         <template x-for="(cell, i) in days" :key="i">
                             <div class="h-12 md:h-16 flex items-center justify-center transition-all"
                                     :class="cellClass(cell)"
                                     @click="selectDay(cell)"
+                                    @mouseenter="hoverDay(cell)"
                                     x-text="cell.day"></div>
                         </template>
                     </div>
+                    <p class="mt-3 text-sm text-brand-gray" x-show="rangeStart && !rangeEnd">
+                        Начало: <span class="font-semibold" x-text="rangeStart"></span>. Выберите дату окончания аренды.
+                    </p>
                 </div>
                 <h3 class="text-3xl a-font mb-6">Параметры яхты</h3>
                 <div class="overflow-y-auto relative custom-scroll mb-8">
@@ -654,10 +728,17 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                            x-mask="+7 (999) 999-99-99" placeholder="+ 7 (000)-000-00-00"
                            class="w-full bg-[#F8F8F8] border-none px-4 py-4">
                 </div>
-                <div class="mb-5">
-                    <label class="block text-brand-gray mb-2">Дата</label>
-                    <input type="date" x-model="rentalForm.desired_date" readonly
-                           class="w-full bg-[#F8F8F8] border-none px-4 py-4">
+                <div class="mb-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-brand-gray mb-2">Дата (с)</label>
+                        <input type="date" x-model="rentalForm.desired_date" readonly
+                               class="w-full bg-[#F8F8F8] border-none px-4 py-4">
+                    </div>
+                    <div>
+                        <label class="block text-brand-gray mb-2">Дата (по)</label>
+                        <input type="date" x-model="rentalForm.desired_date_end" readonly
+                               class="w-full bg-[#F8F8F8] border-none px-4 py-4">
+                    </div>
                 </div>
                 <div class="mb-6">
                     <label class="block text-brand-gray mb-2">Комментарий</label>
@@ -676,6 +757,25 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                     <div class="bg-[#F8F8F8] p-5">
                         <div class="text-brand-gray mb-2">Для профессиональных команд</div>
                         <div class="text-2xl md:text-3xl font-bold text-[#2E325C]" x-text="selectedYacht.rentals[0]?.price_pro"></div>
+                    </div>
+                </div>
+
+                {{-- Итоговая сумма аренды --}}
+                <div class="bg-[#2D92CE33] p-5 mb-6"
+                     x-show="selectedYacht.rentals && selectedYacht.rentals.length > 0 && rentalDays() > 0">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-brand-gray">Количество дней</span>
+                        <span class="font-semibold text-[#2E325C]" x-text="rentalDays()"></span>
+                    </div>
+                    <div class="flex items-center justify-between mb-2"
+                         x-show="selectedYacht.rentals[0]?.price_event_raw !== null && selectedYacht.rentals[0]?.price_event_raw !== undefined">
+                        <span class="text-brand-gray">Итого (мероприятия)</span>
+                        <span class="text-xl md:text-2xl font-bold text-[#2E325C]" x-text="rentalTotal(selectedYacht.rentals[0]?.price_event_raw)"></span>
+                    </div>
+                    <div class="flex items-center justify-between"
+                         x-show="selectedYacht.rentals[0]?.price_pro_raw !== null && selectedYacht.rentals[0]?.price_pro_raw !== undefined">
+                        <span class="text-brand-gray">Итого (профкоманды)</span>
+                        <span class="text-xl md:text-2xl font-bold text-[#2E325C]" x-text="rentalTotal(selectedYacht.rentals[0]?.price_pro_raw)"></span>
                     </div>
                 </div>
 
