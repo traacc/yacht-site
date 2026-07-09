@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Mail;
 class SubmitYachtRentalRequestAction
 {
     /**
-     * Сохраняет запрос на аренду яхты и уведомляет администратора и владельца яхты.
+     * Сохраняет запрос на аренду яхты и отправляет уведомление на order@carter-pro.ru.
      *
      * @param  array{name: string, phone: string, desired_date?: string|null, desired_date_end?: string|null, comment?: string|null, source?: string|null}  $data
      */
@@ -31,14 +31,7 @@ class SubmitYachtRentalRequestAction
 
         $rentalRequest->setRelation('yacht', $yacht);
 
-        $recipients = array_unique(array_filter([
-            env('FEEDBACK_NOTIFICATION_EMAIL') ?? config('mail.from.address'),
-            $yacht->user?->email,
-        ]));
-
-        foreach ($recipients as $recipient) {
-            Mail::to($recipient)->send(new YachtRentalRequested($rentalRequest));
-        }
+        Mail::to('order@carter-pro.ru')->send(new YachtRentalRequested($rentalRequest));
 
         return $rentalRequest;
     }
