@@ -381,7 +381,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                         <div class="flex items-center gap-4 flex-wrap text-sm">
                             <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#BAD5C6] inline-block"></span> Свободно</span>
                             <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#F4C9C6] inline-block"></span> Занято</span>
-                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#EAE1CB] inline-block"></span> По запросу</span>
+                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#EAE1CB] inline-block"></span> Договорная цена</span>
                             <div class="flex items-center gap-1">
                                 <button type="button" @click="prevMonth()" class="w-8 h-8 flex items-center justify-center text-[#2D92CE] text-xl hover:bg-white transition-colors">‹</button>
                                 <button type="button" @click="nextMonth()" class="w-8 h-8 flex items-center justify-center text-[#2D92CE] text-xl hover:bg-white transition-colors">›</button>
