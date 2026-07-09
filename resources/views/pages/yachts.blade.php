@@ -258,7 +258,6 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                 </div>
                 {{-- Календарь доступности яхты --}}
                 <h3 class="text-3xl a-font">Доступность</h3>
-                <p>Выберите даты начала и окончания аренды, кликнув по свободным дням.</p>
                 <div class="mt-8 bg-[#F8F8F8] p-4 md:p-6"
                     x-data="{
                         calMonth: 0,
@@ -279,6 +278,9 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             this.$watch('selectedYacht', () => { this.rangeStart = null; this.rangeEnd = null; this.hoverDate = null; });
                         },
                         get monthLabel() { return this.monthNames[this.calMonth] + ' ' + this.calYear; },
+                        get hasAvailability() {
+                            return (selectedYacht.rentals || []).some(r => r.start && r.end);
+                        },
                         prevMonth() {
                             if (this.calMonth === 0) { this.calMonth = 11; this.calYear--; }
                             else { this.calMonth--; }
@@ -376,6 +378,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             openRentalModal(this.rangeStart, this.rangeEnd);
                         }
                     }">
+                    <p class="mb-4" x-show="hasAvailability">Выберите даты начала и окончания аренды, кликнув по свободным дням.</p>
                     <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
                         <h6 class="a-font text-xl md:text-2xl text-[#2E325C]" x-text="monthLabel"></h6>
                         <div class="flex items-center gap-4 flex-wrap text-sm">
@@ -388,21 +391,31 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             </div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-7 mb-1">
-                        <template x-for="wd in weekdays" :key="wd">
-                            <div class="text-center font-semibold text-[#2E325C] py-2" x-text="wd"></div>
-                        </template>
+                    <div class="relative" :class="{ 'opacity-60': !hasAvailability }">
+                        <div class="grid grid-cols-7 mb-1">
+                            <template x-for="wd in weekdays" :key="wd">
+                                <div class="text-center font-semibold text-[#2E325C] py-2" x-text="wd"></div>
+                            </template>
+                        </div>
+                        <div class="grid grid-cols-7 gap-px bg-[#EAEAEA] border border-[#EAEAEA]" @mouseleave="hoverDate = null">
+                            <template x-for="(cell, i) in days" :key="i">
+                                <div class="h-12 md:h-16 flex items-center justify-center transition-all"
+                                        :class="cellClass(cell)"
+                                        @click="selectDay(cell)"
+                                        @mouseenter="hoverDay(cell)"
+                                        x-text="cell.day"></div>
+                            </template>
+                        </div>
+                        {{-- Перечёркиваем календарь, если яхта не сдаётся / нет арендных дат --}}
+                        <div x-show="!hasAvailability" class="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
+                            <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+                                <line x1="0" y1="0" x2="100" y2="100" stroke="#C6455E" stroke-width="1.5" vector-effect="non-scaling-stroke"></line>
+                                <line x1="100" y1="0" x2="0" y2="100" stroke="#C6455E" stroke-width="1.5" vector-effect="non-scaling-stroke"></line>
+                            </svg>
+                            <span class="relative bg-white/90 text-[#2E325C] a-font text-lg md:text-xl px-4 py-2">Яхта пока не сдаётся в аренду</span>
+                        </div>
                     </div>
-                    <div class="grid grid-cols-7 gap-px bg-[#EAEAEA] border border-[#EAEAEA]" @mouseleave="hoverDate = null">
-                        <template x-for="(cell, i) in days" :key="i">
-                            <div class="h-12 md:h-16 flex items-center justify-center transition-all"
-                                    :class="cellClass(cell)"
-                                    @click="selectDay(cell)"
-                                    @mouseenter="hoverDay(cell)"
-                                    x-text="cell.day"></div>
-                        </template>
-                    </div>
-                    <p class="mt-3 text-sm text-brand-gray" x-show="rangeStart && !rangeEnd">
+                    <p class="mt-3 text-sm text-brand-gray" x-show="hasAvailability && rangeStart && !rangeEnd">
                         Начало: <span class="font-semibold" x-text="rangeStart"></span>. Выберите дату окончания аренды.
                     </p>
                 </div>
