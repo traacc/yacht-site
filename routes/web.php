@@ -546,9 +546,20 @@ Route::get('/yachts', function () {
             ])->values()->toArray()
             : [],
         // Даты одобренных заявок на аренду — помечаются в календаре как «Занято»
+        // (разворачиваем весь период desired_date … desired_date_end в отдельные дни)
         'booked_dates' => $yacht->for_rent
-            ? $yacht->rentalRequests->map(fn ($request) => $request->desired_date?->format('Y-m-d'))
-                ->filter()->unique()->values()->toArray()
+            ? $yacht->rentalRequests->flatMap(function ($request) {
+                if (! $request->desired_date) {
+                    return [];
+                }
+                $end = $request->desired_date_end ?? $request->desired_date;
+                if ($end->lt($request->desired_date)) {
+                    $end = $request->desired_date;
+                }
+
+                return collect(\Carbon\CarbonPeriod::create($request->desired_date, $end))
+                    ->map(fn ($date) => $date->format('Y-m-d'));
+            })->unique()->values()->toArray()
             : [],
         'gallery' => $yacht->getMedia('gallery')->map(fn ($media) => [
             'url' => $media->getUrl(),
