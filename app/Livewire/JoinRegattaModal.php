@@ -1103,7 +1103,7 @@ class JoinRegattaModal extends Component
         // Если капитаном выбран существующий пользователь или заявку подаёт
         // авторизованный — вход и письмо не нужны.
         if (! $actor && ! $selectsCaptain) {
-            Auth::login($captain);
+            Auth::login($captain, remember: true);
             session()->regenerate();
 
             try {

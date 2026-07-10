@@ -36,7 +36,6 @@ class LoginModal extends Component
     public string $password_confirmation = '';
     public string $loginCaptchaToken = '';
     public string $registerCaptchaToken = '';
-    public bool $remember = false;
 
     // Данные для отправки credentials
     public string $selectedUserId = '';
@@ -60,8 +59,10 @@ class LoginModal extends Component
         ]);
 
         
-        // Попытка авторизации
-        if (Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+        // Попытка авторизации. Всегда выдаём remember-куку: сессия живёт
+        // ограниченное время, и без неё пользователей выбивает после
+        // периода неактивности.
+        if (Auth::attempt(['email' => $this->email, 'password' => $this->password], remember: true)) {
             session()->regenerate();
 
             // Полная перезагрузка страницы (без wire:navigate): после
@@ -179,8 +180,8 @@ class LoginModal extends Component
             }
         }
 
-        // 2. Автоматически входим в систему
-        Auth::login($user);
+        // 2. Автоматически входим в систему (с remember-кукой, см. login())
+        Auth::login($user, remember: true);
 
         session()->regenerate();
 
@@ -209,8 +210,8 @@ class LoginModal extends Component
             return;
         }
 
-        // Входим под выбранным пользователем
-        Auth::login($user);
+        // Входим под выбранным пользователем (с remember-кукой, см. login())
+        Auth::login($user, remember: true);
         session()->regenerate();
 
         $this->selectedUserId = '';
