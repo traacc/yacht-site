@@ -1,998 +1,243 @@
 # DESIGN.md — Архитектура проекта «Yacht Association»
 
-## 1. Обзор технологического стека (TALL)
+_Документ отражает фактическую архитектуру на 2026-07-10 (изначальная версия была проектом «до реализации» и сильно устарела). Актуальную структуру каталогов см. в [`PROJECT_STRUCTURE.md`](PROJECT_STRUCTURE.md), термины предметной области — в [`doc.md`](doc.md), правила для ИИ-агентов — в [`AGENTS.md`](AGENTS.md)._
+
+## 1. Технологический стек (TALL)
 
 | Компонент | Технология | Версия |
 |-----------|-----------|--------|
-| **T** — Стили | Tailwind CSS | 4.x |
-| **A** — Интерактивность | Alpine.js | 3.x |
-| **L** — Бэкенд | Laravel | 12.x |
-| **L** — Динамические компоненты | Livewire | 3.x |
-| Админ-панель | Filament PHP | 4.x |
-| Аутентификация | Laravel Jetstream | 5.x (Livewire-стек) |
+| **T** — Стили | Tailwind CSS (+ Vite 8) | 4.x |
+| **A** — Интерактивность | Alpine.js (+ flatpickr) | 3.x |
+| **L** — Бэкенд | Laravel (PHP ^8.3) | 13.x |
+| **L** — Динамические компоненты | Livewire + Volt | 3.x / 1.x |
+| Админ-панель и ЛК | Filament PHP (две панели) | 4.x |
+| Аутентификация | Laravel Breeze (Livewire-стек) | 2.x |
 | Медиа-файлы | Spatie Media Library | 11.x |
-| База данных | PostgreSQL | 16.x |
-| Кэширование | Redis | 7.x |
-| Очереди | Laravel Queue (Redis) | — |
-| Поиск | Laravel Scout + Meilisearch | — |
-
----
+| База данных | MySQL | 8.4 |
+| Кэш / Очереди | Redis | — |
+| PDF | barryvdh/laravel-dompdf | 3.x |
+| Excel | phpoffice/phpspreadsheet | 5.x |
+| UI-киты | TallStackUI, filament-map-picker, filament-yandex-map | — |
+| Тесты | PHPUnit | 12.x |
+| Окружение | Laravel Sail (Docker: app, worker, mysql, redis, meilisearch, mailpit, selenium) | — |
 
 ## 2. Архитектура высокого уровня
 
 ```mermaid
 graph TB
-    subgraph Client
-        Browser[Браузер]
-    end
+    Browser[Браузер] --> Public[Публичный сайт: роуты-замыкания + Blade + Livewire/Volt]
+    Browser --> Admin["/admin — Filament (админ)"]
+    Browser --> Cabinet["/user — Filament (личный кабинет)"]
 
-    subgraph Frontend
-        Livewire[Livewire Components]
-        Alpine[Alpine.js]
-        Tailwind[Tailwind CSS]
-    end
+    Public --> Actions[Actions / Services]
+    Admin --> Actions
+    Cabinet --> Actions
 
-    subgraph Backend
-        Laravel[Laravel 11]
-        Filament[Filament Admin Panel]
-        Jetstream[Jetstream Auth]
-    end
+    Actions --> DB[(MySQL 8.4)]
+    Actions --> Media[Spatie Media Library / storage public]
+    Actions --> Queue[Redis Queue → queue:work в контейнере worker]
 
-    subgraph Services
-        Queue[Redis Queue]
-        Cache[Redis Cache]
-        Media[Spatie Media Library]
-        TG[Telegram Bot API]
-    end
-
-    subgraph Storage
-        DB[(PostgreSQL)]
-        S3[File Storage / S3]
-    end
-
-    Browser --> Livewire
-    Browser --> Alpine
-    Livewire --> Laravel
-    Laravel --> Filament
-    Laravel --> Jetstream
-    Laravel --> Queue
-    Laravel --> Cache
-    Laravel --> Media
-    Queue --> TG
-    Media --> S3
-    Laravel --> DB
+    Queue --> TG[Telegram Bot API]
+    Queue --> VK[VK API]
+    Actions --> Yandex[Яндекс: Карты / Геокодер / SmartCaptcha]
+    Actions --> Weather[Погодный API]
+    Actions --> Mail[SMTP / Mailpit в dev]
 ```
 
----
+Контроллеров практически нет: публичные страницы — замыкания в `routes/web.php`, отдающие Blade-шаблоны; интерактив — Livewire-компоненты; мутации — Action-классы; интеграции и расчёты — Service-классы.
 
-## 3. Схема базы данных (ER-диаграмма)
+## 3. Схема базы данных
+
+### Домены и таблицы (ключевые поля)
+
+**Пользователи и команды**
+- `users` — external_id, ФИО (first/last/patronymic), birth_date, sport_category, about, email/phone (+verified_at), photo_url, `system_role`, creation_source, is_banned; soft deletes.
+- `teams` — external_id, name, organizer_id→users, default_yacht_id→yachts, approval_status, is_archived; soft deletes.
+- `team_members` — team_id, user_id, `role` (organizer/team_admin/member), status (в т.ч. left), is_permanent, joined_at.
+- `team_member_invitations` — приглашение участника (в т.ч. из другой команды): team_id, user_id, from_team_id, requested_by, status, rejection_reason.
+
+**Яхты**
+- `yachts` — name, `vfps_number` (уник.), user_id→users (владелец, **nullable — см. OwnedScope**), gims_number, class/project/year, home_region, mooring_place, for_rent, suitable_for, approval_status, owner_* (контакты), past_regattas; soft deletes.
+- `yacht_document_types` — типы документов яхты/пользователя (`owner`), настраиваются в админке.
+- `yacht_ownership_transfers` — заявки на смену владельца: yacht_id, requester_id, previous_owner_id, status, reviewed_by.
+- `yacht_rentals` — занятые диапазоны дат аренды: yacht_id, date_start/date_end, price_event/price_pro.
+- `yacht_rental_requests` — публичные заявки на аренду: yacht_id, name, phone, desired_date(_end), status (pending/approved/rejected), user_id.
+- `yacht_options` / `yacht_option_values` / `yacht_option_selections` — справочник опций аренды и выбор значений для яхты.
+
+**Соревнования**
+- `seasons` — год, даты; `series` — группа регат внутри сезона.
+- `regattas` — season_id, series_id, name, `level_coefficient`, date/time start/end, location + coordinates, water_area, описания, regulations, races_count, entry_fee_required/amount, `entry_required_documents` (json), `regatta_status` (upcoming/closest/active/finished/cancelled/postponed), postponed_to_date/note/regatta_id; soft deletes.
+- `regatta_events` — **гонки** регаты (event_datetime); `regatta_schedule_events` — программа/расписание регаты.
+- `regatta_entries` — заявки: regatta_id, team_id, yacht_id, `status` (pending/approved/rejected/withdrawn), source, documents_complete, fee_paid, entry_password.
+- `regatta_entry_crew` — экипаж заявки: regatta_entry_id, team_member_id, role (в т.ч. captain).
+- `race_results` — результат гонки: event_id→regatta_events, regatta_entry_id, position/points (string — допускают DNF/DNS и пр.), penalty_code.
+- `regatta_results` — итоговый протокол регаты (result_type, source, is_published, pdf_path) и `regatta_result_items` — строки протокола со **снапшотами** (team_name, yacht_name, sail_number, captain_name, crew_snapshot, race_breakdown) + override-флаги для ручной правки total_points/final_position, not_participate.
+- `team_ratings` / `personal_ratings` — рейтинг сезона по командам/участникам (total_points, rank_position).
+- `sequences` — счётчики (генерация номеров).
+
+**Финансы**
+- `payment_registries` — платежи с morph-привязкой `payable` (например, к заявке); name, amount, status, document.
+- `financial_reports`, `expenses` — публикуемые документы отчётности.
+
+**Контент и обратная связь**
+- `news` — author_id, type, title, content, external_url, cover_image_url (+object_position), published_to_tg/vk, published_at; soft deletes.
+- `gallery` (+ `video_links`) — альбомы (season_id, regatta_id, images json, cover) и видео-ссылки.
+- `help` / `help_category` — раздел «Помощь» (специалисты, контакты); soft deletes.
+- `faqs`, `user_questions` — FAQ и вопросы пользователей (ответ можно импортировать в FAQ).
+- `documents` — morph `documentable`: файлы, привязанные к любым сущностям.
+- `votings` / `voting_options` / `votes` — голосования (анонимность, множественный выбор, период).
+- `feedback_requests` — обращения с формы обратной связи.
+- `settings` — key/value (+group) настройки страниц сайта, редактируются в админке через `SettingsService`.
+- `media` — таблица Spatie Media Library (morph, кастомная модель `App\Models\Media`).
+
+### Связи (компактно)
 
 ```mermaid
 erDiagram
-    users {
-        bigint id PK
-        string first_name
-        string last_name
-        date birth_date
-        string sport_rank
-        string email UK
-        string phone UK
-        boolean phone_verified
-        boolean email_verified
-        string password
-        string avatar_path
-        string role "participant | admin"
-        timestamps timestamps
-    }
+    users ||--o{ team_members : ""
+    teams ||--o{ team_members : ""
+    teams }o--|| users : "organizer"
+    users |o--o{ yachts : "владелец (nullable)"
 
-    teams {
-        bigint id PK
-        string name UK
-        bigint organizer_id FK
-        bigint default_yacht_id FK "nullable"
-        text description
-        timestamps timestamps
-    }
+    seasons ||--o{ series : ""
+    seasons ||--o{ regattas : ""
+    series |o--o{ regattas : ""
 
-    team_user {
-        bigint id PK
-        bigint team_id FK
-        bigint user_id FK
-        string role "organizer | member"
-        timestamps timestamps
-    }
+    regattas ||--o{ regatta_entries : ""
+    teams ||--o{ regatta_entries : ""
+    yachts |o--o{ regatta_entries : ""
+    regatta_entries ||--o{ regatta_entry_crew : ""
+    team_members ||--o{ regatta_entry_crew : ""
 
-    yachts {
-        bigint id PK
-        string name
-        string vfps_number UK "номер ВФПС"
-        bigint owner_id FK
-        string owner_contact_phone
-        string owner_contact_email
-        text parameters
-        timestamps timestamps
-    }
+    regattas ||--o{ regatta_events : "гонки"
+    regatta_events ||--o{ race_results : ""
+    regatta_entries ||--o{ race_results : "без FK-каскада!"
 
-    seasons {
-        bigint id PK
-        integer year
-        string name
-        date start_date
-        date end_date
-        timestamps timestamps
-    }
+    regattas ||--o{ regatta_results : ""
+    regatta_results ||--o{ regatta_result_items : "снапшоты"
 
-    series {
-        bigint id PK
-        bigint season_id FK
-        string name
-        text description
-        timestamps timestamps
-    }
+    seasons ||--o{ team_ratings : ""
+    seasons ||--o{ personal_ratings : ""
 
-    regattas {
-        bigint id PK
-        bigint season_id FK
-        bigint series_id FK "nullable"
-        string name
-        text description
-        decimal level_coefficient
-        date start_date
-        date end_date
-        string water_area
-        integer race_days
-        integer race_count
-        text schedule
-        text prizes
-        string status "planned | active | completed"
-        timestamps timestamps
-    }
+    yachts ||--o{ yacht_rentals : ""
+    yachts ||--o{ yacht_rental_requests : ""
+    yachts ||--o{ yacht_ownership_transfers : ""
+    yacht_options ||--o{ yacht_option_values : ""
+    yachts }o--o{ yacht_options : "selections"
 
-    regatta_documents {
-        bigint id PK
-        bigint regatta_id FK
-        string type "regulations | race_instructions | other"
-        string title
-        timestamps timestamps
-    }
-
-    applications {
-        bigint id PK
-        bigint regatta_id FK
-        bigint team_id FK
-        bigint yacht_id FK
-        string status "pending | approved | rejected | cancelled"
-        bigint created_by FK
-        timestamps timestamps
-    }
-
-    application_crew {
-        bigint id PK
-        bigint application_id FK
-        bigint user_id FK
-        string role_on_boat
-        timestamps timestamps
-    }
-
-    races {
-        bigint id PK
-        bigint regatta_id FK
-        integer race_number
-        date race_date
-        string status "planned | completed"
-        timestamps timestamps
-    }
-
-    race_results {
-        bigint id PK
-        bigint race_id FK
-        bigint team_id FK
-        bigint yacht_id FK
-        integer position
-        decimal points
-        string penalty "nullable"
-        timestamps timestamps
-    }
-
-    regatta_results {
-        bigint id PK
-        bigint regatta_id FK
-        bigint team_id FK
-        bigint yacht_id FK
-        integer final_position
-        decimal total_points
-        decimal weighted_points "с учётом коэффициента"
-        timestamps timestamps
-    }
-
-    news {
-        bigint id PK
-        string title
-        text content
-        string type "association | external"
-        boolean published
-        boolean sent_to_telegram
-        bigint author_id FK
-        timestamp published_at
-        timestamps timestamps
-    }
-
-    albums {
-        bigint id PK
-        string title
-        text description
-        timestamps timestamps
-    }
-
-    gallery_items {
-        bigint id PK
-        bigint album_id FK
-        string type "photo | video"
-        string url "nullable, for video links"
-        timestamps timestamps
-    }
-
-    pages {
-        bigint id PK
-        string slug UK
-        string title
-        text content
-        string section "association | help"
-        integer sort_order
-        timestamps timestamps
-    }
-
-    documents {
-        bigint id PK
-        bigint page_id FK "nullable"
-        string title
-        string category
-        timestamps timestamps
-    }
-
-    leadership {
-        bigint id PK
-        string name
-        string position
-        string photo_path
-        string type "leadership | board"
-        integer sort_order
-        timestamps timestamps
-    }
-
-    ratings {
-        bigint id PK
-        bigint season_id FK
-        bigint team_id FK "nullable"
-        bigint user_id FK "nullable"
-        string type "team | personal"
-        decimal total_points
-        integer position
-        timestamps timestamps
-    }
-
-    users ||--o{ teams : "organizes"
-    users ||--o{ team_user : "belongs to"
-    teams ||--o{ team_user : "has members"
-    users ||--o{ yachts : "owns"
-    teams ||--o| yachts : "default yacht"
-
-    seasons ||--o{ series : "contains"
-    seasons ||--o{ regattas : "contains"
-    series ||--o{ regattas : "groups"
-
-    regattas ||--o{ regatta_documents : "has"
-    regattas ||--o{ applications : "receives"
-    regattas ||--o{ races : "consists of"
-    regattas ||--o{ regatta_results : "produces"
-
-    applications ||--o{ application_crew : "has crew"
-    applications }o--|| teams : "from team"
-    applications }o--|| yachts : "with yacht"
-
-    races ||--o{ race_results : "has"
-    race_results }o--|| teams : "for team"
-
-    regatta_results }o--|| teams : "for team"
-
-    news }o--|| users : "authored by"
-    albums ||--o{ gallery_items : "contains"
-
-    seasons ||--o{ ratings : "calculated for"
-    ratings }o--o| teams : "team rating"
-    ratings }o--o| users : "personal rating"
+    votings ||--o{ voting_options : ""
+    voting_options ||--o{ votes : ""
+    gallery ||--o{ video_links : ""
 ```
 
----
+> ⚠️ Каскад `race_results` → `regatta_entries` **не обеспечивается БД**: очистку осиротевших результатов и пересчёт выполняет `RegattaEntryResultObserver`. Удалять заявки только через Eloquent.
 
 ## 4. Роли и права доступа
 
-| Роль | Описание | Возможности |
-|------|----------|-------------|
-| `participant` | Зарегистрированный пользователь | Просмотр, регистрация яхты, создание/вступление в команду |
-| `team_organizer` | Организатор команды (роль в `team_user`) | Подача заявок на регату, управление составом команды, привязка яхты |
-| `admin` | Администратор сайта | Полный доступ к Filament-панели, управление всеми сущностями |
+Системные роли (`App\Enums\SystemRole`, поле `users.system_role`): `user`, `admin`, `judge`, `secretary`, `accountant`. Доступ к разделам админки ограничивается через `RestrictsAccessByRole` + страница `AccessControlSettings`; хелперы — `App\Support\AccessControl`.
 
----
+Роли в команде (`App\Enums\TeamMemberRole`, поле `team_members.role`): `organizer`, `team_admin`, `member`. Проверки — `TeamRoleGuard`, `TeamPolicy` (подача заявок на регату, управление составом).
 
-## 5. Структура директорий проекта
+## 5. Структура директорий
 
-```
-yacht/
-├── app/
-│   ├── Actions/                    # Бизнес-логика (Single Action Classes)
-│   │   ├── Regatta/
-│   │   │   ├── CreateRegattaAction.php
-│   │   │   ├── ImportResultsAction.php
-│   │   │   └── CalculateRatingsAction.php
-│   │   ├── Team/
-│   │   │   ├── CreateTeamAction.php
-│   │   │   └── ManageTeamMembersAction.php
-│   │   ├── Application/
-│   │   │   ├── SubmitApplicationAction.php
-│   │   │   └── CancelApplicationAction.php
-│   │   └── News/
-│   │       └── PublishNewsAction.php
-│   │
-│   ├── Filament/                   # Filament Admin Panel
-│   │   ├── Resources/
-│   │   │   ├── UserResource.php
-│   │   │   ├── TeamResource.php
-│   │   │   ├── YachtResource.php
-│   │   │   ├── RegattaResource.php
-│   │   │   ├── RaceResource.php
-│   │   │   ├── ApplicationResource.php
-│   │   │   ├── NewsResource.php
-│   │   │   ├── AlbumResource.php
-│   │   │   ├── SeasonResource.php
-│   │   │   ├── SeriesResource.php
-│   │   │   ├── PageResource.php
-│   │   │   ├── LeadershipResource.php
-│   │   │   └── DocumentResource.php
-│   │   ├── Pages/
-│   │   │   ├── Dashboard.php
-│   │   │   └── ImportResults.php
-│   │   └── Widgets/
-│   │       ├── UpcomingRegattasWidget.php
-│   │       ├── ApplicationsWidget.php
-│   │       └── StatsOverviewWidget.php
-│   │
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── HomeController.php
-│   │   │   ├── RegattaController.php
-│   │   │   ├── TeamController.php
-│   │   │   ├── YachtController.php
-│   │   │   ├── NewsController.php
-│   │   │   ├── GalleryController.php
-│   │   │   ├── AssociationController.php
-│   │   │   └── HelpController.php
-│   │   └── Middleware/
-│   │       └── EnsureTeamOrganizer.php
-│   │
-│   ├── Livewire/                   # Livewire Components
-│   │   ├── Home/
-│   │   │   ├── RegattaCalendar.php
-│   │   │   ├── RegattaCountdown.php
-│   │   │   └── NewsFeed.php
-│   │   ├── Regatta/
-│   │   │   ├── RegattaList.php
-│   │   │   ├── RegattaCard.php
-│   │   │   ├── ApplicationForm.php
-│   │   │   └── ResultsTable.php
-│   │   ├── Team/
-│   │   │   ├── TeamList.php
-│   │   │   ├── CreateTeam.php
-│   │   │   └── ManageMembers.php
-│   │   ├── Yacht/
-│   │   │   ├── YachtList.php
-│   │   │   ├── RegisterYacht.php
-│   │   │   └── YachtCard.php
-│   │   ├── Profile/
-│   │   │   ├── Dashboard.php
-│   │   │   ├── EditProfile.php
-│   │   │   └── MyTeams.php
-│   │   └── Gallery/
-│   │       ├── AlbumList.php
-│   │       └── AlbumView.php
-│   │
-│   ├── Models/
-│   │   ├── User.php
-│   │   ├── Team.php
-│   │   ├── Yacht.php
-│   │   ├── Season.php
-│   │   ├── Series.php
-│   │   ├── Regatta.php
-│   │   ├── Race.php
-│   │   ├── RaceResult.php
-│   │   ├── RegattaResult.php
-│   │   ├── Application.php
-│   │   ├── ApplicationCrew.php
-│   │   ├── News.php
-│   │   ├── Album.php
-│   │   ├── GalleryItem.php
-│   │   ├── Page.php
-│   │   ├── Document.php
-│   │   ├── Leadership.php
-│   │   └── Rating.php
-│   │
-│   ├── Notifications/
-│   │   ├── ApplicationSubmitted.php
-│   │   ├── ApplicationApproved.php
-│   │   ├── ApplicationCancelled.php
-│   │   └── RegattaReminder.php
-│   │
-│   ├── Services/
-│   │   ├── TelegramService.php
-│   │   ├── RatingCalculatorService.php
-│   │   ├── ResultsImportService.php
-│   │   └── VfpsLookupService.php
-│   │
-│   ├── Jobs/
-│   │   ├── SendToTelegram.php
-│   │   ├── ProcessResultsImport.php
-│   │   └── RecalculateRatings.php
-│   │
-│   ├── Enums/
-│   │   ├── UserRole.php
-│   │   ├── TeamRole.php
-│   │   ├── ApplicationStatus.php
-│   │   ├── RegattaStatus.php
-│   │   ├── NewsType.php
-│   │   └── GalleryItemType.php
-│   │
-│   └── Policies/
-│       ├── TeamPolicy.php
-│       ├── YachtPolicy.php
-│       ├── ApplicationPolicy.php
-│       └── RegattaPolicy.php
-│
-├── database/
-│   ├── migrations/
-│   │   ├── 0001_create_users_table.php
-│   │   ├── 0002_create_yachts_table.php
-│   │   ├── 0003_create_teams_table.php
-│   │   ├── 0004_create_team_user_table.php
-│   │   ├── 0005_create_seasons_table.php
-│   │   ├── 0006_create_series_table.php
-│   │   ├── 0007_create_regattas_table.php
-│   │   ├── 0008_create_regatta_documents_table.php
-│   │   ├── 0009_create_applications_table.php
-│   │   ├── 0010_create_application_crew_table.php
-│   │   ├── 0011_create_races_table.php
-│   │   ├── 0012_create_race_results_table.php
-│   │   ├── 0013_create_regatta_results_table.php
-│   │   ├── 0014_create_news_table.php
-│   │   ├── 0015_create_albums_table.php
-│   │   ├── 0016_create_gallery_items_table.php
-│   │   ├── 0017_create_pages_table.php
-│   │   ├── 0018_create_documents_table.php
-│   │   ├── 0019_create_leadership_table.php
-│   │   └── 0020_create_ratings_table.php
-│   │
-│   ├── seeders/
-│   │   ├── DatabaseSeeder.php
-│   │   ├── YachtSeeder.php          # Импорт существующего списка яхт
-│   │   ├── PageSeeder.php           # Начальные страницы
-│   │   └── AdminUserSeeder.php
-│   │
-│   └── factories/
-│       ├── UserFactory.php
-│       ├── TeamFactory.php
-│       ├── YachtFactory.php
-│       └── RegattaFactory.php
-│
-├── resources/
-│   ├── views/
-│   │   ├── layouts/
-│   │   │   ├── app.blade.php         # Основной макет
-│   │   │   └── guest.blade.php       # Макет для гостей
-│   │   │
-│   │   ├── pages/
-│   │   │   ├── home.blade.php
-│   │   │   ├── association/
-│   │   │   │   ├── index.blade.php
-│   │   │   │   ├── charter.blade.php
-│   │   │   │   ├── leadership.blade.php
-│   │   │   │   ├── board.blade.php
-│   │   │   │   ├── policy.blade.php
-│   │   │   │   ├── rules.blade.php
-│   │   │   │   ├── regulations.blade.php
-│   │   │   │   └── decisions.blade.php
-│   │   │   ├── competitions/
-│   │   │   │   ├── index.blade.php
-│   │   │   │   └── show.blade.php
-│   │   │   ├── teams/
-│   │   │   │   ├── index.blade.php
-│   │   │   │   └── show.blade.php
-│   │   │   ├── yachts/
-│   │   │   │   ├── index.blade.php
-│   │   │   │   └── show.blade.php
-│   │   │   ├── ratings/
-│   │   │   │   └── index.blade.php
-│   │   │   ├── help/
-│   │   │   │   └── index.blade.php
-│   │   │   ├── gallery/
-│   │   │   │   ├── index.blade.php
-│   │   │   │   └── album.blade.php
-│   │   │   └── news/
-│   │   │       ├── index.blade.php
-│   │   │       └── show.blade.php
-│   │   │
-│   │   ├── profile/
-│   │   │   ├── dashboard.blade.php
-│   │   │   ├── edit.blade.php
-│   │   │   ├── teams.blade.php
-│   │   │   └── yachts.blade.php
-│   │   │
-│   │   ├── livewire/                  # Шаблоны Livewire-компонентов
-│   │   │   ├── home/
-│   │   │   ├── regatta/
-│   │   │   ├── team/
-│   │   │   ├── yacht/
-│   │   │   ├── profile/
-│   │   │   └── gallery/
-│   │   │
-│   │   └── components/                # Blade-компоненты
-│   │       ├── countdown-timer.blade.php
-│   │       ├── regatta-card.blade.php
-│   │       ├── team-card.blade.php
-│   │       ├── yacht-card.blade.php
-│   │       ├── news-card.blade.php
-│   │       ├── person-card.blade.php
-│   │       └── navigation.blade.php
-│   │
-│   ├── css/
-│   │   └── app.css
-│   └── js/
-│       └── app.js
-│
-├── routes/
-│   ├── web.php                        # Публичные маршруты
-│   ├── auth.php                       # Jetstream auth routes
-│   └── api.php                        # API (webhook для TG и т.д.)
-│
-├── config/
-│   ├── filament.php
-│   ├── jetstream.php
-│   ├── media-library.php
-│   └── telegram.php                   # Настройки Telegram-бота
-│
-├── tests/
-│   ├── Feature/
-│   │   ├── Auth/
-│   │   ├── Regatta/
-│   │   ├── Team/
-│   │   ├── Yacht/
-│   │   └── Application/
-│   └── Unit/
-│       ├── RatingCalculatorTest.php
-│       └── ResultsImportTest.php
-│
-├── doc.md                             # Техническое задание
-├── DESIGN.md                          # Этот файл
-├── composer.json
-├── package.json
-├── tailwind.config.js
-├── vite.config.js
-└── .env.example
-```
+Актуальная структура и разбор по доменам — в [`PROJECT_STRUCTURE.md`](PROJECT_STRUCTURE.md). Ключевое:
 
----
+- `app/Actions/{Regatta,RegattaEntry,RegattaResult,Team,Yacht,YachtRental,Voting,Feedback,Document}/` — бизнес-логика (Single Action Classes);
+- `app/Services/` — расчёты (`RaceScorer`, `RatingCalculator`), `SettingsService`, `Rgd/RgdParser`, интеграции (Telegram, VK, Яндекс, погода);
+- `app/Filament/` — админ-панель; `app/Filament/User/` — личный кабинет;
+- `app/Livewire/` — публичные компоненты; `app/Observers/` — регистрируются в `AppServiceProvider`;
+- `routes/web.php` (замыкания), `routes/auth.php` (Breeze), `routes/console.php` (планировщик). **`api.php` нет.**
 
-## 6. Маршрутизация (Routes)
+## 6. Маршрутизация (фактическая)
 
-### Публичные маршруты
+### Публичные маршруты (`routes/web.php`)
 
-| Метод | URI | Контроллер / Компонент | Описание |
-|-------|-----|----------------------|----------|
-| GET | `/` | `HomeController@index` | Главная страница |
-| GET | `/association` | `AssociationController@index` | Раздел Ассоциация |
-| GET | `/association/{slug}` | `AssociationController@show` | Подстраница Ассоциации |
-| GET | `/competitions` | `RegattaController@index` | Список регат |
-| GET | `/competitions/{regatta}` | `RegattaController@show` | Карточка регаты |
-| GET | `/teams` | `TeamController@index` | Список команд |
-| GET | `/teams/{team}` | `TeamController@show` | Карточка команды |
-| GET | `/yachts` | `YachtController@index` | Список яхт |
-| GET | `/yachts/{yacht}` | `YachtController@show` | Карточка яхты |
-| GET | `/ratings` | `RatingsController@index` | Рейтинги |
-| GET | `/help` | `HelpController@index` | Раздел помощь |
-| GET | `/news` | `NewsController@index` | Список новостей |
-| GET | `/news/{news}` | `NewsController@show` | Новость |
-| GET | `/gallery` | `GalleryController@index` | Галерея |
-| GET | `/gallery/{album}` | `GalleryController@show` | Альбом |
+| Метод | URI | Описание |
+|-------|-----|----------|
+| GET | `/` | Главная: новости, галерея, FAQ, партнёры, таймер и календарь регат |
+| GET | `/association/{charter,management,trustees,regulations,decisions,votings}` | Раздел «Ассоциация» (контент из `settings` + документы) |
+| POST | `/association/votings/{voting}/vote` | Голосование (`CastVoteAction`) |
+| GET | `/competitions` | Список регат |
+| GET | `/regattas/{regatta}` | Карточка регаты |
+| GET | `/regattas/entries` | Заявки на регаты |
+| GET | `/regattas/calendar/pdf` | PDF-календарь сезона |
+| GET | `/regatta/{regatta}/download-{documents,teams,teams-pdf,results-pdf}` | Выгрузки по регате (архивы, PDF) |
+| GET | `/series/results`, `/series/{series}` | Результаты серий |
+| GET | `/teams` (+ `/team/{team}/download-history`) | Команды, PDF-история команды |
+| GET | `/yachts` | Каталог яхт (вкл. аренду) |
+| POST | `/yachts/{yacht}/rental-request` | Заявка на аренду (`SubmitYachtRentalRequestAction`) |
+| GET | `/ratings` | Рейтинги (командный/личный) |
+| GET | `/news`, `/news/{news}` | Новости |
+| GET | `/gallery` (+ `/gallery/{gallery}/download`) | Галерея, скачивание альбома |
+| GET | `/help` | Помощь |
+| POST | `/feedback`, `/questions` | Обратная связь, вопрос (Yandex SmartCaptcha) |
 
-### Защищённые маршруты (auth)
+### Панели Filament
 
-| Метод | URI | Компонент | Описание |
-|-------|-----|-----------|----------|
-| GET | `/profile` | `Livewire\Profile\Dashboard` | Личный кабинет |
-| GET | `/profile/teams` | `Livewire\Profile\MyTeams` | Мои команды |
-| GET | `/profile/teams/create` | `Livewire\Team\CreateTeam` | Создание команды |
-| GET | `/profile/yachts/register` | `Livewire\Yacht\RegisterYacht` | Регистрация яхты |
+| URI | Панель | Содержимое |
+|-----|--------|-----------|
+| `/admin` | `AdminPanelProvider` | ~25 ресурсов (регаты, заявки pending/archived, результаты, команды, рейтинги, яхты + опции/типы документов/передачи владения, аренда, пользователи, новости, галерея, помощь, FAQ, голосования, финансы, серии, вопросы), страницы настроек разделов сайта (`*PageSettings`, `SiteSettings`, `AccessControlSettings`), виджеты |
+| `/user` | `UserPanelProvider` | ЛК: мои команды, яхты, заявки на регаты, результаты, аренда, передачи владения, вопросы, профиль |
 
-### Админ-панель (Filament)
+Аутентификация — Breeze (`routes/auth.php`) + Livewire `Auth/LoginModal`; вход в панели — `FilamentAuthenticate`.
 
-| URI | Описание |
-|-----|----------|
-| `/admin` | Dashboard Filament |
-| `/admin/users` | Управление пользователями |
-| `/admin/teams` | Управление командами |
-| `/admin/yachts` | Управление яхтами |
-| `/admin/regattas` | Управление регатами |
-| `/admin/applications` | Управление заявками |
-| `/admin/news` | Управление новостями |
-| `/admin/gallery` | Управление галереей |
-| `/admin/pages` | Управление страницами |
-| `/admin/import-results` | Импорт результатов |
+## 7. Ключевые бизнес-процессы
 
----
+### 7.1. Заявка на регату
+`JoinRegattaModal` (Livewire) → `SubmitRegattaEntryAction`: создаёт `RegattaEntry` + `RegattaEntryCrew`, письма (`RegattaEntrySubmitted`, `SendRegattaEntryPassword` — пароль для редактирования заявки без входа). Заявка попадает в Pending-ресурс админки; статусы — `EntryStatus`. Обязательные документы заявки — `UpdateRegattaEntryRequiredDocumentsAction`, оплата — `PaymentRegistry` (morph payable) + `RegattaEntryFeeObserver`.
 
-## 7. Livewire-компоненты (детализация)
+### 7.2. Результаты и рейтинги
+Импорт протокола: `ImportRegattaResultItemsAction` (Excel) или `ImportRgdResultItemsAction` + `Services/Rgd/RgdParser` (формат RGD, также команда `regattas:import-rgd`). Очки считает `RaceScorer` (позиции/штрафы — строки: DNF, DNS и т.п.), рейтинги сезона — `RatingCalculator` (+ команда `ratings:recalculate`) с учётом `level_coefficient`. Строки протокола хранят снапшоты состава и разбивку по гонкам; ручные правки — override-флаги. Публикация протокола — `is_published`, PDF — `GenerateRegattaResultPdfAction`. Пересчёты триггерятся обсерверами (`RegattaEntryResultObserver`, `RegattaResultItemObserver`).
 
-### `Home\RegattaCalendar`
-- Интерактивный календарь с отметками регат
-- Клик по дате → переход к регате
-- Данные: список регат текущего сезона
+### 7.3. Публикация новостей в соцсети
+Новость с `published_at` в будущем публикуется отложенно: планировщик ежеминутно запускает `news:publish-to-telegram` / `news:publish-to-vk` → jobs `PublishNewsToTelegram` / `PublishNewsToVk` → `TelegramService` / `VkService` (поддерживают прокси); флаги `published_to_tg/vk`. `NewsObserver` — сопутствующая логика при сохранении.
 
-### `Home\RegattaCountdown`
-- Таймер обратного отсчёта до ближайшей регаты
-- Кнопка «Заявка на регату»
-- Alpine.js для отображения таймера на клиенте
+### 7.4. Аренда яхт
+Яхта с `for_rent=true` показывается в каталоге аренды с опциями (`yacht_options`) и занятыми датами (`yacht_rentals`, календарь в админке — `Forms/Components/RentalCalendar`). Публичная заявка → `SubmitYachtRentalRequestAction` → `YachtRentalRequest` (+ письмо `YachtRentalRequested`); одобрение в админке бронирует даты.
 
-### `Home\NewsFeed`
-- Пагинированный список новостей
-- Фильтрация по типу (ассоциация / внешние)
+### 7.5. Передача владения яхтой
+Пользователь в ЛК подаёт `YachtOwnershipTransfer` (яхты без владельца ищутся по `vfps_number` через `withoutGlobalScopes()`); админ одобряет — яхта перепривязывается к новому владельцу.
 
-### `Regatta\ApplicationForm`
-- Форма подачи заявки на регату
-- Выбор команды (где пользователь — организатор)
-- Выбор яхты (привязанная или из списка)
-- Формирование экипажа из участников команды
+### 7.6. Статусы регат
+Команда `regattas:update-statuses` (ежеминутно) переводит регаты по датам: upcoming → closest → active → finished; поддерживаются cancelled/postponed (с переносом на дату или другую регату).
 
-### `Regatta\ResultsTable`
-- Таблица результатов регаты
-- Отображение промежуточных и итоговых результатов
-- Sorting, expandable rows для просмотра гонок
+## 8. Интеграции
 
-### `Team\CreateTeam`
-- Форма создания команды
-- Автоматическое назначение создателя организатором
-- Привязка яхты по умолчанию
+| Интеграция | Реализация | Конфигурация (env) |
+|-----------|------------|--------------------|
+| Telegram (новости в канал) | `TelegramService` + job | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_PROXY` |
+| VK (новости в группу) | `VkService` + job (OAuth-refresh токены) | `VK_CLIENT_ID/SECRET`, `VK_ACCESS_TOKEN`, `VK_REFRESH_TOKEN`, `VK_GROUP_ID`, `VK_DEVICE_ID`, `VK_PROXY` |
+| Яндекс.Карты / Геокодер | `YandexMapService`, `YandexGeocoderService`, filament-yandex-map, map-picker | `YANDEX_MAP_API_KEY`, `YANDEX_MAP_SUGGEST_API_KEY` |
+| Yandex SmartCaptcha | `Rules/YandexCaptcha` (формы feedback/questions/rental) | `YANDEX_SMARTCAPTCHA_SITE_KEY/SERVER_KEY` |
+| Погода | `WeatherService` (кэшируется) | — |
+| Почта | Mailable-классы `app/Mail`; в dev — Mailpit | `MAIL_*`, `FEEDBACK_NOTIFICATION_EMAIL` |
 
-### `Yacht\RegisterYacht`
-- Форма регистрации яхты
-- Автопоиск по номеру ВФПС из существующего списка
-- Валидация уникальности, уведомление о занятости
+## 9. Медиа-файлы (Spatie Media Library)
 
----
+Кастомная модель `App\Models\Media` (uuid). Коллекции: `Yacht` — `gallery`, `interior_gallery`; `Gallery` — `cover`, `images`, `videos`; `News`, `Team`, `Help` — `gallery`. Часть изображений хранится путями на диске `public` (аватары, обложки новостей, настройки страниц); конвертация — `Services/ImageConverter`.
 
-## 8. Модели и связи
+## 10. Планировщик и очереди
 
-### `User`
-```php
-// Relationships
-hasMany: yachts (owned)
-belongsToMany: teams (through team_user, with pivot role)
-hasMany: applications (created)
-hasMany: news (authored)
-// Computed
-isTeamOrganizer(Team $team): bool
-isAdmin(): bool
-```
+`routes/console.php` (контейнер worker также крутит `queue:work redis`):
 
-### `Team`
-```php
-belongsTo: organizer (User)
-belongsTo: defaultYacht (Yacht, nullable)
-belongsToMany: members (User, through team_user, with pivot role)
-hasMany: applications
-hasMany: raceResults
-hasMany: regattaResults
-hasMany: ratings
-```
+| Команда / Job | Периодичность |
+|---------------|---------------|
+| `regattas:update-statuses` | ежеминутно |
+| `news:publish-to-telegram`, `news:publish-to-vk` | ежеминутно, `withoutOverlapping` |
+| `model:prune` | ежедневно |
+| Jobs: `PublishNewsToTelegram`, `PublishNewsToVk` | очередь Redis |
 
-### `Yacht`
-```php
-belongsTo: owner (User)
-hasMany: applications
-hasMany: raceResults
-hasMany: regattaResults
-// Spatie Media Library: photos
-```
+Разовые команды: `ratings:recalculate`, `regattas:import-rgd`, `yachts:prune-orphans`, `users:update-names`, `users:list-multi-team`.
 
-### `Regatta`
-```php
-belongsTo: season
-belongsTo: series (nullable)
-hasMany: races
-hasMany: applications
-hasMany: regattaResults
-hasMany: documents (RegattaDocument)
-// Spatie Media Library: documents, images
-```
+## 11. Тестирование и известные особенности
 
-### `Application`
-```php
-belongsTo: regatta
-belongsTo: team
-belongsTo: yacht
-belongsTo: createdBy (User)
-hasMany: crew (ApplicationCrew)
-// Scopes: pending(), approved()
-```
+- **Тесты (PHPUnit) не работают на in-memory SQLite** — есть MySQL-only ENUM-миграции (`DB::statement ... MODIFY COLUMN ... ENUM`). Проверка БД-логики — `php artisan tinker` на MySQL в контейнере.
+- Artisan — только внутри контейнера: `docker exec yacht-site-laravel.worker-1 php artisan …`.
+- CSS собран заранее — после новых Tailwind-классов обязателен `npm run build`.
+- `Yacht` — глобальный скоуп `OwnedScope` (`user_id IS NOT NULL`); стаб-яхты без владельца видны только через `withoutGlobalScopes()`.
+- Позиции/очки в результатах — строки (нужны коды DNF/DNS/OCS и т.п.), см. `PenaltyCode`.
+- Мягкое удаление у ключевых сущностей; безопасное удаление — `App\Support\SafeDelete`.
 
-### `Race`
-```php
-belongsTo: regatta
-hasMany: results (RaceResult)
-```
+## 12. Зависимости
 
-### `Rating`
-```php
-belongsTo: season
-belongsTo: team (nullable)
-belongsTo: user (nullable)
-// Scopes: teamRatings(), personalRatings()
-```
-
----
-
-## 9. Ключевые бизнес-процессы
-
-### 9.1. Подача заявки на регату
-
-```mermaid
-sequenceDiagram
-    participant U as Team Organizer
-    participant LW as Livewire Component
-    participant A as Action
-    participant DB as Database
-    participant N as Notification
-
-    U->>LW: Нажимает Заявка на регату
-    LW->>LW: Проверка: user is organizer
-    LW->>LW: Показ формы: выбор яхты + экипаж
-    U->>LW: Заполняет и отправляет
-    LW->>A: SubmitApplicationAction
-    A->>DB: Создание Application + ApplicationCrew
-    A->>N: ApplicationSubmitted notification
-    N-->>U: Email + уведомление в ЛК
-```
-
-### 9.2. Публикация новости + Telegram
-
-```mermaid
-sequenceDiagram
-    participant Admin as Администратор
-    participant FP as Filament Panel
-    participant DB as Database
-    participant Q as Queue
-    participant TG as Telegram API
-
-    Admin->>FP: Создаёт/публикует новость
-    FP->>DB: Сохранение News record
-    FP->>Q: Dispatch SendToTelegram job
-    Q->>TG: POST /sendMessage
-    TG-->>Q: OK
-    Q->>DB: Mark sent_to_telegram = true
-```
-
-### 9.3. Импорт результатов соревнований
-
-```mermaid
-sequenceDiagram
-    participant Admin as Администратор
-    participant FP as Filament Import Page
-    participant Q as Queue
-    participant S as ResultsImportService
-    participant DB as Database
-    participant R as RatingCalculatorService
-
-    Admin->>FP: Загружает CSV/Excel файл
-    FP->>Q: Dispatch ProcessResultsImport
-    Q->>S: Парсинг файла
-    S->>S: Валидация формата и ID команд
-    alt Формат валиден
-        S->>DB: Upsert RaceResults + RegattaResults
-        S->>R: Пересчёт рейтингов
-        R->>DB: Update Ratings table
-    else Ошибка формата
-        S-->>Admin: Уведомление об ошибке
-        Note over FP: Возможность загрузить как изображение
-    end
-```
-
----
-
-## 10. Filament Admin — ресурсы и кастомные страницы
-
-### Ресурсы (CRUD)
-
-| Resource | Особенности |
-|----------|-------------|
-| `UserResource` | Фильтры по ролям, управление командами пользователя |
-| `TeamResource` | Inline-редактирование состава, привязка яхты |
-| `YachtResource` | Поиск по ВФПС номеру, связь с владельцем |
-| `RegattaResource` | Relation Manager для гонок и документов, статусы |
-| `ApplicationResource` | Approve/Reject actions, просмотр экипажа |
-| `NewsResource` | Rich-editor, toggle публикации, отправка в TG |
-| `AlbumResource` | Bulk upload через Spatie ML, разделение фото/видео |
-| `SeasonResource` | Связь с регатами и сериями |
-| `PageResource` | Markdown/WYSIWYG editor для текстовых страниц |
-| `LeadershipResource` | Сортировка drag-n-drop, фото |
-
-### Кастомные страницы
-
-| Страница | Функциональность |
-|----------|-----------------|
-| `ImportResults` | Upload CSV/Excel, preview, confirm import |
-| `Dashboard` | Виджеты: ближайшие регаты, новые заявки, статистика |
-
----
-
-## 11. Интеграции
-
-### Telegram Bot API
-- **Назначение**: Автоматическая публикация новостей в TG-канал
-- **Реализация**: `TelegramService` использует HTTP-клиент Laravel
-- **Триггер**: Event `NewsPublished` → Listener → Job `SendToTelegram`
-- **Конфигурация**: `config/telegram.php` (bot token, channel ID)
-
-### Импорт данных ВФПС
-- **Назначение**: Автоподсказка при регистрации яхты
-- **Реализация**: Seeder для начального импорта; `VfpsLookupService` для поиска
-- **Источник**: CSV/Excel файл с реестром яхт ВФПС
-
----
-
-## 12. Медиа-файлы (Spatie Media Library)
-
-| Модель | Коллекции | Преобразования |
-|--------|-----------|----------------|
-| `User` | `avatar` | thumb (100x100), medium (300x300) |
-| `Yacht` | `photos` | thumb, gallery (800x600) |
-| `Regatta` | `documents`, `images` | — |
-| `News` | `cover`, `attachments` | thumb, og-image (1200x630) |
-| `GalleryItem` | `media` | thumb (200x200), large (1920x1080) |
-| `Leadership` | `photo` | card (400x400) |
-| `Document` | `file` | — |
-| `RegattaDocument` | `file` | — |
-
----
-
-## 13. Кэширование
-
-| Ключ | TTL | Содержимое |
-|------|-----|-----------|
-| `home.upcoming_regatta` | 1 час | Ближайшая регата + countdown |
-| `home.calendar.{season_id}` | 1 час | Данные календаря сезона |
-| `ratings.team.{season_id}` | 6 часов | Командный рейтинг сезона |
-| `ratings.personal.{season_id}` | 6 часов | Личный рейтинг сезона |
-| `pages.{slug}` | 24 часа | Контент статических страниц |
-
-Инвалидация: через Model Observers при обновлении связанных данных.
-
----
-
-## 14. Очереди (Jobs)
-
-| Job | Queue | Описание |
-|-----|-------|----------|
-| `SendToTelegram` | `notifications` | Отправка новости в TG-канал |
-| `ProcessResultsImport` | `imports` | Обработка загруженного файла результатов |
-| `RecalculateRatings` | `default` | Пересчёт рейтингов после импорта |
-| `ProcessMediaConversions` | `media` | Обработка изображений (Spatie ML) |
-
----
-
-## 15. Этапы реализации
-
-### Этап 1 — Фундамент
-- Инициализация Laravel 11 + Jetstream (Livewire)
-- Установка и настройка Filament PHP
-- Установка Tailwind CSS, Alpine.js, Spatie Media Library
-- Миграции БД (все таблицы)
-- Модели с отношениями
-- Seeders (админ, тестовые данные, список яхт ВФПС)
-
-### Этап 2 — Публичная часть
-- Главная страница (календарь, countdown, новости)
-- Раздел «Ассоциация» (статические страницы из БД)
-- Раздел «Соревнования» (список + карточка регаты)
-- Раздел «Команды» (список + карточка)
-- Раздел «Яхты» (список + карточка)
-- Раздел «Помощь»
-- Раздел «Галерея»
-
-### Этап 3 — Личный кабинет
-- Регистрация и авторизация (Jetstream)
-- Профиль пользователя
-- Регистрация яхты (с автопоиском ВФПС)
-- Создание и управление командой
-- Подача заявок на регату
-
-### Этап 4 — Админ-панель (Filament)
-- Все CRUD-ресурсы
-- Импорт результатов (CSV/Excel)
-- Управление заявками
-- Публикация новостей
-- Управление галереей (bulk upload)
-- Управление статическими страницами
-
-### Этап 5 — Интеграции и рейтинги
-- Telegram-интеграция (публикация новостей)
-- Система расчёта рейтингов
-- Результаты соревнований (таблицы)
-- Уведомления (email + in-app)
-
-### Этап 6 — Полировка
-- SEO-оптимизация
-- Адаптивная мобильная версия
-- Performance (кэширование, оптимизация запросов)
-- Тестирование (Feature + Unit)
-- Деплой
-
----
-
-## 16. Зависимости (composer.json)
-
-```json
-{
-    "require": {
-        "php": "^8.2",
-        "laravel/framework": "^11.0",
-        "laravel/jetstream": "^5.0",
-        "livewire/livewire": "^3.0",
-        "filament/filament": "^3.0",
-        "spatie/laravel-medialibrary": "^11.0",
-        "spatie/laravel-permission": "^6.0",
-        "maatwebsite/excel": "^3.1",
-        "nutgram/nutgram": "^4.0",
-        "laravel/scout": "^10.0",
-        "meilisearch/meilisearch-php": "^1.0"
-    },
-    "require-dev": {
-        "pestphp/pest": "^2.0",
-        "laravel/pint": "^1.0",
-        "larastan/larastan": "^2.0"
-    }
-}
-```
-
----
-
-## 17. Переменные окружения (.env)
-
-```env
-# Database
-DB_CONNECTION=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=yacht
-DB_USERNAME=yacht
-DB_PASSWORD=secret
-
-# Redis
-REDIS_HOST=127.0.0.1
-REDIS_PORT=6379
-
-# Queue
-QUEUE_CONNECTION=redis
-
-# Telegram
-TELEGRAM_BOT_TOKEN=
-TELEGRAM_CHANNEL_ID=
-
-# Media Storage
-MEDIA_DISK=s3
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_DEFAULT_REGION=
-AWS_BUCKET=
-
-# Meilisearch
-SCOUT_DRIVER=meilisearch
-MEILISEARCH_HOST=http://127.0.0.1:7700
-MEILISEARCH_KEY=
-```
+Источник истины — [`composer.json`](composer.json) / [`package.json`](package.json). Основное: `laravel/framework ^13`, `filament/filament ^4` (+ spatie-media-library-plugin), `livewire/livewire ^3` + `livewire/volt`, `spatie/laravel-medialibrary ^11`, `barryvdh/laravel-dompdf ^3`, `phpoffice/phpspreadsheet ^5`, `tallstackui/tallstackui`, `dotswan/filament-map-picker`, `kpebedko22/filament-yandex-map`; dev: `laravel/breeze`, `laravel/pint`, `laravel/sail`, `phpunit/phpunit ^12`. Фронтенд: `tailwindcss ^4`, `vite ^8`, `alpinejs ^3`, `flatpickr`. **Новые пакеты — только по явному указанию.**
