@@ -2,6 +2,7 @@
         isOpen: @entangle('isOpen'),
         requireConfirm: @js($this->state === 'guest' || $this->state === 'form'),
         attemptClose() {
+            if (! this.isOpen) return;
             if (this.requireConfirm && ! confirm('Закрыть окно? Введённые данные не будут сохранены.')) return;
             this.isOpen = false;
             $wire.closeModal();
