@@ -86,11 +86,11 @@
                                 <tr class="hover:bg-gray-50 transition-colors border-b border-brand-border">
                                     <td class="py-3">{{ $index + 1 }}</td>
                                     <td class="py-3">
-                                        @if($entry->yacht && $entry->team)
+                                        @if($entry->yacht && $entry->crew->count())
                                             <button type="button"
-                                                    onclick="Livewire.dispatch('open-team-card', { teamId: '{{ $entry->team->id }}' })"
+                                                    onclick="Livewire.dispatch('open-entry-crew', { entryId: '{{ $entry->id }}' })"
                                                     class="text-[#2D92CE] hover:underline cursor-pointer"
-                                                    title="Информация о команде">
+                                                    title="Экипаж яхты">
                                                 {{ $entry->yacht->name }}
                                             </button>
                                         @else
