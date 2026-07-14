@@ -667,6 +667,20 @@ class RegattaResource extends Resource
 
                         return $record;
                     }),
+                Action::make('replicate')
+                    ->label('Дублировать')
+                    ->icon('heroicon-o-document-duplicate')
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->modalHeading('Дублировать регату')
+                    ->modalDescription('Будет создана копия регаты с расписанием и документами. После создания откроется окно редактирования.')
+                    ->modalSubmitActionLabel('Дублировать')
+                    ->action(function (Regatta $record, $livewire): void {
+                        $replica = app(\App\Actions\Regatta\ReplicateRegattaAction::class)->execute($record);
+
+                        // Открываем окно редактирования созданной копии.
+                        $livewire->replaceMountedAction('edit', context: ['recordKey' => $replica->getKey()]);
+                    }),
                 DeleteAction::make(),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
