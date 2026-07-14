@@ -281,7 +281,17 @@
         </section>
         <livewire:edit-regatta-entry-modal />
         @endif
-
+        {{-- ===== О РЕГАТЕ ===== --}}
+        @if(filled($regatta->description))
+            <section class="py-10">
+                <div class="container mx-auto">
+                    <h2 class="section-title a-font text-brand-dark mb-8">О регате</h2>
+                    <div class="prose max-w-none text-brand-gray text-lg leading-relaxed">
+                        {!! $regatta->description !!}
+                    </div>
+                </div>
+            </section>
+        @endif
         {{-- ===== РАСПИСАНИЕ ===== --}}
         @if($scheduleDays->isNotEmpty())
             <section class="py-10">
@@ -316,23 +326,7 @@
                 </div>
             </section>
         @endif
-        {{-- ===== О РЕГАТЕ ===== --}}
-        <!--
-        <section class="py-10">
-            <div class="container mx-auto bg-brand-light-bg flex flex-col md:flex-row gap-10 items-center">
-                @if($regatta->background_image)
-                <div class="pic max-w-[720px] shrink-0">
-                    <img class="w-full h-full" src="{{ $regatta->background_image ? asset('storage/' . $regatta->background_image) : asset('images/regatas/reg_preview.png') }}" alt="{{ $regatta->name }}" />
-                </div>
-                @endif
-                <div class="info py-4">
-                    <h2 class="section-title a-font text-brand-dark text-5xl mb-8">О регате</h2>
-                    <p class="text-brand-gray font-medium text-lg mb-4">{!! $regatta->description !!}</p>
 
-                </div>
-            </div>
-        </section>
-        -->
 
         {{-- ===== ЛОКАЦИЯ ===== --}}
         @if(!empty($regatta->coordinates))
