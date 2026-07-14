@@ -9,6 +9,7 @@ use App\Models\Regatta;
 use App\Services\RegattaService;
 use BackedEnum;
 use Carbon\Carbon;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -308,6 +309,36 @@ class RegattaResource extends Resource
                     ->relationship('scheduleEvents')
                     ->label('Расписание регаты')
                     ->helperText('Мероприятия регаты: регистрация, открытие, брифинги и т.п. Гонки задаются в результатах регаты.')
+                    ->hintAction(
+                        Action::make('duplicateAllPlusDay')
+                            ->label('Дублировать весь список на следующий день')
+                            ->icon('heroicon-m-document-duplicate')
+                            ->color('gray')
+                            ->visible(fn (Repeater $component): bool => filled($component->getRawState()))
+                            ->action(function (Repeater $component): void {
+                                $items = $component->getRawState();
+
+                                $newItems = $items;
+                                foreach ($items as $item) {
+                                    if (! empty($item['event_datetime'])) {
+                                        $item['event_datetime'] = Carbon::parse($item['event_datetime'])
+                                            ->addDay()
+                                            ->format('Y-m-d H:i');
+                                    }
+
+                                    if ($newUuid = $component->generateUuid()) {
+                                        $newItems[$newUuid] = $item;
+                                    } else {
+                                        $newItems[] = $item;
+                                    }
+                                }
+
+                                $component->rawState($newItems);
+                                $component->collapsed(false, shouldMakeComponentCollapsible: false);
+                                $component->callAfterStateUpdated();
+                                $component->partiallyRender();
+                            }),
+                    )
                     ->defaultItems(0)
                     ->reorderable()
                     ->orderColumn('sort_order')
@@ -325,6 +356,42 @@ class RegattaResource extends Resource
                     ->itemLabel(fn (array $state, int $index): ?string => (! empty($state['event_datetime']) && ! empty($state['name']))
                         ? ($index + 1) . ". {$state['event_datetime']} — {$state['name']}"
                         : ($index + 1) . '. Новое событие')
+                    ->extraItemActions([
+                        Action::make('duplicatePlusDay')
+                            ->label('Заполнить на следующий день')
+                            ->icon('heroicon-m-document-duplicate')
+                            ->color('gray')
+                            ->action(function (array $arguments, Repeater $component): void {
+                                $items = $component->getRawState();
+                                $source = $items[$arguments['item']];
+
+                                if (! empty($source['event_datetime'])) {
+                                    $source['event_datetime'] = Carbon::parse($source['event_datetime'])
+                                        ->addDay()
+                                        ->format('Y-m-d H:i');
+                                }
+
+                                $newUuid = $component->generateUuid();
+
+                                // Insert the duplicate right after the source item.
+                                $newItems = [];
+                                foreach ($items as $key => $value) {
+                                    $newItems[$key] = $value;
+                                    if ($key === $arguments['item']) {
+                                        if ($newUuid) {
+                                            $newItems[$newUuid] = $source;
+                                        } else {
+                                            $newItems[] = $source;
+                                        }
+                                    }
+                                }
+
+                                $component->rawState($newItems);
+                                $component->collapsed(false, shouldMakeComponentCollapsible: false);
+                                $component->callAfterStateUpdated();
+                                $component->partiallyRender();
+                            }),
+                    ])
                     ->columns(3)
                     ->columnSpanFull()
                     ->addActionLabel('Добавить пункт расписания')
