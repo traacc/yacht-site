@@ -32,14 +32,23 @@ final class ReplicateRegattaAction
         'postponed_to_regatta_id',
     ];
 
-    public function execute(Regatta $source): Regatta
+    /**
+     * @param  array<string, mixed>  $overrides  Атрибуты, перезаписывающие значения копии
+     *                                            (например, название и даты этапа серии).
+     */
+    public function execute(Regatta $source, array $overrides = []): Regatta
     {
-        return DB::transaction(function () use ($source): Regatta {
+        return DB::transaction(function () use ($source, $overrides): Regatta {
             /** @var Regatta $replica */
             $replica = $source->replicate(self::EXCLUDED_ATTRIBUTES);
 
             $replica->name           = $this->buildCopyName($source->name);
             $replica->regatta_status = \App\Enums\RegattaStatus::Upcoming->value;
+
+            foreach ($overrides as $attribute => $value) {
+                $replica->{$attribute} = $value;
+            }
+
             $replica->save();
 
             $this->copyScheduleEvents($source, $replica);

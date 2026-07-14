@@ -115,11 +115,60 @@ class RegattaResource extends Resource
                     ])
                     ->createOptionUsing(fn (array $data): string => \App\Models\Season::create($data)->id)
                     ->required(),
+                // ── Создание серии из этапов ──────────────
+                // Альтернативный способ: заполнить регату-«шаблон» один раз
+                // и задать список дат — по каждой дате создаётся регата серии
+                // с данными из этой формы. Доступно только при создании.
+                Section::make('Создать как серию')
+                    ->description('Заполните данные регаты один раз и добавьте даты этапов — по каждому этапу будет создана отдельная регата серии с этими данными.')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->hidden(fn (string $operation): bool => $operation !== 'create')
+                    ->schema([
+                        Toggle::make('create_as_series')
+                            ->label('Создать серию из этапов')
+                            ->helperText('Вместо одной регаты будет создано несколько — по одной на каждый этап. Остальные поля формы копируются в каждый этап.')
+                            ->live()
+                            ->default(false),
+                        TextInput::make('series_name')
+                            ->label('Название серии')
+                            ->placeholder('Например: Кубок весны 2026')
+                            ->visible(fn (Get $get): bool => (bool) $get('create_as_series'))
+                            ->required(fn (Get $get): bool => (bool) $get('create_as_series')),
+                        Repeater::make('series_stages')
+                            ->label('Этапы серии')
+                            ->helperText('Каждый этап станет отдельной регатой. Название формируется автоматически: «<название> — Этап N». Расписание сдвигается на смещение дат этапа.')
+                            ->visible(fn (Get $get): bool => (bool) $get('create_as_series'))
+                            ->defaultItems(2)
+                            ->minItems(2)
+                            ->addActionLabel('Добавить этап')
+                            ->columns(2)
+                            ->itemLabel(fn (array $state, int $index): string => 'Этап ' . ($index + 1))
+                            ->schema([
+                                DatePicker::make('date_start')
+                                    ->label('Дата начала')
+                                    ->displayFormat('d.m.Y')
+                                    ->required(),
+                                DatePicker::make('date_end')
+                                    ->label('Дата окончания')
+                                    ->displayFormat('d.m.Y')
+                                    ->required(),
+                                TimePicker::make('time_start')
+                                    ->label('Время начала')
+                                    ->displayFormat('H:i')
+                                    ->seconds(false),
+                                TimePicker::make('time_end')
+                                    ->label('Время окончания')
+                                    ->displayFormat('H:i')
+                                    ->seconds(false),
+                            ]),
+                    ]),
                 Select::make('series_id')
                     ->label('Серия')
                     ->relationship('series', 'name')
                     ->searchable()
                     ->preload()
+                    ->hidden(fn (Get $get): bool => (bool) $get('create_as_series'))
                     ->createOptionForm([
                         Forms\Components\TextInput::make('name')
                             ->label('Название')
@@ -145,15 +194,18 @@ class RegattaResource extends Resource
                 DatePicker::make('date_start')
                     ->label('Дата начала')
                     ->displayFormat('d.m.Y')
-                    ->minDate(now()->subYears(100)) 
+                    ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100))
-                    ->required(),
+                    // В режиме серии даты задаются в этапах.
+                    ->hidden(fn (Get $get): bool => (bool) $get('create_as_series'))
+                    ->required(fn (Get $get): bool => ! (bool) $get('create_as_series')),
                 DatePicker::make('date_end')
                     ->label('Дата окончания')
                     ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100))
                     ->displayFormat('d.m.Y')
-                    ->required(),
+                    ->hidden(fn (Get $get): bool => (bool) $get('create_as_series'))
+                    ->required(fn (Get $get): bool => ! (bool) $get('create_as_series')),
 
                 TimePicker::make('time_start')
                     ->label('Время начала')
