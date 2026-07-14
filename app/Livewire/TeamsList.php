@@ -53,7 +53,7 @@ class TeamsList extends Component
                 ->orderByRaw("name REGEXP '^[А-Яа-яЁё]' DESC")
                 ->orderBy('name'))
             ->when($this->sort === 'rating', fn ($q) => $q->orderByRaw(
-                'COALESCE((SELECT r.rank_position FROM team_ratings r JOIN seasons s ON s.id = r.season_id WHERE r.team_id = teams.id ORDER BY s.year DESC LIMIT 1), -1) DESC'
+                'COALESCE((SELECT r.rank_position FROM team_ratings r JOIN seasons s ON s.id = r.season_id WHERE r.team_id = teams.id ORDER BY s.year DESC LIMIT 1), 999999) ASC'
             ))
             ->when($this->sort === 'newest', fn ($q) => $q->orderByDesc('created_at'))
             ->orderBy('name') // fallback
