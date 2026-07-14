@@ -49,17 +49,12 @@
 
                 <div class="md:px-4 px-2 pt-4 pb-7 space-y-4">
                     <div class="text-brand-navy font-semibold leading-tight flex flex-col justify-between md:items-start md:h-[58px]">
-                        <div class="font-semibold text-lg">{{ $team->name }}</div>
+                        <button @click="setTeam({{ $loop->index }})" class="font-semibold text-lg text-left hover:underline cursor-pointer">{{ $team->name }}</button>
                         <div class="text-base">
                             <span class="font-semibold">Капитан:</span>
                             <x-user-name-link :id="$team->organizer?->id" :name="$team->organizer?->name" class="font-medium" />
                         </div>
                     </div>
-
-                    <button @click="setTeam({{ $loop->index }})" class="flex items-center gap-2 text-brand-navy font-semibold text-lg hover:gap-3 transition-all duration-200 group">
-                        Подробнее  →
-                        <span class="text-brand-navy group-hover:translate-x-1 transition-transform duration-200"></span>
-                    </button>
                 </div>
             </div>
             @empty
@@ -77,13 +72,14 @@
                         <th class="py-2 a-font text-center">Команда</th>
                         <th class="py-2 a-font text-center">Капитан</th>
                         <th class="py-2 a-font text-center">Рейтинг</th>
-                        <th class="py-2 a-font text-center"></th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($teams as $team)
                     <tr class="border-t text-sm lg:text-2xl">
-                        <td data-label="Команда" class="py-2 text-center">{{ $team->name }}</td>
+                        <td data-label="Команда" class="py-2 text-center">
+                            <a href="#" @click.prevent="setTeam({{ $loop->index }})" class="text-[#2D92CE] font-semibold hover:underline cursor-pointer">{{ $team->name }}</a>
+                        </td>
                         <td data-label="Капитан" class="py-2 text-center"><x-user-name-link :id="$team->organizer?->id" :name="$team->organizer?->name" /></td>
                         <td data-label="Рейтинг" class="py-2 text-center">
                             @php($latestRating = $team->teamRatings->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first())
@@ -93,13 +89,10 @@
                                 —
                             @endif
                         </td>
-                        <td data-label="" class="py-2 text-center">
-                            <a href="#" @click.prevent="setTeam({{ $loop->index }})" class="text-[#2D92CE] font-semibold hover:underline [&>span]:hidden md:[&>span]:inline">Подробнее  <span>→</span></a>
-                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="py-8 text-center text-brand-gray-light">Команды не найдены.</td>
+                        <td colspan="3" class="py-8 text-center text-brand-gray-light">Команды не найдены.</td>
                     </tr>
                     @endforelse
                 </tbody>
