@@ -105,13 +105,14 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             <th class="py-2 a-font text-center text-2xl">Балл ORC</th>
                             <th class="py-2 a-font text-center text-2xl">Сертификат ORC</th>
                             -->
-                            <th class="py-2 a-font text-center"></th>
                         </tr>
                     </thead>
                     <tbody>
                         <template x-for="yacht in filteredYachts" :key="yacht.id">
                         <tr class="border-t text-[10px]  text-sm lg:text-2xl">
-                            <td data-label="Название" class="py-2 text-center" x-text="yacht.name"></td>
+                            <td data-label="Название" class="py-2 text-center">
+                                <a href="#" @click.prevent="openYachtModal(yacht)" class="text-[#2D92CE] font-semibold hover:underline cursor-pointer" x-text="yacht.name"></a>
+                            </td>
                             <td data-label="Парус №" class="py-2 text-center" x-text="yacht.vfps_number"></td>
                             <td data-label="Капитан" class="py-2 text-center">
                                 <template x-if="yacht.owner?.id && yacht.owner?.name && yacht.owner.name !== '—'">
@@ -131,14 +132,11 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                                 </template>
                             </td>
                             -->
-                            <td class="py-2 text-center">
-                                <a href="#" @click.prevent="openYachtModal(yacht)" class="text-[#2D92CE] font-semibold hover:underline [&>span]:hidden md:[&>span]:inline">Подробнее  <span>→</span></a>
-                            </td>
                         </tr>
                         </template>
                         <template x-if="filteredYachts.length === 0">
                         <tr>
-                            <td colspan="6" class="py-8 text-center text-gray-500">Яхты не найдены</td>
+                            <td colspan="3" class="py-8 text-center text-gray-500">Яхты не найдены</td>
                         </tr>
                         </template>
                     </tbody>
