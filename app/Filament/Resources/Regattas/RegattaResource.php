@@ -679,7 +679,12 @@ class RegattaResource extends Resource
                         $replica = app(\App\Actions\Regatta\ReplicateRegattaAction::class)->execute($record);
 
                         // Открываем окно редактирования созданной копии.
-                        $livewire->replaceMountedAction('edit', context: ['recordKey' => $replica->getKey()]);
+                        // Контекст table+recordKey нужен, чтобы Filament резолвил
+                        // именно табличный record-экшен, а не экшен страницы.
+                        $livewire->replaceMountedAction('edit', context: [
+                            'table'     => true,
+                            'recordKey' => $replica->getKey(),
+                        ]);
                     }),
                 DeleteAction::make(),
                 ForceDeleteAction::make(),
