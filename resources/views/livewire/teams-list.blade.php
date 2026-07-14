@@ -84,7 +84,7 @@
                         <td data-label="Рейтинг" class="py-2 text-center">
                             @php($latestRating = $team->teamRatings->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first())
                             @if($latestRating?->rank_position)
-                                {{ $latestRating->rank_position }} <span class="text-sm text-gray-400">({{ rtrim(rtrim(number_format((float) $latestRating->total_points, 3, '.', ''), '0'), '.') }})</span>
+                                {{ $latestRating->rank_position }} <span class="text-sm text-gray-400 hidden">({{ rtrim(rtrim(number_format((float) $latestRating->total_points, 3, '.', ''), '0'), '.') }})</span>
                             @else
                                 —
                             @endif
