@@ -484,7 +484,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                     <div x-show="galleryTab === 'exterior'" x-data="{ activeIndex: 0, lightboxOpen: false }">
                         <div class="relative mb-4">
                             <img :src="selectedYacht.gallery[activeIndex]?.url" :alt="selectedYacht.gallery[activeIndex]?.name"
-                                 class="w-full aspect-video object-contain cursor-pointer" @click="lightboxOpen = true">
+                                 class="w-full aspect-video object-contain cursor-pointer max-h-[400px]" @click="lightboxOpen = true">
                             <template x-if="selectedYacht.gallery.length > 1">
                                 <div>
                                     <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.gallery.length - 1"
@@ -530,7 +530,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                     <div x-show="galleryTab === 'interior'" x-data="{ activeIndex: 0, lightboxOpen: false }">
                         <div class="relative mb-4">
                             <img :src="selectedYacht.interior_gallery[activeIndex]?.url" :alt="selectedYacht.interior_gallery[activeIndex]?.name"
-                                 class="w-full aspect-video object-contain cursor-pointer" @click="lightboxOpen = true">
+                                 class="w-full aspect-video object-contain cursor-pointer max-h-[400px]" @click="lightboxOpen = true">
                             <template x-if="selectedYacht.interior_gallery.length > 1">
                                 <div>
                                     <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.interior_gallery.length - 1"
