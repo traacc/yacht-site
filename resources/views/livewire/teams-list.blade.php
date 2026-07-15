@@ -72,6 +72,7 @@
                         <th class="py-2 a-font text-center">Команда</th>
                         <th class="py-2 a-font text-center">Капитан</th>
                         <th class="py-2 a-font text-center">Рейтинг</th>
+                        <th class="py-2 a-font text-center">Рейтинговые очки</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -81,10 +82,17 @@
                             <a href="#" @click.prevent="setTeam({{ $loop->index }})" class="text-[#2D92CE] font-semibold hover:underline cursor-pointer">{{ $team->name }}</a>
                         </td>
                         <td data-label="Капитан" class="py-2 text-center"><x-user-name-link :id="$team->organizer?->id" :name="$team->organizer?->name" /></td>
+                        @php($latestRating = $team->teamRatings->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first())
                         <td data-label="Рейтинг" class="py-2 text-center">
-                            @php($latestRating = $team->teamRatings->sortByDesc(fn ($r) => $r->season?->year ?? 0)->first())
                             @if($latestRating?->rank_position)
-                                {{ $latestRating->rank_position }} <span class="text-sm text-gray-400 hidden">({{ rtrim(rtrim(number_format((float) $latestRating->total_points, 3, '.', ''), '0'), '.') }})</span>
+                                {{ $latestRating->rank_position }}
+                            @else
+                                —
+                            @endif
+                        </td>
+                        <td data-label="Рейтинговые очки" class="py-2 text-center">
+                            @if($latestRating?->total_points !== null)
+                                {{ rtrim(rtrim(number_format((float) $latestRating->total_points, 3, '.', ''), '0'), '.') }}
                             @else
                                 —
                             @endif
@@ -92,7 +100,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="3" class="py-8 text-center text-brand-gray-light">Команды не найдены.</td>
+                        <td colspan="4" class="py-8 text-center text-brand-gray-light">Команды не найдены.</td>
                     </tr>
                     @endforelse
                 </tbody>
