@@ -22,7 +22,7 @@
 @if(($heroMedia ?? null) && $heroMedia['type'] === 'video')
     <video autoplay muted playsinline loop src="{{ $heroMedia['url'] }}" class="scale-[2.5] object-center absolute inset-0 w-full h-full object-cover"></video>
 @elseif(($heroMedia ?? null) && $heroMedia['type'] === 'image')
-    <img class="relative block mx-auto w-full h-auto object-center" src="{{ $heroMedia['url'] }}" alt="">
+    <img class="relative block mx-auto w-full h-auto object-center max-w-[1920px]" src="{{ $heroMedia['url'] }}" alt="">
 @else
     <video autoplay muted playsinline loop src="{{ '/videos/hero_video_3.mp4' }}"  class="scale-[2.5] object-center absolute inset-0 w-full h-full object-cover"></video>
 @endif
