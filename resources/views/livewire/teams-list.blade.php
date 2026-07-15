@@ -29,8 +29,8 @@
                 placeholder="Поиск команды"
             >
             <select wire:model.live="sort" name="team_sort" id="team_sort" class="team_filter">
-                <option value="name">По названию (А-Я)</option>
                 <option value="rating">Рейтинг: по убыванию</option>
+                <option value="name">По названию (А-Я)</option>
                 <option value="newest">Сначала новые</option>
             </select>
         </div>
