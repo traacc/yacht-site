@@ -115,20 +115,53 @@ class RgdParticipantsExporter
     {
         $cols = array_fill(0, self::COLS, '');
 
-        $yacht     = $entry->yacht;
-        $class     = $yacht?->class ?: 'CARTER 30';
-        $crewNames = $entry->crew
-            ->map(fn ($c) => trim((string) $c->teamMember?->user?->name))
-            ->filter()
-            ->implode(self::CREW_DELIM);
+        $yacht = $entry->yacht;
+        $class = $yacht?->class ?: 'CARTER 30';
+
+        // Один проход по экипажу — колонки состава (ФИО, дата рожд., разряд, роль)
+        // выровнены по одному порядку и одинаковому числу значений (разделитель 0x13).
+        $names = $births = $ranks = $roles = [];
+        foreach ($entry->crew as $c) {
+            $user = $c->teamMember?->user;
+            $name = trim((string) $user?->name);
+            if ($name === '') {
+                continue;   // без имени пропускаем целиком, чтобы не сбить выравнивание колонок
+            }
+            $names[]  = $name;
+            $births[] = $user?->birth_date?->format('d.m.Y') ?? '';
+            $ranks[]  = $this->rankLabel($user?->sport_category);
+            $roles[]  = $c->role === 'captain' ? 'капитан' : '';
+        }
 
         $cols[1]  = 'RUS';                                             // страна (в БД не хранится)
         $cols[2]  = (string) ($yacht?->vfps_number ?? '');            // парус №
         $cols[3]  = sprintf('%s(%s,,,)', $yacht?->name ?? '', $class); // яхта(тип)
-        $cols[4]  = $crewNames;                                        // экипаж (ФИО)
+        $cols[4]  = implode(self::CREW_DELIM, $names);                 // экипаж (ФИО)
+        $cols[27] = implode(self::CREW_DELIM, $births);                // даты рождения
+        $cols[29] = implode(self::CREW_DELIM, $ranks);                 // спортивные разряды
+        $cols[30] = implode(self::CREW_DELIM, $roles);                 // роли (капитан)
         $cols[33] = (string) ($yacht?->reg_place ?? '');              // город
         $cols[34] = (string) ($entry->team?->name ?? '');             // команда
 
         return implode(self::DELIM, $cols);
+    }
+
+    /** Разряд в формате .rgd: числовые — «N р», категории — аббревиатурой, б/р — пусто. */
+    private function rankLabel(mixed $category): string
+    {
+        $value = $category instanceof \App\Enums\SportCategory
+            ? $category->value
+            : (string) $category;
+
+        return match ($value) {
+            '3'    => '3 р',
+            '2'    => '2 р',
+            '1'    => '1 р',
+            'kms'  => 'КМС',
+            'ms'   => 'МС',
+            'msmk' => 'МСМК',
+            'zms'  => 'ЗМС',
+            default => '',   // 'no' (б/р) или неизвестно — пусто
+        };
     }
 }
