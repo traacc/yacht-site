@@ -200,8 +200,8 @@ class HomePageSettings extends Page
                             ->imageEditorViewportWidth(1920)
                             ->imageEditorViewportHeight(1080)
                             ->imageEditorAspectRatios([
-                                '5:2',
                                 '16:9',
+                                '5:2',
                                 '4:3',
                                 '1:1',
                                 null,
