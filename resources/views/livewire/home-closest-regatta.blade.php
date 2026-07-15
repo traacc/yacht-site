@@ -1,4 +1,4 @@
-<section x-data="{ windyModalOpen: false }" class="relative h-[480px] md:h-[708px] overflow-hidden">
+<section x-data="{ windyModalOpen: false }" class="relative {{ (($heroMedia['type'] ?? null) === 'image') ? 'min-h-[480px] md:min-h-[708px]' : 'h-[480px] md:h-[708px]' }} overflow-hidden bg-black">
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('countdown', (targetDate) => ({
@@ -22,7 +22,7 @@
 @if(($heroMedia ?? null) && $heroMedia['type'] === 'video')
     <video autoplay muted playsinline loop src="{{ $heroMedia['url'] }}" class="scale-[2.5] object-center absolute inset-0 w-full h-full object-cover"></video>
 @elseif(($heroMedia ?? null) && $heroMedia['type'] === 'image')
-    <img class="absolute inset-0 object-center w-full h-full object-contain" src="{{ $heroMedia['url'] }}" alt="">
+    <img class="relative block mx-auto w-full h-auto object-center" src="{{ $heroMedia['url'] }}" alt="">
 @else
     <video autoplay muted playsinline loop src="{{ '/videos/hero_video_3.mp4' }}"  class="scale-[2.5] object-center absolute inset-0 w-full h-full object-cover"></video>
 @endif
@@ -30,6 +30,7 @@
 
     <div class="hero-overlay absolute inset-0"></div>
 
+    <div class="absolute inset-0 z-10">
     @if($regatta)
     <div class="container mx-auto relative mt-4">
         {{-- Карточка ближайшей регаты --}}
@@ -144,6 +145,7 @@
             class="pointer-events-auto relative z-20 max-w-3xs mx-auto mt-16 block w-full text-center bg-brand-blue text-2xl md:text-4xl text-white font-semibold py-2.5 transition-colors cursor-pointer">
         Заявка →
     </button>
+    </div>
 
     {{-- Модальное окно Windy --}}
     <div x-show="windyModalOpen"
