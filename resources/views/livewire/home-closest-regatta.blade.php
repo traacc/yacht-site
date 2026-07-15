@@ -1,4 +1,4 @@
-<section x-data="{ windyModalOpen: false }" class="relative h-[480px] md:h-[768px] overflow-hidden">
+<section x-data="{ windyModalOpen: false }" class="relative h-[clamp(480px,40vw,4320px)] overflow-hidden">
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('countdown', (targetDate) => ({
@@ -33,10 +33,10 @@
 @if(($heroMedia ?? null) && $heroMedia['type'] === 'video')
     <video autoplay muted playsinline loop src="{{ $heroMedia['url'] }}" class="scale-[2.5] object-center absolute inset-0 w-full h-full object-cover"></video>
 @elseif(($heroMedia ?? null) && $heroMedia['type'] === 'image')
-    <img class="absolute inset-0 mx-auto w-full h-full object-cover object-center max-w-[1920px]" src="{{ $heroMedia['url'] }}" alt="">
+    <img class="absolute inset-0 w-full h-full object-cover object-center" src="{{ $heroMedia['url'] }}" alt="">
 @elseif(($heroMedia ?? null) && $heroMedia['type'] === 'slideshow')
     <div x-data="heroSlideshow({{ count($heroMedia['slides']) }})"
-         class="absolute inset-0 mx-auto w-full max-w-[1920px]">
+         class="absolute inset-0 w-full">
         @foreach($heroMedia['slides'] as $i => $slide)
             <img class="absolute inset-0 block w-full h-full object-cover object-center opacity-0 transition-opacity duration-1000 ease-in-out"
                  :class="{ 'opacity-100': current === {{ $i }} }"
