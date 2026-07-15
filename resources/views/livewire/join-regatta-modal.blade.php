@@ -637,14 +637,6 @@
                                 .
                             @endif
                         </div>
-                        <label class="mt-3 flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" wire:model="feePaid"
-                                   class="rounded border-gray-300 text-[#2D92CE] focus:ring-[#2D92CE]">
-                            <span class="text-sm text-[#2E325C]">Сбор оплачен</span>
-                        </label>
-                        @error('feePaid')
-                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                        @enderror
                     </div>
                 @endif
 
