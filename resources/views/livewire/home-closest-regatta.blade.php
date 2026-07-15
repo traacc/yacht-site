@@ -17,12 +17,36 @@
                 this.seconds = Math.floor((diff % (1000 * 60)) / 1000);
             }
         }));
+
+        Alpine.data('heroSlideshow', (count, interval = 5000) => ({
+            current: 0,
+            count: count,
+            init() {
+                if (this.count <= 1) return;
+                setInterval(() => {
+                    this.current = (this.current + 1) % this.count;
+                }, interval);
+            }
+        }));
     });
 </script>   
 @if(($heroMedia ?? null) && $heroMedia['type'] === 'video')
     <video autoplay muted playsinline loop src="{{ $heroMedia['url'] }}" class="scale-[2.5] object-center absolute inset-0 w-full h-full object-cover"></video>
 @elseif(($heroMedia ?? null) && $heroMedia['type'] === 'image')
-    <img class="relative block mx-auto w-full h-auto object-center max-w-[1920px] max-h-[708px]" src="{{ $heroMedia['url'] }}" alt="">
+    <img class="relative block mx-auto w-full h-[708px] object-cover object-center max-w-[1920px]" src="{{ $heroMedia['url'] }}" alt="">
+@elseif(($heroMedia ?? null) && $heroMedia['type'] === 'slideshow')
+    <div x-data="heroSlideshow({{ count($heroMedia['slides']) }})"
+         class="relative mx-auto w-full max-w-[1920px]">
+        {{-- Первый слайд в потоке задаёт высоту блока; остальные накладываются поверх --}}
+        <img class="invisible block w-full h-[708px] object-cover object-center"
+             src="{{ $heroMedia['slides'][0] }}" alt="" aria-hidden="true">
+        @foreach($heroMedia['slides'] as $i => $slide)
+            <img class="absolute inset-0 block w-full h-full object-cover object-center opacity-0 transition-opacity duration-1000 ease-in-out"
+                 :class="{ 'opacity-100': current === {{ $i }} }"
+                 src="{{ $slide }}" alt=""
+                 @if($i > 0) loading="lazy" @endif>
+        @endforeach
+    </div>
 @else
     <video autoplay muted playsinline loop src="{{ '/videos/hero_video_3.mp4' }}"  class="scale-[2.5] object-center absolute inset-0 w-full h-full object-cover"></video>
 @endif

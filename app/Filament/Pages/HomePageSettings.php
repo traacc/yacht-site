@@ -74,11 +74,12 @@ class HomePageSettings extends Page
             ->values()
             ->all();
 
-        // Hero-фон: одиночный файл (изображение или видео)
+        // Hero-фон: список файлов (одно изображение/видео либо набор изображений для слайд-шоу)
         $heroMedia = collect((array) $settings->get('home.hero_media', []))
             ->flatten()
             ->filter(fn ($v) => is_string($v) && $v !== '')
-            ->first();
+            ->values()
+            ->all();
 
         // Заполняем форму через fill() — это запускает afterStateHydrated на FileUpload
         $this->form->fill([
@@ -185,13 +186,16 @@ class HomePageSettings extends Page
                     ->description('Загрузите изображение или видео для фона верхнего блока главной страницы. Если ничего не загружено — используется видео по умолчанию.')
                     ->schema([
                         FileUpload::make('hero_media')
-                            ->label('Фон (изображение или видео)')
-                            ->helperText('Поддерживаются изображения (JPG, PNG, WebP) и видео (MP4, WebM).')
+                            ->label('Фон (изображение, видео или слайд-шоу)')
+                            ->helperText('Один файл — статичный фон (изображение или видео). Загрузите несколько изображений — они будут показываться как автоматическое слайд-шоу. Порядок задаётся перетаскиванием.')
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'])
+                            ->multiple()
+                            ->reorderable()
                             ->disk('public')
                             ->directory('home/hero')
                             ->visibility('public')
                             ->maxSize(51200)
+                            ->maxFiles(20)
                             ->imageEditor()
                             ->imageEditorViewportWidth(1920)
                             ->imageEditorViewportHeight(1080)
@@ -538,14 +542,15 @@ class HomePageSettings extends Page
         $settings->set('home.gallery_random', (bool) $data['gallery_random'], 'home');
         $settings->set('home.gallery_sort', $data['gallery_sort'] ?? 'manual', 'home');
 
-        // Hero-фон: нормализуем к одиночному пути (строка) либо null
+        // Hero-фон: нормализуем к списку путей.
+        // Изображения автоматически перекодируем в WebP (видео не трогаем).
+        $converter = app(ImageConverter::class);
         $heroMedia = collect((array) ($data['hero_media'] ?? []))
             ->flatten()
             ->filter(fn ($v) => is_string($v) && $v !== '')
-            ->first();
-
-        // Изображения автоматически перекодируем в WebP (видео не трогаем)
-        $heroMedia = app(ImageConverter::class)->toWebp($heroMedia, 'public');
+            ->map(fn (string $path) => $converter->toWebp($path, 'public'))
+            ->values()
+            ->all();
 
         $settings->set('home.hero_media', $heroMedia, 'home');
 
