@@ -198,11 +198,11 @@ class HomePageSettings extends Page
                             ->maxFiles(20)
                             ->imageEditor()
                             ->imageEditorViewportWidth(1920)
-                            ->imageEditorViewportHeight(960)
+                            ->imageEditorViewportHeight(768)
                             ->imageEditorAspectRatios([
+                                '5:2',
                                 '2:1',
                                 '16:9',
-                                '5:2',
                                 '4:3',
                                 '1:1',
                                 null,

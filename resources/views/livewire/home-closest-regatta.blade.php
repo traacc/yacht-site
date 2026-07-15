@@ -1,4 +1,4 @@
-<section x-data="{ windyModalOpen: false }" class="relative h-[480px] md:h-[960px] overflow-hidden bg-black">
+<section x-data="{ windyModalOpen: false }" class="relative h-[480px] md:h-[768px] overflow-hidden bg-black">
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('countdown', (targetDate) => ({
