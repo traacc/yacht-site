@@ -45,7 +45,7 @@
         @endforeach
     </div>
 @else
-    <video autoplay muted playsinline loop src="{{ '/videos/hero_video_3.mp4' }}"  class="scale-[2.5] object-center absolute inset-0 w-full h-full object-cover"></video>
+    <img class="absolute inset-0 object-[29%_50%] lg:object-[50%_50%] lg:top-0 w-full h-full object-cover" src="{{ asset('/images/bg/bg_hero.webp') }}" alt="">
 @endif
     <!--<img class="absolute inset-0 object-[29%_50%] lg:object-[50%_50%] lg:top-0 w-full h-full object-cover" src="{{ asset('/images/bg/bg_hero.webp') }}" alt="">-->
 
