@@ -79,7 +79,7 @@ class ManageRegattas extends ManageRecords
             Action::make('exportParticipants')
                 ->label('Экспорт участников (.rgd)')
                 ->icon('heroicon-o-arrow-down-tray')
-                ->color('gray')
+                ->color('white')
                 ->form([
                     Select::make('regatta_id')
                         ->label('Регата')
