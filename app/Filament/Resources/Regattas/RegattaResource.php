@@ -738,34 +738,6 @@ class RegattaResource extends Resource
                             'recordKey' => $replica->getKey(),
                         ]);
                     }),
-                Action::make('exportParticipants')
-                    ->label('Экспорт участников (.rgd)')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('gray')
-                    ->action(function (Regatta $record) {
-                        $exporter = app(\App\Services\RgdParticipantsExporter::class);
-                        $entries  = $exporter->loadParticipants($record);
-
-                        if ($entries->isEmpty()) {
-                            \Filament\Notifications\Notification::make()
-                                ->title('Нет заявок для экспорта')
-                                ->warning()
-                                ->send();
-
-                            return null;
-                        }
-
-                        $bytes    = $exporter->toBytes($exporter->build($record, $entries));
-                        $filename = $exporter->filename($record);
-
-                        return response()->streamDownload(
-                            function () use ($bytes): void {
-                                echo $bytes;
-                            },
-                            $filename,
-                            ['Content-Type' => 'application/octet-stream'],
-                        );
-                    }),
                 DeleteAction::make(),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
