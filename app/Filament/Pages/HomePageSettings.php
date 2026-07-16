@@ -110,19 +110,10 @@ class HomePageSettings extends Page
             'gallery_sort' => $settings->get('home.gallery_sort', 'manual') ?? 'manual',
             // Hero-фон главной страницы
             'hero_media' => $heroMedia,
-            // Кроп на каждый файл, ключом = индекс в порядке hero_media (совпадает с ключами FileUpload при гидрации).
-            'hero_crops' => collect($heroMedia)
-                ->mapWithKeys(function (string $path, int $i) use ($settings) {
-                    $c = (array) ($settings->get('home.hero_crops', [])[$path] ?? []);
-
-                    return [$i => [
-                        'crop_x' => (float) ($c['crop_x'] ?? 0.0),
-                        'crop_y' => (float) ($c['crop_y'] ?? 0.0),
-                        'crop_w' => (float) ($c['crop_w'] ?? 1.0),
-                        'crop_h' => (float) ($c['crop_h'] ?? 1.0),
-                    ]];
-                })
-                ->all(),
+            'hero_crop_x' => (float) $settings->get('home.hero_crop_x', 0.0),
+            'hero_crop_y' => (float) $settings->get('home.hero_crop_y', 0.0),
+            'hero_crop_w' => (float) $settings->get('home.hero_crop_w', 1.0),
+            'hero_crop_h' => (float) $settings->get('home.hero_crop_h', 1.0),
             'hero_height' => (int) $settings->get('home.hero_height', 768),
             // Всплывающий баннер
             'banner_enabled' => (bool) $settings->get('home.banner_enabled', false),
@@ -169,45 +160,6 @@ class HomePageSettings extends Page
         }
 
         return asset('/images/bg/bg_hero.webp');
-    }
-
-    /**
-     * Список изображений hero из ТЕКУЩЕГО состояния формы для per-image viewport-контрола.
-     * Ключ (fileKey) совпадает с ключами формы hero_media/hero_crops, поэтому кроп
-     * корректно привязывается к каждому файлу (в т.ч. только что загруженному).
-     * Видео пропускаются (в <img> не превьюются).
-     *
-     * @return list<array{key: string, url: string}>
-     */
-    public function heroImages(): array
-    {
-        $videoExtensions = ['mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v'];
-        $images = [];
-
-        foreach ((array) ($this->data['hero_media'] ?? []) as $key => $file) {
-            if ($file instanceof TemporaryUploadedFile) {
-                if (! str_starts_with((string) $file->getMimeType(), 'image/')) {
-                    continue;
-                }
-                try {
-                    $url = $file->temporaryUrl();
-                } catch (\Throwable) {
-                    continue;
-                }
-            } elseif (is_string($file) && $file !== '') {
-                $ext = strtolower((string) pathinfo($file, PATHINFO_EXTENSION));
-                if (in_array($ext, $videoExtensions, true)) {
-                    continue;
-                }
-                $url = Storage::disk('public')->url($file);
-            } else {
-                continue;
-            }
-
-            $images[] = ['key' => (string) $key, 'url' => $url];
-        }
-
-        return $images;
     }
 
     // ──────────────────────────────────────────────
@@ -309,13 +261,15 @@ class HomePageSettings extends Page
                         // (панорамирование) + ползунок/колесо (зум). Значения хранятся
                         // в скрытых полях ниже и применяются на сайте вживую.
                         ViewField::make('hero_viewport_control')
-                            ->label('Область просмотра каждого изображения (Full HD)')
+                            ->label('Область просмотра (Full HD)')
                             ->view('filament.forms.hero-viewport')
                             ->dehydrated(false)
                             ->columnSpanFull(),
 
-                        // Карта crop-прямоугольников: ключ формы (fileKey) → {crop_x,crop_y,crop_w,crop_h}.
-                        Hidden::make('hero_crops')->default([]),
+                        Hidden::make('hero_crop_x')->default(0),
+                        Hidden::make('hero_crop_y')->default(0),
+                        Hidden::make('hero_crop_w')->default(1),
+                        Hidden::make('hero_crop_h')->default(1),
                         Hidden::make('hero_height')->default(768),
                     ]),
 
@@ -653,33 +607,25 @@ class HomePageSettings extends Page
         $settings->set('home.gallery_random', (bool) $data['gallery_random'], 'home');
         $settings->set('home.gallery_sort', $data['gallery_sort'] ?? 'manual', 'home');
 
-        // Hero-фон: нормализуем к списку путей, сохраняя ключи файлов (fileKey), чтобы
-        // перепривязать crop-настройки к итоговым webp-путям. Изображения перекодируем в WebP.
+        // Hero-фон: нормализуем к списку путей.
+        // Изображения автоматически перекодируем в WebP (видео не трогаем).
         $converter = app(ImageConverter::class);
-        $rawCrops = (array) ($data['hero_crops'] ?? []);
-        $heroMedia = [];
-        $cropsByPath = [];
-
-        foreach ((array) ($data['hero_media'] ?? []) as $key => $file) {
-            if (! is_string($file) || $file === '') {
-                continue;
-            }
-
-            $webp = $converter->toWebp($file, 'public');
-            $heroMedia[] = $webp;
-
-            $c = (array) ($rawCrops[$key] ?? []);
-            $cropsByPath[$webp] = [
-                'crop_x' => max(0, min(1, (float) ($c['crop_x'] ?? 0))),
-                'crop_y' => max(0, min(1, (float) ($c['crop_y'] ?? 0))),
-                'crop_w' => max(0.02, min(1, (float) ($c['crop_w'] ?? 1))),
-                'crop_h' => max(0.02, min(1, (float) ($c['crop_h'] ?? 1))),
-            ];
-        }
+        $heroMedia = collect((array) ($data['hero_media'] ?? []))
+            ->flatten()
+            ->filter(fn ($v) => is_string($v) && $v !== '')
+            ->map(fn (string $path) => $converter->toWebp($path, 'public'))
+            ->values()
+            ->all();
 
         $settings->set('home.hero_media', $heroMedia, 'home');
-        // Кроп на каждый файл (ключ = итоговый путь) + общая высота блока (≤768px).
-        $settings->set('home.hero_crops', $cropsByPath, 'home');
+
+        // Hero-viewport: crop-прямоугольник (доли изображения) + высота блока.
+        // Применяется вживую, сам файл не меняется.
+        $settings->set('home.hero_crop_x', max(0, min(1, (float) ($data['hero_crop_x'] ?? 0))), 'home');
+        $settings->set('home.hero_crop_y', max(0, min(1, (float) ($data['hero_crop_y'] ?? 0))), 'home');
+        $settings->set('home.hero_crop_w', max(0.02, min(1, (float) ($data['hero_crop_w'] ?? 1))), 'home');
+        $settings->set('home.hero_crop_h', max(0.02, min(1, (float) ($data['hero_crop_h'] ?? 1))), 'home');
+        // Высота блока — не более 768px (при Full HD).
         $settings->set('home.hero_height', max(120, min(768, (int) ($data['hero_height'] ?? 768))), 'home');
 
         // Всплывающий баннер
