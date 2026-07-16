@@ -79,21 +79,21 @@
     <div class="container mx-auto relative mt-4">
         {{-- Карточка ближайшей регаты --}}
         <div class="mx-4 md:mx-0 pt-12 flex justify-between">
-            <div class="relative bg-[#00000080] backdrop-blur-xs p-3 md:p-4 w-full md:w-auto md:max-w-2xl shadow-2xl">
+            <div class="relative bg-[#00000080] backdrop-blur-xs p-3 md:p-4 3xl:p-7 w-full md:w-auto md:max-w-2xl 3xl:max-w-5xl shadow-2xl">
                 <a href="{{ route('competition-details', $regatta) }}"
                    class="absolute inset-0 z-0"
                    aria-label="Перейти на страницу регаты {{ $regatta->name }}"></a>
-                <div class="relative z-10 flex items-center gap-2 mb-1 md:mb-3 pointer-events-none">
-                    <span class="rounded-full bg-[#F24842] text-center text-white flex justify-center items-center shrink-0 aspect-square size-6 p-1 md:p-0 md:size-11">
+                <div class="relative z-10 flex items-center gap-2 3xl:gap-4 mb-1 md:mb-3 3xl:mb-5 pointer-events-none">
+                    <span class="rounded-full bg-[#F24842] text-center text-white flex justify-center items-center shrink-0 aspect-square size-6 p-1 md:p-0 md:size-11 3xl:size-16 [&_svg]:3xl:size-8">
                         {!!  file_get_contents(public_path('images/icons/calendar.svg')) !!}
                     </span>
-                    <span class="text-white text-lg md:text-2xl font-bold pb-0.5 md:pb-2 pt-1">
+                    <span class="text-white text-lg md:text-2xl 3xl:text-4xl font-bold pb-0.5 md:pb-2 pt-1">
                         Ближайшая регата
                     </span>
                 </div>
-                <div class="relative z-10 grid justify-between items-center gap-2 md:gap-4 grid-cols-1 md:grid-cols-[380px_300px] pointer-events-none">
-                    <h3 class="font-display text-white text-2xl/7 mb-2 md:mb-0 md:text-4xl font-bold a-font">{!! nl2br(e($regatta->name)) !!}</h3>
-                    <div class="flex flex-col gap-2 md:gap-0 mb-4 justify-between text-white font-medium text-sm md:text-lg md:row-span-2 h-full">
+                <div class="relative z-10 grid justify-between items-center gap-2 md:gap-4 3xl:gap-8 grid-cols-1 md:grid-cols-[380px_300px] 3xl:grid-cols-[560px_400px] pointer-events-none">
+                    <h3 class="font-display text-white text-2xl/7 mb-2 md:mb-0 md:text-4xl 3xl:text-6xl font-bold a-font">{!! nl2br(e($regatta->name)) !!}</h3>
+                    <div class="flex flex-col gap-2 md:gap-0 3xl:gap-3 mb-4 justify-between text-white font-medium text-sm md:text-lg 3xl:text-2xl md:row-span-2 h-full [&_svg]:3xl:size-7">
                         <div class="flex items-center gap-2">
                             {!!  file_get_contents(public_path('images/icons/calendar.svg')) !!}
                             {{ $regatta->dateRange() }}
@@ -113,8 +113,8 @@
                             @if($hasWeather)
                             <div class="">
                                 <div class="flex pointer-events-auto items-center gap-2">
-                                    <div class="lg:text-sm text-xs">Погода сейчас</div>
-                                    <div @click="windyModalOpen = true" class="lg:text-sm text-xs underline cursor-pointer">Прогноз</div>
+                                    <div class="lg:text-sm text-xs 3xl:text-lg">Погода сейчас</div>
+                                    <div @click="windyModalOpen = true" class="lg:text-sm text-xs 3xl:text-lg underline cursor-pointer">Прогноз</div>
                                 </div>
                                 
                                 <div class="pointer-events-auto flex items-center gap-2 cursor-pointer"
@@ -138,7 +138,7 @@
                             @endif
                         @else
                         <div class="">
-                            <div class="lg:text-sm text-xs">Погода сейчас</div>
+                            <div class="lg:text-sm text-xs 3xl:text-lg">Погода сейчас</div>
                             <div class="flex items-center gap-2">
                                 {!!  file_get_contents(public_path('images/icons/weather.svg')) !!}
                                 {{ $hasWeather ? $currentWeather : '—' }}
@@ -153,31 +153,31 @@
                     </div>
                     @if($hasDocuments)
                     <a href="{{ route('regatta.documents.download', $regatta) }}"
-                        class="pointer-events-auto text-white text-l font-semibold hover:underline items-center gap-4 flex mt-6">
+                        class="pointer-events-auto text-white text-l 3xl:text-2xl font-semibold hover:underline items-center gap-4 flex mt-6 3xl:[&_svg]:size-7">
                         <x-icon-2 name="download" /> Скачать документы регаты
                     </a>
                     @endif
                 </div>
             </div>
             <div class="hidden md:block">
-                <div x-data="countdown('{{ $startDateTime }}')" class="shrink-0 flex flex-col justify-center text-center bg-[#00000080] p-6 h-full">
-                    <p class="text-sm md:text-lg mb-4 text-white">До начала регаты осталось</p>
-                    <div class="flex items-start gap-3 bg-[#F8F8F80D] p-2">
-                        <div class="text-center border-r border-[#EAEAEA80] pr-3">
-                            <div class="text-2xl md:text-5xl countdown-digit text-white a-font" x-text="String(days).padStart(2,'0')">00</div>
-                            <div class="text-white mt-3 pl-2 text-[10px] md:text-base">Дней</div>
+                <div x-data="countdown('{{ $startDateTime }}')" class="shrink-0 flex flex-col justify-center text-center bg-[#00000080] p-6 3xl:p-9 h-full">
+                    <p class="text-sm md:text-lg 3xl:text-2xl mb-4 3xl:mb-6 text-white">До начала регаты осталось</p>
+                    <div class="flex items-start gap-3 3xl:gap-5 bg-[#F8F8F80D] p-2 3xl:p-4">
+                        <div class="text-center border-r border-[#EAEAEA80] pr-3 3xl:pr-5">
+                            <div class="text-2xl md:text-5xl 3xl:text-7xl countdown-digit text-white a-font" x-text="String(days).padStart(2,'0')">00</div>
+                            <div class="text-white mt-3 pl-2 text-[10px] md:text-base 3xl:text-xl">Дней</div>
                         </div>
-                        <div class="text-center border-r border-[#EAEAEA80] pr-3">
-                            <div class="text-2xl md:text-5xl countdown-digit text-white a-font" x-text="String(hours).padStart(2,'0')">00</div>
-                            <div class="text-white mt-3 pl-2 text-[10px] md:text-base">Часов</div>
+                        <div class="text-center border-r border-[#EAEAEA80] pr-3 3xl:pr-5">
+                            <div class="text-2xl md:text-5xl 3xl:text-7xl countdown-digit text-white a-font" x-text="String(hours).padStart(2,'0')">00</div>
+                            <div class="text-white mt-3 pl-2 text-[10px] md:text-base 3xl:text-xl">Часов</div>
                         </div>
-                        <div class="text-center border-r border-[#EAEAEA80] pr-3">
-                            <div class="text-2xl md:text-5xl countdown-digit text-white a-font" x-text="String(minutes).padStart(2,'0')">00</div>
-                            <div class="text-white mt-3 pl-2 text-[10px] md:text-base">Минут</div>
+                        <div class="text-center border-r border-[#EAEAEA80] pr-3 3xl:pr-5">
+                            <div class="text-2xl md:text-5xl 3xl:text-7xl countdown-digit text-white a-font" x-text="String(minutes).padStart(2,'0')">00</div>
+                            <div class="text-white mt-3 pl-2 text-[10px] md:text-base 3xl:text-xl">Минут</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-2xl md:text-5xl countdown-digit text-white a-font" x-text="String(seconds).padStart(2,'0')">00</div>
-                            <div class="text-white mt-3 pl-1 text-[10px] md:text-base">Секунд</div>
+                            <div class="text-2xl md:text-5xl 3xl:text-7xl countdown-digit text-white a-font" x-text="String(seconds).padStart(2,'0')">00</div>
+                            <div class="text-white mt-3 pl-1 text-[10px] md:text-base 3xl:text-xl">Секунд</div>
                         </div>
                     </div>
                 </div>
@@ -186,7 +186,7 @@
     </div>
     @endif
     <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"
-            class="pointer-events-auto relative z-20 max-w-3xs mx-auto mt-16 block w-full text-center bg-brand-blue text-2xl md:text-4xl text-white font-semibold py-2.5 transition-colors cursor-pointer">
+            class="pointer-events-auto relative z-20 max-w-3xs 3xl:max-w-xs mx-auto mt-16 block w-full text-center bg-brand-blue text-2xl md:text-4xl 3xl:text-5xl text-white font-semibold py-2.5 3xl:py-4 transition-colors cursor-pointer">
         Заявка →
     </button>
     </div>
