@@ -1,12 +1,12 @@
 @php
-    // Высота hero-блока: настраиваемая (не более 768px при Full HD), с пропорциональным
-    // масштабированием на узких экранах и защитным минимумом.
+    // Высота hero-блока: постоянная пропорция 1920:высота на всех ширинах —
+    // тогда object-cover не перекадрирует изображение по оси Y, и выбранный фокус
+    // сохраняется при любом масштабе страницы. max-height ограничивает блок
+    // настроенной высотой (Full HD) на экранах шире 1920px.
     $heroHeight = max(200, min(768, (int) ($heroViewport['height'] ?? 768)));
-    $heroVw = round($heroHeight / 19.2, 4);            // vw, дающий $heroHeight при ширине 1920
-    $heroMinH = min($heroHeight, 480);                 // нижняя граница (не выше самой высоты)
-    $heroSectionStyle = "height: clamp({$heroMinH}px, {$heroVw}vw, {$heroHeight}px);";
+    $heroSectionStyle = "aspect-ratio: 1920 / {$heroHeight}; max-height: {$heroHeight}px;";
 @endphp
-<section x-data="{ windyModalOpen: false }" class="relative overflow-hidden" style="{{ $heroSectionStyle }}">
+<section x-data="{ windyModalOpen: false }" class="relative overflow-hidden mx-auto" style="{{ $heroSectionStyle }}">
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('countdown', (targetDate) => ({
