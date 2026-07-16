@@ -153,7 +153,7 @@
                     </div>
                     @if($hasDocuments)
                     <a href="{{ route('regatta.documents.download', $regatta) }}"
-                        class="pointer-events-auto text-white text-l 3xl:text-2xl font-semibold hover:underline items-center gap-4 flex mt-6 3xl:[&_svg]:size-7">
+                        class="pointer-events-auto text-white text-l 3xl:text-xl font-semibold hover:underline items-center gap-4 flex mt-6 3xl:[&_svg]:size-7">
                         <x-icon-2 name="download" /> Скачать документы регаты
                     </a>
                     @endif
