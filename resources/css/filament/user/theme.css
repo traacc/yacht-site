@@ -60,7 +60,88 @@
   }
 
 .container {
-  @apply px-2 2xl:px-5 max-w-(--breakpoint-2xl) 3xl:max-w-[2300px] mx-auto;
+  @apply px-2 2xl:px-5 max-w-(--breakpoint-2xl) mx-auto;
+}
+
+/*
+  Масштабирование всего сайта на широких экранах (4K и близко).
+  zoom увеличивает вёрстку целиком, не трогая существующие брейкпоинты:
+  layout считается от viewport/zoom, поэтому контент не расползается.
+
+  Инвариант: держим «эффективную» ширину макета ≈ 1920px, поэтому на
+  каждом шаге zoom = breakpoint / 1920. Ступеньки (а не одна формула
+  с vw) — ради Firefox: его zoom не принимает вычисляемые через vw
+  значения, а atan2() не работает с длинами. Числовые значения — везде.
+*/
+@media (min-width: 2227px) {
+  body {
+    zoom: 1.16;
+  }
+}
+@media (min-width: 2400px) {
+  body {
+    zoom: 1.25;
+  }
+}
+@media (min-width: 2560px) {
+  body {
+    zoom: 1.33333;
+  }
+}
+@media (min-width: 2880px) {
+  body {
+    zoom: 1.5;
+  }
+}
+@media (min-width: 3360px) {
+  body {
+    zoom: 1.75;
+  }
+}
+@media (min-width: 3840px) {
+  body {
+    zoom: 2;
+  }
+}
+@media (min-width: 4320px) {
+  body {
+    zoom: 2.25;
+  }
+}
+@media (min-width: 4800px) {
+  body {
+    zoom: 2.5;
+  }
+}
+@media (min-width: 5280px) {
+  body {
+    zoom: 2.75;
+  }
+}
+@media (min-width: 5760px) {
+  body {
+    zoom: 3;
+  }
+}
+@media (min-width: 6240px) {
+  body {
+    zoom: 3.25;
+  }
+}
+@media (min-width: 6720px) {
+  body {
+    zoom: 3.5;
+  }
+}
+@media (min-width: 7200px) {
+  body {
+    zoom: 3.75;
+  }
+}
+@media (min-width: 7680px) {
+  body {
+    zoom: 4;
+  }
 }
 
 .fi-body {
