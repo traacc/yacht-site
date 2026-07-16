@@ -96,10 +96,11 @@ class ManageRegattas extends ManageRecords
 
                             return Regatta::query()
                                 ->get()
-                                ->sortBy([
-                                    [fn (Regatta $r) => $priority[$r->regatta_status?->value] ?? 99, 'asc'],
-                                    [fn (Regatta $r) => $r->date_start, 'asc'],
-                                ])
+                                ->sortBy(fn (Regatta $r): string => sprintf(
+                                    '%02d-%011d',
+                                    $priority[$r->regatta_status?->value] ?? 99,
+                                    $r->date_start?->timestamp ?? 0,
+                                ))
                                 ->mapWithKeys(fn (Regatta $r): array => [
                                     $r->id => $r->name . ' • ' . ($r->date_start?->format('d.m.Y') ?? '—'),
                                 ])
