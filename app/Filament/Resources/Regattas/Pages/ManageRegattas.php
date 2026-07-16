@@ -8,6 +8,7 @@ use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\Regatta\ReplicateRegattaAction;
 use App\Actions\Regatta\UpdateRegattaRequiredDocumentsAction;
 use App\Filament\Resources\Regattas\RegattaResource;
+use App\Enums\RegattaStatus;
 use App\Models\Regatta;
 use App\Models\Series;
 use App\Services\RgdParticipantsExporter;
@@ -83,13 +84,27 @@ class ManageRegattas extends ManageRecords
                 ->form([
                     Select::make('regatta_id')
                         ->label('Регата')
-                        ->options(fn (): array => Regatta::query()
-                            ->orderBy('date_start')
-                            ->get()
-                            ->mapWithKeys(fn (Regatta $r): array => [
-                                $r->id => $r->name . ' • ' . ($r->date_start?->format('d.m.Y') ?? '—'),
-                            ])
-                            ->all())
+                        ->options(function (): array {
+                            $priority = [
+                                RegattaStatus::Closest->value   => 0,
+                                RegattaStatus::Active->value     => 1,
+                                RegattaStatus::Upcoming->value   => 2,
+                                RegattaStatus::Postponed->value  => 3,
+                                RegattaStatus::Finished->value   => 4,
+                                RegattaStatus::Cancelled->value  => 5,
+                            ];
+
+                            return Regatta::query()
+                                ->get()
+                                ->sortBy([
+                                    [fn (Regatta $r) => $priority[$r->regatta_status?->value] ?? 99, 'asc'],
+                                    [fn (Regatta $r) => $r->date_start, 'asc'],
+                                ])
+                                ->mapWithKeys(fn (Regatta $r): array => [
+                                    $r->id => $r->name . ' • ' . ($r->date_start?->format('d.m.Y') ?? '—'),
+                                ])
+                                ->all();
+                        })
                         ->searchable()
                         ->required(),
                 ])
