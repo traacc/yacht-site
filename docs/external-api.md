@@ -16,7 +16,7 @@ JSON-API для двустороннего обмена данными рега�
 ## Базовый адрес
 
 ```
-https://<host>/api
+https://carter30.pro/api
 ```
 
 Все ответы — JSON. Клиенту рекомендуется слать заголовок `Accept: application/json`.
@@ -216,7 +216,7 @@ GET /api/regattas/{external_id}/results
       "result_type": "final",
       "source": "manual",
       "is_published": true,
-      "pdf_url": "https://<host>/storage/results/....pdf",
+      "pdf_url": "https://carter30.pro/storage/results/....pdf",
       "items": [
         {
           "final_position": "1",
@@ -402,7 +402,7 @@ i-я гонка). Лишние элементы сверх числа гонок
 ```bash
 curl -H "Authorization: Bearer $TOKEN" \
      -H "Accept: application/json" \
-     "https://<host>/api/regattas?status=active"
+     "https://carter30.pro/api/regattas?status=active"
 ```
 
 Экспорт участников:
@@ -410,7 +410,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 ```bash
 curl -H "Authorization: Bearer $TOKEN" \
      -H "Accept: application/json" \
-     https://<host>/api/regattas/42/participants
+     https://carter30.pro/api/regattas/42/participants
 ```
 
 Список результатов:
@@ -418,7 +418,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 ```bash
 curl -H "Authorization: Bearer $TOKEN" \
      -H "Accept: application/json" \
-     "https://<host>/api/regattas/42/results?type=final"
+     "https://carter30.pro/api/regattas/42/results?type=final"
 ```
 
 Импорт результатов:
@@ -428,5 +428,5 @@ curl -X POST \
      -H "Authorization: Bearer $TOKEN" \
      -H "Content-Type: application/json" \
      -d @results.json \
-     https://<host>/api/regattas/42/results
+     https://carter30.pro/api/regattas/42/results
 ```
