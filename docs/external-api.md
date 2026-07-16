@@ -60,9 +60,60 @@ docker exec yacht-site-laravel.worker-1 php artisan tinker --execute='
 /api/regattas/42/participants
 ```
 
+Получить список регат и найти нужный `external_id` — метод ниже.
+
 ---
 
-## 1. Экспорт участников
+## 1. Список регат
+
+Возвращает регаты (свежие первыми) — для поиска `external_id` нужной регаты.
+
+```
+GET /api/regattas
+```
+
+### Параметры запроса (query)
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `status` | string | Необязательный фильтр по статусу (см. значения ниже). Неизвестное значение игнорируется |
+
+### Ответ `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "external_id": 42,
+      "name": "Кубок памяти В.Я. Потапова",
+      "water_area": "Пирогово",
+      "location": null,
+      "date_start": "2026-06-12",
+      "date_end": "2026-06-12",
+      "status": "finished",
+      "entries_count": 21
+    }
+  ]
+}
+```
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `external_id` | int | Идентификатор регаты для путей API |
+| `name` | string | Название |
+| `water_area` | string \| null | Акватория |
+| `location` | string \| null | Место проведения |
+| `date_start` / `date_end` | string \| null | Даты, `YYYY-MM-DD` |
+| `status` | string | Статус (см. ниже) |
+| `entries_count` | int | Число заявок |
+
+**Значения `status`:** `upcoming` (планируемая), `closest` (ближайшая),
+`active` (идёт), `finished` (завершена), `cancelled` (отменена),
+`postponed` (перенесена).
+
+---
+
+## 2. Экспорт участников
 
 Возвращает участников регаты (заявки) зачётной группы «КАРТЕР 30».
 
@@ -141,7 +192,7 @@ GET /api/regattas/{external_id}/participants
 
 ---
 
-## 2. Импорт результатов
+## 3. Импорт результатов
 
 Записывает результаты зачётной группы «КАРТЕР 30» в регату: итоговую таблицу и
 результаты по отдельным гонкам.
@@ -274,6 +325,14 @@ i-я гонка). Лишние элементы сверх числа гонок
 ---
 
 ## Примеры (curl)
+
+Список регат:
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+     -H "Accept: application/json" \
+     "https://<host>/api/regattas?status=active"
+```
 
 Экспорт участников:
 
