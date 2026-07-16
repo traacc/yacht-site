@@ -1,9 +1,10 @@
 @php
-    // Контрол управляет тремя соседними скрытыми полями формы (hero_zoom / hero_pos_x / hero_pos_y).
-    $prefix   = \Illuminate\Support\Str::beforeLast($getStatePath(), '.');
-    $zoomPath = $prefix . '.hero_zoom';
-    $posXPath = $prefix . '.hero_pos_x';
-    $posYPath = $prefix . '.hero_pos_y';
+    // Контрол управляет соседними скрытыми полями формы (hero_zoom / hero_pos_x / hero_pos_y / hero_height).
+    $prefix     = \Illuminate\Support\Str::beforeLast($getStatePath(), '.');
+    $zoomPath   = $prefix . '.hero_zoom';
+    $posXPath   = $prefix . '.hero_pos_x';
+    $posYPath   = $prefix . '.hero_pos_y';
+    $heightPath = $prefix . '.hero_height';
 
     // Вычисляем URL превью на этапе рендера: к этому моменту состояние формы
     // уже заполнено, поэтому уже загруженное изображение показывается корректно.
@@ -17,6 +18,7 @@
             zoom: $wire.$entangle('{{ $zoomPath }}'),
             posX: $wire.$entangle('{{ $posXPath }}'),
             posY: $wire.$entangle('{{ $posYPath }}'),
+            height: $wire.$entangle('{{ $heightPath }}'),
             dragging: false,
             last: { x: 0, y: 0 },
             point(e) {
@@ -43,15 +45,15 @@
                 const next = this.zoom + (e.deltaY < 0 ? 0.1 : -0.1);
                 this.zoom = Math.min(5, Math.max(1, Math.round(next * 10) / 10));
             },
-            reset() { this.zoom = 1; this.posX = 50; this.posY = 50; },
+            reset() { this.zoom = 1; this.posX = 50; this.posY = 50; this.height = 768; },
         }"
         class="space-y-3"
     >
-        {{-- Рамка = видимая область блока при Full HD (соотношение 5:2). --}}
+        {{-- Рамка = видимая область блока при Full HD: ширина 1920 × настраиваемая высота. --}}
         <div
             x-ref="stage"
             class="relative w-full overflow-hidden rounded-lg border border-gray-300 bg-gray-100 dark:border-white/10 dark:bg-gray-900 select-none"
-            style="aspect-ratio: 5 / 2;"
+            :style="`aspect-ratio: 1920 / ${height};`"
             :class="dragging ? 'cursor-grabbing' : 'cursor-grab'"
             x-on:mousedown.prevent="start"
             x-on:mousemove.window="move"
@@ -78,12 +80,19 @@
         <div class="flex items-center gap-3">
             <span class="text-xs text-gray-500 dark:text-gray-400 w-16 shrink-0">Масштаб</span>
             <input type="range" min="1" max="5" step="0.1" x-model.number="zoom" class="flex-1">
-            <span class="text-xs tabular-nums w-10 text-right text-gray-600 dark:text-gray-300" x-text="Number(zoom).toFixed(1) + '×'"></span>
+            <span class="text-xs tabular-nums w-12 text-right text-gray-600 dark:text-gray-300" x-text="Number(zoom).toFixed(1) + '×'"></span>
             <button type="button" x-on:click="reset" class="text-xs text-primary-600 hover:underline dark:text-primary-400">Сброс</button>
         </div>
 
+        <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-500 dark:text-gray-400 w-16 shrink-0">Высота</span>
+            <input type="range" min="200" max="768" step="4" x-model.number="height" class="flex-1">
+            <span class="text-xs tabular-nums w-12 text-right text-gray-600 dark:text-gray-300" x-text="Math.round(height) + 'px'"></span>
+        </div>
+
         <p class="text-xs text-gray-500 dark:text-gray-400">
-            Перетаскивайте изображение мышью, чтобы выбрать видимую область. Ползунок или колесо мыши — приближение.
+            Перетаскивайте изображение мышью, чтобы выбрать видимую область. Масштаб — приближение (или колесо мыши),
+            высота — высота блока при Full HD (не более 768px, на узких экранах уменьшается пропорционально).
             Рамка показывает, как фон выглядит на Full HD-мониторе при 100% масштабе.
         </p>
     </div>

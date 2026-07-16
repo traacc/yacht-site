@@ -216,14 +216,16 @@ class SettingsService
      *  - zoom  — масштаб (transform: scale), 1.0 = весь кадр, >1 = наезд;
      *  - pos_x/pos_y — фокус-точка наезда (transform-origin) в процентах.
      *
-     * @return array{zoom: float, pos_x: int, pos_y: int}
+     * @return array{zoom: float, pos_x: int, pos_y: int, height: int}
      */
     public function getHeroViewport(): array
     {
         return [
-            'zoom'  => (float) $this->get('home.hero_zoom', 1.0),
-            'pos_x' => (int) $this->get('home.hero_pos_x', 50),
-            'pos_y' => (int) $this->get('home.hero_pos_y', 50),
+            'zoom'   => (float) $this->get('home.hero_zoom', 1.0),
+            'pos_x'  => (int) $this->get('home.hero_pos_x', 50),
+            'pos_y'  => (int) $this->get('home.hero_pos_y', 50),
+            // Высота блока при Full HD (px), не более 768. На узких экранах масштабируется пропорционально.
+            'height' => (int) $this->get('home.hero_height', 768),
         ];
     }
 }

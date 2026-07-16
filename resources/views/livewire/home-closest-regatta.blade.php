@@ -1,4 +1,12 @@
-<section x-data="{ windyModalOpen: false }" class="relative h-[clamp(480px,40vw,768px)] overflow-hidden">
+@php
+    // Высота hero-блока: настраиваемая (не более 768px при Full HD), с пропорциональным
+    // масштабированием на узких экранах и защитным минимумом.
+    $heroHeight = max(200, min(768, (int) ($heroViewport['height'] ?? 768)));
+    $heroVw = round($heroHeight / 19.2, 4);            // vw, дающий $heroHeight при ширине 1920
+    $heroMinH = min($heroHeight, 480);                 // нижняя граница (не выше самой высоты)
+    $heroSectionStyle = "height: clamp({$heroMinH}px, {$heroVw}vw, {$heroHeight}px);";
+@endphp
+<section x-data="{ windyModalOpen: false }" class="relative overflow-hidden" style="{{ $heroSectionStyle }}">
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('countdown', (targetDate) => ({

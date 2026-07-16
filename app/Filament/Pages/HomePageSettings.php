@@ -113,6 +113,7 @@ class HomePageSettings extends Page
             'hero_zoom' => (float) $settings->get('home.hero_zoom', 1.0),
             'hero_pos_x' => (int) $settings->get('home.hero_pos_x', 50),
             'hero_pos_y' => (int) $settings->get('home.hero_pos_y', 50),
+            'hero_height' => (int) $settings->get('home.hero_height', 768),
             // Всплывающий баннер
             'banner_enabled' => (bool) $settings->get('home.banner_enabled', false),
             'banner_title' => $settings->get('home.banner_title', ''),
@@ -267,6 +268,7 @@ class HomePageSettings extends Page
                         Hidden::make('hero_zoom')->default(1),
                         Hidden::make('hero_pos_x')->default(50),
                         Hidden::make('hero_pos_y')->default(50),
+                        Hidden::make('hero_height')->default(768),
                     ]),
 
                 // ── Спонсоры / партнёры ──────────────────────
@@ -619,6 +621,8 @@ class HomePageSettings extends Page
         $settings->set('home.hero_zoom', max(1.0, min(5.0, (float) ($data['hero_zoom'] ?? 1.0))), 'home');
         $settings->set('home.hero_pos_x', max(0, min(100, (int) ($data['hero_pos_x'] ?? 50))), 'home');
         $settings->set('home.hero_pos_y', max(0, min(100, (int) ($data['hero_pos_y'] ?? 50))), 'home');
+        // Высота блока — не более 768px (при Full HD).
+        $settings->set('home.hero_height', max(200, min(768, (int) ($data['hero_height'] ?? 768))), 'home');
 
         // Всплывающий баннер
         $settings->set('home.banner_enabled', (bool) ($data['banner_enabled'] ?? false), 'home');
