@@ -28,6 +28,8 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use UnitEnum;
 
 class HomePageSettings extends Page
@@ -122,19 +124,36 @@ class HomePageSettings extends Page
 
     /**
      * URL изображения для превью области просмотра (viewport-контрол).
-     * Берётся первое сохранённое изображение hero; для видео/пустого —
-     * дефолтный фон (контрол всё равно работает, задавая зум/позицию).
+     *
+     * Читает ТЕКУЩЕЕ состояние формы, поэтому превью обновляется сразу после
+     * загрузки — ещё до сохранения: для только что загруженного файла берётся
+     * временный URL Livewire, для уже сохранённого — публичный URL с диска.
+     * Видео и пустое состояние → дефолтный фон (зум/позиция всё равно работают).
      */
     public function heroPreviewUrl(): string
     {
-        $media = app(SettingsService::class)->getHeroMedia();
+        $videoExtensions = ['mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v'];
 
-        if ($media) {
-            if (($media['type'] ?? null) === 'image') {
-                return (string) $media['url'];
+        foreach ((array) ($this->data['hero_media'] ?? []) as $file) {
+            // Свежая загрузка — временный файл Livewire.
+            if ($file instanceof TemporaryUploadedFile) {
+                if (str_starts_with((string) $file->getMimeType(), 'image/')) {
+                    try {
+                        return $file->temporaryUrl();
+                    } catch (\Throwable) {
+                        // temporaryUrl недоступен (напр. не-превьюабельный тип) — пропускаем.
+                    }
+                }
+
+                continue;
             }
-            if (($media['type'] ?? null) === 'slideshow') {
-                return (string) ($media['slides'][0] ?? '');
+
+            // Уже сохранённый файл — путь на публичном диске.
+            if (is_string($file) && $file !== '') {
+                $ext = strtolower((string) pathinfo($file, PATHINFO_EXTENSION));
+                if (! in_array($ext, $videoExtensions, true)) {
+                    return Storage::disk('public')->url($file);
+                }
             }
         }
 
@@ -222,6 +241,8 @@ class HomePageSettings extends Page
                             ->visibility('public')
                             //->maxSize(51200)
                             ->maxFiles(20)
+                            // Реактивно — чтобы превью viewport-контрола обновлялось сразу после загрузки.
+                            ->live()
                             /*
                             ->imageEditor()
                             // Область отображения hero-блока при Full HD (1920px) и 100% масштабе:
@@ -240,7 +261,6 @@ class HomePageSettings extends Page
                         ViewField::make('hero_viewport_control')
                             ->label('Область просмотра (Full HD)')
                             ->view('filament.forms.hero-viewport')
-                            ->viewData(['imageUrl' => $this->heroPreviewUrl()])
                             ->dehydrated(false)
                             ->columnSpanFull(),
 

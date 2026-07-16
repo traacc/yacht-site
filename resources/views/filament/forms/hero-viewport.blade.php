@@ -4,6 +4,11 @@
     $zoomPath = $prefix . '.hero_zoom';
     $posXPath = $prefix . '.hero_pos_x';
     $posYPath = $prefix . '.hero_pos_y';
+
+    // Вычисляем URL превью на этапе рендера: к этому моменту состояние формы
+    // уже заполнено, поэтому уже загруженное изображение показывается корректно.
+    // $getLivewire() отдаёт саму страницу (Filament прокидывает публичные методы компонента во вью).
+    $imageUrl = $getLivewire()->heroPreviewUrl();
 @endphp
 
 <x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
