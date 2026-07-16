@@ -84,7 +84,7 @@ class ManageRegattas extends ManageRecords
                     Select::make('regatta_id')
                         ->label('Регата')
                         ->options(fn (): array => Regatta::query()
-                            ->orderByDesc('date_start')
+                            ->orderBy('date_start')
                             ->get()
                             ->mapWithKeys(fn (Regatta $r): array => [
                                 $r->id => $r->name . ' • ' . ($r->date_start?->format('d.m.Y') ?? '—'),
