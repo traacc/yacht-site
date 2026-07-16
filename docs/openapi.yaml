@@ -17,7 +17,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: https://{host}/api
+  - url: https://carter30.pro/api
     description: Боевой сервер
     variables:
       host:
