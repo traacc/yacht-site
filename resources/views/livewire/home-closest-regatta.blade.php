@@ -6,7 +6,7 @@
     $heroHeight = max(120, min(768, (int) ($heroViewport['height'] ?? 768)));
     $heroSectionStyle = "aspect-ratio: 1920 / {$heroHeight}; max-height: {$heroHeight}px;";
 @endphp
-<section x-data="{ windyModalOpen: false }" class="relative overflow-hidden mx-auto" style="{{ $heroSectionStyle }}">
+<section x-data="{ windyModalOpen: false }" class="relative overflow-hidden mx-auto w-full" style="{{ $heroSectionStyle }}">
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('countdown', (targetDate) => ({
