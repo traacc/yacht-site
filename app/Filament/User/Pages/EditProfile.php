@@ -133,7 +133,7 @@ class EditProfile extends BaseEditProfile
                             ->label('Дата рождения')
                             ->minDate(now()->subYears(100)) 
                             ->maxDate(now()->addYears(100))
-                            ->displayFormat('d.m.Y')
+                            ->displayFormat('d M Y')
                             ->native(false),
                         TextInput::make('email')
                             ->label('Email')

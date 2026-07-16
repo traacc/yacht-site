@@ -118,7 +118,8 @@ class ArchivedRegattaEntryResource extends Resource
                     ->columnSpanFull(),
                 DatePicker::make('submitted_at')
                     ->label('Дата рассмотрения')
-                    ->displayFormat('d.m.Y')
+                    ->displayFormat('d M Y')
+                    ->native(false)
                     ->required(),
                 Select::make('status')
                     ->label('Статус')
