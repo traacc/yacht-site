@@ -192,7 +192,81 @@ GET /api/regattas/{external_id}/participants
 
 ---
 
-## 3. Импорт результатов
+## 3. Список результатов
+
+Возвращает протоколы результатов регаты (предварительный/итоговый) с итоговыми
+таблицами. У регаты может быть несколько протоколов.
+
+```
+GET /api/regattas/{external_id}/results
+```
+
+### Параметры запроса (query)
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `type` | string | Фильтр: `preliminary` или `final` |
+| `published` | bool | Фильтр по публикации: `1`/`0` |
+
+### Ответ `200 OK`
+
+```json
+{
+  "regatta": { "external_id": 42, "name": "Кубок памяти В.Я. Потапова" },
+  "results": [
+    {
+      "result_id": "019f6c4b-d3ff-7272-a90c-a48e2f336837",
+      "result_type": "final",
+      "source": "manual",
+      "is_published": true,
+      "pdf_url": "https://<host>/storage/results/....pdf",
+      "items": [
+        {
+          "final_position": "1",
+          "total_points": "3.0",
+          "not_participate": false,
+          "sail_number": "691",
+          "yacht_name": "Energie",
+          "team_name": "Energie",
+          "captain_name": "Харитонов Денис Владимирович",
+          "race_breakdown": null
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Поля протокола
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `result_id` | string (uuid) | ID протокола |
+| `result_type` | string | `preliminary` \| `final` |
+| `source` | string | Источник: `imported` (из API/файла), `manual` и т.п. |
+| `is_published` | bool | Опубликован ли протокол |
+| `pdf_url` | string \| null | Ссылка на PDF, если сгенерирован |
+| `items[]` | array | Итоговая таблица, отсортирована по месту |
+
+### Поля строки итога (`items[]`)
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `final_position` | string \| null | Итоговое место |
+| `total_points` | string \| null | Итоговые очки |
+| `not_participate` | bool | Не участвовал(а) |
+| `sail_number` | string \| null | Парусный номер |
+| `yacht_name` | string \| null | Яхта |
+| `team_name` | string \| null | Команда |
+| `captain_name` | string \| null | Капитан |
+| `race_breakdown` | array \| null | Пооночная разбивка (снапшот, может отсутствовать) |
+
+Имена яхты/команды/номера берутся из живой связи, а при удалении сущности — из
+сохранённого снапшота, поэтому строка результата уцелевает.
+
+---
+
+## 4. Импорт результатов
 
 Записывает результаты зачётной группы «КАРТЕР 30» в регату: итоговую таблицу и
 результаты по отдельным гонкам.
@@ -340,6 +414,14 @@ curl -H "Authorization: Bearer $TOKEN" \
 curl -H "Authorization: Bearer $TOKEN" \
      -H "Accept: application/json" \
      https://<host>/api/regattas/42/participants
+```
+
+Список результатов:
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+     -H "Accept: application/json" \
+     "https://<host>/api/regattas/42/results?type=final"
 ```
 
 Импорт результатов:
