@@ -39,31 +39,33 @@
     });
 </script>   
 @php
-    // Viewport hero: показываем crop-прямоугольник изображения (доли [0..1]), заданный в админке.
-    // Медиа позиционируется так, что выбранный прямоугольник заполняет блок (object-fit: cover
-    // сглаживает случай, если исходник заменили на другую пропорцию).
-    $hv = $heroViewport ?? ['crop_x' => 0, 'crop_y' => 0, 'crop_w' => 1, 'crop_h' => 1, 'height' => 768];
-    $cw = max(0.02, min(1, (float) $hv['crop_w']));
-    $ch = max(0.02, min(1, (float) $hv['crop_h']));
-    $cx = max(0, min(1 - $cw, (float) $hv['crop_x']));
-    $cy = max(0, min(1 - $ch, (float) $hv['crop_y']));
-    $heroStyle = sprintf(
-        'position:absolute; max-width:none; width:%.4f%%; height:%.4f%%; left:%.4f%%; top:%.4f%%; object-fit:cover;',
-        100 / $cw, 100 / $ch, -100 * $cx / $cw, -100 * $cy / $ch,
-    );
+    // Viewport hero: у каждого медиа свой crop-прямоугольник (доли [0..1]).
+    // Медиа позиционируется так, что выбранный прямоугольник заполняет блок
+    // (object-fit: cover сглаживает расхождение пропорций).
+    $heroMediaStyle = function (array $crop): string {
+        $cw = max(0.02, min(1, (float) ($crop['w'] ?? 1)));
+        $ch = max(0.02, min(1, (float) ($crop['h'] ?? 1)));
+        $cx = max(0, min(1 - $cw, (float) ($crop['x'] ?? 0)));
+        $cy = max(0, min(1 - $ch, (float) ($crop['y'] ?? 0)));
+
+        return sprintf(
+            'position:absolute; max-width:none; width:%.4f%%; height:%.4f%%; left:%.4f%%; top:%.4f%%; object-fit:cover;',
+            100 / $cw, 100 / $ch, -100 * $cx / $cw, -100 * $cy / $ch,
+        );
+    };
 @endphp
 @if(($heroMedia ?? null) && $heroMedia['type'] === 'video')
-    <video autoplay muted playsinline loop src="{{ $heroMedia['url'] }}" style="{{ $heroStyle }}"></video>
+    <video autoplay muted playsinline loop src="{{ $heroMedia['url'] }}" style="{{ $heroMediaStyle($heroMedia['crop'] ?? []) }}"></video>
 @elseif(($heroMedia ?? null) && $heroMedia['type'] === 'image')
-    <img style="{{ $heroStyle }}" src="{{ $heroMedia['url'] }}" alt="">
+    <img style="{{ $heroMediaStyle($heroMedia['crop'] ?? []) }}" src="{{ $heroMedia['url'] }}" alt="">
 @elseif(($heroMedia ?? null) && $heroMedia['type'] === 'slideshow')
     <div x-data="heroSlideshow({{ count($heroMedia['slides']) }})"
          class="absolute inset-0 w-full">
         @foreach($heroMedia['slides'] as $i => $slide)
             <img class="opacity-0 transition-opacity duration-1000 ease-in-out"
-                 style="{{ $heroStyle }}"
+                 style="{{ $heroMediaStyle($slide['crop'] ?? []) }}"
                  :class="{ 'opacity-100': current === {{ $i }} }"
-                 src="{{ $slide }}" alt=""
+                 src="{{ $slide['url'] }}" alt=""
                  @if($i > 0) loading="lazy" @endif>
         @endforeach
     </div>

@@ -152,8 +152,11 @@ class SettingsService
      *  - несколько изображений → слайд-шоу ('slideshow' со списком URL);
      *  - видео среди набора игнорируются для слайд-шоу (слайды только из изображений).
      *
-     * @return array{type: 'video'|'image', url: string}|array{type: 'slideshow', slides: list<string>}|null
-     *         Данные медиа, либо null если ничего не загружено.
+     *  Каждый элемент несёт свой crop-прямоугольник (доли [0..1]) — своя видимая область на слайд.
+     *
+     * @return array{type: 'video'|'image', url: string, crop: array{x: float, y: float, w: float, h: float}}
+     *              |array{type: 'slideshow', slides: list<array{url: string, crop: array{x: float, y: float, w: float, h: float}}>}
+     *              |null
      */
     public function getHeroMedia(): ?array
     {
@@ -166,6 +169,7 @@ class SettingsService
             return null;
         }
 
+        $crops = (array) $this->get('home.hero_crops', []);
         $videoExtensions = ['mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v'];
         $isVideo = fn (string $path): bool => in_array(
             strtolower((string) pathinfo($path, PATHINFO_EXTENSION)),
@@ -173,6 +177,7 @@ class SettingsService
             true,
         );
         $url = fn (string $path): string => Storage::disk('public')->url($path);
+        $crop = fn (string $path): array => $this->heroCropFor($path, $crops);
 
         // Одиночный файл — прежнее поведение (image или video).
         if ($paths->count() === 1) {
@@ -181,25 +186,32 @@ class SettingsService
             return [
                 'url'  => $url($path),
                 'type' => $isVideo($path) ? 'video' : 'image',
+                'crop' => $crop($path),
             ];
         }
 
         // Несколько файлов — слайд-шоу только из изображений.
-        $slides = $paths->reject($isVideo)->map($url)->values();
+        $slides = $paths->reject($isVideo)
+            ->map(fn (string $path) => ['url' => $url($path), 'crop' => $crop($path)])
+            ->values();
 
         // Изображений не осталось (загружены только видео) — берём первое как одиночный фон.
         if ($slides->isEmpty()) {
+            $path = (string) $paths->first();
+
             return [
-                'url'  => $url((string) $paths->first()),
+                'url'  => $url($path),
                 'type' => 'video',
+                'crop' => $crop($path),
             ];
         }
 
         // Единственное изображение — обычный одиночный фон.
         if ($slides->count() === 1) {
             return [
-                'url'  => (string) $slides->first(),
+                'url'  => $slides->first()['url'],
                 'type' => 'image',
+                'crop' => $slides->first()['crop'],
             ];
         }
 
@@ -210,23 +222,32 @@ class SettingsService
     }
 
     /**
-     * Настройки видимой области (viewport) hero-изображения на сайте.
+     * Crop-прямоугольник (доли [0..1]) для конкретного файла hero по его пути.
+     * Значение по умолчанию — весь кадр.
      *
-     * Управляют не кадрированием файла, а тем, какая часть медиа видна в блоке.
-     * Задаются crop-прямоугольником в долях изображения [0..1]:
-     *  - crop_x/crop_y — левый верхний угол видимой области;
-     *  - crop_w/crop_h — ширина/высота видимой области;
-     *  - height — высота блока при Full HD (px, ≤768); пропорция блока = пропорции прямоугольника.
+     * @param  array<string, mixed>  $crops  карта путь → {crop_x,crop_y,crop_w,crop_h}
+     * @return array{x: float, y: float, w: float, h: float}
+     */
+    private function heroCropFor(string $path, array $crops): array
+    {
+        $c = is_array($crops[$path] ?? null) ? $crops[$path] : [];
+
+        return [
+            'x' => max(0.0, min(1.0, (float) ($c['crop_x'] ?? 0.0))),
+            'y' => max(0.0, min(1.0, (float) ($c['crop_y'] ?? 0.0))),
+            'w' => max(0.02, min(1.0, (float) ($c['crop_w'] ?? 1.0))),
+            'h' => max(0.02, min(1.0, (float) ($c['crop_h'] ?? 1.0))),
+        ];
+    }
+
+    /**
+     * Общие настройки hero-блока (единые для всех слайдов).
      *
-     * @return array{crop_x: float, crop_y: float, crop_w: float, crop_h: float, height: int}
+     * @return array{height: int}
      */
     public function getHeroViewport(): array
     {
         return [
-            'crop_x' => (float) $this->get('home.hero_crop_x', 0.0),
-            'crop_y' => (float) $this->get('home.hero_crop_y', 0.0),
-            'crop_w' => (float) $this->get('home.hero_crop_w', 1.0),
-            'crop_h' => (float) $this->get('home.hero_crop_h', 1.0),
             'height' => (int) $this->get('home.hero_height', 768),
         ];
     }
