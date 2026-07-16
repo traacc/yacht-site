@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\FilamentAuthenticate;
+use App\Http\Middleware\MaintenanceMode;
+use App\Http\Middleware\VerifyApiToken;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -9,18 +12,20 @@ use Illuminate\Session\TokenMismatchException;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'filament.auth' => \App\Http\Middleware\FilamentAuthenticate::class,
+            'filament.auth' => FilamentAuthenticate::class,
+            'api.token' => VerifyApiToken::class,
         ]);
         // Режим обновления применяется только к публичному сайту (группа web).
         // Панель администратора (/admin) использует собственный стек middleware
         // и остаётся доступной для отключения режима.
         $middleware->web(append: [
-            \App\Http\Middleware\MaintenanceMode::class,
+            MaintenanceMode::class,
         ]);
         $middleware->trustProxies(at: '*');
     })

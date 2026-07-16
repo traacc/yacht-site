@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Http\Resources\ParticipantResource;
+use App\Models\Regatta;
+use App\Services\RgdParticipantsExporter;
+use Illuminate\Http\JsonResponse;
+
+/**
+ * GET /api/regattas/{regatta}/participants
+ *
+ * Экспорт участников регаты для внешней (судейской) программы в JSON.
+ * Регата резолвится по external_id. Зачётная группа — «КАРТЕР 30»
+ * (RgdParticipantsExporter::CLASS_NAME), как и в файловом экспорте .rgd.
+ */
+class RegattaParticipantsController extends Controller
+{
+    public function __construct(private readonly RgdParticipantsExporter $exporter) {}
+
+    public function __invoke(Regatta $regatta): JsonResponse
+    {
+        $entries = $this->exporter->loadParticipants($regatta);
+
+        return response()->json([
+            'regatta' => [
+                'external_id' => $regatta->external_id,
+                'name' => $regatta->name,
+                'water_area' => $regatta->water_area,
+                'date_start' => $regatta->date_start?->format('Y-m-d'),
+                'date_end' => $regatta->date_end?->format('Y-m-d'),
+            ],
+            'class' => RgdParticipantsExporter::CLASS_NAME,
+            'participants' => ParticipantResource::collection($entries),
+        ]);
+    }
+}
