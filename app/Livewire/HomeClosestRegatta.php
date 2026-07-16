@@ -59,6 +59,7 @@ class HomeClosestRegatta extends Component
             'lat'            => $regatta?->coordinates ? (float) $regatta->coordinates[0] : null,
             'lon'            => $regatta?->coordinates ? (float) $regatta->coordinates[1] : null,
             'heroMedia'      => $settings->getHeroMedia(),
+            'heroViewport'   => $settings->getHeroViewport(),
         ]);
     }
 }

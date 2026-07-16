@@ -30,15 +30,24 @@
         }));
     });
 </script>   
+@php
+    // Viewport hero: зум + фокус-точка (transform-origin). Применяется вживую к медиа,
+    // не меняя сам файл. zoom=1 → виден весь кадр; >1 → наезд на точку pos_x/pos_y.
+    $hv = $heroViewport ?? ['zoom' => 1.0, 'pos_x' => 50, 'pos_y' => 50];
+    $heroStyle = 'object-position: ' . $hv['pos_x'] . '% ' . $hv['pos_y'] . '%;'
+        . ' transform: scale(' . $hv['zoom'] . ');'
+        . ' transform-origin: ' . $hv['pos_x'] . '% ' . $hv['pos_y'] . '%;';
+@endphp
 @if(($heroMedia ?? null) && $heroMedia['type'] === 'video')
-    <video autoplay muted playsinline loop src="{{ $heroMedia['url'] }}" class="scale-[2.5] object-center absolute inset-0 w-full h-full object-cover"></video>
+    <video autoplay muted playsinline loop src="{{ $heroMedia['url'] }}" style="{{ $heroStyle }}" class="absolute inset-0 w-full h-full object-cover"></video>
 @elseif(($heroMedia ?? null) && $heroMedia['type'] === 'image')
-    <img class="absolute inset-0 w-full h-full object-cover object-center" src="{{ $heroMedia['url'] }}" alt="">
+    <img class="absolute inset-0 w-full h-full object-cover" style="{{ $heroStyle }}" src="{{ $heroMedia['url'] }}" alt="">
 @elseif(($heroMedia ?? null) && $heroMedia['type'] === 'slideshow')
     <div x-data="heroSlideshow({{ count($heroMedia['slides']) }})"
          class="absolute inset-0 w-full">
         @foreach($heroMedia['slides'] as $i => $slide)
-            <img class="absolute inset-0 block w-full h-full object-cover object-center opacity-0 transition-opacity duration-1000 ease-in-out"
+            <img class="absolute inset-0 block w-full h-full object-cover opacity-0 transition-opacity duration-1000 ease-in-out"
+                 style="{{ $heroStyle }}"
                  :class="{ 'opacity-100': current === {{ $i }} }"
                  src="{{ $slide }}" alt=""
                  @if($i > 0) loading="lazy" @endif>

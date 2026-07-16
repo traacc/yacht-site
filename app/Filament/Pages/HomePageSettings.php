@@ -12,11 +12,13 @@ use App\Services\SettingsService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\ViewField;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
@@ -106,6 +108,9 @@ class HomePageSettings extends Page
             'gallery_sort' => $settings->get('home.gallery_sort', 'manual') ?? 'manual',
             // Hero-фон главной страницы
             'hero_media' => $heroMedia,
+            'hero_zoom' => (float) $settings->get('home.hero_zoom', 1.0),
+            'hero_pos_x' => (int) $settings->get('home.hero_pos_x', 50),
+            'hero_pos_y' => (int) $settings->get('home.hero_pos_y', 50),
             // Всплывающий баннер
             'banner_enabled' => (bool) $settings->get('home.banner_enabled', false),
             'banner_title' => $settings->get('home.banner_title', ''),
@@ -113,6 +118,27 @@ class HomePageSettings extends Page
             'banner_button_text' => $settings->get('home.banner_button_text', ''),
             'banner_button_url' => $settings->get('home.banner_button_url', ''),
         ]);
+    }
+
+    /**
+     * URL изображения для превью области просмотра (viewport-контрол).
+     * Берётся первое сохранённое изображение hero; для видео/пустого —
+     * дефолтный фон (контрол всё равно работает, задавая зум/позицию).
+     */
+    public function heroPreviewUrl(): string
+    {
+        $media = app(SettingsService::class)->getHeroMedia();
+
+        if ($media) {
+            if (($media['type'] ?? null) === 'image') {
+                return (string) $media['url'];
+            }
+            if (($media['type'] ?? null) === 'slideshow') {
+                return (string) ($media['slides'][0] ?? '');
+            }
+        }
+
+        return asset('/images/bg/bg_hero.webp');
     }
 
     // ──────────────────────────────────────────────
@@ -197,17 +223,28 @@ class HomePageSettings extends Page
                             //->maxSize(51200)
                             ->maxFiles(20)
                             ->imageEditor()
+                            // Область отображения hero-блока при Full HD (1920px) и 100% масштабе:
+                            // ширина 1920px, высота 40vw = 768px → соотношение 5:2 (2.5:1).
                             ->imageEditorViewportWidth(1920)
                             ->imageEditorViewportHeight(768)
                             ->imageEditorAspectRatios([
-                                '5:2',
-                                '2:1',
-                                '16:9',
-                                '4:3',
-                                '1:1',
-                                null,
+                                '5:2', // = 1920×768, точное соответствие видимой области на сайте
                             ])
                             ->columnSpanFull(),
+
+                        // Визуальный контрол области просмотра: тащим изображение мышью
+                        // (панорамирование) + ползунок/колесо (зум). Значения хранятся
+                        // в скрытых полях ниже и применяются на сайте вживую.
+                        ViewField::make('hero_viewport_control')
+                            ->label('Область просмотра (Full HD)')
+                            ->view('filament.forms.hero-viewport')
+                            ->viewData(['imageUrl' => $this->heroPreviewUrl()])
+                            ->dehydrated(false)
+                            ->columnSpanFull(),
+
+                        Hidden::make('hero_zoom')->default(1),
+                        Hidden::make('hero_pos_x')->default(50),
+                        Hidden::make('hero_pos_y')->default(50),
                     ]),
 
                 // ── Спонсоры / партнёры ──────────────────────
@@ -555,6 +592,11 @@ class HomePageSettings extends Page
             ->all();
 
         $settings->set('home.hero_media', $heroMedia, 'home');
+
+        // Hero-viewport: зум + фокус-точка (применяется вживую, файл не меняется).
+        $settings->set('home.hero_zoom', max(1.0, min(5.0, (float) ($data['hero_zoom'] ?? 1.0))), 'home');
+        $settings->set('home.hero_pos_x', max(0, min(100, (int) ($data['hero_pos_x'] ?? 50))), 'home');
+        $settings->set('home.hero_pos_y', max(0, min(100, (int) ($data['hero_pos_y'] ?? 50))), 'home');
 
         // Всплывающий баннер
         $settings->set('home.banner_enabled', (bool) ($data['banner_enabled'] ?? false), 'home');

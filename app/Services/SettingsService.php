@@ -208,4 +208,22 @@ class SettingsService
             'slides' => $slides->all(),
         ];
     }
+
+    /**
+     * Настройки видимой области (viewport) hero-изображения на сайте.
+     *
+     * Управляют не кадрированием файла, а тем, как медиа показывается в блоке:
+     *  - zoom  — масштаб (transform: scale), 1.0 = весь кадр, >1 = наезд;
+     *  - pos_x/pos_y — фокус-точка наезда (transform-origin) в процентах.
+     *
+     * @return array{zoom: float, pos_x: int, pos_y: int}
+     */
+    public function getHeroViewport(): array
+    {
+        return [
+            'zoom'  => (float) $this->get('home.hero_zoom', 1.0),
+            'pos_x' => (int) $this->get('home.hero_pos_x', 50),
+            'pos_y' => (int) $this->get('home.hero_pos_y', 50),
+        ];
+    }
 }
