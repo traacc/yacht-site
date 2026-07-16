@@ -222,6 +222,7 @@ class HomePageSettings extends Page
                             ->visibility('public')
                             //->maxSize(51200)
                             ->maxFiles(20)
+                            /*
                             ->imageEditor()
                             // Область отображения hero-блока при Full HD (1920px) и 100% масштабе:
                             // ширина 1920px, высота 40vw = 768px → соотношение 5:2 (2.5:1).
@@ -230,6 +231,7 @@ class HomePageSettings extends Page
                             ->imageEditorAspectRatios([
                                 '5:2', // = 1920×768, точное соответствие видимой области на сайте
                             ])
+                            */
                             ->columnSpanFull(),
 
                         // Визуальный контрол области просмотра: тащим изображение мышью
