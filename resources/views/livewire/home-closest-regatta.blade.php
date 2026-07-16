@@ -3,7 +3,7 @@
     // тогда object-cover не перекадрирует изображение по оси Y, и выбранный фокус
     // сохраняется при любом масштабе страницы. max-height ограничивает блок
     // настроенной высотой (Full HD) на экранах шире 1920px.
-    $heroHeight = max(200, min(768, (int) ($heroViewport['height'] ?? 768)));
+    $heroHeight = max(120, min(768, (int) ($heroViewport['height'] ?? 768)));
     $heroSectionStyle = "aspect-ratio: 1920 / {$heroHeight}; max-height: {$heroHeight}px;";
 @endphp
 <section x-data="{ windyModalOpen: false }" class="relative overflow-hidden mx-auto" style="{{ $heroSectionStyle }}">
@@ -39,22 +39,28 @@
     });
 </script>   
 @php
-    // Viewport hero: зум + фокус-точка (transform-origin). Применяется вживую к медиа,
-    // не меняя сам файл. zoom=1 → виден весь кадр; >1 → наезд на точку pos_x/pos_y.
-    $hv = $heroViewport ?? ['zoom' => 1.0, 'pos_x' => 50, 'pos_y' => 50];
-    $heroStyle = 'object-position: ' . $hv['pos_x'] . '% ' . $hv['pos_y'] . '%;'
-        . ' transform: scale(' . $hv['zoom'] . ');'
-        . ' transform-origin: ' . $hv['pos_x'] . '% ' . $hv['pos_y'] . '%;';
+    // Viewport hero: показываем crop-прямоугольник изображения (доли [0..1]), заданный в админке.
+    // Медиа позиционируется так, что выбранный прямоугольник заполняет блок (object-fit: cover
+    // сглаживает случай, если исходник заменили на другую пропорцию).
+    $hv = $heroViewport ?? ['crop_x' => 0, 'crop_y' => 0, 'crop_w' => 1, 'crop_h' => 1, 'height' => 768];
+    $cw = max(0.02, min(1, (float) $hv['crop_w']));
+    $ch = max(0.02, min(1, (float) $hv['crop_h']));
+    $cx = max(0, min(1 - $cw, (float) $hv['crop_x']));
+    $cy = max(0, min(1 - $ch, (float) $hv['crop_y']));
+    $heroStyle = sprintf(
+        'position:absolute; max-width:none; width:%.4f%%; height:%.4f%%; left:%.4f%%; top:%.4f%%; object-fit:cover;',
+        100 / $cw, 100 / $ch, -100 * $cx / $cw, -100 * $cy / $ch,
+    );
 @endphp
 @if(($heroMedia ?? null) && $heroMedia['type'] === 'video')
-    <video autoplay muted playsinline loop src="{{ $heroMedia['url'] }}" style="{{ $heroStyle }}" class="absolute inset-0 w-full h-full object-cover"></video>
+    <video autoplay muted playsinline loop src="{{ $heroMedia['url'] }}" style="{{ $heroStyle }}"></video>
 @elseif(($heroMedia ?? null) && $heroMedia['type'] === 'image')
-    <img class="absolute inset-0 w-full h-full object-cover" style="{{ $heroStyle }}" src="{{ $heroMedia['url'] }}" alt="">
+    <img style="{{ $heroStyle }}" src="{{ $heroMedia['url'] }}" alt="">
 @elseif(($heroMedia ?? null) && $heroMedia['type'] === 'slideshow')
     <div x-data="heroSlideshow({{ count($heroMedia['slides']) }})"
          class="absolute inset-0 w-full">
         @foreach($heroMedia['slides'] as $i => $slide)
-            <img class="absolute inset-0 block w-full h-full object-cover opacity-0 transition-opacity duration-1000 ease-in-out"
+            <img class="opacity-0 transition-opacity duration-1000 ease-in-out"
                  style="{{ $heroStyle }}"
                  :class="{ 'opacity-100': current === {{ $i }} }"
                  src="{{ $slide }}" alt=""

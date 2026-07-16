@@ -212,19 +212,21 @@ class SettingsService
     /**
      * Настройки видимой области (viewport) hero-изображения на сайте.
      *
-     * Управляют не кадрированием файла, а тем, как медиа показывается в блоке:
-     *  - zoom  — масштаб (transform: scale), 1.0 = весь кадр, >1 = наезд;
-     *  - pos_x/pos_y — фокус-точка наезда (transform-origin) в процентах.
+     * Управляют не кадрированием файла, а тем, какая часть медиа видна в блоке.
+     * Задаются crop-прямоугольником в долях изображения [0..1]:
+     *  - crop_x/crop_y — левый верхний угол видимой области;
+     *  - crop_w/crop_h — ширина/высота видимой области;
+     *  - height — высота блока при Full HD (px, ≤768); пропорция блока = пропорции прямоугольника.
      *
-     * @return array{zoom: float, pos_x: int, pos_y: int, height: int}
+     * @return array{crop_x: float, crop_y: float, crop_w: float, crop_h: float, height: int}
      */
     public function getHeroViewport(): array
     {
         return [
-            'zoom'   => (float) $this->get('home.hero_zoom', 1.0),
-            'pos_x'  => (int) $this->get('home.hero_pos_x', 50),
-            'pos_y'  => (int) $this->get('home.hero_pos_y', 50),
-            // Высота блока при Full HD (px), не более 768. На узких экранах масштабируется пропорционально.
+            'crop_x' => (float) $this->get('home.hero_crop_x', 0.0),
+            'crop_y' => (float) $this->get('home.hero_crop_y', 0.0),
+            'crop_w' => (float) $this->get('home.hero_crop_w', 1.0),
+            'crop_h' => (float) $this->get('home.hero_crop_h', 1.0),
             'height' => (int) $this->get('home.hero_height', 768),
         ];
     }

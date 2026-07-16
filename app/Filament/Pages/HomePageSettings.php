@@ -110,9 +110,10 @@ class HomePageSettings extends Page
             'gallery_sort' => $settings->get('home.gallery_sort', 'manual') ?? 'manual',
             // Hero-фон главной страницы
             'hero_media' => $heroMedia,
-            'hero_zoom' => (float) $settings->get('home.hero_zoom', 1.0),
-            'hero_pos_x' => (int) $settings->get('home.hero_pos_x', 50),
-            'hero_pos_y' => (int) $settings->get('home.hero_pos_y', 50),
+            'hero_crop_x' => (float) $settings->get('home.hero_crop_x', 0.0),
+            'hero_crop_y' => (float) $settings->get('home.hero_crop_y', 0.0),
+            'hero_crop_w' => (float) $settings->get('home.hero_crop_w', 1.0),
+            'hero_crop_h' => (float) $settings->get('home.hero_crop_h', 1.0),
             'hero_height' => (int) $settings->get('home.hero_height', 768),
             // Всплывающий баннер
             'banner_enabled' => (bool) $settings->get('home.banner_enabled', false),
@@ -265,9 +266,10 @@ class HomePageSettings extends Page
                             ->dehydrated(false)
                             ->columnSpanFull(),
 
-                        Hidden::make('hero_zoom')->default(1),
-                        Hidden::make('hero_pos_x')->default(50),
-                        Hidden::make('hero_pos_y')->default(50),
+                        Hidden::make('hero_crop_x')->default(0),
+                        Hidden::make('hero_crop_y')->default(0),
+                        Hidden::make('hero_crop_w')->default(1),
+                        Hidden::make('hero_crop_h')->default(1),
                         Hidden::make('hero_height')->default(768),
                     ]),
 
@@ -617,12 +619,14 @@ class HomePageSettings extends Page
 
         $settings->set('home.hero_media', $heroMedia, 'home');
 
-        // Hero-viewport: зум + фокус-точка (применяется вживую, файл не меняется).
-        $settings->set('home.hero_zoom', max(1.0, min(5.0, (float) ($data['hero_zoom'] ?? 1.0))), 'home');
-        $settings->set('home.hero_pos_x', max(0, min(100, (int) ($data['hero_pos_x'] ?? 50))), 'home');
-        $settings->set('home.hero_pos_y', max(0, min(100, (int) ($data['hero_pos_y'] ?? 50))), 'home');
+        // Hero-viewport: crop-прямоугольник (доли изображения) + высота блока.
+        // Применяется вживую, сам файл не меняется.
+        $settings->set('home.hero_crop_x', max(0, min(1, (float) ($data['hero_crop_x'] ?? 0))), 'home');
+        $settings->set('home.hero_crop_y', max(0, min(1, (float) ($data['hero_crop_y'] ?? 0))), 'home');
+        $settings->set('home.hero_crop_w', max(0.02, min(1, (float) ($data['hero_crop_w'] ?? 1))), 'home');
+        $settings->set('home.hero_crop_h', max(0.02, min(1, (float) ($data['hero_crop_h'] ?? 1))), 'home');
         // Высота блока — не более 768px (при Full HD).
-        $settings->set('home.hero_height', max(200, min(768, (int) ($data['hero_height'] ?? 768))), 'home');
+        $settings->set('home.hero_height', max(120, min(768, (int) ($data['hero_height'] ?? 768))), 'home');
 
         // Всплывающий баннер
         $settings->set('home.banner_enabled', (bool) ($data['banner_enabled'] ?? false), 'home');
