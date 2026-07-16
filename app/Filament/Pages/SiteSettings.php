@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Filament\Pages;
 
 use App\Filament\Concerns\RestrictsAccessByRole;
+use App\Models\ApiClient;
 use App\Services\SettingsService;
 use App\Services\SitemapGenerator;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -20,6 +22,7 @@ use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\HtmlString;
 use UnitEnum;
 
 class SiteSettings extends Page
@@ -44,6 +47,12 @@ class SiteSettings extends Page
      * @var array<string, mixed>
      */
     public array $data = [];
+
+    /** Plaintext только что выпущенного API-токена — показывается один раз. */
+    public ?string $newApiToken = null;
+
+    /** Имя клиента, для которого выпущен токен (для подписи в UI). */
+    public ?string $newApiTokenName = null;
 
     // ──────────────────────────────────────────────
     // Lifecycle
@@ -75,6 +84,33 @@ class SiteSettings extends Page
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('issueApiToken')
+                ->label('Выпустить API-токен')
+                ->icon(Heroicon::OutlinedKey)
+                ->color('primary')
+                ->modalHeading('Выпуск API-токена')
+                ->modalDescription('Токен для доступа внешней программы к API (участники и результаты). Значение показывается один раз.')
+                ->modalSubmitActionLabel('Выпустить')
+                ->schema([
+                    TextInput::make('name')
+                        ->label('Название клиента')
+                        ->placeholder('Судейская программа')
+                        ->required()
+                        ->maxLength(255),
+                ])
+                ->action(function (array $data): void {
+                    [$client, $plain] = ApiClient::issue(trim((string) $data['name']));
+
+                    $this->newApiToken = $plain;
+                    $this->newApiTokenName = $client->name;
+
+                    Notification::make()
+                        ->title('Токен выпущен')
+                        ->body('Скопируйте значение — оно показывается один раз.')
+                        ->success()
+                        ->send();
+                }),
+
             Action::make('generateSitemap')
                 ->label('Сгенерировать sitemap.xml')
                 ->icon(Heroicon::OutlinedMap)
@@ -165,7 +201,58 @@ class SiteSettings extends Page
                             ->default(true),
                     ]),
 
+                // ── API для внешней программы ─────────────────
+                Section::make('API для внешней программы')
+                    ->description('Токены доступа к API (экспорт участников, импорт и чтение результатов). Кнопка выпуска — в шапке страницы. Токен хранится только хешем и показывается один раз.')
+                    ->schema([
+                        Placeholder::make('api_clients')
+                            ->hiddenLabel()
+                            ->content(fn (): HtmlString => new HtmlString(
+                                view('filament.pages.partials.api-clients', [
+                                    'clients' => ApiClient::orderByDesc('created_at')->get(),
+                                    'newToken' => $this->newApiToken,
+                                    'newTokenName' => $this->newApiTokenName,
+                                ])->render(),
+                            ))
+                            ->columnSpanFull(),
+                    ]),
+
             ]);
+    }
+
+    // ──────────────────────────────────────────────
+    // API-токены (действия из партиала)
+    // ──────────────────────────────────────────────
+
+    /** Отозвать токен: доступ прекращается, запись сохраняется для истории. */
+    public function revokeApiClient(string $id): void
+    {
+        $client = ApiClient::find($id);
+
+        if ($client && $client->revoked_at === null) {
+            $client->forceFill(['revoked_at' => now()])->save();
+
+            Notification::make()
+                ->title("Токен «{$client->name}» отозван")
+                ->success()
+                ->send();
+        }
+    }
+
+    /** Удалить токен безвозвратно. */
+    public function deleteApiClient(string $id): void
+    {
+        $client = ApiClient::find($id);
+
+        if ($client) {
+            $name = $client->name;
+            $client->delete();
+
+            Notification::make()
+                ->title("Токен «{$name}» удалён")
+                ->success()
+                ->send();
+        }
     }
 
     // ──────────────────────────────────────────────
