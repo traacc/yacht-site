@@ -1,0 +1,506 @@
+openapi: 3.1.0
+info:
+  title: API регаты для внешней (судейской) программы
+  description: |
+    JSON-API для обмена данными регаты с внешней программой:
+
+    - список регат (поиск `external_id`);
+    - экспорт участников регаты из заявок;
+    - чтение и импорт результатов регаты.
+
+    Обрабатывается зачётная группа **«КАРТЕР 30»**. Регата адресуется по
+    `external_id` — стабильному целочисленному номеру (не UUID).
+
+    Аутентификация — Bearer-токен. Токен выпускается в админ-панели
+    («Настройки сайта» → «API для внешней программы») и хранится на сервере
+    только в виде sha256-хеша.
+  version: 1.0.0
+
+servers:
+  - url: https://{host}/api
+    description: Боевой сервер
+    variables:
+      host:
+        default: example.com
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Регаты
+    description: Список регат
+  - name: Участники
+    description: Экспорт участников
+  - name: Результаты
+    description: Чтение и импорт результатов
+
+paths:
+  /regattas:
+    get:
+      tags: [Регаты]
+      summary: Список регат
+      description: Возвращает регаты (свежие первыми) для поиска `external_id`.
+      operationId: listRegattas
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Необязательный фильтр по статусу. Неизвестное значение игнорируется.
+          schema:
+            $ref: '#/components/schemas/RegattaStatus'
+      responses:
+        '200':
+          description: Успех
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Regatta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /regattas/{external_id}/participants:
+    get:
+      tags: [Участники]
+      summary: Экспорт участников
+      description: Участники регаты (заявки) зачётной группы «КАРТЕР 30».
+      operationId: listParticipants
+      parameters:
+        - $ref: '#/components/parameters/RegattaExternalId'
+      responses:
+        '200':
+          description: Успех
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  regatta:
+                    $ref: '#/components/schemas/RegattaBrief'
+                  class:
+                    type: string
+                    example: КАРТЕР 30
+                  participants:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Participant'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /regattas/{external_id}/results:
+    get:
+      tags: [Результаты]
+      summary: Список результатов
+      description: Протоколы результатов регаты (предварительный/итоговый) с итоговыми таблицами.
+      operationId: listResults
+      parameters:
+        - $ref: '#/components/parameters/RegattaExternalId'
+        - name: type
+          in: query
+          required: false
+          description: Фильтр по типу протокола.
+          schema:
+            $ref: '#/components/schemas/ResultType'
+        - name: published
+          in: query
+          required: false
+          description: Фильтр по публикации.
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Успех
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  regatta:
+                    $ref: '#/components/schemas/RegattaBrief'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ResultProtocol'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Результаты]
+      summary: Импорт результатов
+      description: |
+        Записывает результаты зачётной группы «КАРТЕР 30»: итоговую таблицу и
+        результаты по гонкам. Привязка по парусному номеру (`vfps_number`),
+        идемпотентно — повторный вызов обновляет строки той же яхты.
+      operationId: importResults
+      parameters:
+        - $ref: '#/components/parameters/RegattaExternalId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportResultsRequest'
+      responses:
+        '200':
+          description: Импорт выполнен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResultsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Bearer-токен, выпущенный в админ-панели.
+
+  parameters:
+    RegattaExternalId:
+      name: external_id
+      in: path
+      required: true
+      description: Стабильный целочисленный идентификатор регаты.
+      schema:
+        type: integer
+        example: 42
+
+  responses:
+    Unauthorized:
+      description: Нет/неверный/отозванный токен
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: Неверный или отсутствующий API-токен.
+    NotFound:
+      description: Регата с таким external_id не найдена
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Ошибка валидации тела запроса
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+          example:
+            message: Ошибка валидации запроса.
+            errors:
+              crews:
+                - The crews field is required.
+
+  schemas:
+    RegattaStatus:
+      type: string
+      description: |
+        Статус регаты: `upcoming` — планируемая, `closest` — ближайшая,
+        `active` — идёт, `finished` — завершена, `cancelled` — отменена,
+        `postponed` — перенесена.
+      enum: [upcoming, closest, active, finished, cancelled, postponed]
+
+    ResultType:
+      type: string
+      description: '`preliminary` — предварительный, `final` — итоговый.'
+      enum: [preliminary, final]
+
+    SportCategory:
+      type: string
+      description: |
+        Спортивный разряд: `no` — б/р, `3`/`2`/`1` — разряды, `kms` — КМС,
+        `ms` — МС, `msmk` — МСМК, `zms` — ЗМС.
+      enum: ['no', '3', '2', '1', kms, ms, msmk, zms]
+
+    CrewRole:
+      type: string
+      enum: [captain, main, reserve]
+
+    Regatta:
+      type: object
+      properties:
+        external_id:
+          type: integer
+          example: 42
+        name:
+          type: string
+          example: Кубок памяти В.Я. Потапова
+        water_area:
+          type: [string, 'null']
+          example: Пирогово
+        location:
+          type: [string, 'null']
+        date_start:
+          type: [string, 'null']
+          format: date
+          example: '2026-06-12'
+        date_end:
+          type: [string, 'null']
+          format: date
+          example: '2026-06-12'
+        status:
+          $ref: '#/components/schemas/RegattaStatus'
+        entries_count:
+          type: integer
+          example: 21
+
+    RegattaBrief:
+      type: object
+      properties:
+        external_id:
+          type: integer
+          example: 42
+        name:
+          type: string
+          example: Кубок памяти В.Я. Потапова
+        water_area:
+          type: [string, 'null']
+        date_start:
+          type: [string, 'null']
+          format: date
+        date_end:
+          type: [string, 'null']
+          format: date
+      description: |
+        Краткая карточка регаты. В ответе участников содержит также `water_area`
+        и даты; в ответе результатов — только `external_id` и `name`.
+
+    Participant:
+      type: object
+      properties:
+        entry_id:
+          type: string
+          format: uuid
+        country:
+          type: string
+          example: RUS
+        sail_number:
+          type: [string, 'null']
+          description: Парусный номер (vfps_number) — ключ привязки результатов.
+          example: '691'
+        yacht:
+          type: object
+          properties:
+            name:
+              type: [string, 'null']
+            class:
+              type: [string, 'null']
+            type:
+              type: [string, 'null']
+              description: Тип/проект
+            city:
+              type: [string, 'null']
+        team:
+          type: [string, 'null']
+        crew:
+          type: array
+          items:
+            $ref: '#/components/schemas/CrewMember'
+
+    CrewMember:
+      type: object
+      properties:
+        name:
+          type: string
+        birth_date:
+          type: [string, 'null']
+          format: date
+        sport_category:
+          oneOf:
+            - $ref: '#/components/schemas/SportCategory'
+            - type: 'null'
+        role:
+          $ref: '#/components/schemas/CrewRole'
+
+    ResultProtocol:
+      type: object
+      properties:
+        result_id:
+          type: string
+          format: uuid
+        result_type:
+          $ref: '#/components/schemas/ResultType'
+        source:
+          type: string
+          description: 'Источник: `imported` (из API/файла), `manual` и т. п.'
+          example: manual
+        is_published:
+          type: boolean
+        pdf_url:
+          type: [string, 'null']
+          format: uri
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultItem'
+
+    ResultItem:
+      type: object
+      properties:
+        final_position:
+          type: [string, 'null']
+        total_points:
+          type: [string, 'null']
+        not_participate:
+          type: boolean
+        sail_number:
+          type: [string, 'null']
+        yacht_name:
+          type: [string, 'null']
+        team_name:
+          type: [string, 'null']
+        captain_name:
+          type: [string, 'null']
+        race_breakdown:
+          type: [array, 'null']
+          description: Пооночная разбивка (снапшот протокола, может отсутствовать).
+          items:
+            type: object
+
+    ImportResultsRequest:
+      type: object
+      required: [crews]
+      properties:
+        result_type:
+          allOf:
+            - $ref: '#/components/schemas/ResultType'
+          default: preliminary
+          description: Куда пишем протокол.
+        create_missing:
+          type: boolean
+          default: false
+          description: Создавать отсутствующие в базе яхты (и команду-заглушку).
+        replace:
+          type: boolean
+          default: false
+          description: Очистить строки итогов протокола перед импортом.
+        races:
+          type: array
+          description: Список гонок по порядку (создаются/находятся по имени).
+          items:
+            $ref: '#/components/schemas/ImportRace'
+        crews:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ImportCrew'
+
+    ImportRace:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          example: Гонка 1
+        at:
+          type: [string, 'null']
+          format: date-time
+          example: '2026-06-12 12:00:00'
+
+    ImportCrew:
+      type: object
+      required: [sail_number]
+      properties:
+        sail_number:
+          type: string
+          maxLength: 255
+          description: Парусный номер — ключ привязки к яхте/заявке.
+          example: '691'
+        yacht_name:
+          type: [string, 'null']
+          maxLength: 255
+        type:
+          type: [string, 'null']
+          maxLength: 255
+        city:
+          type: [string, 'null']
+          maxLength: 255
+        team:
+          type: [string, 'null']
+          maxLength: 255
+        final_position:
+          type: [string, 'null']
+          maxLength: 32
+        total_points:
+          type: [string, 'null']
+          maxLength: 32
+        races:
+          type: array
+          description: Результаты по гонкам, по порядку `races` верхнего уровня.
+          items:
+            $ref: '#/components/schemas/ImportRaceResult'
+
+    ImportRaceResult:
+      type: object
+      properties:
+        position:
+          type: [string, 'null']
+          maxLength: 32
+          description: 'Место. Скобки `(3)` — сброшенная гонка; коды `DNF/DNS/DSQ/OCS/RET/BFD/UFD`.'
+          example: '1'
+        points:
+          type: [string, 'null']
+          maxLength: 32
+          description: Очки за гонку. Если пусто — вычисляются из места.
+
+    ImportResultsResponse:
+      type: object
+      properties:
+        result_id:
+          type: string
+          format: uuid
+        result_type:
+          $ref: '#/components/schemas/ResultType'
+        summary:
+          $ref: '#/components/schemas/ImportSummary'
+
+    ImportSummary:
+      type: object
+      properties:
+        imported:
+          type: integer
+          description: Записано/обновлено строк.
+        skipped:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+        created_yachts:
+          type: integer
+        created_teams:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
