@@ -106,12 +106,12 @@ class RegattaResource extends Resource
                             ->maxValue(2099),
                         Forms\Components\DatePicker::make('start_date')
                             ->label('Дата начала сезона')
-                            ->displayFormat('d M Y')
+                            ->displayFormat('d.m.Y')
                             ->native(false)
                             ->required(),
                         Forms\Components\DatePicker::make('end_date')
                             ->label('Дата окончания сезона')
-                            ->displayFormat('d M Y')
+                            ->displayFormat('d.m.Y')
                             ->native(false)
                             ->required(),
                     ])
@@ -149,12 +149,12 @@ class RegattaResource extends Resource
                             ->schema([
                                 DatePicker::make('date_start')
                                     ->label('Дата начала')
-                                    ->displayFormat('d M Y')
+                                    ->displayFormat('d.m.Y')
                                     ->native(false)
                                     ->required(),
                                 DatePicker::make('date_end')
                                     ->label('Дата окончания')
-                                    ->displayFormat('d M Y')
+                                    ->displayFormat('d.m.Y')
                                     ->native(false)
                                     ->required(),
                                 TimePicker::make('time_start')
@@ -197,7 +197,7 @@ class RegattaResource extends Resource
                     ->columnSpanFull(),
                 DatePicker::make('date_start')
                     ->label('Дата начала')
-                    ->displayFormat('d M Y')
+                    ->displayFormat('d.m.Y')
                     ->native(false)
                     ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100))
@@ -208,7 +208,7 @@ class RegattaResource extends Resource
                     ->label('Дата окончания')
                     ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100))
-                    ->displayFormat('d M Y')
+                    ->displayFormat('d.m.Y')
                     ->native(false)
                     ->hidden(fn (Get $get): bool => (bool) $get('create_as_series'))
                     ->required(fn (Get $get): bool => ! (bool) $get('create_as_series')),
@@ -344,7 +344,7 @@ class RegattaResource extends Resource
 
                 DatePicker::make('postponed_to_date')
                     ->label('Дата переноса')
-                    ->displayFormat('d M Y')
+                    ->displayFormat('d.m.Y')
                     ->native(false)
                     ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100))
@@ -640,7 +640,7 @@ class RegattaResource extends Resource
                     ->schema([
                         DatePicker::make('date')
                             ->label('Выберите дату')
-                            ->displayFormat('d M Y')
+                            ->displayFormat('d.m.Y')
                             ->native(false)
                             ->native(false),
                     ])

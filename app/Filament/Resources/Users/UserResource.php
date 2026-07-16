@@ -122,7 +122,7 @@ class UserResource extends Resource
                 DatePicker::make('birth_date')
                     ->minDate(now()->subYears(100)) 
                     ->maxDate(now()->addYears(100))
-                    ->displayFormat('d M Y')
+                    ->displayFormat('d.m.Y')
                     ->native(false)
                     ->label('Дата рождения')
                     ->required(),

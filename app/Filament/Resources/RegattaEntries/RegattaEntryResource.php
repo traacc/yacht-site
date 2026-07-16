@@ -140,7 +140,7 @@ class RegattaEntryResource extends Resource
                     ->columnSpanFull(),
                 DatePicker::make('submitted_at')
                     ->label('Дата рассмотрения')
-                    ->displayFormat('d M Y')
+                    ->displayFormat('d.m.Y')
                     ->native(false)
                     ->default(now())
                     ->required(),
@@ -375,7 +375,7 @@ class RegattaEntryResource extends Resource
                 /*
                 TextColumn::make('submitted_at')
                     ->label('Дата рассмотрения')
-                    ->dateTime()->dateTime('d M Y')
+                    ->dateTime()->dateTime('d.m.Y')
                     ->sortable(),
                 */
                 TextColumn::make('status')

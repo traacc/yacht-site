@@ -114,7 +114,7 @@ class NewsResource extends Resource
                     ->searchable(),
                 TextColumn::make('published_at')
                     ->label('Дата публикации')
-                    ->dateTime()->dateTime('d M Y')
+                    ->dateTime()->dateTime('d.m.Y')
                     ->sortable(),
                 IconColumn::make('published_to_tg')
                     ->label('В Telegram')

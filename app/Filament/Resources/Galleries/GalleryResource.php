@@ -89,12 +89,12 @@ class GalleryResource extends Resource
                             ->maxValue(2099),
                         Forms\Components\DatePicker::make('start_date')
                             ->label('Дата начала сезона')
-                            ->displayFormat('d M Y')
+                            ->displayFormat('d.m.Y')
                             ->native(false)
                             ->required(),
                         Forms\Components\DatePicker::make('end_date')
                             ->label('Дата окончания сезона')
-                            ->displayFormat('d M Y')
+                            ->displayFormat('d.m.Y')
                             ->native(false)
                             ->required(),
                     ])
@@ -117,7 +117,7 @@ class GalleryResource extends Resource
 
                 DatePicker::make('date')
                     ->label('Дата')
-                    ->displayFormat('d M Y')
+                    ->displayFormat('d.m.Y')
                     ->native(false)
                     ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100)),

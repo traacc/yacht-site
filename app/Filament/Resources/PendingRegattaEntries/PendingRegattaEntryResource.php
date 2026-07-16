@@ -213,7 +213,7 @@ class PendingRegattaEntryResource extends Resource
                     ->toggleable(),
                 TextColumn::make('created_at')
                     ->label('Подана')
-                    ->dateTime('d M Y'),
+                    ->dateTime('d.m.Y'),
             ])
             ->stackedOnMobile()
             ->emptyStateHeading('Нет заявок на рассмотрении')
