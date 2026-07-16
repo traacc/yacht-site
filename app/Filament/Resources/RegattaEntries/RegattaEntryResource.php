@@ -440,9 +440,16 @@ class RegattaEntryResource extends Resource
                     ->relationship(
                         'regatta',
                         'name',
-                        modifyQueryUsing: fn (Builder $query) => $query->orderBy('date_start'),
+                        modifyQueryUsing: fn (Builder $query) => $query
+                            ->whereIn('regatta_status', [
+                                \App\Enums\RegattaStatus::Upcoming,
+                                \App\Enums\RegattaStatus::Closest,
+                                \App\Enums\RegattaStatus::Active,
+                            ])
+                            ->orderBy('date_start'),
                     )
-                    ->searchable(),
+                    ->searchable()
+                    ->preload(),
                 SelectFilter::make('source')
                     ->label('Источник')
                     ->options(
