@@ -322,18 +322,15 @@ class RatingCalculator
             $points[$item->team_id] = ($points[$item->team_id] ?? 0) + $item->score;
         }
 
-        arsort($points);
-
-        $rank = 1;
-        foreach ($points as $teamId => $total) {
+        foreach ($this->rankByPoints($points) as $teamId => $row) {
             TeamRating::updateOrCreate(
                 [
                     'season_id' => $season->id,
                     'team_id'   => $teamId,
                 ],
                 [
-                    'total_points'  => $total,
-                    'rank_position' => $rank++,
+                    'total_points'  => $row['total'],
+                    'rank_position' => $row['rank'],
                 ]
             );
         }
@@ -354,21 +351,48 @@ class RatingCalculator
             }
         }
 
-        arsort($points);
-
-        $rank = 1;
-        foreach ($points as $userId => $total) {
+        foreach ($this->rankByPoints($points) as $userId => $row) {
             PersonalRating::updateOrCreate(
                 [
                     'season_id' => $season->id,
                     'user_id'   => $userId,
                 ],
                 [
-                    'total_points'  => $total,
-                    'rank_position' => $rank++,
+                    'total_points'  => $row['total'],
+                    'rank_position' => $row['rank'],
                 ]
             );
         }
+    }
+
+    /**
+     * Проставляет места по убыванию очков. Участники с одинаковыми очками
+     * (с точностью до 3 знаков, как очки хранятся в БД) получают одно и то же
+     * место, а следующее место пропускается на число совпавших — стандартный
+     * принцип «1-2-2-4».
+     *
+     * @param  array<array-key, float|int>  $points  entity_id => total_points
+     * @return array<array-key, array{total: float|int, rank: int}>
+     */
+    private function rankByPoints(array $points): array
+    {
+        arsort($points);
+
+        $ranked   = [];
+        $position = 0;
+        $rank     = 0;
+        $prev     = null;
+        foreach ($points as $id => $total) {
+            $position++;
+            if ($prev === null || round((float) $total, 3) < round((float) $prev, 3)) {
+                $rank = $position;
+            }
+
+            $ranked[$id] = ['total' => $total, 'rank' => $rank];
+            $prev = $total;
+        }
+
+        return $ranked;
     }
 
     /**
