@@ -715,7 +715,7 @@ class JoinRegattaModal extends Component
         }
 
         $rules = [
-            "guestMembers.$i.newName"      => ['required', 'string', 'max:255'],
+            "guestMembers.$i.newName"      => ['required', 'string', 'max:255', $this->fullNameRule()],
             "guestMembers.$i.newBirthDate" => ['required', 'date', 'before:today'],
         ];
 
@@ -768,6 +768,21 @@ class JoinRegattaModal extends Component
         $this->resetErrorBag(["guestMembers.$i.newName", "guestMembers.$i.newBirthDate", "guestMembers.$i.newSportCategory"]);
     }
 
+    /**
+     * Правило валидации: ФИО должно содержать отчество.
+     * name имеет вид «Фамилия Имя Отчество» — минимум три слова.
+     */
+    private function fullNameRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            $parts = preg_split('/\s+/', trim((string) $value), -1, PREG_SPLIT_NO_EMPTY);
+
+            if (count($parts) < 3) {
+                $fail('Укажите ФИО полностью, включая отчество (Фамилия Имя Отчество).');
+            }
+        };
+    }
+
     /** Сгенерировать уникальный «технический» email для незарегистрированного участника */
     private function generateUniqueEmail(): string
     {
@@ -818,7 +833,7 @@ class JoinRegattaModal extends Component
         if ($selectsCaptain) {
             $rules['captainUserId'] = ['required', 'string', 'exists:users,id'];
         } else {
-            $rules['guestName']      = ['required', 'string', 'max:255'];
+            $rules['guestName']      = ['required', 'string', 'max:255', $this->fullNameRule()];
             $rules['guestEmail']     = ['required', 'email', 'unique:users,email'];
             $rules['guestPhone']     = ['required', 'unique:users,phone'];
             $rules['guestBirthDate'] = ['required', 'date', 'before:today'];

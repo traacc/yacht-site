@@ -107,7 +107,12 @@ class LoginModal extends Component
     public function register()
     {
         $this->validate([
-            'name'                  => ['required', 'string', 'max:255'],
+            'name'                  => ['required', 'string', 'max:255', function (string $attribute, mixed $value, \Closure $fail): void {
+                // ФИО должно содержать отчество: «Фамилия Имя Отчество» — минимум три слова.
+                if (count(preg_split('/\s+/', trim((string) $value), -1, PREG_SPLIT_NO_EMPTY)) < 3) {
+                    $fail('Укажите ФИО полностью, включая отчество (Фамилия Имя Отчество).');
+                }
+            }],
             /*
             'first_name'            => ['required', 'string', 'max:255'],
             'last_name'             => ['required', 'string', 'max:255'],
