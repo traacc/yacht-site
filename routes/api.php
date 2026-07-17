@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\RegattaListController;
 use App\Http\Controllers\Api\RegattaParticipantsController;
 use App\Http\Controllers\Api\RegattaResultsController;
-use App\Http\Controllers\Api\RegattaResultsListController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,7 +17,6 @@ use Illuminate\Support\Facades\Route;
 |
 |   GET  /api/regattas                         — список регат (поиск external_id)
 |   GET  /api/regattas/{regatta}/participants  — экспорт участников (КАРТЕР 30)
-|   GET  /api/regattas/{regatta}/results       — список протоколов результатов
 |   POST /api/regattas/{regatta}/results       — импорт результатов (КАРТЕР 30)
 |
 */
@@ -29,9 +27,6 @@ Route::middleware('api.token')->group(function (): void {
 
     Route::get('regattas/{regatta}/participants', RegattaParticipantsController::class)
         ->name('api.regattas.participants');
-
-    Route::get('regattas/{regatta}/results', RegattaResultsListController::class)
-        ->name('api.regattas.results.index');
 
     Route::post('regattas/{regatta}/results', RegattaResultsController::class)
         ->name('api.regattas.results');

@@ -189,50 +189,7 @@ GET /api/regattas/{external_id}/participants
 
 ---
 
-## 3. Список результатов
-
-Возвращает протоколы результатов регаты (предварительный/итоговый) с итоговыми
-таблицами. У регаты может быть несколько протоколов.
-
-```
-GET /api/regattas/{external_id}/results
-```
-
-### Параметры запроса (query)
-
-| Параметр | Тип | Описание |
-|---|---|---|
-| `type` | string | Фильтр: `preliminary` или `final` |
-| `published` | bool | Фильтр по публикации: `1`/`0` |
-
-### Ответ `200 OK`
-
-```json
-{
-  "regatta": { "external_id": 42, "name": "Кубок памяти В.Я. Потапова" },
-  "results": [
-    {
-      "result_id": "019f6c4b-d3ff-7272-a90c-a48e2f336837",
-      "result_type": "final",
-      "source": "manual",
-      "is_published": true
-    }
-  ]
-}
-```
-
-### Поля протокола
-
-| Поле | Тип | Описание |
-|---|---|---|
-| `result_id` | string (uuid) | ID протокола |
-| `result_type` | string | `preliminary` \| `final` |
-| `source` | string | Источник: `imported` (из API/файла), `manual` и т.п. |
-| `is_published` | bool | Опубликован ли протокол |
-
----
-
-## 4. Импорт результатов
+## 3. Импорт результатов
 
 Записывает результаты зачётной группы «КАРТЕР 30» в регату: итоговую таблицу и
 результаты по отдельным гонкам.
@@ -380,14 +337,6 @@ curl -H "Authorization: Bearer $TOKEN" \
 curl -H "Authorization: Bearer $TOKEN" \
      -H "Accept: application/json" \
      https://carter30.pro/api/regattas/42/participants
-```
-
-Список результатов:
-
-```bash
-curl -H "Authorization: Bearer $TOKEN" \
-     -H "Accept: application/json" \
-     "https://carter30.pro/api/regattas/42/results?type=final"
 ```
 
 Импорт результатов:

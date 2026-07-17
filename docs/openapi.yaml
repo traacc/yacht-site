@@ -6,7 +6,7 @@ info:
 
     - список регат (поиск `external_id`);
     - экспорт участников регаты из заявок;
-    - чтение и импорт результатов регаты.
+    - импорт результатов регаты.
 
     Обрабатывается зачётная группа **«КАРТЕР 30»**. Регата адресуется по
     `external_id` — стабильному целочисленному номеру (не UUID).
@@ -32,7 +32,7 @@ tags:
   - name: Участники
     description: Экспорт участников
   - name: Результаты
-    description: Чтение и импорт результатов
+    description: Импорт результатов
 
 paths:
   /regattas:
@@ -94,44 +94,6 @@ paths:
           $ref: '#/components/responses/NotFound'
 
   /regattas/{external_id}/results:
-    get:
-      tags: [Результаты]
-      summary: Список результатов
-      description: Протоколы результатов регаты (предварительный/итоговый) с итоговыми таблицами.
-      operationId: listResults
-      parameters:
-        - $ref: '#/components/parameters/RegattaExternalId'
-        - name: type
-          in: query
-          required: false
-          description: Фильтр по типу протокола.
-          schema:
-            $ref: '#/components/schemas/ResultType'
-        - name: published
-          in: query
-          required: false
-          description: Фильтр по публикации.
-          schema:
-            type: boolean
-      responses:
-        '200':
-          description: Успех
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  regatta:
-                    $ref: '#/components/schemas/RegattaBrief'
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/ResultProtocol'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
     post:
       tags: [Результаты]
       summary: Импорт результатов
@@ -276,9 +238,7 @@ components:
         date_end:
           type: [string, 'null']
           format: date
-      description: |
-        Краткая карточка регаты. В ответе участников содержит также `water_area`
-        и даты; в ответе результатов — только `external_id` и `name`.
+      description: Краткая карточка регаты в ответе экспорта участников.
 
     Participant:
       type: object
@@ -326,21 +286,6 @@ components:
             - type: 'null'
         role:
           $ref: '#/components/schemas/CrewRole'
-
-    ResultProtocol:
-      type: object
-      properties:
-        result_id:
-          type: string
-          format: uuid
-        result_type:
-          $ref: '#/components/schemas/ResultType'
-        source:
-          type: string
-          description: 'Источник: `imported` (из API/файла), `manual` и т. п.'
-          example: manual
-        is_published:
-          type: boolean
 
     ImportResultsRequest:
       type: object
