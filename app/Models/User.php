@@ -105,6 +105,16 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         });
 
         static::creating(function (self $user) {
+            // Запрещаем создание пользователя без отчества в поле name
+            // (name имеет вид «Фамилия Имя Отчество» — минимум три слова).
+            $nameParts = preg_split('/\s+/', trim((string) $user->name), -1, PREG_SPLIT_NO_EMPTY);
+
+            if (count($nameParts) < 3) {
+                throw ValidationException::withMessages([
+                    'name' => 'Отчество обязательно: укажите ФИО полностью (Фамилия Имя Отчество)',
+                ]);
+            }
+
             if ($user->external_id === null) {
                 // Атомарно увеличиваем счетчик и забираем новое значение
                 $sequence = DB::table('sequences')
