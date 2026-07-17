@@ -387,6 +387,8 @@ class ArchivedRegattaEntryResource extends Resource
 
                         static::syncCrew($record, $crew);
 
+                        static::recalculateSeasonRatings($record);
+
                         return $record;
                     }),
                 DeleteAction::make(),
@@ -505,6 +507,30 @@ class ArchivedRegattaEntryResource extends Resource
                 ['role'           => $item['role'] ?? 'main'],
             );
         }
+    }
+
+    /**
+     * Пересчитывает личный и командный рейтинг сезона после правки архивной заявки.
+     *
+     * Состав экипажа, команда и статус заявки участвуют в расчёте рейтингов
+     * (RatingCalculator::crewByRegattaTeam), поэтому их изменение должно
+     * отражаться в рейтингах. Пересчёт читает уже готовые итоговые строки
+     * (regatta_result_items) и свежий состав экипажа.
+     *
+     * Важно: итоговые строки результатов (в т.ч. «замороженные» с team_id = null)
+     * намеренно НЕ пересчитываются — их total_points и место историчны, а
+     * recomputeItemTotals обнулил бы замороженные строки и сдвинул число лодок.
+     */
+    public static function recalculateSeasonRatings(RegattaEntry $record): void
+    {
+        $record->loadMissing('regatta.season');
+
+        if ($record->regatta?->season === null) {
+            return;
+        }
+
+        app(\App\Services\RatingCalculator::class)
+            ->recalculateAfterRegatta($record->regatta);
     }
 
     /**
