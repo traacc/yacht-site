@@ -8,12 +8,15 @@ use Filament\Resources\Pages\ManageRecords;
 
 class ManagePersonalRatings extends ManageRecords
 {
+    use \App\Filament\Concerns\RecalculatesRatings;
+
     protected static string $resource = PersonalRatingResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
             CreateAction::make()->createAnother(false)->modalHeading('Новый личный рейтинг'),
+            $this->recalculateRatingsAction(),
         ];
     }
 }

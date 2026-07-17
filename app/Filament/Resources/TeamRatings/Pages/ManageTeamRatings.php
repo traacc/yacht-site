@@ -8,12 +8,15 @@ use Filament\Resources\Pages\ManageRecords;
 
 class ManageTeamRatings extends ManageRecords
 {
+    use \App\Filament\Concerns\RecalculatesRatings;
+
     protected static string $resource = TeamRatingResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
             CreateAction::make()->createAnother(false)->modalHeading('Новый командный рейтинг'),
+            $this->recalculateRatingsAction(),
         ];
     }
 }
