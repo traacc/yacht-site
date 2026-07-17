@@ -368,8 +368,8 @@ class RatingCalculator
     /**
      * Проставляет места по убыванию очков. Участники с одинаковыми очками
      * (с точностью до 3 знаков, как очки хранятся в БД) получают одно и то же
-     * место, а следующее место пропускается на число совпавших — стандартный
-     * принцип «1-2-2-4».
+     * место, а места идут подряд без пропусков — принцип «1-1-1-2-3»
+     * (плотное ранжирование).
      *
      * @param  array<array-key, float|int>  $points  entity_id => total_points
      * @return array<array-key, array{total: float|int, rank: int}>
@@ -378,14 +378,12 @@ class RatingCalculator
     {
         arsort($points);
 
-        $ranked   = [];
-        $position = 0;
-        $rank     = 0;
-        $prev     = null;
+        $ranked = [];
+        $rank   = 0;
+        $prev   = null;
         foreach ($points as $id => $total) {
-            $position++;
             if ($prev === null || round((float) $total, 3) < round((float) $prev, 3)) {
-                $rank = $position;
+                $rank++;
             }
 
             $ranked[$id] = ['total' => $total, 'rank' => $rank];
