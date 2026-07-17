@@ -12,7 +12,8 @@ class ListUsersWithoutPatronymic extends Command
 {
     protected $signature = 'users:without-patronymic
                             {--count : Вывести только количество}
-                            {--by-team : Разбить вывод на отдельные таблицы по постоянным командам}';
+                            {--by-team : Разбить вывод на отдельные таблицы по постоянным командам}
+                            {--no-id : Не отображать столбец ID}';
 
     protected $description = 'Выводит список пользователей без отчества в поле name (ФИО менее чем из трёх слов).';
 
@@ -51,19 +52,30 @@ class ListUsersWithoutPatronymic extends Command
         }
 
         $this->table(
-            ['ID', 'ФИО', 'Email', 'Дата рождения', 'Команды'],
-            $users->map(fn (User $user) => [
-                $user->id,
+            $this->withOptionalId(['ФИО', 'Email', 'Дата рождения', 'Команды']),
+            $users->map(fn (User $user) => $this->withOptionalId([
                 $user->name,
                 $user->email,
                 $user->birth_date?->format('Y-m-d') ?? '—',
                 $this->teamNamesFor($user)->implode(', ') ?: '—',
-            ])->all()
+            ], $user->id))->all()
         );
 
         $this->info("Всего: {$users->count()}.");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Добавить в начало строки/заголовка столбец ID, если он не отключён флагом --no-id.
+     */
+    private function withOptionalId(array $row, ?string $id = 'ID'): array
+    {
+        if ($this->option('no-id')) {
+            return $row;
+        }
+
+        return array_merge([$id], $row);
     }
 
     /**
@@ -125,13 +137,12 @@ class ListUsersWithoutPatronymic extends Command
             $this->line("<fg=yellow;options=bold>{$teamName}</> (" . count($teamUsers) . ')');
 
             $this->table(
-                ['ID', 'ФИО', 'Email', 'Дата рождения'],
-                collect($teamUsers)->map(fn (User $user) => [
-                    $user->id,
+                $this->withOptionalId(['ФИО', 'Email', 'Дата рождения']),
+                collect($teamUsers)->map(fn (User $user) => $this->withOptionalId([
                     $user->name,
                     $user->email,
                     $user->birth_date?->format('Y-m-d') ?? '—',
-                ])->all()
+                ], $user->id))->all()
             );
         }
     }
