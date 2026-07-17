@@ -341,36 +341,6 @@ components:
           example: manual
         is_published:
           type: boolean
-        pdf_url:
-          type: [string, 'null']
-          format: uri
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/ResultItem'
-
-    ResultItem:
-      type: object
-      properties:
-        final_position:
-          type: [string, 'null']
-        total_points:
-          type: [string, 'null']
-        not_participate:
-          type: boolean
-        sail_number:
-          type: [string, 'null']
-        yacht_name:
-          type: [string, 'null']
-        team_name:
-          type: [string, 'null']
-        captain_name:
-          type: [string, 'null']
-        race_breakdown:
-          type: [array, 'null']
-          description: Пооночная разбивка (снапшот протокола, может отсутствовать).
-          items:
-            type: object
 
     ImportResultsRequest:
       type: object

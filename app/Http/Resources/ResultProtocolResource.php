@@ -9,9 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * Протокол результата регаты (RegattaResult) для JSON-API: тип/источник/публикация,
- * ссылка на PDF и итоговая таблица (items). У регаты может быть несколько протоколов
- * (предварительный/итоговый).
+ * Протокол результата регаты (RegattaResult) для JSON-API: тип/источник/публикация.
+ * У регаты может быть несколько протоколов (предварительный/итоговый).
  *
  * @mixin RegattaResult
  */
@@ -27,8 +26,6 @@ class ResultProtocolResource extends JsonResource
             'result_type' => $this->result_type,   // preliminary | final
             'source' => $this->source,         // imported | manual | ...
             'is_published' => (bool) $this->is_published,
-            'pdf_url' => $this->pdf_url,
-            'items' => ResultItemResource::collection($this->whenLoaded('items')),
         ];
     }
 }

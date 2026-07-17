@@ -215,20 +215,7 @@ GET /api/regattas/{external_id}/results
       "result_id": "019f6c4b-d3ff-7272-a90c-a48e2f336837",
       "result_type": "final",
       "source": "manual",
-      "is_published": true,
-      "pdf_url": "https://carter30.pro/storage/results/....pdf",
-      "items": [
-        {
-          "final_position": "1",
-          "total_points": "3.0",
-          "not_participate": false,
-          "sail_number": "691",
-          "yacht_name": "Energie",
-          "team_name": "Energie",
-          "captain_name": "Харитонов Денис Владимирович",
-          "race_breakdown": null
-        }
-      ]
+      "is_published": true
     }
   ]
 }
@@ -242,24 +229,6 @@ GET /api/regattas/{external_id}/results
 | `result_type` | string | `preliminary` \| `final` |
 | `source` | string | Источник: `imported` (из API/файла), `manual` и т.п. |
 | `is_published` | bool | Опубликован ли протокол |
-| `pdf_url` | string \| null | Ссылка на PDF, если сгенерирован |
-| `items[]` | array | Итоговая таблица, отсортирована по месту |
-
-### Поля строки итога (`items[]`)
-
-| Поле | Тип | Описание |
-|---|---|---|
-| `final_position` | string \| null | Итоговое место |
-| `total_points` | string \| null | Итоговые очки |
-| `not_participate` | bool | Не участвовал(а) |
-| `sail_number` | string \| null | Парусный номер |
-| `yacht_name` | string \| null | Яхта |
-| `team_name` | string \| null | Команда |
-| `captain_name` | string \| null | Капитан |
-| `race_breakdown` | array \| null | Пооночная разбивка (снапшот, может отсутствовать) |
-
-Имена яхты/команды/номера берутся из живой связи, а при удалении сущности — из
-сохранённого снапшота, поэтому строка результата уцелевает.
 
 ---
 

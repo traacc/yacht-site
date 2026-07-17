@@ -22,7 +22,6 @@ class RegattaResultsListController extends Controller
     public function __invoke(Request $request, Regatta $regatta): JsonResponse
     {
         $results = $regatta->results()
-            ->with('items')
             ->when(
                 in_array($request->string('type')->value(), ['preliminary', 'final'], true),
                 fn ($q) => $q->where('result_type', $request->string('type')->value()),
