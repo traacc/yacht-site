@@ -244,8 +244,8 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                     </div>
 
                     {{-- ─── Вид: список с сортировкой ─── --}}
-                    <div x-show="personalView === 'list'" class="overflow-x-auto md:pb-6 md:pt-0 bg-white">
-                        <table class="w-full text-sm md:text-base">
+                    <div x-show="personalView === 'list'" class="overflow-x-auto md:pb-6 md:pt-0 bg-white flex justify-center">
+                        <table class="w-full max-w-[540px] text-sm md:text-base">
                             <thead>
                                 <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] bg-white sticky top-0">
                                     <th class="pb-2 text-center font-medium a-font pt-6 w-16">Место</th>
