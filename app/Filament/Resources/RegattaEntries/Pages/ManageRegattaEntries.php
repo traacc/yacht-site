@@ -10,8 +10,10 @@ use App\Enums\RegattaEntrySource;
 use App\Filament\Resources\RegattaEntries\RegattaEntryResource;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
+use App\Services\RgdParticipantsExporter;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
+use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
 use Livewire\Attributes\On;
@@ -133,6 +135,44 @@ class ManageRegattaEntries extends ManageRecords
                 ->icon('heroicon-o-document-text')
                 ->color('white')
                 ->url(fn () => \App\Filament\Resources\RegattaEntryDocumentTypeResource::getUrl()),
+            Action::make('exportParticipants')
+                ->label('Экспорт участников (.rgd)')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('white')
+                ->form([
+                    Select::make('regatta_id')
+                        ->label('Регата')
+                        ->options(fn (): array => Regatta::exportSelectOptions())
+                        ->searchable()
+                        ->required(),
+                ])
+                ->modalHeading('Экспорт участников в .rgd')
+                ->modalDescription('Файл зачётной группы «КАРТЕР 30» только с данными участников (Windows-1251).')
+                ->modalSubmitActionLabel('Скачать .rgd')
+                ->action(function (array $data) {
+                    $regatta  = Regatta::findOrFail($data['regatta_id']);
+                    $exporter = app(RgdParticipantsExporter::class);
+                    $entries  = $exporter->loadParticipants($regatta);
+
+                    if ($entries->isEmpty()) {
+                        Notification::make()
+                            ->title('У регаты нет заявок для экспорта')
+                            ->warning()
+                            ->send();
+
+                        return null;
+                    }
+
+                    $bytes = $exporter->toBytes($exporter->build($regatta, $entries));
+
+                    return response()->streamDownload(
+                        function () use ($bytes): void {
+                            echo $bytes;
+                        },
+                        $exporter->filename($regatta),
+                        ['Content-Type' => 'application/octet-stream'],
+                    );
+                }),
             CreateAction::make()
             ->modalHeading('Новая заявка на регату')
                 ->createAnother(false)

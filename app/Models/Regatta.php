@@ -252,6 +252,36 @@ class Regatta extends Model
     // Helpers
     // ──────────────────────────────────────────────
 
+    /**
+     * Список регат для Select в модалках экспорта: сначала ближайшие/активные,
+     * затем прочие по дате старта. Значение — «Название • дд.мм.гггг».
+     *
+     * @return array<int, string>
+     */
+    public static function exportSelectOptions(): array
+    {
+        $priority = [
+            RegattaStatus::Closest->value   => 0,
+            RegattaStatus::Active->value    => 1,
+            RegattaStatus::Upcoming->value  => 2,
+            RegattaStatus::Postponed->value => 3,
+            RegattaStatus::Finished->value  => 4,
+            RegattaStatus::Cancelled->value => 5,
+        ];
+
+        return static::query()
+            ->get()
+            ->sortBy(fn (self $r): string => sprintf(
+                '%02d-%011d',
+                $priority[$r->regatta_status?->value] ?? 99,
+                $r->date_start?->timestamp ?? 0,
+            ))
+            ->mapWithKeys(fn (self $r): array => [
+                $r->id => $r->name . ' • ' . ($r->date_start?->format('d.m.Y') ?? '—'),
+            ])
+            ->all();
+    }
+
     public function isUpcoming(): bool
     {
         $start = $this->startDateTime();

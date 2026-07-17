@@ -8,10 +8,9 @@ use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\Regatta\ReplicateRegattaAction;
 use App\Actions\Regatta\UpdateRegattaRequiredDocumentsAction;
 use App\Filament\Resources\Regattas\RegattaResource;
-use App\Enums\RegattaStatus;
+use App\Exports\RegattaParticipantsExport;
 use App\Models\Regatta;
 use App\Models\Series;
-use App\Services\RgdParticipantsExporter;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -77,47 +76,25 @@ class ManageRegattas extends ManageRecords
                 ->icon('heroicon-o-document-text')
                 ->color('white')
                 ->url(fn () => \App\Filament\Resources\RegattaEntryDocumentTypeResource::getUrl()),
-            Action::make('exportParticipants')
-                ->label('Экспорт участников (.rgd)')
-                ->icon('heroicon-o-arrow-down-tray')
+            Action::make('exportParticipantsXlsx')
+                ->label('Экспорт участников (.xlsx)')
+                ->icon('heroicon-o-table-cells')
                 ->color('white')
                 ->form([
                     Select::make('regatta_id')
                         ->label('Регата')
-                        ->options(function (): array {
-                            $priority = [
-                                RegattaStatus::Closest->value   => 0,
-                                RegattaStatus::Active->value     => 1,
-                                RegattaStatus::Upcoming->value   => 2,
-                                RegattaStatus::Postponed->value  => 3,
-                                RegattaStatus::Finished->value   => 4,
-                                RegattaStatus::Cancelled->value  => 5,
-                            ];
-
-                            return Regatta::query()
-                                ->get()
-                                ->sortBy(fn (Regatta $r): string => sprintf(
-                                    '%02d-%011d',
-                                    $priority[$r->regatta_status?->value] ?? 99,
-                                    $r->date_start?->timestamp ?? 0,
-                                ))
-                                ->mapWithKeys(fn (Regatta $r): array => [
-                                    $r->id => $r->name . ' • ' . ($r->date_start?->format('d.m.Y') ?? '—'),
-                                ])
-                                ->all();
-                        })
+                        ->options(fn (): array => Regatta::exportSelectOptions())
                         ->searchable()
                         ->required(),
                 ])
-                ->modalHeading('Экспорт участников в .rgd')
-                ->modalDescription('Файл зачётной группы «КАРТЕР 30» только с данными участников (Windows-1251).')
-                ->modalSubmitActionLabel('Скачать .rgd')
+                ->modalHeading('Экспорт участников в .xlsx')
+                ->modalDescription('Список участников регаты (парусный №, яхта, команда, экипаж).')
+                ->modalSubmitActionLabel('Скачать .xlsx')
                 ->action(function (array $data) {
-                    $regatta  = Regatta::findOrFail($data['regatta_id']);
-                    $exporter = app(RgdParticipantsExporter::class);
-                    $entries  = $exporter->loadParticipants($regatta);
+                    $regatta = Regatta::findOrFail($data['regatta_id']);
+                    $export  = app(RegattaParticipantsExport::class);
 
-                    if ($entries->isEmpty()) {
+                    if ($export->loadParticipants($regatta)->isEmpty()) {
                         Notification::make()
                             ->title('У регаты нет заявок для экспорта')
                             ->warning()
@@ -126,15 +103,7 @@ class ManageRegattas extends ManageRecords
                         return null;
                     }
 
-                    $bytes = $exporter->toBytes($exporter->build($regatta, $entries));
-
-                    return response()->streamDownload(
-                        function () use ($bytes): void {
-                            echo $bytes;
-                        },
-                        $exporter->filename($regatta),
-                        ['Content-Type' => 'application/octet-stream'],
-                    );
+                    return $export->download($regatta);
                 }),
             CreateAction::make()->modalHeading('Новая регата')
                 ->createAnother(false)
