@@ -132,9 +132,63 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                     </div>
 
                 </div>
-                <div x-show="activeTab === 'personal'" role="tabpanel" class="bg-brand-light rounded-xl md:p-4">
-                    <h3 class="font-display  text-[#2E325C]  text-3xl mb-4 a-font">Личный рейтинг</h3>
-                    <div class="overflow-x-auto md:pb-6 md:pt-0 bg-white">
+                <div x-show="activeTab === 'personal'" role="tabpanel" class="bg-brand-light rounded-xl md:p-4"
+                    x-data="{
+                        participants: {{ Js::from($personalRatings) }},
+                        personalView: 'places',
+                        sortField: 'points',
+                        sortDir: 'desc',
+                        get flatParticipants() {
+                            const rows = [];
+                            this.participants.forEach(group => {
+                                (group.participants || []).forEach(p => {
+                                    rows.push(Object.assign({}, p, { place: group.place }));
+                                });
+                            });
+                            const dir = this.sortDir === 'asc' ? 1 : -1;
+                            return rows.sort((a, b) => {
+                                if (this.sortField === 'name') {
+                                    return (a.name || '').localeCompare(b.name || '', 'ru') * dir;
+                                }
+                                const byPoints = ((a.total_points || 0) - (b.total_points || 0)) * dir;
+                                if (byPoints !== 0) return byPoints;
+                                return (a.name || '').localeCompare(b.name || '', 'ru');
+                            });
+                        },
+                        sortBy(field) {
+                            if (this.sortField === field) {
+                                this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+                            } else {
+                                this.sortField = field;
+                                this.sortDir = field === 'name' ? 'asc' : 'desc';
+                            }
+                        },
+                        sortArrow(field) {
+                            if (this.sortField !== field) return '';
+                            return this.sortDir === 'asc' ? ' ▲' : ' ▼';
+                        }
+                    }"
+                >
+                    <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+                        <h3 class="font-display  text-[#2E325C]  text-3xl a-font">Личный рейтинг</h3>
+                        <div class="inline-flex rounded-lg overflow-hidden border border-[#EAEAEA] bg-white">
+                            <button
+                                type="button"
+                                class="px-4 py-2 text-sm md:text-base font-medium transition-colors cursor-pointer"
+                                :class="personalView === 'places' ? 'bg-[#2D92CE] text-white' : 'text-[#2E325C] hover:bg-brand-light'"
+                                @click="personalView = 'places'"
+                            >Места</button>
+                            <button
+                                type="button"
+                                class="px-4 py-2 text-sm md:text-base font-medium transition-colors cursor-pointer"
+                                :class="personalView === 'list' ? 'bg-[#2D92CE] text-white' : 'text-[#2E325C] hover:bg-brand-light'"
+                                @click="personalView = 'list'"
+                            >Список</button>
+                        </div>
+                    </div>
+
+                    {{-- ─── Вид: группировка по местам ─── --}}
+                    <div x-show="personalView === 'places'" class="overflow-x-auto md:pb-6 md:pt-0 bg-white">
                         <table class="w-full text-sm md:text-base">
                             <thead>
                                 <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] bg-white sticky top-0">
@@ -143,9 +197,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                     <th class="pb-2 text-center font-medium a-font pt-6">Очки</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y text-center font-medium"
-                                x-data="{ participants: {{ Js::from($personalRatings) }} }"
-                            >
+                            <tbody class="divide-y text-center font-medium">
                                 <template x-for="(row, i) in participants" :key="i">
                                     <tr>
                                         <td class="py-2" data-label="Место">
@@ -183,6 +235,71 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                     </tr>
                                 </template>
                                 <template x-if="participants.length === 0">
+                                    <tr>
+                                        <td colspan="3" class="py-6 text-gray-400">Данные рейтинга пока не опубликованы</td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- ─── Вид: список с сортировкой ─── --}}
+                    <div x-show="personalView === 'list'" class="overflow-x-auto md:pb-6 md:pt-0 bg-white">
+                        <table class="w-full text-sm md:text-base">
+                            <thead>
+                                <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] bg-white sticky top-0">
+                                    <th class="pb-2 text-center font-medium a-font pt-6 w-16">Место</th>
+                                    <th class="pb-2 text-left font-medium a-font pt-6">
+                                        <button type="button" class="a-font hover:text-[#2D92CE] transition-colors cursor-pointer"
+                                            @click="sortBy('name')">
+                                            <span>Участник</span><span x-text="sortArrow('name')"></span>
+                                        </button>
+                                    </th>
+                                    <th class="pb-2 text-center font-medium a-font pt-6">
+                                        <button type="button" class="a-font hover:text-[#2D92CE] transition-colors cursor-pointer"
+                                            @click="sortBy('points')">
+                                            <span>Очки</span><span x-text="sortArrow('points')"></span>
+                                        </button>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y text-center font-medium">
+                                <template x-for="(p, i) in flatParticipants" :key="p.id ?? i">
+                                    <tr>
+                                        <td class="py-2" data-label="Место">
+                                            <div class="flex items-center md:justify-center gap-3">
+                                                <span :class="p.place===1?'text-[#C2A36B]':p.place===2?'text-[#9FA6AD]':p.place===3?'text-[#B56A3A]':'opacity-0'" class="font-bold text-sm">{!! file_get_contents(public_path('images/icons/cup.svg')) !!}</span><span x-text="p.place"></span>
+                                            </div>
+                                        </td>
+                                        <td class="py-2 md:text-left" data-label="Участник">
+                                            <button
+                                                type="button"
+                                                class="flex items-center gap-3 group cursor-pointer md:justify-start justify-end w-full"
+                                                @click="p.id ? Livewire.dispatch('open-user-card', { userId: p.id }) : openParticipant(p)"
+                                                :title="p.name"
+                                            >
+                                                <span class="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-[#2E325C] text-white text-xs font-bold ring-2 ring-white group-hover:ring-[#2D92CE] transition-all flex-shrink-0 order-2 md:order-1">
+                                                    <template x-if="p.avatar">
+                                                        <img :src="p.avatar" :alt="p.name" class="w-full h-full object-cover">
+                                                    </template>
+                                                    <template x-if="!p.avatar">
+                                                        <span x-text="initials(p.name)"></span>
+                                                    </template>
+                                                </span>
+                                                <span class="text-[#2E325C] group-hover:text-[#2D92CE] group-hover:underline transition-colors order-1 md:order-2" x-text="p.name"></span>
+                                            </button>
+                                        </td>
+                                        <td class="py-2" data-label="Очки">
+                                            <button
+                                                type="button"
+                                                class="text-[#2D92CE] hover:text-[#2D92CE] hover:underline transition-colors cursor-pointer font-semibold"
+                                                @click="openRegattas({ participants: [p] })"
+                                                x-text="p.total_points"
+                                            ></button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <template x-if="flatParticipants.length === 0">
                                     <tr>
                                         <td colspan="3" class="py-6 text-gray-400">Данные рейтинга пока не опубликованы</td>
                                     </tr>
