@@ -82,7 +82,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                     <tr>
                                         <td class="py-2" data-label="Место">
                                             <div class="flex items-center md:justify-center gap-3">
-                                                <span :class="i===0?'text-[#C2A36B]':i===1?'text-[#9FA6AD]':i===2?'text-[#B56A3A]':'opacity-0'" class="font-bold text-sm">{!! file_get_contents(public_path('images/icons/cup.svg')) !!}</span><span x-text="i+1"></span>
+                                                <span :class="team.rank===1?'text-[#C2A36B]':team.rank===2?'text-[#9FA6AD]':team.rank===3?'text-[#B56A3A]':'opacity-0'" class="font-bold text-sm">{!! file_get_contents(public_path('images/icons/cup.svg')) !!}</span><span x-text="team.rank"></span>
                                             </div>
                                         </td>
                                         <td class="py-2" data-label="Команда">

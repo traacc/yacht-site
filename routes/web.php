@@ -648,23 +648,25 @@ Route::get('/ratings', function () {
         return $breakdownCache[$season->id][$userId] ?? [];
     };
 
-    $place = 1;
     $personalRatings = PersonalRating::with(['user', 'season'])
         ->ranked()
         ->get()
         ->map(fn ($r) => [
             'id' => $r->user?->id,
             'name' => $r->user?->name ?? '—',
+            'rank' => $r->rank_position,
             'total_points' => (float) $r->total_points,
             'birthday' => $r->user?->birth_date?->format('d.m.Y') ?? '—',
             'category' => $r->user?->sport_category?->getLabel() ?? '—',
             'avatar' => $r->user?->photo_url ? asset('storage/'.$r->user->photo_url) : null,
             'regattas' => $breakdownFor($r->season, $r->user_id),
         ])
-        ->groupBy('total_points')
-        ->map(function ($group) use (&$place) {
+        // Место берём из rank_position (то же, что в карточке участника): равные
+        // очки получают одно место, следующее место пропускается.
+        ->groupBy('rank')
+        ->map(function ($group) {
             return [
-                'place' => $place++,
+                'place' => $group->first()['rank'],
                 'total_points' => $group->first()['total_points'],
                 'participants' => $group->values()->toArray(),
             ];
