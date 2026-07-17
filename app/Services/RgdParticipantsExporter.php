@@ -161,7 +161,7 @@ class RgdParticipantsExporter
             'ms'   => 'МС',
             'msmk' => 'МСМК',
             'zms'  => 'ЗМС',
-            default => '',   // 'no' (б/р) или неизвестно — пусто
+            default => 'б/р',   // 'no' (б/р) или неизвестно — пусто
         };
     }
 }
