@@ -249,7 +249,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                             <thead>
                                 <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] bg-white sticky top-0">
                                     <th class="pb-2 text-center font-medium a-font pt-6 w-16">Место</th>
-                                    <th class="pb-2 text-center font-medium a-font pt-6">
+                                    <th class="pb-2 text-left md:pl-8 font-medium a-font pt-6">
                                         <button type="button" class="a-font hover:text-[#2D92CE] transition-colors cursor-pointer"
                                             @click="sortBy('name')">
                                             <span>Участник</span><span class="text-sm align-middle" x-text="sortArrow('name')"></span>
@@ -271,10 +271,10 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                                 <span :class="p.place===1?'text-[#C2A36B]':p.place===2?'text-[#9FA6AD]':p.place===3?'text-[#B56A3A]':'opacity-0'" class="font-bold text-sm">{!! file_get_contents(public_path('images/icons/cup.svg')) !!}</span><span x-text="p.place"></span>
                                             </div>
                                         </td>
-                                        <td class="py-2 md:text-center" data-label="Участник">
+                                        <td class="py-2 text-left md:pl-8" data-label="Участник">
                                             <button
                                                 type="button"
-                                                class="flex items-center gap-3 group cursor-pointer md:justify-center justify-end w-full"
+                                                class="flex items-center gap-3 group cursor-pointer md:justify-start justify-end w-full"
                                                 @click="p.id ? Livewire.dispatch('open-user-card', { userId: p.id }) : openParticipant(p)"
                                                 :title="p.name"
                                             >
