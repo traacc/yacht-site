@@ -59,6 +59,19 @@
                             <dt class="text-brand-gray-light">Участий в регатах</dt>
                             <dd class="font-medium text-brand-dark">{{ $user['regattas'] }}</dd>
                         </div>
+                        @if(!empty($user['rating']))
+                            <div>
+                                <dt class="text-brand-gray-light">Личный рейтинг{{ $user['rating']['season'] ? ' '.$user['rating']['season'] : '' }}</dt>
+                                <dd class="font-medium text-brand-dark">
+                                    @if($user['rating']['position'])
+                                        {{ $user['rating']['position'] }} место
+                                    @endif
+                                    @if($user['rating']['points'] !== null)
+                                        <span class="text-brand-gray-light">· {{ rtrim(rtrim(number_format($user['rating']['points'], 3, '.', ' '), '0'), '.') }} очк.</span>
+                                    @endif
+                                </dd>
+                            </div>
+                        @endif
                     </dl>
 
                     {{-- О себе --}}
