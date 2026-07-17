@@ -881,6 +881,35 @@ class JoinRegattaModal extends Component
             return;
         }
 
+        // Команда выбрана из списка — в экипаже (рулевой или участники) должен быть
+        // хотя бы один постоянный участник этой команды. Новые (незарегистрированные)
+        // участники постоянными быть не могут — учитываем только существующих.
+        if ($selectsTeam && $this->teamId) {
+            $crewUserIds = [];
+
+            if ($selectsCaptain && $this->captainUserId) {
+                $crewUserIds[] = (string) $this->captainUserId;
+            }
+
+            foreach ($this->guestMembers as $m) {
+                if (($m['registered'] ?? null) === true && ! empty($m['user_id'])) {
+                    $crewUserIds[] = (string) $m['user_id'];
+                }
+            }
+
+            $hasPermanentMember = $crewUserIds !== [] && TeamMember::query()
+                ->where('team_id', $this->teamId)
+                ->where('is_permanent', true)
+                ->whereIn('user_id', $crewUserIds)
+                ->exists();
+
+            if (! $hasPermanentMember) {
+                $this->addError('teamId', 'В экипаже должен быть хотя бы один постоянный участник выбранной команды.');
+
+                return;
+            }
+        }
+
         //$password = Str::password(12);
         $password = 'Carter30pro';
 
