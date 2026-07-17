@@ -31,7 +31,7 @@ trait RecalculatesRatings
         return Action::make('recalculate_ratings')
             ->label('Пересчитать рейтинги')
             ->icon(Heroicon::ArrowPath)
-            ->color('warning')
+            ->color('white')
             ->modalHeading('Пересчёт рейтингов')
             ->modalDescription('Командный и личный рейтинг выбранного сезона будут пересчитаны заново по текущим результатам и составам экипажей. Результаты гонок не изменятся.')
             ->modalSubmitActionLabel('Пересчитать')
