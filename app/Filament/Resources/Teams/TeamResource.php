@@ -110,7 +110,22 @@ class TeamResource extends Resource
 
                 Repeater::make('teamMembers')
                     ->label('Участники')
-                    ->relationship('teamMembers')
+                    ->relationship('teamMembers', modifyQueryUsing: function (Builder $query, $livewire) {
+                        // Текущая редактируемая команда — её постоянных участников оставляем
+                        $currentTeamId = null;
+                        if ($livewire && method_exists($livewire, 'getMountedTableActionRecord')) {
+                            $currentTeamId = $livewire->getMountedTableActionRecord()?->getKey();
+                        }
+
+                        // Не показываем участников, которые являются постоянными в другой команде
+                        return $query->whereDoesntHave('user.teamMemberships', function (Builder $q) use ($currentTeamId) {
+                            $q->where('is_permanent', true);
+
+                            if ($currentTeamId) {
+                                $q->where('team_id', '!=', $currentTeamId);
+                            }
+                        });
+                    })
                     ->addActionLabel('Добавить участника')
                     ->columns(3)
                     ->columnSpanFull()
