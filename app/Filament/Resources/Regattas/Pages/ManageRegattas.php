@@ -7,8 +7,9 @@ namespace App\Filament\Resources\Regattas\Pages;
 use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\Regatta\ReplicateRegattaAction;
 use App\Actions\Regatta\UpdateRegattaRequiredDocumentsAction;
-use App\Filament\Resources\Regattas\RegattaResource;
 use App\Exports\RegattaParticipantsExport;
+use App\Filament\Resources\RegattaEntryDocumentTypeResource;
+use App\Filament\Resources\Regattas\RegattaResource;
 use App\Models\Regatta;
 use App\Models\Series;
 use Carbon\Carbon;
@@ -75,7 +76,7 @@ class ManageRegattas extends ManageRecords
                 ->label('Документы')
                 ->icon('heroicon-o-document-text')
                 ->color('white')
-                ->url(fn () => \App\Filament\Resources\RegattaEntryDocumentTypeResource::getUrl()),
+                ->url(fn () => RegattaEntryDocumentTypeResource::getUrl()),
             Action::make('exportParticipantsXlsx')
                 ->label('Экспорт участников (.xlsx)')
                 ->icon('heroicon-o-table-cells')
@@ -91,8 +92,12 @@ class ManageRegattas extends ManageRecords
                 ->modalDescription('Список участников регаты (парусный №, яхта, команда, экипаж).')
                 ->modalSubmitActionLabel('Скачать .xlsx')
                 ->action(function (array $data) {
-                    $regatta = Regatta::findOrFail($data['regatta_id']);
-                    $export  = app(RegattaParticipantsExport::class);
+                    // Список в Select уже ограничен, но присланный id управляем клиентом.
+                    $regatta = Regatta::query()
+                        ->visibleForUser()
+                        ->whereKey($data['regatta_id'])
+                        ->firstOrFail();
+                    $export = app(RegattaParticipantsExport::class);
 
                     if ($export->loadParticipants($regatta)->isEmpty()) {
                         Notification::make()
@@ -110,14 +115,15 @@ class ManageRegattas extends ManageRecords
                 ->using(function (array $data, string $model): Regatta {
                     // Режим серии: даты этапов задаются в отдельном списке,
                     // первая регата (Этап 1) создаётся здесь, остальные — в after().
-                    $seriesMode = (bool) ($data['create_as_series'] ?? false);
+                    // hidesSeries() — не только UI: поля скрыты, но payload управляем клиентом.
+                    $seriesMode = (bool) ($data['create_as_series'] ?? false) && ! RegattaResource::hidesSeries();
                     $seriesName = $data['series_name'] ?? null;
-                    $stages     = $data['series_stages'] ?? [];
+                    $stages = $data['series_stages'] ?? [];
                     unset($data['create_as_series'], $data['series_name'], $data['series_stages']);
 
                     $requiredDocs = $data['required_documents'] ?? [];
-                    $extraDocs    = $data['extra_documents'] ?? [];
-                    $otherFiles   = $data['other_files'] ?? [];
+                    $extraDocs = $data['extra_documents'] ?? [];
+                    $otherFiles = $data['other_files'] ?? [];
                     $data['entry_required_documents'] = RegattaResource::assembleEntryRequiredDocuments(
                         $data['entry_doc_selected'] ?? [],
                         $data['entry_doc_required'] ?? [],
@@ -127,16 +133,16 @@ class ManageRegattas extends ManageRecords
                     if ($seriesMode && $stages !== []) {
                         $series = Series::create([
                             'season_id' => $data['season_id'] ?? null,
-                            'name'      => $seriesName,
+                            'name' => $seriesName,
                         ]);
 
-                        $firstStage         = $stages[0];
-                        $data['series_id']  = $series->id;
-                        $data['name']       = self::seriesStageName($data['name'] ?? '', 1);
+                        $firstStage = $stages[0];
+                        $data['series_id'] = $series->id;
+                        $data['name'] = self::seriesStageName($data['name'] ?? '', 1);
                         $data['date_start'] = $firstStage['date_start'] ?? null;
-                        $data['date_end']   = $firstStage['date_end'] ?? null;
+                        $data['date_end'] = $firstStage['date_end'] ?? null;
                         $data['time_start'] = $firstStage['time_start'] ?? null;
-                        $data['time_end']   = $firstStage['time_end'] ?? null;
+                        $data['time_end'] = $firstStage['time_end'] ?? null;
                     }
 
                     /** @var Regatta $record */
@@ -162,17 +168,17 @@ class ManageRegattas extends ManageRecords
                     // Первый этап уже создан в using() (в него сохранены расписание
                     // и документы). Остальные этапы клонируем с него и сдвигаем
                     // расписание на разницу дат старта.
-                    $baseName    = $data['name'] ?? '';
+                    $baseName = $data['name'] ?? '';
                     $stageOneDay = $record->date_start ? $record->date_start->copy()->startOfDay() : null;
-                    $replicate   = app(ReplicateRegattaAction::class);
+                    $replicate = app(ReplicateRegattaAction::class);
 
                     foreach (array_slice($stages, 1) as $offset => $stage) {
                         $replica = $replicate->execute($record, [
-                            'name'       => self::seriesStageName($baseName, $offset + 2),
+                            'name' => self::seriesStageName($baseName, $offset + 2),
                             'date_start' => $stage['date_start'] ?? null,
-                            'date_end'   => $stage['date_end'] ?? null,
+                            'date_end' => $stage['date_end'] ?? null,
                             'time_start' => $stage['time_start'] ?? null,
-                            'time_end'   => $stage['time_end'] ?? null,
+                            'time_end' => $stage['time_end'] ?? null,
                         ]);
 
                         self::shiftScheduleEvents($replica, $stageOneDay, $stage['date_start'] ?? null);

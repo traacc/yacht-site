@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\RaceResults;
 
+use App\Filament\Concerns\RestrictsAccessByRole;
+use App\Filament\Concerns\ScopesToOwnedRegattas;
 use App\Filament\Resources\RaceResults\Pages\ManageRaceResults;
 use App\Models\RaceResult;
 use App\Models\RegattaEntry;
@@ -16,27 +18,32 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class RaceResultResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
+    use ScopesToOwnedRegattas;
 
     protected static ?string $model = RaceResult::class;
+
+    /** До регаты идём через заявку. */
+    protected static function regattaRelationPath(): ?string
+    {
+        return 'regattaEntry.regatta';
+    }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?int $navigationSort = 10;
 
-    
     public static function shouldRegisterNavigation(): bool
     {
         return false;
     }
-    
 
     public static function getModelLabel(): string
     {
@@ -48,13 +55,24 @@ class RaceResultResource extends Resource
         return 'Результат гонок'; // Название во множественном числе
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return static::scopeToOwnedRegattas(parent::getEloquentQuery());
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 Select::make('regatta_entry_id')
                     ->label('Заявка')
-                    ->relationship('regattaEntry')
+                    ->relationship(
+                        name: 'regattaEntry',
+                        modifyQueryUsing: fn (Builder $query) => $query->whereHas(
+                            'regatta',
+                            fn (Builder $q) => $q->visibleForUser(),
+                        ),
+                    )
                     ->getOptionLabelFromRecordUsing(
                         fn (RegattaEntry $record): string => trim(
                             ($record->regatta?->name ?? '—')
@@ -90,7 +108,7 @@ class RaceResultResource extends Resource
                     ->required()
                     ->numeric()
                     ->default(0.0),
-                //TextInput::make('penalty_code'),
+                // TextInput::make('penalty_code'),
             ]);
     }
 

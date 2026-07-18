@@ -138,7 +138,15 @@ erDiagram
 
 ## 4. Роли и права доступа
 
-Системные роли (`App\Enums\SystemRole`, поле `users.system_role`): `user`, `admin`, `judge`, `secretary`, `accountant`. Доступ к разделам админки ограничивается через `RestrictsAccessByRole` + страница `AccessControlSettings`; хелперы — `App\Support\AccessControl`.
+Системные роли (`App\Enums\SystemRole`, поле `users.system_role`): `user`, `admin`, `judge`, `secretary`, `accountant`, `developer_admin`. Доступ к разделам админки ограничивается через `RestrictsAccessByRole` + страница `AccessControlSettings`; хелперы — `App\Support\AccessControl`.
+
+**Админ-разработчик** (`developer_admin`) — ведёт только собственные регаты:
+
+- Разделы: жёсткий белый список `AccessControl::developerAdminAllowed()`, а не матрица прав. Матрица считает не настроенный пункт разрешённым, поэтому новая роль получила бы там полный доступ.
+- Строки: владелец регаты — `regattas.user_id`, проставляется хуком `creating` в `Regatta::booted()` (через `??=`, чтобы `replicate()` не терял автора). Поле намеренно **не** в `$fillable`.
+- Ограничение выборки — скоуп `Regatta::scopeVisibleForUser()` + трейт `App\Filament\Concerns\ScopesToOwnedRegattas` в ресурсах. Глобального скоупа нет: он затронул бы публичный сайт, API и импорт. Скоуп сужает только эту роль, для остальных и для гостей — no-op.
+- Регаты без владельца (`user_id IS NULL` — созданные до введения роли, импортом или консолью) этой роли не видны.
+- Серии для роли скрыты (глобальны, управлять ими она не может), личный кабинет `/user` — как у прочих сотрудников.
 
 Роли в команде (`App\Enums\TeamMemberRole`, поле `team_members.role`): `organizer`, `team_admin`, `member`. Проверки — `TeamRoleGuard`, `TeamPolicy` (подача заявок на регату, управление составом).
 

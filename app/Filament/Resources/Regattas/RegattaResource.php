@@ -4,8 +4,16 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Regattas;
 
+use App\Actions\Document\SyncDocumentFilesAction;
+use App\Actions\Regatta\ReplicateRegattaAction;
+use App\Enums\RegattaStatus;
+use App\Filament\Concerns\RestrictsAccessByRole;
+use App\Filament\Concerns\ScopesToOwnedRegattas;
 use App\Filament\Resources\Regattas\Pages\ManageRegattas;
 use App\Models\Regatta;
+use App\Models\Season;
+use App\Models\Series;
+use App\Models\YachtDocumentType;
 use App\Services\RegattaService;
 use BackedEnum;
 use Carbon\Carbon;
@@ -18,22 +26,21 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
-use Filament\Forms;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\TimePicker;
-use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Components\Utilities\Get;
+use Filament\Forms\Components\TimePicker;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
@@ -42,20 +49,26 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-
-use Kpebedko22\FilamentYandexMap\Forms\Components\YandexMap;
+use Kpebedko22\FilamentYandexMap\DTOs\Buttons\ButtonData;
+use Kpebedko22\FilamentYandexMap\DTOs\Buttons\ButtonOptions;
+use Kpebedko22\FilamentYandexMap\Enums\Buttons\ButtonFloat;
 use Kpebedko22\FilamentYandexMap\Enums\YandexMapMode;
-use Kpebedko22\FilamentYandexMap\DTOs\Buttons\{ButtonData, ButtonOptions};
-use Kpebedko22\FilamentYandexMap\Enums\Buttons\{ButtonFloat, ButtonSize};
-
+use Kpebedko22\FilamentYandexMap\Forms\Components\YandexMap;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Str;
 
 class RegattaResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
+    use ScopesToOwnedRegattas;
 
     protected static ?string $model = Regatta::class;
+
+    /** Ресурс самой регаты — связи до неё нет. */
+    protected static function regattaRelationPath(): ?string
+    {
+        return null;
+    }
 
     protected static string|BackedEnum|null $navigationIcon = 'regatta';
 
@@ -73,7 +86,7 @@ class RegattaResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        $maxFiles      = (int) config('documents.max_files_per_type', 10);
+        $maxFiles = (int) config('documents.max_files_per_type', 10);
         $acceptedTypes = [
             'application/pdf',
             'application/msword',
@@ -94,28 +107,28 @@ class RegattaResource extends Resource
                 Select::make('season_id')
                     ->label('Сезон')
                     ->relationship('season', 'year',
-                    modifyQueryUsing: fn (Builder $query) => $query->orderByDesc('year'),)
+                        modifyQueryUsing: fn (Builder $query) => $query->orderByDesc('year'), )
                     ->searchable()
                     ->preload()
                     ->createOptionForm([
-                        Forms\Components\TextInput::make('year')
+                        TextInput::make('year')
                             ->label('Год')
                             ->required()
                             ->numeric()
                             ->minValue(2000)
                             ->maxValue(2099),
-                        Forms\Components\DatePicker::make('start_date')
+                        DatePicker::make('start_date')
                             ->label('Дата начала сезона')
                             ->displayFormat('d.m.Y')
                             ->native(false)
                             ->required(),
-                        Forms\Components\DatePicker::make('end_date')
+                        DatePicker::make('end_date')
                             ->label('Дата окончания сезона')
                             ->displayFormat('d.m.Y')
                             ->native(false)
                             ->required(),
                     ])
-                    ->createOptionUsing(fn (array $data): string => \App\Models\Season::create($data)->id)
+                    ->createOptionUsing(fn (array $data): string => Season::create($data)->id)
                     ->required(),
                 // ── Создание серии из этапов ──────────────
                 // Альтернативный способ: заполнить регату-«шаблон» один раз
@@ -125,7 +138,9 @@ class RegattaResource extends Resource
                     ->description('Заполните данные регаты один раз и добавьте даты этапов — по каждому этапу будет создана отдельная регата серии с этими данными.')
                     ->columnSpanFull()
                     ->collapsible()
-                    ->hidden(fn (string $operation): bool => $operation !== 'create')
+                    // Серии глобальны, админ-разработчик ими управлять не может —
+                    // он создаёт только одиночные регаты.
+                    ->hidden(fn (string $operation): bool => $operation !== 'create' || static::hidesSeries())
                     ->schema([
                         Toggle::make('create_as_series')
                             ->label('Создать серию из этапов')
@@ -145,7 +160,7 @@ class RegattaResource extends Resource
                             ->minItems(2)
                             ->addActionLabel('Добавить этап')
                             ->columns(2)
-                            ->itemLabel(fn (array $state, int $index): string => 'Этап ' . ($index + 1))
+                            ->itemLabel(fn (array $state, int $index): string => 'Этап '.($index + 1))
                             ->schema([
                                 DatePicker::make('date_start')
                                     ->label('Дата начала')
@@ -172,22 +187,22 @@ class RegattaResource extends Resource
                     ->relationship('series', 'name')
                     ->searchable()
                     ->preload()
-                    ->hidden(fn (Get $get): bool => (bool) $get('create_as_series'))
+                    ->hidden(fn (Get $get): bool => (bool) $get('create_as_series') || static::hidesSeries())
                     ->createOptionForm([
-                        Forms\Components\TextInput::make('name')
+                        TextInput::make('name')
                             ->label('Название')
                             ->required(),
-                        Forms\Components\Select::make('season_id')
+                        Select::make('season_id')
                             ->label('Сезон')
                             ->relationship('season', 'year',
                                 modifyQueryUsing: fn (Builder $query) => $query->orderByDesc('year'))
                             ->searchable()
                             ->preload()
                             ->required(),
-                        Forms\Components\Textarea::make('description')
+                        Textarea::make('description')
                             ->label('Описание'),
                     ])
-                    ->createOptionUsing(fn (array $data): string => \App\Models\Series::create($data)->id),
+                    ->createOptionUsing(fn (array $data): string => Series::create($data)->id),
                 TextInput::make('level_coefficient')
                     ->label('Коэффициент соревнований')
                     ->placeholder('Введите коэффициент соревнований')
@@ -240,7 +255,6 @@ class RegattaResource extends Resource
                     ->placeholder('Введите акваторию')
                     ->columnSpanFull(),
 
-                
                 YandexMap::make('coordinates')
                     ->label('Выберите на карте')
                     ->columnSpanFull()
@@ -253,11 +267,13 @@ class RegattaResource extends Resource
                     ->formatStateUsing(function ($state) {
                         if (is_string($state) && str_contains($state, ',')) {
                             [$lat, $lng] = explode(',', $state, 2);
+
                             return [
                                 'lat' => (float) trim($lat),
                                 'lng' => (float) trim($lng),
                             ];
                         }
+
                         return $state;
                     })
                     ->drawBtnParameters(
@@ -268,6 +284,7 @@ class RegattaResource extends Resource
                         if (is_array($state) && isset($state['lat'], $state['lng'])) {
                             return "{$state['lat']},{$state['lng']}";
                         }
+
                         return $state;
                     }),
 
@@ -313,7 +330,7 @@ class RegattaResource extends Resource
                     ]),
 
                 Hidden::make('regatta_status')
-                    ->default(\App\Enums\RegattaStatus::Upcoming->value)
+                    ->default(RegattaStatus::Upcoming->value)
                     ->required(),
 
                 Toggle::make('is_postponed')
@@ -322,10 +339,10 @@ class RegattaResource extends Resource
                     ->dehydrated(false)
                     ->afterStateUpdated(function (bool $state, $set, $get) {
                         if ($state) {
-                            $set('regatta_status', \App\Enums\RegattaStatus::Postponed->value);
+                            $set('regatta_status', RegattaStatus::Postponed->value);
                             $set('is_cancelled', false);
                         } elseif (! $get('is_cancelled')) {
-                            $set('regatta_status', \App\Enums\RegattaStatus::Upcoming->value);
+                            $set('regatta_status', RegattaStatus::Upcoming->value);
                         }
                     }),
 
@@ -335,10 +352,10 @@ class RegattaResource extends Resource
                     ->dehydrated(false)
                     ->afterStateUpdated(function (bool $state, $set, $get) {
                         if ($state) {
-                            $set('regatta_status', \App\Enums\RegattaStatus::Cancelled->value);
+                            $set('regatta_status', RegattaStatus::Cancelled->value);
                             $set('is_postponed', false);
                         } elseif (! $get('is_postponed')) {
-                            $set('regatta_status', \App\Enums\RegattaStatus::Upcoming->value);
+                            $set('regatta_status', RegattaStatus::Upcoming->value);
                         }
                     }),
 
@@ -414,8 +431,8 @@ class RegattaResource extends Resource
                             ->label('Описание'),
                     ])
                     ->itemLabel(fn (array $state, int $index): ?string => (! empty($state['event_datetime']) && ! empty($state['name']))
-                        ? ($index + 1) . ". {$state['event_datetime']} — {$state['name']}"
-                        : ($index + 1) . '. Новое событие')
+                        ? ($index + 1).". {$state['event_datetime']} — {$state['name']}"
+                        : ($index + 1).'. Новое событие')
                     ->extraItemActions([
                         Action::make('duplicatePlusDay')
                             ->label('Заполнить на следующий день')
@@ -467,8 +484,8 @@ class RegattaResource extends Resource
                     ->default(fn () => array_map(
                         fn (array $doc) => [
                             'doc_type' => $doc['doc_type'],
-                            'title'    => $doc['title'],
-                            'files'    => [],
+                            'title' => $doc['title'],
+                            'files' => [],
                         ],
                         ManageRegattas::getRequiredDocuments(),
                     ))
@@ -494,7 +511,7 @@ class RegattaResource extends Resource
                                 }
 
                                 if ($missing !== []) {
-                                    $fail('Загрузите следующие обязательные документы: ' . implode(', ', $missing) . '.');
+                                    $fail('Загрузите следующие обязательные документы: '.implode(', ', $missing).'.');
                                 }
                             };
                         },
@@ -513,7 +530,7 @@ class RegattaResource extends Resource
                             ->maxSize(20480)
                             ->maxFiles($maxFiles)
                             ->downloadable()
-                            ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
+                            ->helperText('Можно загрузить до '.$maxFiles.' файлов'),
                     ]),
 
                 // ── Документы регаты (для отображения пользователям) ──
@@ -530,7 +547,7 @@ class RegattaResource extends Resource
                             ->label('Тип')
                             // Тип «Прочее» (other) управляется отдельным полем other_files ниже,
                             // поэтому исключаем его отсюда, чтобы поля не затирали файлы друг друга.
-                            ->options(fn () => collect(\App\Models\YachtDocumentType::options())->except('other')->all())
+                            ->options(fn () => collect(YachtDocumentType::options())->except('other')->all())
                             ->required(),
                         TextInput::make('title')
                             ->label('Название')
@@ -547,13 +564,13 @@ class RegattaResource extends Resource
                                 fn (TemporaryUploadedFile $file): string => (string) Str::of($file->getClientOriginalName())
                                     ->beforeLast('.')
                                     ->slug() // Превратит "Отчёт 2026" в "otcet-2026"
-                                    ->append('.' . $file->getClientOriginalExtension()),
+                                    ->append('.'.$file->getClientOriginalExtension()),
                             )
                             ->acceptedFileTypes($acceptedTypes)
                             ->maxSize(20480)
                             ->maxFiles($maxFiles)
                             ->downloadable()
-                            ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
+                            ->helperText('Можно загрузить до '.$maxFiles.' файлов'),
                     ]),
 
                 // ── Прочие документы: загрузка пачкой (как в галерее) ──
@@ -571,7 +588,7 @@ class RegattaResource extends Resource
                         fn (TemporaryUploadedFile $file): string => (string) Str::of($file->getClientOriginalName())
                             ->beforeLast('.')
                             ->slug()
-                            ->append('.' . $file->getClientOriginalExtension()),
+                            ->append('.'.$file->getClientOriginalExtension()),
                     )
                     ->acceptedFileTypes($acceptedTypes)
                     ->maxSize(20480)
@@ -585,10 +602,10 @@ class RegattaResource extends Resource
                     ->schema([
                         CheckboxList::make('entry_doc_selected')
                             ->label('Документы')
-                            ->options(fn () => \App\Models\YachtDocumentType::cachedConfigurable()
+                            ->options(fn () => YachtDocumentType::cachedConfigurable()
                                 ->pluck('label', 'key')
                                 ->all())
-                            ->descriptions(fn () => \App\Models\YachtDocumentType::cachedConfigurable()
+                            ->descriptions(fn () => YachtDocumentType::cachedConfigurable()
                                 ->whereNotNull('description')
                                 ->pluck('description', 'key')
                                 ->all())
@@ -598,7 +615,7 @@ class RegattaResource extends Resource
                             ->helperText('Отметьте документы, которые участник должен приложить при подаче заявки.'),
                         CheckboxList::make('entry_doc_required')
                             ->label('Обязательные к загрузке')
-                            ->options(fn (Get $get) => \App\Models\YachtDocumentType::cachedConfigurable()
+                            ->options(fn (Get $get) => YachtDocumentType::cachedConfigurable()
                                 ->whereIn('key', (array) $get('entry_doc_selected'))
                                 ->pluck('label', 'key')
                                 ->all())
@@ -655,10 +672,10 @@ class RegattaResource extends Resource
                 SelectFilter::make('regatta_status')
                     ->label('Статус')
                     ->options([
-                        \App\Enums\RegattaStatus::Upcoming->value  => \App\Enums\RegattaStatus::Upcoming->getLabel(),
-                        \App\Enums\RegattaStatus::Postponed->value => \App\Enums\RegattaStatus::Postponed->getLabel(),
-                        \App\Enums\RegattaStatus::Cancelled->value => \App\Enums\RegattaStatus::Cancelled->getLabel(),
-                        \App\Enums\RegattaStatus::Finished->value  => \App\Enums\RegattaStatus::Finished->getLabel(),
+                        RegattaStatus::Upcoming->value => RegattaStatus::Upcoming->getLabel(),
+                        RegattaStatus::Postponed->value => RegattaStatus::Postponed->getLabel(),
+                        RegattaStatus::Cancelled->value => RegattaStatus::Cancelled->getLabel(),
+                        RegattaStatus::Finished->value => RegattaStatus::Finished->getLabel(),
                     ]),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
@@ -666,18 +683,18 @@ class RegattaResource extends Resource
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать регату')
                     ->mountUsing(function (Schema $form, Regatta $record): void {
-                        $sync         = app(\App\Actions\Document\SyncDocumentFilesAction::class);
+                        $sync = app(SyncDocumentFilesAction::class);
                         $requiredDocs = ManageRegattas::getRequiredDocuments();
                         $requiredDocTypes = array_column($requiredDocs, 'doc_type');
 
                         $data = $record->toArray();
                         $data['required_documents'] = $sync->load($record, $requiredDocs);
                         // Тип «Прочее» (other) выводится в отдельном поле other_files, а не в Repeater.
-                        $data['extra_documents']    = $sync->loadExtra($record, array_merge($requiredDocTypes, ['other']));
-                        $data['other_files']        = $sync->loadFlat($record, 'other');
+                        $data['extra_documents'] = $sync->loadExtra($record, array_merge($requiredDocTypes, ['other']));
+                        $data['other_files'] = $sync->loadFlat($record, 'other');
 
-                        $data['is_postponed'] = ($data['regatta_status'] ?? null) === \App\Enums\RegattaStatus::Postponed->value;
-                        $data['is_cancelled'] = ($data['regatta_status'] ?? null) === \App\Enums\RegattaStatus::Cancelled->value;
+                        $data['is_postponed'] = ($data['regatta_status'] ?? null) === RegattaStatus::Postponed->value;
+                        $data['is_cancelled'] = ($data['regatta_status'] ?? null) === RegattaStatus::Cancelled->value;
 
                         $entryDocs = static::splitEntryRequiredDocuments($record->entry_required_documents);
                         $data['entry_doc_selected'] = $entryDocs['selected'];
@@ -687,8 +704,8 @@ class RegattaResource extends Resource
                     })
                     ->using(function (Regatta $record, array $data): Regatta {
                         $requiredDocs = $data['required_documents'] ?? [];
-                        $extraDocs    = $data['extra_documents'] ?? [];
-                        $otherFiles   = $data['other_files'] ?? [];
+                        $extraDocs = $data['extra_documents'] ?? [];
+                        $otherFiles = $data['other_files'] ?? [];
                         $data['entry_required_documents'] = static::assembleEntryRequiredDocuments(
                             $data['entry_doc_selected'] ?? [],
                             $data['entry_doc_required'] ?? [],
@@ -696,14 +713,14 @@ class RegattaResource extends Resource
                         unset($data['required_documents'], $data['extra_documents'], $data['other_files'], $data['is_postponed'], $data['is_cancelled'], $data['entry_doc_selected'], $data['entry_doc_required']);
 
                         $postponedToDate = $data['postponed_to_date'] ?? null;
-                        $newStatus       = $data['regatta_status'] ?? null;
+                        $newStatus = $data['regatta_status'] ?? null;
 
                         // Если статус postponed и указана дата — вызываем RegattaService
-                        if (static::statusEquals($newStatus, \App\Enums\RegattaStatus::Postponed) && $postponedToDate) {
+                        if (static::statusEquals($newStatus, RegattaStatus::Postponed) && $postponedToDate) {
                             $service = app(RegattaService::class);
                             $service->postpone($record, Carbon::parse($postponedToDate));
 
-                            $sync = app(\App\Actions\Document\SyncDocumentFilesAction::class);
+                            $sync = app(SyncDocumentFilesAction::class);
                             $sync->execute($record, $requiredDocs);
                             $sync->execute($record, $extraDocs);
                             $sync->executeFlat($record, 'other', $otherFiles);
@@ -717,7 +734,7 @@ class RegattaResource extends Resource
 
                         $record->update($data);
 
-                        $sync = app(\App\Actions\Document\SyncDocumentFilesAction::class);
+                        $sync = app(SyncDocumentFilesAction::class);
                         $sync->execute($record, $requiredDocs);
                         $sync->execute($record, $extraDocs);
                         $sync->executeFlat($record, 'other', $otherFiles);
@@ -737,13 +754,13 @@ class RegattaResource extends Resource
                     ->modalDescription('Будет создана копия регаты с расписанием и документами. После создания откроется окно редактирования.')
                     ->modalSubmitActionLabel('Дублировать')
                     ->action(function (Regatta $record, $livewire): void {
-                        $replica = app(\App\Actions\Regatta\ReplicateRegattaAction::class)->execute($record);
+                        $replica = app(ReplicateRegattaAction::class)->execute($record);
 
                         // Открываем окно редактирования созданной копии.
                         // Контекст table+recordKey нужен, чтобы Filament резолвил
                         // именно табличный record-экшен, а не экшен страницы.
                         $livewire->replaceMountedAction('edit', context: [
-                            'table'     => true,
+                            'table' => true,
                             'recordKey' => $replica->getKey(),
                         ]);
                     }),
@@ -767,20 +784,38 @@ class RegattaResource extends Resource
         ];
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return static::scopeToOwnedRegattas(parent::getEloquentQuery());
+    }
+
+    /**
+     * Скрывать ли работу с сериями: они глобальны и роли «Админ-разработчик»
+     * недоступны для управления.
+     */
+    public static function hidesSeries(): bool
+    {
+        return (bool) auth()->user()?->isDeveloperAdmin();
+    }
+
     public static function getRecordRouteBindingEloquentQuery(): Builder
     {
-        return parent::getRecordRouteBindingEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
+        // visibleForUser обязателен: без него чужая регата открывается
+        // по прямой ссылке ?tableAction=edit&tableActionRecord=<uuid>.
+        return static::scopeToOwnedRegattas(
+            parent::getRecordRouteBindingEloquentQuery()
+                ->withoutGlobalScopes([
+                    SoftDeletingScope::class,
+                ])
+        );
     }
 
     /**
      * Сравнивает значение статуса (строка или enum) с целевым enum-кейсом.
      */
-    public static function statusEquals(mixed $status, \App\Enums\RegattaStatus $target): bool
+    public static function statusEquals(mixed $status, RegattaStatus $target): bool
     {
-        if ($status instanceof \App\Enums\RegattaStatus) {
+        if ($status instanceof RegattaStatus) {
             return $status === $target;
         }
 
@@ -837,7 +872,7 @@ class RegattaResource extends Resource
 
         return array_map(
             fn (string $key): array => [
-                'doc_type'    => $key,
+                'doc_type' => $key,
                 'is_required' => in_array($key, $requiredKeys, true),
             ],
             $selectedKeys,
@@ -855,8 +890,8 @@ class RegattaResource extends Resource
             return $state['title'] ?? null;
         }
 
-        $model = \App\Models\YachtDocumentType::cachedAll()
-            ->first(fn (\App\Models\YachtDocumentType $t) => $t->key === $docType);
+        $model = YachtDocumentType::cachedAll()
+            ->first(fn (YachtDocumentType $t) => $t->key === $docType);
 
         return $model?->label ?? ($state['title'] ?? null);
     }

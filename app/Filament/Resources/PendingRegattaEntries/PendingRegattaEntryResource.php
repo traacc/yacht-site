@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\PendingRegattaEntries;
 
+use App\Enums\RegattaEntrySource;
+use App\Enums\RegattaStatus;
+use App\Filament\Concerns\RestrictsAccessByRole;
+use App\Filament\Concerns\ScopesToOwnedRegattas;
 use App\Filament\Resources\PendingRegattaEntries\Pages\ManagePendingRegattaEntries;
 use App\Filament\Resources\RegattaEntries\Pages\ManageRegattaEntries;
+use App\Models\Document;
+use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -25,7 +31,8 @@ use Illuminate\Database\Eloquent\Collection;
 
 class PendingRegattaEntryResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
+    use ScopesToOwnedRegattas;
 
     protected static ?string $model = RegattaEntry::class;
 
@@ -47,18 +54,18 @@ class PendingRegattaEntryResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        return static::scopeToOwnedRegattas(parent::getEloquentQuery())
             ->where('status', 'pending')
             ->whereHas('regatta', fn (Builder $q) => $q->whereIn(
                 'regatta_status',
                 [
-                    \App\Enums\RegattaStatus::Closest->value,
-                    \App\Enums\RegattaStatus::Upcoming->value,
-                    \App\Enums\RegattaStatus::Active->value,
+                    RegattaStatus::Closest->value,
+                    RegattaStatus::Upcoming->value,
+                    RegattaStatus::Active->value,
                 ],
             ))
             ->orderBy(
-                \App\Models\Regatta::select('date_start')
+                Regatta::select('date_start')
                     ->whereColumn('regattas.id', 'regatta_entries.regatta_id'),
                 'asc'
             );
@@ -82,7 +89,7 @@ class PendingRegattaEntryResource extends Resource
             TextEntry::make('source')
                 ->label('Источник')
                 ->badge()
-                ->formatStateUsing(fn (\App\Enums\RegattaEntrySource $state): string => $state->label()),
+                ->formatStateUsing(fn (RegattaEntrySource $state): string => $state->label()),
             TextEntry::make('created_at')
                 ->label('Дата подачи')
                 ->dateTime('d.m.Y H:i'),
@@ -95,10 +102,10 @@ class PendingRegattaEntryResource extends Resource
                     TextEntry::make('role')
                         ->label('Роль')
                         ->formatStateUsing(fn (string $state): string => match ($state) {
-                            'main'    => 'Основной',
+                            'main' => 'Основной',
                             'reserve' => 'Запасной',
                             'captain' => 'Рулевой',
-                            default   => $state,
+                            default => $state,
                         }),
                 ])
                 ->columns(2)
@@ -109,7 +116,7 @@ class PendingRegattaEntryResource extends Resource
                 ->schema([
                     TextEntry::make('title')
                         ->label('Документ')
-                        ->url(fn (\App\Models\Document $record): string => $record->file_url)
+                        ->url(fn (Document $record): string => $record->file_url)
                         ->openUrlInNewTab(),
                     TextEntry::make('file_size_for_humans')
                         ->label('Размер'),
@@ -128,16 +135,16 @@ class PendingRegattaEntryResource extends Resource
                         ->label('Статус')
                         ->badge()
                         ->formatStateUsing(fn (string $state): string => match ($state) {
-                            'uploaded'         => 'Загружен',
+                            'uploaded' => 'Загружен',
                             'missing_required' => 'Не загружен (обязательный)',
                             'missing_optional' => 'Не загружен',
-                            default            => $state,
+                            default => $state,
                         })
                         ->color(fn (string $state): string => match ($state) {
-                            'uploaded'         => 'success',
+                            'uploaded' => 'success',
                             'missing_required' => 'danger',
                             'missing_optional' => 'gray',
-                            default            => 'gray',
+                            default => 'gray',
                         }),
                 ])
                 ->columns(2)
@@ -162,7 +169,7 @@ class PendingRegattaEntryResource extends Resource
         $uploaded = $record->documents->pluck('doc_type')->all();
 
         return array_map(fn (array $doc): array => [
-            'title'  => $doc['title'],
+            'title' => $doc['title'],
             'status' => in_array($doc['doc_type'], $uploaded, true)
                 ? 'uploaded'
                 : (($doc['is_required'] ?? false) ? 'missing_required' : 'missing_optional'),
@@ -209,7 +216,7 @@ class PendingRegattaEntryResource extends Resource
                 TextColumn::make('source')
                     ->label('Источник')
                     ->badge()
-                    ->formatStateUsing(fn (\App\Enums\RegattaEntrySource $state): string => $state->label())
+                    ->formatStateUsing(fn (RegattaEntrySource $state): string => $state->label())
                     ->toggleable(),
                 TextColumn::make('created_at')
                     ->label('Подана')
@@ -222,8 +229,7 @@ class PendingRegattaEntryResource extends Resource
             ->recordActions([
                 ViewAction::make()
                     ->label('Просмотр')
-                    ->modalHeading(fn (RegattaEntry $record): string =>
-                        "Заявка: {$record->team?->name} — {$record->regatta?->name}"
+                    ->modalHeading(fn (RegattaEntry $record): string => "Заявка: {$record->team?->name} — {$record->regatta?->name}"
                     )
                     ->extraModalFooterActions([
                         Action::make('approveFromView')
@@ -257,8 +263,7 @@ class PendingRegattaEntryResource extends Resource
                     ->color('success')
                     ->requiresConfirmation()
                     ->modalHeading('Одобрить заявку?')
-                    ->modalDescription(fn (RegattaEntry $record): string =>
-                        "Команда «{$record->team?->name}» на регату «{$record->regatta?->name}»"
+                    ->modalDescription(fn (RegattaEntry $record): string => "Команда «{$record->team?->name}» на регату «{$record->regatta?->name}»"
                     )
                     ->modalSubmitActionLabel('Одобрить')
                     ->action(function (RegattaEntry $record): void {
@@ -274,8 +279,7 @@ class PendingRegattaEntryResource extends Resource
                     ->color('danger')
                     ->requiresConfirmation()
                     ->modalHeading('Отклонить заявку?')
-                    ->modalDescription(fn (RegattaEntry $record): string =>
-                        "Команда «{$record->team?->name}» на регату «{$record->regatta?->name}»"
+                    ->modalDescription(fn (RegattaEntry $record): string => "Команда «{$record->team?->name}» на регату «{$record->regatta?->name}»"
                     )
                     ->modalSubmitActionLabel('Отклонить')
                     ->action(function (RegattaEntry $record): void {

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\RegattaStatus;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +13,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
 use Illuminate\Support\Facades\DB;
 
 class Regatta extends Model
@@ -50,21 +51,22 @@ class Regatta extends Model
     protected function casts(): array
     {
         return [
-            'coordinates'              => 'array',
-            'level_coefficient'        => 'decimal:2',
-            'date_start'               => 'date',
-            'date_end'                 => 'date',
-            'time_start'               => 'datetime:H:i',
-            'time_end'                 => 'datetime:H:i',
-            'race_days_count'          => 'integer',
-            'races_count'              => 'integer',
-            'regatta_status'           => RegattaStatus::class,
-            'postponed_to_date'        => 'date',
+            'coordinates' => 'array',
+            'level_coefficient' => 'decimal:2',
+            'date_start' => 'date',
+            'date_end' => 'date',
+            'time_start' => 'datetime:H:i',
+            'time_end' => 'datetime:H:i',
+            'race_days_count' => 'integer',
+            'races_count' => 'integer',
+            'regatta_status' => RegattaStatus::class,
+            'postponed_to_date' => 'date',
             'entry_required_documents' => 'array',
-            'entry_fee_required'       => 'boolean',
-            'entry_fee_amount'         => 'decimal:2',
+            'entry_fee_required' => 'boolean',
+            'entry_fee_amount' => 'decimal:2',
         ];
     }
+
     public function getRouteKeyName(): string
     {
         return 'external_id';
@@ -73,10 +75,14 @@ class Regatta extends Model
     // Boot
     // ──────────────────────────────────────────────
 
-
     protected static function booted(): void
     {
         static::creating(function (self $regatta) {
+            // Автор регаты. `??=` обязателен: replicate() (ReplicateRegattaAction,
+            // RegattaService::postpone) уже переносит user_id — не перетираем его.
+            // Консоль, сидеры и импорт работают без auth() → регата остаётся «ничьей».
+            $regatta->user_id ??= auth()->id();
+
             if ($regatta->external_id === null) {
                 // Атомарно увеличиваем счетчик и забираем новое значение
                 $sequence = DB::table('sequences')
@@ -131,6 +137,12 @@ class Regatta extends Model
         return $this->belongsTo(Season::class);
     }
 
+    /** Автор регаты. NULL — регата «ничья», доступна только админам. */
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     public function series(): BelongsTo
     {
         return $this->belongsTo(Series::class);
@@ -145,8 +157,8 @@ class Regatta extends Model
     public function scheduleEvents(): HasMany
     {
         return $this->hasMany(RegattaScheduleEvent::class)
-                    ->orderBy('sort_order')
-                    ->orderBy('event_datetime');
+            ->orderBy('sort_order')
+            ->orderBy('event_datetime');
     }
 
     public function entries(): HasMany
@@ -198,6 +210,24 @@ class Regatta extends Model
     // Scopes
     // ──────────────────────────────────────────────
 
+    /**
+     * Ограничивает выборку регатами, доступными пользователю.
+     *
+     * Сужается только роль «Админ-разработчик» — она видит лишь свои регаты.
+     * Все прочие роли, а также гости и публичный сайт, проходят насквозь,
+     * поэтому применение скоупа вне админки безвредно.
+     */
+    public function scopeVisibleForUser(Builder $query, ?User $user = null): Builder
+    {
+        $user ??= auth()->user();
+
+        if (! $user?->isDeveloperAdmin()) {
+            return $query;
+        }
+
+        return $query->where($query->qualifyColumn('user_id'), $user->id);
+    }
+
     public function scopeUpcoming($query)
     {
         $today = now()->format('Y-m-d');
@@ -205,10 +235,10 @@ class Regatta extends Model
 
         return $query->where(function ($q) use ($today, $time) {
             $q->where('date_start', '>', $today)
-              ->orWhere(function ($q) use ($today, $time) {
-                  $q->where('date_start', '=', $today)
-                    ->whereRaw("COALESCE(time_start, '12:00:00') >= ?", [$time]);
-              });
+                ->orWhere(function ($q) use ($today, $time) {
+                    $q->where('date_start', '=', $today)
+                        ->whereRaw("COALESCE(time_start, '12:00:00') >= ?", [$time]);
+                });
         });
     }
 
@@ -261,15 +291,16 @@ class Regatta extends Model
     public static function exportSelectOptions(): array
     {
         $priority = [
-            RegattaStatus::Closest->value   => 0,
-            RegattaStatus::Active->value    => 1,
-            RegattaStatus::Upcoming->value  => 2,
+            RegattaStatus::Closest->value => 0,
+            RegattaStatus::Active->value => 1,
+            RegattaStatus::Upcoming->value => 2,
             RegattaStatus::Postponed->value => 3,
-            RegattaStatus::Finished->value  => 4,
+            RegattaStatus::Finished->value => 4,
             RegattaStatus::Cancelled->value => 5,
         ];
 
         return static::query()
+            ->visibleForUser()
             ->get()
             ->sortBy(fn (self $r): string => sprintf(
                 '%02d-%011d',
@@ -277,7 +308,7 @@ class Regatta extends Model
                 $r->date_start?->timestamp ?? 0,
             ))
             ->mapWithKeys(fn (self $r): array => [
-                $r->id => $r->name . ' • ' . ($r->date_start?->format('d.m.Y') ?? '—'),
+                $r->id => $r->name.' • '.($r->date_start?->format('d.m.Y') ?? '—'),
             ])
             ->all();
     }
@@ -285,6 +316,7 @@ class Regatta extends Model
     public function isUpcoming(): bool
     {
         $start = $this->startDateTime();
+
         return $start && $start->isFuture();
     }
 
@@ -293,6 +325,7 @@ class Regatta extends Model
     {
         return static::closest()->first();
     }
+
     public static function closestUpcomingAndActive(): ?self
     {
         return static::activeAndClosest()->first();
@@ -301,6 +334,7 @@ class Regatta extends Model
     public function startsInLessThanMonth(): bool
     {
         $start = $this->startDateTime();
+
         return $start && $start->isFuture() && now()->diffInDays($start, false) < 30;
     }
 
@@ -308,12 +342,14 @@ class Regatta extends Model
     {
         $start = $this->startDateTime();
         $end = $this->endDateTime();
+
         return $start && $end && now()->between($start, $end);
     }
 
     public function isFinished(): bool
     {
         $end = $this->endDateTime();
+
         return $end && $end->isPast();
     }
 
@@ -330,33 +366,35 @@ class Regatta extends Model
     /**
      * Комбинирует date_start + time_start (дефолт 12:00).
      */
-    public function startDateTime(): ?\Carbon\Carbon
+    public function startDateTime(): ?Carbon
     {
         if (! $this->date_start) {
             return null;
         }
         $time = $this->time_start ? $this->time_start->format('H:i') : '12:00';
+
         return $this->date_start->copy()->setTimeFromTimeString($time);
     }
 
     /**
      * Комбинирует date_end + time_end (дефолт 12:00).
      */
-    public function endDateTime(): ?\Carbon\Carbon
+    public function endDateTime(): ?Carbon
     {
         if (! $this->date_end) {
             return null;
         }
         $time = $this->time_end ? $this->time_end->format('H:i') : '12:00';
+
         return $this->date_end->copy()->setTimeFromTimeString($time);
     }
 
     public function hasTeam(Team $team): bool
     {
         return $this->entries()
-                    ->where('team_id', $team->id)
-                    ->whereIn('status', ['pending', 'approved'])
-                    ->exists();
+            ->where('team_id', $team->id)
+            ->whereIn('status', ['pending', 'approved'])
+            ->exists();
     }
 
     /**
@@ -393,7 +431,7 @@ class Regatta extends Model
 
         return [
             'position' => $position + 1,
-            'total'    => $sorted->count(),
+            'total' => $sorted->count(),
         ];
     }
 
@@ -413,7 +451,7 @@ class Regatta extends Model
         }
 
         // Date range: "14.05.2026 – 16.05.2026"
-        return $start->format('d.m.Y') . ' – ' . $end->format('d.m.Y');
+        return $start->format('d.m.Y').' – '.$end->format('d.m.Y');
     }
 
     /**
@@ -439,8 +477,8 @@ class Regatta extends Model
             return $types
                 ->filter(fn (YachtDocumentType $t) => in_array($t->key, $raw, true))
                 ->map(fn (YachtDocumentType $t) => [
-                    'doc_type'    => $t->key,
-                    'title'       => $t->label,
+                    'doc_type' => $t->key,
+                    'title' => $t->label,
                     'is_required' => true,
                 ])
                 ->values()
@@ -453,8 +491,8 @@ class Regatta extends Model
                 $type = $types->first(fn (YachtDocumentType $t) => $t->key === ($item['doc_type'] ?? ''));
 
                 return $type ? [
-                    'doc_type'    => $type->key,
-                    'title'       => $type->label,
+                    'doc_type' => $type->key,
+                    'title' => $type->label,
                     'is_required' => (bool) ($item['is_required'] ?? false),
                 ] : null;
             })

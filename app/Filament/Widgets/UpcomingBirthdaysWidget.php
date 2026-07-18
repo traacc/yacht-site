@@ -1,8 +1,9 @@
 <?php
+
 namespace App\Filament\Widgets;
 
+use App\Filament\Resources\Users\UserResource;
 use App\Models\User;
-use Carbon\Carbon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -10,7 +11,14 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class UpcomingBirthdaysWidget extends BaseWidget
 {
     protected static ?string $heading = 'Ближайшие дни рождения';
+
     protected int|string|array $columnSpan = 'full';
+
+    public static function canView(): bool
+    {
+        // Данные по всем пользователям ассоциации — не для админа-разработчика.
+        return ! auth()->user()?->isDeveloperAdmin();
+    }
 
     public function table(Table $table): Table
     {
@@ -24,8 +32,8 @@ class UpcomingBirthdaysWidget extends BaseWidget
                     ->orderByUpcomingBirthday()
             )
             ->columns([
-                Tables\Columns\TextColumn::make('name')->label('Имя')->url(fn (User $record): string => \App\Filament\Resources\Users\UserResource::getUrl('index', [
-                    'tableAction'       => 'edit',
+                Tables\Columns\TextColumn::make('name')->label('Имя')->url(fn (User $record): string => UserResource::getUrl('index', [
+                    'tableAction' => 'edit',
                     'tableActionRecord' => $record->id,
                 ])),
                 Tables\Columns\TextColumn::make('next_birthday')
@@ -40,7 +48,7 @@ class UpcomingBirthdaysWidget extends BaseWidget
                     ->label('Через')
                     ->getStateUsing(fn (User $r) => $r->daysUntilBirthday === 0
                         ? 'Сегодня!'
-                        : $r->daysUntilBirthday . ' дн.'
+                        : $r->daysUntilBirthday.' дн.'
                     ),
             ])->stackedOnMobile()->emptyStateHeading('В ближайшие время нет ни у кого дней рождения');
     }

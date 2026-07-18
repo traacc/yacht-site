@@ -18,6 +18,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 
 class ManageRegattaResults extends ManageRecords
@@ -28,7 +29,7 @@ class ManageRegattaResults extends ManageRecords
     {
         return [
             CreateAction::make()->createAnother(false)->modalHeading('Новые результаты регаты'),
-            
+
             Action::make('import_csv_new')
                 ->label('Импорт из CSV')
                 ->icon(Heroicon::ArrowUpTray)
@@ -36,7 +37,11 @@ class ManageRegattaResults extends ManageRecords
                 ->form([
                     Select::make('regatta_id')
                         ->label('Регата')
-                        ->relationship('regatta', 'name')
+                        ->relationship(
+                            name: 'regatta',
+                            titleAttribute: 'name',
+                            modifyQueryUsing: fn (Builder $query) => $query->visibleForUser(),
+                        )
                         ->required()
                         ->model(RegattaResult::class),
 
@@ -44,7 +49,7 @@ class ManageRegattaResults extends ManageRecords
                         ->label('Тип результата')
                         ->options([
                             'preliminary' => 'Предварительный',
-                            'final'       => 'Финальный',
+                            'final' => 'Финальный',
                         ])
                         ->required()
                         ->default('preliminary'),
@@ -61,14 +66,14 @@ class ManageRegattaResults extends ManageRecords
                         ->default(false),
                 ])
                 ->action(function (array $data): void {
-                    $path    = Storage::disk('local')->path($data['csv_file']);
+                    $path = Storage::disk('local')->path($data['csv_file']);
                     $content = file_get_contents($path);
                     Storage::disk('local')->delete($data['csv_file']);
 
                     $result = RegattaResult::create([
-                        'regatta_id'  => $data['regatta_id'],
+                        'regatta_id' => $data['regatta_id'],
                         'result_type' => $data['result_type'],
-                        'source'      => 'imported',
+                        'source' => 'imported',
                     ]);
 
                     try {
@@ -81,6 +86,7 @@ class ManageRegattaResults extends ManageRecords
                             ->body($e->getMessage())
                             ->danger()
                             ->send();
+
                         return;
                     }
 
@@ -88,14 +94,14 @@ class ManageRegattaResults extends ManageRecords
 
                     $body = "Импортировано: {$importResult['imported']}, пропущено: {$importResult['skipped']}";
                     if (! empty($importResult['errors'])) {
-                        $body .= "\n\nОшибки:\n" . implode("\n", $importResult['errors']);
+                        $body .= "\n\nОшибки:\n".implode("\n", $importResult['errors']);
                     }
 
                     Notification::make()
                         ->title('Импорт завершён')
                         ->body($body)
-                        ->when(empty($importResult['errors']), fn($n) => $n->success())
-                        ->when(! empty($importResult['errors']), fn($n) => $n->warning())
+                        ->when(empty($importResult['errors']), fn ($n) => $n->success())
+                        ->when(! empty($importResult['errors']), fn ($n) => $n->warning())
                         ->send();
                 }),
 
@@ -110,10 +116,10 @@ class ManageRegattaResults extends ManageRecords
                             return RegattaResult::with('regatta')
                                 ->get()
                                 ->mapWithKeys(fn (RegattaResult $r) => [
-                                    $r->id => ($r->regatta?->name ?? '—') . ' • ' . match ($r->result_type) {
+                                    $r->id => ($r->regatta?->name ?? '—').' • '.match ($r->result_type) {
                                         'preliminary' => 'Предварительный',
-                                        'final'       => 'Финальный',
-                                        default       => $r->result_type,
+                                        'final' => 'Финальный',
+                                        default => $r->result_type,
                                     },
                                 ]);
                         })
@@ -147,7 +153,7 @@ class ManageRegattaResults extends ManageRecords
                         ->default(false),
                 ])
                 ->action(function (array $data): void {
-                    $path    = Storage::disk('local')->path($data['rgd_file']);
+                    $path = Storage::disk('local')->path($data['rgd_file']);
                     $content = file_get_contents($path);
                     Storage::disk('local')->delete($data['rgd_file']);
 
@@ -163,15 +169,16 @@ class ManageRegattaResults extends ManageRecords
                         );
                     } catch (\RuntimeException $e) {
                         Notification::make()->title('Ошибка импорта')->body($e->getMessage())->danger()->send();
+
                         return;
                     }
 
                     RegattaResultResource::recalculateRatings($result);
 
                     $body = "Импортировано строк: {$summary['imported']}, пропущено: {$summary['skipped']}"
-                        . "\nСоздано яхт: {$summary['created_yachts']}, команд: {$summary['created_teams']}";
+                        ."\nСоздано яхт: {$summary['created_yachts']}, команд: {$summary['created_teams']}";
                     if (! empty($summary['errors'])) {
-                        $body .= "\n\nОшибки:\n" . implode("\n", $summary['errors']);
+                        $body .= "\n\nОшибки:\n".implode("\n", $summary['errors']);
                     }
 
                     Notification::make()
@@ -193,10 +200,10 @@ class ManageRegattaResults extends ManageRecords
                             return RegattaResult::with('regatta')
                                 ->get()
                                 ->mapWithKeys(fn (RegattaResult $r) => [
-                                    $r->id => ($r->regatta?->name ?? '—') . ' • ' . match ($r->result_type) {
+                                    $r->id => ($r->regatta?->name ?? '—').' • '.match ($r->result_type) {
                                         'preliminary' => 'Предварительный',
-                                        'final'       => 'Финальный',
-                                        default       => $r->result_type,
+                                        'final' => 'Финальный',
+                                        default => $r->result_type,
                                     },
                                 ]);
                         })
@@ -223,10 +230,10 @@ class ManageRegattaResults extends ManageRecords
                             return RegattaResult::with('regatta')
                                 ->get()
                                 ->mapWithKeys(fn (RegattaResult $r) => [
-                                    $r->id => ($r->regatta?->name ?? '—') . ' • ' . match ($r->result_type) {
+                                    $r->id => ($r->regatta?->name ?? '—').' • '.match ($r->result_type) {
                                         'preliminary' => 'Предварительный',
-                                        'final'       => 'Финальный',
-                                        default       => $r->result_type,
+                                        'final' => 'Финальный',
+                                        default => $r->result_type,
                                     },
                                 ]);
                         })
@@ -256,7 +263,7 @@ class ManageRegattaResults extends ManageRecords
             return [];
         }
 
-        $file    = is_array($state) ? reset($state) : $state;
+        $file = is_array($state) ? reset($state) : $state;
         $content = null;
 
         if (is_object($file) && method_exists($file, 'get')) {

@@ -5,9 +5,27 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Enums\SystemRole;
+use App\Filament\Concerns\ScopesToOwnedRegattas;
+use App\Filament\Pages\AccessControlSettings;
+use App\Filament\Pages\EditProfile;
+use App\Filament\Pages\YachtDocumentSettings;
+use App\Filament\Resources\ArchivedRegattaEntries\ArchivedRegattaEntryResource;
+use App\Filament\Resources\Galleries\GalleryResource;
+use App\Filament\Resources\News\NewsResource;
+use App\Filament\Resources\PendingRegattaEntries\PendingRegattaEntryResource;
+use App\Filament\Resources\RaceResults\RaceResultResource;
+use App\Filament\Resources\RegattaEntries\RegattaEntryResource;
+use App\Filament\Resources\RegattaEntryDocumentTypeResource;
+use App\Filament\Resources\RegattaResults\RegattaResultResource;
+use App\Filament\Resources\Regattas\RegattaResource;
+use App\Filament\Resources\TeamRatings\TeamRatingResource;
+use App\Filament\Resources\Teams\TeamResource;
+use App\Filament\Resources\Users\UserResource;
+use App\Filament\Resources\Yachts\YachtResource;
 use App\Models\User;
 use App\Services\SettingsService;
 use Filament\Facades\Filament;
+use Filament\Pages\Dashboard;
 use UnitEnum;
 
 /**
@@ -41,6 +59,68 @@ final class AccessControl
     }
 
     /**
+     * Разделы админки, доступные роли «Админ-разработчик».
+     *
+     * Роль намеренно НЕ входит в матрицу прав: там не настроенный пункт считается
+     * разрешённым (см. allows()), поэтому новая роль получила бы полный доступ
+     * ко всей админке. Здесь — явный белый список, всё остальное запрещено.
+     *
+     * Строки внутри этих разделов дополнительно ограничиваются собственными
+     * регатами пользователя.
+     *
+     * @see ScopesToOwnedRegattas
+     *
+     * @return list<class-string>
+     */
+    public static function developerAdminAllowed(): array
+    {
+        return [
+            RegattaResource::class,
+            RegattaEntryResource::class,
+            PendingRegattaEntryResource::class,
+            ArchivedRegattaEntryResource::class,
+            RegattaResultResource::class,
+            RaceResultResource::class,
+            RegattaEntryDocumentTypeResource::class,
+        ];
+    }
+
+    /**
+     * Ссылки на разделы админки для выпадающего меню в шапке сайта,
+     * отфильтрованные по правам текущего пользователя.
+     *
+     * Единый источник для всех шапок: раньше список был захардкожен в четырёх
+     * местах, расходился между ними и игнорировал матрицу прав — судья видел
+     * ссылки на закрытые для него разделы.
+     *
+     * @return list<array{url: string, label: string}>
+     */
+    public static function adminMenuLinks(): array
+    {
+        $sections = [
+            RegattaResource::class => 'Регаты',
+            RegattaResultResource::class => 'Результаты',
+            RegattaEntryResource::class => 'Заявки на регаты',
+            TeamResource::class => 'Команды',
+            YachtResource::class => 'Яхты',
+            UserResource::class => 'Пользователи',
+            TeamRatingResource::class => 'Рейтинги',
+            NewsResource::class => 'Новости',
+            GalleryResource::class => 'Галерея',
+        ];
+
+        $links = [];
+
+        foreach ($sections as $class => $label) {
+            if (self::allows($class)) {
+                $links[] = ['url' => $class::getUrl('index'), 'label' => $label];
+            }
+        }
+
+        return $links;
+    }
+
+    /**
      * Классы, которые не отображаются в матрице и не подчиняются ей
      * (сама страница управления, профиль, дашборд, страницы только для админа).
      *
@@ -49,11 +129,11 @@ final class AccessControl
     public static function excluded(): array
     {
         return [
-            \App\Filament\Pages\AccessControlSettings::class,
-            \App\Filament\Pages\EditProfile::class,
-            \Filament\Pages\Dashboard::class,
+            AccessControlSettings::class,
+            EditProfile::class,
+            Dashboard::class,
             // Имеет собственное ограничение «только администратор».
-            \App\Filament\Pages\YachtDocumentSettings::class,
+            YachtDocumentSettings::class,
         ];
     }
 
@@ -96,6 +176,11 @@ final class AccessControl
             return true;
         }
 
+        // Админ-разработчик — только явно разрешённые разделы (deny by default).
+        if ($role === SystemRole::DeveloperAdmin) {
+            return in_array($class, self::developerAdminAllowed(), true);
+        }
+
         // Матрицей управляются только панельные роли (judge/secretary/accountant).
         if (! in_array($role, self::configurableRoles(), true)) {
             return false;
@@ -131,7 +216,7 @@ final class AccessControl
 
             $grouped[$group][] = [
                 'class' => $class,
-                'key'   => self::keyFor($class),
+                'key' => self::keyFor($class),
                 'label' => $class::getNavigationLabel(),
             ];
         }

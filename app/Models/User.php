@@ -2,28 +2,26 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use App\Enums\CreationSource;
 use App\Enums\SportCategory;
 use App\Enums\SystemRole;
-use Illuminate\Notifications\Notifiable;
-
+use App\Mail\ResetPasswordMail;
+use Carbon\Carbon;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
-
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Validation\ValidationException;
-use Carbon\Carbon;
-
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 
 class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
@@ -48,7 +46,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 
     protected $attributes = [
         'first_name' => '',
-        'last_name'  => '',
+        'last_name' => '',
     ];
 
     protected $hidden = [
@@ -59,13 +57,13 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     protected function casts(): array
     {
         return [
-            'birth_date'        => 'date',
+            'birth_date' => 'date',
             'email_verified_at' => 'datetime',
             'phone_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'sport_category'    => SportCategory::class,
-            'system_role'       => SystemRole::class,
-            'creation_source'   => CreationSource::class,
+            'password' => 'hashed',
+            'sport_category' => SportCategory::class,
+            'system_role' => SystemRole::class,
+            'creation_source' => CreationSource::class,
         ];
     }
 
@@ -75,8 +73,8 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
      */
     public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
     {
-        \Illuminate\Support\Facades\Mail::to($this->email)
-            ->send(new \App\Mail\ResetPasswordMail($this, $token));
+        Mail::to($this->email)
+            ->send(new ResetPasswordMail($this, $token));
     }
 
     // ──────────────────────────────────────────────
@@ -167,11 +165,11 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         $lastName = array_shift($parts);
 
         $initials = array_map(
-            fn (string $part) => mb_strtoupper(mb_substr($part, 0, 1)) . '.',
+            fn (string $part) => mb_strtoupper(mb_substr($part, 0, 1)).'.',
             $parts
         );
 
-        return trim($lastName . ' ' . implode(' ', $initials));
+        return trim($lastName.' '.implode(' ', $initials));
     }
     /*
     protected function firstName(): Attribute
@@ -229,10 +227,31 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     // Role helpers
     // ──────────────────────────────────────────────
 
-    public function isAdmin(): bool      { return $this->system_role === SystemRole::Admin; }
-    public function isJudge(): bool      { return $this->system_role === SystemRole::Judge; }
-    public function isSecretary(): bool  { return $this->system_role === SystemRole::Secretary; }
-    public function isAccountant(): bool { return $this->system_role === SystemRole::Accountant; }
+    public function isAdmin(): bool
+    {
+        return $this->system_role === SystemRole::Admin;
+    }
+
+    public function isJudge(): bool
+    {
+        return $this->system_role === SystemRole::Judge;
+    }
+
+    public function isSecretary(): bool
+    {
+        return $this->system_role === SystemRole::Secretary;
+    }
+
+    public function isAccountant(): bool
+    {
+        return $this->system_role === SystemRole::Accountant;
+    }
+
+    /** Админ-разработчик: видит и правит только собственные регаты. */
+    public function isDeveloperAdmin(): bool
+    {
+        return $this->system_role === SystemRole::DeveloperAdmin;
+    }
 
     /**
      * Является ли пользователь капитаном (организатором) хотя бы одной команды.
@@ -247,8 +266,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
      */
     public function scopeFreeUsers(Builder $query): Builder
     {
-        return $query->whereDoesntHave('teamMemberships', fn (Builder $q) =>
-            $q->where('status', 'active')
+        return $query->whereDoesntHave('teamMemberships', fn (Builder $q) => $q->where('status', 'active')
         );
     }
 
@@ -266,18 +284,19 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         });
     }
 
-
     // Дней до следующего дня рождения
     protected function daysUntilBirthday(): Attribute
     {
         return Attribute::make(
             get: function () {
-                if (!$this->birth_date) return null;
+                if (! $this->birth_date) {
+                    return null;
+                }
 
                 $today = Carbon::today();
                 $next = $this->birth_date->copy()->setYear($today->year);
 
-                if ($next->isPast() && !$next->isToday()) {
+                if ($next->isPast() && ! $next->isToday()) {
                     $next->addYear();
                 }
 
@@ -291,12 +310,14 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     {
         return Attribute::make(
             get: function () {
-                if (!$this->birth_date) return null;
+                if (! $this->birth_date) {
+                    return null;
+                }
 
                 $today = Carbon::today();
                 $next = $this->birth_date->copy()->setYear($today->year);
 
-                if ($next->isPast() && !$next->isToday()) {
+                if ($next->isPast() && ! $next->isToday()) {
                     $next->addYear();
                 }
 
@@ -331,9 +352,9 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function teams(): BelongsToMany
     {
         return $this->belongsToMany(Team::class, 'team_members')
-                    ->using(TeamMember::class)
-                    ->withPivot(['role', 'status', 'joined_at'])
-                    ->withTimestamps();
+            ->using(TeamMember::class)
+            ->withPivot(['role', 'status', 'joined_at'])
+            ->withTimestamps();
     }
 
     /** Команды, которые пользователь создал */
@@ -366,10 +387,29 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return $this->hasMany(News::class, 'author_id');
     }
 
+    /** Регаты, созданные пользователем */
+    public function ownedRegattas(): HasMany
+    {
+        return $this->hasMany(Regatta::class, 'user_id');
+    }
+
+    /**
+     * Есть ли у пользователя доступ в админ-панель.
+     * Какие именно разделы он там увидит — решает @see \App\Support\AccessControl.
+     */
+    public function canAccessAdminPanel(): bool
+    {
+        return $this->isAdmin()
+            || $this->isJudge()
+            || $this->isSecretary()
+            || $this->isAccountant()
+            || $this->isDeveloperAdmin();
+    }
+
     public function canAccessPanel(Panel $panel): bool
     {
         if ($panel->getId() === 'admin') {
-            return $this->isAdmin() || $this->isJudge() || $this->isSecretary() || $this->isAccountant();
+            return $this->canAccessAdminPanel();
         }
 
         if ($panel->getId() === 'user') {

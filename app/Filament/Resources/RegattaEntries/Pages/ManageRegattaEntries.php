@@ -8,6 +8,7 @@ use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\RegattaEntry\UpdateRegattaEntryRequiredDocumentsAction;
 use App\Enums\RegattaEntrySource;
 use App\Filament\Resources\RegattaEntries\RegattaEntryResource;
+use App\Filament\Resources\RegattaEntryDocumentTypeResource;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use App\Services\RgdParticipantsExporter;
@@ -134,7 +135,7 @@ class ManageRegattaEntries extends ManageRecords
                 ->label('Документы')
                 ->icon('heroicon-o-document-text')
                 ->color('white')
-                ->url(fn () => \App\Filament\Resources\RegattaEntryDocumentTypeResource::getUrl()),
+                ->url(fn () => RegattaEntryDocumentTypeResource::getUrl()),
             Action::make('exportParticipants')
                 ->label('Экспорт участников (.rgd)')
                 ->icon('heroicon-o-arrow-down-tray')
@@ -150,9 +151,13 @@ class ManageRegattaEntries extends ManageRecords
                 ->modalDescription('Файл зачётной группы «КАРТЕР 30» только с данными участников (Windows-1251).')
                 ->modalSubmitActionLabel('Скачать .rgd')
                 ->action(function (array $data) {
-                    $regatta  = Regatta::findOrFail($data['regatta_id']);
+                    // Список в Select уже ограничен, но присланный id управляем клиентом.
+                    $regatta = Regatta::query()
+                        ->visibleForUser()
+                        ->whereKey($data['regatta_id'])
+                        ->firstOrFail();
                     $exporter = app(RgdParticipantsExporter::class);
-                    $entries  = $exporter->loadParticipants($regatta);
+                    $entries = $exporter->loadParticipants($regatta);
 
                     if ($entries->isEmpty()) {
                         Notification::make()
@@ -174,7 +179,7 @@ class ManageRegattaEntries extends ManageRecords
                     );
                 }),
             CreateAction::make()
-            ->modalHeading('Новая заявка на регату')
+                ->modalHeading('Новая заявка на регату')
                 ->createAnother(false)
                 ->using(function (array $data, string $model): RegattaEntry {
                     $requiredDocs = $data['required_documents'] ?? [];

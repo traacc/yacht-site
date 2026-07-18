@@ -3,7 +3,8 @@
 namespace App\Filament\Resources\RegattaResults;
 
 use App\Actions\Document\SyncDocumentFilesAction;
-use App\Actions\RegattaResult\ImportRegattaResultItemsAction;
+use App\Filament\Concerns\RestrictsAccessByRole;
+use App\Filament\Concerns\ScopesToOwnedRegattas;
 use App\Filament\Resources\RegattaEntries\RegattaEntryResource;
 use App\Filament\Resources\RegattaResults\Pages\ManageRegattaResults;
 use App\Models\RaceResult;
@@ -11,16 +12,17 @@ use App\Models\RegattaEntry;
 use App\Models\RegattaEvents;
 use App\Models\RegattaResult;
 use App\Models\RegattaResultItem;
+use App\Models\Season;
 use App\Models\Team;
 use App\Models\Yacht;
 use App\Services\RatingCalculator;
 use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
-use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
@@ -41,28 +43,25 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-use Illuminate\Database\Eloquent\Builder;
-
 class RegattaResultResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
+    use ScopesToOwnedRegattas;
 
     protected static ?string $model = RegattaResult::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'cup';
 
     protected static ?int $navigationSort = 2;
-
 
     public static function getModelLabel(): string
     {
@@ -74,6 +73,11 @@ class RegattaResultResource extends Resource
         return 'Результаты регат';
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return static::scopeToOwnedRegattas(parent::getEloquentQuery());
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
@@ -82,10 +86,10 @@ class RegattaResultResource extends Resource
                     ->label('Регата')
                     ->relationship(
                         name: 'regatta',
-                        titleAttribute:'name',
-                        modifyQueryUsing: fn (Builder $query) => $query->orderBy('date_end', 'asc'),
+                        titleAttribute: 'name',
+                        modifyQueryUsing: fn (Builder $query) => $query->visibleForUser()->orderBy('date_end', 'asc'),
                     )
-                    
+
                     ->required()
                     ->live()
                     ->afterStateUpdated(function ($state, Set $set): void {
@@ -98,7 +102,7 @@ class RegattaResultResource extends Resource
                         $races = [];
                         foreach (self::raceEventsForRegatta($state) as $event) {
                             $races["record-{$event->getKey()}"] = [
-                                'name'           => $event->name,
+                                'name' => $event->name,
                                 'event_datetime' => $event->event_datetime?->format('Y-m-d H:i:s'),
                             ];
                         }
@@ -113,7 +117,7 @@ class RegattaResultResource extends Resource
                     ->label('Тип результата')
                     ->options([
                         'preliminary' => 'Предварительный',
-                        'final'       => 'Финальный',
+                        'final' => 'Финальный',
                     ])
                     ->required()
                     ->default('preliminary'),
@@ -127,7 +131,7 @@ class RegattaResultResource extends Resource
                 Select::make('source')
                     ->label('Источник')
                     ->options([
-                        'manual'   => 'Вручную',
+                        'manual' => 'Вручную',
                         'imported' => 'Импортирован',
                     ])
                     ->required()
@@ -217,9 +221,9 @@ class RegattaResultResource extends Resource
                     ->addActionLabel('Добавить участника')
                     ->columnSpanFull(),
             ])->extraAttributes([
-            // Этот атрибут заставит блок становиться полупрозрачным во время сетевых запросов формы
-            'wire:loading.class' => 'opacity-50 pointer-events-none transition-opacity duration-200'
-        ]);
+                // Этот атрибут заставит блок становиться полупрозрачным во время сетевых запросов формы
+                'wire:loading.class' => 'opacity-50 pointer-events-none transition-opacity duration-200',
+            ]);
     }
 
     /**
@@ -255,7 +259,7 @@ class RegattaResultResource extends Resource
 
                 Notification::make()
                     ->title($items !== []
-                        ? 'Добавлено участников: ' . count($items)
+                        ? 'Добавлено участников: '.count($items)
                         : 'Активных заявок на эту регату нет')
                     ->success()
                     ->send();
@@ -292,13 +296,13 @@ class RegattaResultResource extends Resource
                 $resolvedRegattaId = $regattaId ?? $get('regatta_id');
 
                 return [
-                    'regatta_id'         => $resolvedRegattaId,
+                    'regatta_id' => $resolvedRegattaId,
                     'required_documents' => RegattaEntryResource::defaultRequiredDocuments($resolvedRegattaId),
                 ];
             })
             ->action(function (array $data): void {
                 $requiredDocs = $data['required_documents'] ?? [];
-                $crew         = $data['crew'] ?? [];
+                $crew = $data['crew'] ?? [];
                 unset($data['required_documents'], $data['crew']);
 
                 // Проверка дубликата: та же команда уже подала заявку на эту регату.
@@ -349,9 +353,9 @@ class RegattaResultResource extends Resource
         $items = [];
         foreach ($entries as $entry) {
             $items[(string) Str::uuid()] = [
-                'team_id'        => $entry->team_id,
-                'yacht_id'       => $entry->yacht_id,
-                'total_points'   => 0.0,
+                'team_id' => $entry->team_id,
+                'yacht_id' => $entry->yacht_id,
+                'total_points' => 0.0,
                 'final_position' => null,
             ];
         }
@@ -362,7 +366,7 @@ class RegattaResultResource extends Resource
     /**
      * Яхты из активных заявок (RegattaEntry) на регату — для выбора в результатах.
      *
-     * @return array<string, string>  [yacht_id => name]
+     * @return array<string, string> [yacht_id => name]
      */
     protected static function entryYachtOptions(?string $regattaId): array
     {
@@ -386,7 +390,7 @@ class RegattaResultResource extends Resource
             ->orderBy('name')
             ->get()
             ->mapWithKeys(fn (Yacht $yacht): array => [
-                $yacht->id => trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : '')),
+                $yacht->id => trim(($yacht->name ?? '').($yacht->vfps_number ? " ({$yacht->vfps_number})" : '')),
             ])
             ->all();
     }
@@ -394,7 +398,7 @@ class RegattaResultResource extends Resource
     /**
      * Гонки (события типа race) регаты по порядку.
      *
-     * @return \Illuminate\Support\Collection<int, \App\Models\RegattaEvents>
+     * @return Collection<int, RegattaEvents>
      */
     protected static function raceEventsFor(?RegattaResult $record): Collection
     {
@@ -404,7 +408,7 @@ class RegattaResultResource extends Resource
     /**
      * Гонки (события типа race) указанной регаты по порядку.
      *
-     * @return \Illuminate\Support\Collection<int, \App\Models\RegattaEvents>
+     * @return Collection<int, RegattaEvents>
      */
     protected static function raceEventsForRegatta(?string $regattaId): Collection
     {
@@ -468,7 +472,7 @@ class RegattaResultResource extends Resource
     /**
      * Список участников (экипаж заявки) команды для отображения в таблице.
      */
-    protected static function crewListFor(?string $regattaId, ?string $teamId, ?string $yachtId): HtmlString | string
+    protected static function crewListFor(?string $regattaId, ?string $teamId, ?string $yachtId): HtmlString|string
     {
         if (blank($regattaId) || blank($teamId)) {
             return '—';
@@ -496,10 +500,10 @@ class RegattaResultResource extends Resource
                 $role = match ($crew->role) {
                     'captain' => ' (рулевой)',
                     'reserve' => ' (зап)',
-                    default   => '',
+                    default => '',
                 };
 
-                return e($name) . $role;
+                return e($name).$role;
             })
             ->implode('<br>');
 
@@ -513,23 +517,22 @@ class RegattaResultResource extends Resource
      */
     public static function itemsTableSchema(RegattaResult $record): Repeater
     {
-        $regattaId  = $record->regatta_id;
+        $regattaId = $record->regatta_id;
         $raceEvents = self::raceEventsFor($record);
 
         // Признак «поле заблокировано»: тумблер «Заблокировать заполненные поля»
         // вверху формы включён И в поле уже есть значение. Пустые поля остаются
         // доступными — можно дозаполнять новые результаты, не рискуя задеть старые.
-        $isLocked = fn (string $field): \Closure =>
-            fn (Get $get): bool => (bool) $get('../../lock_filled') && filled($get($field));
+        $isLocked = fn (string $field): \Closure => fn (Get $get): bool => (bool) $get('../../lock_filled') && filled($get($field));
 
         $columns = [
             TableColumn::make('Яхта')->markAsRequired(false),
             TableColumn::make('Команда'),
-            //TableColumn::make('Не участвовали')->markAsRequired(false),
+            // TableColumn::make('Не участвовали')->markAsRequired(false),
             TableColumn::make('Участники')->markAsRequired(false),
         ];
         foreach ($raceEvents as $race) {
-            $columns[] = TableColumn::make(new HtmlString(e($race->name) . ' · место<br>очки'))->markAsRequired(false);
+            $columns[] = TableColumn::make(new HtmlString(e($race->name).' · место<br>очки'))->markAsRequired(false);
         }
         // Итог (место / очки) — в конце, после колонок гонок.
         $columns[] = TableColumn::make(new HtmlString('Место<br>Очки'))->markAsRequired(false);
@@ -538,11 +541,11 @@ class RegattaResultResource extends Resource
             Select::make('yacht_id')
                 ->label('Яхта')
                 ->relationship('yacht', 'name')
-                ->getOptionLabelFromRecordUsing(fn ($record) => trim(($record->name ?? '') . ($record->vfps_number ? " ({$record->vfps_number})" : '')))
+                ->getOptionLabelFromRecordUsing(fn ($record) => trim(($record->name ?? '').($record->vfps_number ? " ({$record->vfps_number})" : '')))
                 ->searchable(['name', 'vfps_number'])
                 ->preload()
                 ->nullable(),
-            
+
             Select::make('team_id')
                 ->label('Команда')
                 ->relationship('team', 'name')
@@ -564,14 +567,14 @@ class RegattaResultResource extends Resource
                         $set('yacht_id', $yachtId);
                     }
                 }),
-                /*
+            /*
                 TextInput::make('not_participate')
                     ->label('Не участвовали'),
                 */
 
             Placeholder::make('crew_list')
                 ->label('Участники')
-                ->content(fn (Get $get): HtmlString | string => self::crewListFor(
+                ->content(fn (Get $get): HtmlString|string => self::crewListFor(
                     $regattaId,
                     $get('team_id'),
                     $get('yacht_id'),
@@ -580,8 +583,8 @@ class RegattaResultResource extends Resource
         foreach ($raceEvents as $i => $race) {
             $fields[] = Group::make([
                 TextInput::make("race_{$i}_position")
-                    ->label($race->name . ' · место')
-                    //->numeric()
+                    ->label($race->name.' · место')
+                    // ->numeric()
                     // Запрещаем одиночный ноль и любой минус, а также одинаковые
                     // места у разных участников в пределах одной гонки.
                     ->rule(function (Get $get) use ($i) {
@@ -634,8 +637,8 @@ class RegattaResultResource extends Resource
                     ->dehydrated(true)
                     ->nullable(),
                 TextInput::make("race_{$i}_points")
-                    ->label($race->name . ' · очки')
-                    //->numeric()
+                    ->label($race->name.' · очки')
+                    // ->numeric()
                     ->disabled($isLocked("race_{$i}_points"))
                     ->dehydrated(true)
                     ->nullable(),
@@ -735,7 +738,7 @@ class RegattaResultResource extends Resource
             // (live onBlur) очки пересчитываются на сервере; на время запроса
             // таблица тускнеет и блокируется, показывая, что идёт обработка.
             ->extraAttributes([
-                'class'              => 'fi-scrollable-table-repeater',
+                'class' => 'fi-scrollable-table-repeater',
                 'wire:loading.class' => 'opacity-50 pointer-events-none transition-opacity duration-200',
             ])
             ->table($columns)
@@ -759,7 +762,7 @@ class RegattaResultResource extends Resource
                 foreach ($raceEvents as $i => $race) {
                     $result = $results->get($race->id);
                     $data["race_{$i}_position"] = $result?->position;
-                    $data["race_{$i}_points"]   = $result?->points;
+                    $data["race_{$i}_points"] = $result?->points;
                 }
 
                 return $data;
@@ -800,7 +803,7 @@ class RegattaResultResource extends Resource
         $skipped = [];
 
         foreach (($data['items'] ?? []) as $row) {
-            $teamId  = $row['team_id'] ?? null;
+            $teamId = $row['team_id'] ?? null;
             $yachtId = $row['yacht_id'] ?? null;
 
             if (blank($teamId)) {
@@ -815,6 +818,7 @@ class RegattaResultResource extends Resource
 
             if (! $entry) {
                 $skipped[] = Team::whereKey($teamId)->value('name') ?? $teamId;
+
                 continue;
             }
 
@@ -824,7 +828,7 @@ class RegattaResultResource extends Resource
                 }
 
                 $position = $row["race_{$i}_position"] ?? null;
-                $points   = $row["race_{$i}_points"] ?? null;
+                $points = $row["race_{$i}_points"] ?? null;
 
                 if (blank($position) && blank($points)) {
                     // Оба поля очищены — удаляем ранее сохранённый результат гонки,
@@ -845,7 +849,7 @@ class RegattaResultResource extends Resource
                     ['event_id' => $eventId, 'regatta_entry_id' => $entry->id],
                     [
                         'position' => filled($position) ? $position : null,
-                        'points'   => filled($points) ? $points : 0,
+                        'points' => filled($points) ? $points : 0,
                     ],
                 );
             }
@@ -854,7 +858,7 @@ class RegattaResultResource extends Resource
         if ($skipped !== []) {
             Notification::make()
                 ->title('Часть результатов гонок не сохранена')
-                ->body('Нет заявки на регату для команд: ' . implode(', ', array_unique($skipped)))
+                ->body('Нет заявки на регату для команд: '.implode(', ', array_unique($skipped)))
                 ->warning()
                 ->send();
         }
@@ -961,7 +965,7 @@ class RegattaResultResource extends Resource
             // Пересчитываем только буквенные статусы — они зависят от числа лодок.
             // Скобки (сброшенная гонка) снимаем для проверки на число.
             $position = trim((string) $result->position);
-            $inner    = (str_starts_with($position, '(') && str_ends_with($position, ')'))
+            $inner = (str_starts_with($position, '(') && str_ends_with($position, ')'))
                 ? trim(substr($position, 1, -1))
                 : $position;
 
@@ -1025,19 +1029,19 @@ class RegattaResultResource extends Resource
     public static function deriveRacePoints(mixed $position, mixed $points, int $boatCount): mixed
     {
         $position = trim((string) $position);
-        $points   = self::normalizePoints($points);
-        $points   = is_string($points) ? trim($points) : $points;
+        $points = self::normalizePoints($points);
+        $points = is_string($points) ? trim($points) : $points;
 
         // Скобки в месте — признак «сброшенной» гонки (результат вне зачёта).
         $isDiscard = str_starts_with($position, '(') && str_ends_with($position, ')');
-        $inner     = $isDiscard ? trim(substr($position, 1, -1)) : $position;
+        $inner = $isDiscard ? trim(substr($position, 1, -1)) : $position;
 
         if (filled($points)) {
             // Очки заданы вручную — снимаем внешние скобки, но сам факт скобок
             // тоже считаем признаком сброшенной гонки (наравне со скобками места).
             $value = (string) $points;
             if (str_starts_with($value, '(') && str_ends_with($value, ')')) {
-                $value     = trim(substr($value, 1, -1));
+                $value = trim(substr($value, 1, -1));
                 $isDiscard = true;
             }
         } elseif ($inner === '') {
@@ -1084,17 +1088,17 @@ class RegattaResultResource extends Resource
                     ->label('Регата'),
                 TextEntry::make('result_type')
                     ->label('Тип')
-                    ->formatStateUsing(fn(string $state) => match ($state) {
+                    ->formatStateUsing(fn (string $state) => match ($state) {
                         'preliminary' => 'Предварительный',
-                        'final'       => 'Финальный',
-                        default       => $state,
+                        'final' => 'Финальный',
+                        default => $state,
                     }),
                 TextEntry::make('source')
                     ->label('Источник')
-                    ->formatStateUsing(fn(string $state) => match ($state) {
-                        'manual'   => 'Вручную',
+                    ->formatStateUsing(fn (string $state) => match ($state) {
+                        'manual' => 'Вручную',
                         'imported' => 'Импортирован',
-                        default    => $state,
+                        default => $state,
                     }),
                 TextEntry::make('created_at')
                     ->label('Создан')
@@ -1117,8 +1121,8 @@ class RegattaResultResource extends Resource
                             ->label('Яхта')
                             ->placeholder('-'),
                         TextEntry::make('total_points')
-                            ->label('Очки')
-                            //->numeric(),
+                            ->label('Очки'),
+                        // ->numeric(),
                     ])
                     ->columns(4)
                     ->columnSpanFull(),
@@ -1135,10 +1139,10 @@ class RegattaResultResource extends Resource
                     ->sortable(),
                 TextColumn::make('result_type')
                     ->label('Тип результатов')
-                    ->formatStateUsing(fn(string $state) => match ($state) {
+                    ->formatStateUsing(fn (string $state) => match ($state) {
                         'preliminary' => 'Предварительный',
-                        'final'       => 'Финальный',
-                        default       => $state,
+                        'final' => 'Финальный',
+                        default => $state,
                     }),
                 TextColumn::make('created_at')
                     ->label('Создан')
@@ -1154,7 +1158,7 @@ class RegattaResultResource extends Resource
             ->filters([
                 SelectFilter::make('season')
                     ->label('Сезон')
-                    ->options(fn (): array => \App\Models\Season::query()
+                    ->options(fn (): array => Season::query()
                         ->orderByDesc('year')
                         ->pluck('year', 'id')
                         ->all())
@@ -1189,7 +1193,7 @@ class RegattaResultResource extends Resource
                         Actions::make([
                             self::createEntryAction($record->regatta_id),
                         ]),
-                        //self::racesManagerSchema(),
+                        // self::racesManagerSchema(),
                         // Защита от случайной правки: при включении все поля таблицы,
                         // где уже есть значение, становятся недоступны для ввода.
                         // Пустые поля остаются доступными для новых результатов.
@@ -1248,7 +1252,7 @@ class RegattaResultResource extends Resource
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
-                    \Filament\Actions\BulkAction::make('export_csv_bulk')
+                    BulkAction::make('export_csv_bulk')
                         ->label('Экспорт CSV')
                         ->icon(Heroicon::ArrowDownTray)
                         ->action(function (Collection $records): StreamedResponse {
@@ -1256,15 +1260,15 @@ class RegattaResultResource extends Resource
 
                             return response()->streamDownload(function () use ($records): void {
                                 $handle = fopen('php://output', 'w');
-                                fputs($handle, "\xEF\xBB\xBF"); // BOM для Excel
+                                fwrite($handle, "\xEF\xBB\xBF"); // BOM для Excel
                                 fputcsv($handle, ['Регата', 'Тип', 'Место', 'Команда', 'Яхта', 'Очки'], ';');
 
                                 foreach ($records as $result) {
                                     $result->load('items.team', 'items.yacht', 'regatta');
                                     $typeName = match ($result->result_type) {
                                         'preliminary' => 'Предварительный',
-                                        'final'       => 'Финальный',
-                                        default       => $result->result_type,
+                                        'final' => 'Финальный',
+                                        default => $result->result_type,
                                     };
 
                                     foreach ($result->items as $item) {
