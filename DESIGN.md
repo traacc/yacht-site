@@ -1,6 +1,6 @@
 # DESIGN.md — Архитектура проекта «Yacht Association»
 
-_Документ отражает фактическую архитектуру на 2026-07-10 (изначальная версия была проектом «до реализации» и сильно устарела). Актуальную структуру каталогов см. в [`PROJECT_STRUCTURE.md`](PROJECT_STRUCTURE.md), термины предметной области — в [`doc.md`](doc.md), правила для ИИ-агентов — в [`AGENTS.md`](AGENTS.md)._
+_Документ отражает фактическую архитектуру на 2026-07-18 (изначальная версия была проектом «до реализации» и сильно устарела). Актуальную структуру каталогов см. в [`PROJECT_STRUCTURE.md`](PROJECT_STRUCTURE.md), термины предметной области — в [`doc.md`](doc.md), правила для ИИ-агентов — в [`AGENTS.md`](AGENTS.md)._
 
 ## 1. Технологический стек (TALL)
 
@@ -42,6 +42,9 @@ graph TB
     Actions --> Yandex[Яндекс: Карты / Геокодер / SmartCaptcha]
     Actions --> Weather[Погодный API]
     Actions --> Mail[SMTP / Mailpit в dev]
+
+    Judge[Судейская программа КАРТЕР 30] --> Api["/api — REST, Bearer-токен"]
+    Api --> Actions
 ```
 
 Контроллеров практически нет: публичные страницы — замыкания в `routes/web.php`, отдающие Blade-шаблоны; интерактив — Livewire-компоненты; мутации — Action-классы; интеграции и расчёты — Service-классы.
@@ -89,6 +92,7 @@ graph TB
 - `feedback_requests` — обращения с формы обратной связи.
 - `settings` — key/value (+group) настройки страниц сайта, редактируются в админке через `SettingsService`.
 - `media` — таблица Spatie Media Library (morph, кастомная модель `App\Models\Media`).
+- `api_clients` — Bearer-токены (хэши) внешнего API судейской программы; выпуск/отзыв — в админке (`SiteSettings`).
 
 ### Связи (компактно)
 
@@ -146,7 +150,7 @@ erDiagram
 - `app/Services/` — расчёты (`RaceScorer`, `RatingCalculator`), `SettingsService`, `Rgd/RgdParser`, интеграции (Telegram, VK, Яндекс, погода);
 - `app/Filament/` — админ-панель; `app/Filament/User/` — личный кабинет;
 - `app/Livewire/` — публичные компоненты; `app/Observers/` — регистрируются в `AppServiceProvider`;
-- `routes/web.php` (замыкания), `routes/auth.php` (Breeze), `routes/console.php` (планировщик). **`api.php` нет.**
+- `routes/web.php` (замыкания), `routes/auth.php` (Breeze), `routes/api.php` (внешний API судейской программы), `routes/console.php` (планировщик).
 
 ## 6. Маршрутизация (фактическая)
 
@@ -181,13 +185,25 @@ erDiagram
 
 Аутентификация — Breeze (`routes/auth.php`) + Livewire `Auth/LoginModal`; вход в панели — `FilamentAuthenticate`.
 
+### Внешний API (`routes/api.php`)
+
+REST API для судейской программы «КАРТЕР 30». Middleware `api.token` (`VerifyApiToken`) проверяет Bearer-токен по хэшу в `api_clients` (выпуск токенов — админка, `SiteSettings`). Регата резолвится по `external_id` (`Regatta::getRouteKeyName()`).
+
+| Метод | URI | Назначение |
+|-------|-----|-----------|
+| GET | `/api/regattas` | Список регат (поиск по external_id) |
+| GET | `/api/regattas/{regatta}/participants` | Экспорт участников в формате КАРТЕР 30 (`RgdParticipantsExporter`) |
+| POST | `/api/regattas/{regatta}/results` | Импорт результатов регаты (`ImportResultsRequest`, далее — конвейер импорта результатов) |
+
+Проверка доступности — команда `api:check` (`ApiCheck`).
+
 ## 7. Ключевые бизнес-процессы
 
 ### 7.1. Заявка на регату
 `JoinRegattaModal` (Livewire) → `SubmitRegattaEntryAction`: создаёт `RegattaEntry` + `RegattaEntryCrew`, письма (`RegattaEntrySubmitted`, `SendRegattaEntryPassword` — пароль для редактирования заявки без входа). Заявка попадает в Pending-ресурс админки; статусы — `EntryStatus`. Обязательные документы заявки — `UpdateRegattaEntryRequiredDocumentsAction`, оплата — `PaymentRegistry` (morph payable) + `RegattaEntryFeeObserver`.
 
 ### 7.2. Результаты и рейтинги
-Импорт протокола: `ImportRegattaResultItemsAction` (Excel) или `ImportRgdResultItemsAction` + `Services/Rgd/RgdParser` (формат RGD, также команда `regattas:import-rgd`). Очки считает `RaceScorer` (позиции/штрафы — строки: DNF, DNS и т.п.), рейтинги сезона — `RatingCalculator` (+ команда `ratings:recalculate`) с учётом `level_coefficient`. Строки протокола хранят снапшоты состава и разбивку по гонкам; ручные правки — override-флаги. Публикация протокола — `is_published`, PDF — `GenerateRegattaResultPdfAction`. Пересчёты триггерятся обсерверами (`RegattaEntryResultObserver`, `RegattaResultItemObserver`).
+Импорт протокола: `ImportRegattaResultItemsAction` (Excel), `ImportRgdResultItemsAction` + `Services/Rgd/RgdParser` (формат RGD, также команда `regattas:import-rgd`) или по API от судейской программы (`POST /api/regattas/{regatta}/results` + `ApplyRegattaResultsAction`). Очки считает `RaceScorer` (позиции/штрафы — строки: DNF, DNS и т.п.), рейтинги сезона — `RatingCalculator` (+ команда `ratings:recalculate` и действие пересчёта в ресурсах рейтингов админки) с учётом `level_coefficient`; места — dense ranking по `rank_position`. Строки протокола хранят снапшоты состава и разбивку по гонкам; ручные правки — override-флаги. Публикация протокола — `is_published`, PDF — `GenerateRegattaResultPdfAction`. Пересчёты триггерятся обсерверами (`RegattaEntryResultObserver`, `RegattaResultItemObserver`).
 
 ### 7.3. Публикация новостей в соцсети
 Новость с `published_at` в будущем публикуется отложенно: планировщик ежеминутно запускает `news:publish-to-telegram` / `news:publish-to-vk` → jobs `PublishNewsToTelegram` / `PublishNewsToVk` → `TelegramService` / `VkService` (поддерживают прокси); флаги `published_to_tg/vk`. `NewsObserver` — сопутствующая логика при сохранении.

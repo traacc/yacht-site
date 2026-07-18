@@ -72,7 +72,7 @@ app/
 ├── Exports/ Imports/ ← Excel-экспорт/импорт (phpspreadsheet)
 ├── Filament/         ← Админ-панель (Resources/, Pages/, Widgets/)
 │   └── User/         ← Личный кабинет пользователя (вторая панель)
-├── Http/Middleware/  ← MaintenanceMode, FilamentAuthenticate (контроллеров почти нет)
+├── Http/             ← Middleware (MaintenanceMode, VerifyApiToken…), Controllers/Api (судейская программа)
 ├── Jobs/             ← Публикация новостей в Telegram/VK
 ├── Livewire/         ← Публичные интерактивные компоненты
 ├── Mail/             ← Почтовые уведомления
@@ -84,8 +84,9 @@ app/
 └── Support/          ← AccessControl, SafeDelete, Svg
 
 routes/
-├── web.php           ← Публичные маршруты — замыкания (api.php нет)
+├── web.php           ← Публичные маршруты — замыкания
 ├── auth.php          ← Breeze
+├── api.php           ← Внешний API судейской программы (Bearer-токен, VerifyApiToken)
 └── console.php
 
 resources/views/
