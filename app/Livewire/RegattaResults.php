@@ -30,7 +30,8 @@ class RegattaResults extends Component
     // Фильтры (режим 'list')
     // ──────────────────────────────────────────────
 
-    public string $yearFilter   = '';
+    public string $yearFilter = '';
+
     public string $statusFilter = '';
 
     // ──────────────────────────────────────────────
@@ -48,14 +49,14 @@ class RegattaResults extends Component
     // ──────────────────────────────────────────────
 
     public function mount(
-        string  $mode      = 'home',
+        string $mode = 'home',
         ?string $regattaId = null,
-        string  $year      = '',
-        string  $status    = '',
+        string $year = '',
+        string $status = '',
     ): void {
-        $this->mode         = $mode;
-        $this->regattaId    = $regattaId;
-        $this->yearFilter   = $year;
+        $this->mode = $mode;
+        $this->regattaId = $regattaId;
+        $this->yearFilter = $year;
         $this->statusFilter = $status;
     }
 
@@ -73,17 +74,31 @@ class RegattaResults extends Component
                 ->find($this->regattaId);
         }
 
-        // Режим 'home': последняя завершённая или активная регата
+        // Режим 'home': последняя завершённая или активная регата с результатами
         return Regatta::with($this->eagerLoads())
             ->where(function ($query) {
                 $query->where('date_end', '<', now())
-                      ->orWhere(function ($q) {
-                          $q->where('date_start', '<=', now())
+                    ->orWhere(function ($q) {
+                        $q->where('date_start', '<=', now())
                             ->where('date_end', '>=', now());
-                      });
+                    });
             })
+            ->tap(fn ($q) => $this->scopePublishedResults($q))
             ->orderBy('date_end', 'desc')
             ->first();
+    }
+
+    /**
+     * Ограничивает выборку регатами, у которых есть опубликованный результат
+     * хотя бы с одной строкой участника. Публичные таблицы строятся только по
+     * RegattaResult, поэтому регаты без них показывать нечем.
+     */
+    protected function scopePublishedResults($query)
+    {
+        return $query->whereHas(
+            'results',
+            fn ($q) => $q->where('is_published', true)->whereHas('items'),
+        );
     }
 
     /**
@@ -94,11 +109,12 @@ class RegattaResults extends Component
         $query = Regatta::with($this->eagerLoads())
             ->where(function ($q) {
                 $q->where('date_end', '<', now())
-                  ->orWhere(function ($inner) {
-                      $inner->where('date_start', '<=', now())
+                    ->orWhere(function ($inner) {
+                        $inner->where('date_start', '<=', now())
                             ->where('date_end', '>=', now());
-                  });
-            });
+                    });
+            })
+            ->tap(fn ($q) => $this->scopePublishedResults($q));
 
         if ($this->yearFilter !== '') {
             $query->whereYear('date_start', $this->yearFilter);
@@ -108,7 +124,7 @@ class RegattaResults extends Component
             $query->where('date_end', '<', now());
         } elseif ($this->statusFilter === 'preliminary') {
             $query->where('date_start', '<=', now())
-                  ->where('date_end', '>=', now());
+                ->where('date_end', '>=', now());
         }
 
         return $query->orderBy('date_end', 'desc')->get();
@@ -122,11 +138,12 @@ class RegattaResults extends Component
         return Regatta::query()
             ->where(function ($q) {
                 $q->where('date_end', '<', now())
-                  ->orWhere(function ($inner) {
-                      $inner->where('date_start', '<=', now())
+                    ->orWhere(function ($inner) {
+                        $inner->where('date_start', '<=', now())
                             ->where('date_end', '>=', now());
-                  });
+                    });
             })
+            ->tap(fn ($q) => $this->scopePublishedResults($q))
             ->selectRaw('YEAR(date_start) as year')
             ->distinct()
             ->orderByDesc('year')
@@ -142,16 +159,16 @@ class RegattaResults extends Component
      * Открывает модальное окно с составом команды.
      * Вызывается из шаблона через wire:click.
      *
-     * @param  string  $teamId   UUID команды
-     * @param  string  $teamName Название команды
-     * @param  array   $members  Массив участников [['name'=>..., 'birthday'=>..., 'rank'=>...], ...]
+     * @param  string  $teamId  UUID команды
+     * @param  string  $teamName  Название команды
+     * @param  array  $members  Массив участников [['name'=>..., 'birthday'=>..., 'rank'=>...], ...]
      */
     public function openTeamModal(string $teamId, string $teamName, array $members): void
     {
         $this->activeTeamModal = [
-            'team_id'   => $teamId,
+            'team_id' => $teamId,
             'team_name' => $teamName,
-            'members'   => $members,
+            'members' => $members,
         ];
     }
 
@@ -165,18 +182,18 @@ class RegattaResults extends Component
      * Открывает модальное окно с результатами команды по каждой гонке.
      * Вызывается из шаблона через wire:click.
      *
-     * @param  string       $teamName  Название команды
-     * @param  string|null  $yachtName Название яхты (для подзаголовка)
-     * @param  float|string $total     Итоговые очки
-     * @param  array        $races     Массив гонок [['num'=>..,'name'=>..,'pos'=>..,'pts'=>..], ...]
+     * @param  string  $teamName  Название команды
+     * @param  string|null  $yachtName  Название яхты (для подзаголовка)
+     * @param  float|string  $total  Итоговые очки
+     * @param  array  $races  Массив гонок [['num'=>..,'name'=>..,'pos'=>..,'pts'=>..], ...]
      */
     public function openRacesModal(string $teamName, ?string $yachtName, float|string|null $total, array $races): void
     {
         $this->activeRacesModal = [
-            'team_name'  => $teamName,
+            'team_name' => $teamName,
             'yacht_name' => $yachtName,
-            'total'      => $total,
-            'races'      => $races,
+            'total' => $total,
+            'races' => $races,
         ];
     }
 
@@ -210,12 +227,12 @@ class RegattaResults extends Component
         $crewMap = [];
         foreach ($entries as $entry) {
             $crewList = $entry->crew->map(fn ($c) => [
-                'id'       => $c->teamMember->user->id ?? null,
-                'name'     => $c->teamMember->user->name ?? '',
+                'id' => $c->teamMember->user->id ?? null,
+                'name' => $c->teamMember->user->name ?? '',
                 'birthday' => $c->teamMember->user->birth_date?->format('d.m.Y') ?? '—',
-                'rank'     => $c->teamMember->user->sport_category?->getLabel() ?? '—',
-                'avatar'   => $c->teamMember->user->photo_url ? asset('storage/'.$c->teamMember->user->photo_url) : null,
-                'role'     => $c->role,
+                'rank' => $c->teamMember->user->sport_category?->getLabel() ?? '—',
+                'avatar' => $c->teamMember->user->photo_url ? asset('storage/'.$c->teamMember->user->photo_url) : null,
+                'role' => $c->role,
             ])->toArray();
 
             // Если у команды несколько заявок (разные яхты) — объединяем экипаж
@@ -270,8 +287,8 @@ class RegattaResults extends Component
         $raceMeta = [];
         foreach ($raceEvents->values() as $i => $event) {
             $raceMeta[$event->id] = [
-                'num'  => $i + 1,
-                'name' => $event->name ?: ('Гонка ' . ($i + 1)),
+                'num' => $i + 1,
+                'name' => $event->name ?: ('Гонка '.($i + 1)),
             ];
         }
 
@@ -294,7 +311,7 @@ class RegattaResults extends Component
 
             $resultsByEvent = $entry->raceResults->keyBy('event_id');
 
-            $races  = [];
+            $races = [];
             $hasAny = false;
 
             foreach ($raceMeta as $eventId => $meta) {
@@ -311,10 +328,10 @@ class RegattaResults extends Component
                 }
 
                 $races[] = [
-                    'num'  => $meta['num'],
+                    'num' => $meta['num'],
                     'name' => $meta['name'],
-                    'pos'  => $pos,
-                    'pts'  => $rr && $rr->points !== null ? $rr->points : null,
+                    'pos' => $pos,
+                    'pts' => $rr && $rr->points !== null ? $rr->points : null,
                 ];
             }
 
@@ -341,7 +358,7 @@ class RegattaResults extends Component
             foreach ($members as $member) {
                 if (($member['role'] ?? null) === 'captain') {
                     $captainMap[$teamId] = [
-                        'id'   => $member['id'] ?? null,
+                        'id' => $member['id'] ?? null,
                         'name' => $member['name'] ?: null,
                     ];
                     break;
@@ -358,8 +375,8 @@ class RegattaResults extends Component
     protected function eagerLoads(): array
     {
         return [
-            'results'                             => fn ($q) => $q->where('is_published', true),
-            'results.items'                       => fn ($q) => $q->reorder()
+            'results' => fn ($q) => $q->where('is_published', true),
+            'results.items' => fn ($q) => $q->reorder()
                 ->orderByRaw('final_position IS NULL')
                 ->orderByRaw('CAST(final_position AS UNSIGNED)')
                 ->orderBy('final_position'),
@@ -377,8 +394,8 @@ class RegattaResults extends Component
     {
         $data = match ($this->mode) {
             'show', 'home' => $this->renderSingle(),
-            'list'         => $this->renderList(),
-            default        => $this->renderSingle(),
+            'list' => $this->renderList(),
+            default => $this->renderSingle(),
         };
 
         return view('livewire.regatta-results', $data);
@@ -386,14 +403,14 @@ class RegattaResults extends Component
 
     private function renderSingle(): array
     {
-        $regatta     = $this->resolveRegatta();
+        $regatta = $this->resolveRegatta();
         $resultItems = $regatta?->results?->flatMap->items ?? collect();
 
-        $crewMap    = $regatta ? $this->buildCrewMap($regatta, $resultItems) : [];
+        $crewMap = $regatta ? $this->buildCrewMap($regatta, $resultItems) : [];
         $captainMap = $this->buildCaptainMap($crewMap);
-        $racesMap   = $regatta ? $this->buildRacesMap($regatta, $resultItems) : [];
+        $racesMap = $regatta ? $this->buildRacesMap($regatta, $resultItems) : [];
 
-        $topTeams        = collect();
+        $topTeams = collect();
         $topParticipants = collect();
 
         if ($this->mode === 'home') {
@@ -401,9 +418,9 @@ class RegattaResults extends Component
 
             $topTeamData = $settings->get('home.top_teams', []);
             $topTeams = collect($topTeamData)
-                ->filter(fn ($item) => !empty($item['id']))
+                ->filter(fn ($item) => ! empty($item['id']))
                 ->map(fn ($item) => [
-                    'model'  => \App\Models\Team::find($item['id']),
+                    'model' => Team::find($item['id']),
                     'points' => $item['points'] ?? null,
                 ])
                 ->filter(fn ($item) => $item['model'] !== null)
@@ -411,9 +428,9 @@ class RegattaResults extends Component
 
             $topParticipantData = $settings->get('home.top_participants', []);
             $topParticipants = collect($topParticipantData)
-                ->filter(fn ($item) => !empty($item['id']))
+                ->filter(fn ($item) => ! empty($item['id']))
                 ->map(fn ($item) => [
-                    'model'  => \App\Models\User::find($item['id']),
+                    'model' => User::find($item['id']),
                     'points' => $item['points'] ?? null,
                 ])
                 ->filter(fn ($item) => $item['model'] !== null)
@@ -425,17 +442,17 @@ class RegattaResults extends Component
 
     private function renderList(): array
     {
-        $crewMaps    = [];
+        $crewMaps = [];
         $captainMaps = [];
-        $racesMaps   = [];
-        $regattas    = $this->resolveRegattas();
+        $racesMaps = [];
+        $regattas = $this->resolveRegattas();
 
         $regattas->each(function ($r) use (&$crewMaps, &$captainMaps, &$racesMaps) {
             $resultItems = $r->results->flatMap->items ?? collect();
             $r->setRelation('resultItems', $resultItems);
-            $crewMaps[$r->id]    = $this->buildCrewMap($r, $resultItems);
+            $crewMaps[$r->id] = $this->buildCrewMap($r, $resultItems);
             $captainMaps[$r->id] = $this->buildCaptainMap($crewMaps[$r->id]);
-            $racesMaps[$r->id]   = $this->buildRacesMap($r, $resultItems);
+            $racesMaps[$r->id] = $this->buildRacesMap($r, $resultItems);
         });
 
         $availableYears = $this->availableYears();

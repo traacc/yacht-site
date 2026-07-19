@@ -168,7 +168,8 @@
     @elseif($mode === 'show')
     {{-- ===== РЕЖИМ: СТРАНИЦА РЕГАТЫ ===== --}}
 
-        @if($regatta && $regatta->regatta_status === \App\Enums\RegattaStatus::Finished)
+        {{-- Блок результатов показываем только если по регате есть строки RegattaResult --}}
+        @if($regatta && $regatta->regatta_status === \App\Enums\RegattaStatus::Finished && $resultItems->isNotEmpty())
             <section class="results mb-12">
                 <div class="container mx-auto bg-[#F8F8F8]">
                     <div class="flex flex-col md:flex-row mb-6 justify-between pt-4">
