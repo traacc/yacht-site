@@ -1,12 +1,23 @@
 @php
-    // Высота hero-блока: постоянная пропорция 1920:высота на всех ширинах —
-    // тогда object-cover не перекадрирует изображение по оси Y, и выбранный фокус
-    // сохраняется при любом масштабе страницы. max-height ограничивает блок
-    // настроенной высотой (Full HD) на экранах шире 1920px.
+    // Высота hero-блока: от md постоянная пропорция 1920:высота — тогда object-cover
+    // не перекадрирует изображение по оси Y, и выбранный фокус сохраняется при любом
+    // масштабе страницы. max-height ограничивает блок настроенной высотой (Full HD)
+    // на экранах шире 1920px.
+    // На мобильной пропорция дала бы высоту ~150px, и контент карточки обрезался бы
+    // (overflow-hidden), поэтому там высоту задаёт сам контент — см. .home-hero ниже.
     $heroHeight = max(120, min(768, (int) ($heroViewport['height'] ?? 768)));
-    $heroSectionStyle = "aspect-ratio: 1920 / {$heroHeight}; max-height: {$heroHeight}px;";
+    $heroSectionStyle = "--hero-ar: {$heroHeight}; --hero-h: {$heroHeight}px;";
 @endphp
-<section x-data="{ windyModalOpen: false }" class="relative overflow-hidden mx-auto w-full" style="{{ $heroSectionStyle }}">
+<section x-data="{ windyModalOpen: false }" class="home-hero relative overflow-hidden mx-auto w-full pb-10 md:pb-0" style="{{ $heroSectionStyle }}">
+<style>
+    @media (min-width: 768px) {
+        .home-hero {
+            aspect-ratio: 1920 / var(--hero-ar);
+            max-height: var(--hero-h);
+            padding-bottom: 0;
+        }
+    }
+</style>
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('countdown', (targetDate) => ({
@@ -74,7 +85,8 @@
 
     <div class="hero-overlay absolute inset-0"></div>
 
-    <div class="absolute inset-0 z-10">
+    {{-- На мобильной контент в обычном потоке и задаёт высоту секции, от md — поверх медиа --}}
+    <div class="relative md:absolute md:inset-0 z-10">
     @if($regatta)
     <div class="container mx-auto relative mt-4">
         {{-- Карточка ближайшей регаты --}}
@@ -186,7 +198,7 @@
     </div>
     @endif
     <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"
-            class="pointer-events-auto relative z-20 max-w-3xs 3xl:max-w-xs mx-auto mt-16 block w-full text-center bg-brand-blue text-2xl md:text-4xl 3xl:text-5xl text-white font-semibold py-2.5 3xl:py-4 transition-colors cursor-pointer">
+            class="pointer-events-auto relative z-20 max-w-3xs 3xl:max-w-xs mx-auto mt-8 md:mt-16 block w-full text-center bg-brand-blue text-2xl md:text-4xl 3xl:text-5xl text-white font-semibold py-2.5 3xl:py-4 transition-colors cursor-pointer">
         Заявка →
     </button>
     </div>
