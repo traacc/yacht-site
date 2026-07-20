@@ -4,8 +4,9 @@ namespace App\Livewire;
 
 use App\Models\Regatta;
 use App\Models\Season;
+use Carbon\Carbon;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
-use Livewire\Attributes\Computed; // Важно для Livewire v3
 
 class RegattasCalendar extends Component
 {
@@ -59,7 +60,7 @@ class RegattasCalendar extends Component
             ->get();
 
         // Группируем. Убедитесь, что date_start кастится к Carbon в модели!
-        $grouped = $regattas->groupBy(fn (Regatta $r) => (int) \Carbon\Carbon::parse($r->date_start)->format('n'));
+        $grouped = $regattas->groupBy(fn (Regatta $r) => (int) Carbon::parse($r->date_start)->format('n'));
 
         $currentMonth = (int) now()->format('n');
 
@@ -71,6 +72,7 @@ class RegattasCalendar extends Component
                 'events' => $grouped->has($num)
                     ? $grouped->get($num)->map(fn (Regatta $r) => [
                         'id' => $r->id,
+                        'external_id' => $r->external_id,
                         'date' => $r->dateRange(),
                         'title' => $r->name,
                         'city' => $r->location,

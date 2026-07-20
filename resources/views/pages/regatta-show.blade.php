@@ -12,6 +12,12 @@
                         </div>
                     @endif
                     <h2 class="section-title a-font text-brand-dark text-6xl py-6">{{ $regatta->name }}</h2>
+                    {{-- ID для судейской программы — только админу-разработчику --}}
+                    @if(auth()->user()?->isDeveloperAdmin())
+                        <div class="text-sm text-brand-gray pb-3">
+                            ID (внешний): <strong class="text-brand-dark">{{ $regatta->external_id ?? '—' }}</strong>
+                        </div>
+                    @endif
                     <div class="space-y-1.5 text-brand-gray font-medium text-lg">
                         @if($regatta->regatta_status != \App\Enums\RegattaStatus::Postponed)
                         <div class="flex items-center gap-2 pb-3">

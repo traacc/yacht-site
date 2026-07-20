@@ -76,6 +76,10 @@
                     <h2 class="text-brand-navy font-semibold text-sm md:text-lg leading-tight">
                         {{ $regatta->name }}
                     </h2>
+                    {{-- ID для судейской программы — только админу-разработчику --}}
+                    @if (auth()->user()?->isDeveloperAdmin())
+                    <div class="text-[10px] text-brand-gray-light">ID: {{ $regatta->external_id ?? '—' }}</div>
+                    @endif
 
                     <div class="flex items-center gap-3 text-gray-600 text-[10px] md:text-base text-sm max-w-4 md:max-w-full">
                         <img src="{{ asset('images/icons/marker.svg') }}" alt=""> {{ $regatta->location }}
@@ -128,6 +132,9 @@
                         <td class="py-2 text-center">@if ($regatta->regatta_status != \App\Enums\RegattaStatus::Postponed) {{ $regatta->dateRange() }} @endif</td>
                         <td class="py-2 text-center text-brand-navy">
                             {{ $regatta->name }}
+                            @if (auth()->user()?->isDeveloperAdmin())
+                            <div class="text-[10px] text-brand-gray-light">ID: {{ $regatta->external_id ?? '—' }}</div>
+                            @endif
                             @if ($statusBadge)
                             <div class="md:hidden mt-1">
                                 <span class="{{ $statusBadge[0] }} px-3 py-1 inline-block font-semibold text-sm">{{ $statusBadge[1] }}</span>

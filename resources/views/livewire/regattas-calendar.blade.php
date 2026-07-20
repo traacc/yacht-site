@@ -115,6 +115,10 @@
                                             @endif
                                             <p class="text-[#2E325C] font-bold mt-0.5 {{ in_array($event['status'], ['postponed', 'cancelled']) ? 'line-through decoration-1 opacity-70' : '' }}"><a class="hover:underline" href="{{ $event['url'] }}">{{ $event['title'] }}</a></p>
                                             <!--<p class="text-brand-gray-light text-sm">{{ $event['city'] }}</p>-->
+                                            {{-- ID для судейской программы — только админу-разработчику --}}
+                                            @if (auth()->user()?->isDeveloperAdmin())
+                                                <p class="text-brand-gray-light text-xs">ID: {{ $event['external_id'] ?? '—' }}</p>
+                                            @endif
                                             <div class="controls text-xs font-semibold flex gap-2">
                                                 @if ($event['has_documents'])
                                                     <a href="{{ $event['documents_url'] }}"
