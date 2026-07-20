@@ -104,6 +104,13 @@ class RegattaResource extends Resource
                     ->label('Название')
                     ->placeholder('Введите название регаты')
                     ->required(),
+                TextInput::make('external_id')
+                    ->label('ID (внешний)')
+                    ->helperText('Номер регаты для судейской программы. Генерируется автоматически.')
+                    ->readOnly()
+                    ->dehydrated(false)
+                    ->visible(fn (): bool => (bool) auth()->user()?->isDeveloperAdmin())
+                    ->formatStateUsing(fn (?Regatta $record) => $record?->external_id ?? '—'),
                 Select::make('season_id')
                     ->label('Сезон')
                     ->relationship('season', 'year',
@@ -648,6 +655,13 @@ class RegattaResource extends Resource
                 TextColumn::make('regatta_status')
                     ->label('Статус')
                     ->badge()->sortable()->toggleable(),
+                // external_id нужен только для сопоставления с судейской программой
+                TextColumn::make('external_id')
+                    ->label('ID (внешний)')
+                    ->copyable()
+                    ->sortable()->toggleable()
+                    ->searchable(query: fn (Builder $query, string $search) => $query->where('external_id', $search))
+                    ->visible(fn (): bool => (bool) auth()->user()?->isDeveloperAdmin()),
             ])
             ->stackedOnMobile()
             ->emptyStateHeading('Записей пока нет')
