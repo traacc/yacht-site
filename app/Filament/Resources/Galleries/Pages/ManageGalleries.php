@@ -26,12 +26,19 @@ class ManageGalleries extends ManageRecords
                 ->icon(Heroicon::Plus)
                 ->action(function (): void {
                     $gallery = Gallery::create([
-                        'name'         => '',     // пустое имя = черновик; обязательно к заполнению в форме
+                        'name' => '',     // пустое имя = черновик; обязательно к заполнению в форме
                         'is_published' => false,  // черновик скрыт на публичной части до сохранения
                     ]);
 
-                    $this->mountAction('edit', [], [
-                        'table'     => true,
+                    // ★ ВАЖНО: именно replaceMountedAction, а не mountAction.
+                    //   mountAction добавил бы 'edit' ПОВЕРХ выполняющегося 'create',
+                    //   а Filament резолвит вложенный экшен как модальный экшен родителя
+                    //   ($parentAction->getModalAction('edit')) — его нет, экшен молча
+                    //   не резолвится и модалка не открывается.
+                    //   replaceMountedAction очищает стек, и 'edit' резолвится как
+                    //   табличный record-экшен (context: table + recordKey).
+                    $this->replaceMountedAction('edit', [], [
+                        'table' => true,
                         'recordKey' => $gallery->getKey(),
                     ]);
                 }),
