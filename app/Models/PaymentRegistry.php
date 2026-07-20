@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +18,7 @@ class PaymentRegistry extends Model
         'name',
         'amount',
         'status',
+        'payment_method',
         'document',
         'payable_type',
         'payable_id',
@@ -27,6 +29,7 @@ class PaymentRegistry extends Model
         return [
             'amount' => 'decimal:2',
             'status' => PaymentStatus::class,
+            'payment_method' => PaymentMethod::class,
         ];
     }
 
@@ -58,9 +61,9 @@ class PaymentRegistry extends Model
         $payable = $this->payable;
 
         return match (true) {
-            $payable instanceof Team         => $payable,
+            $payable instanceof Team => $payable,
             $payable instanceof RegattaEntry => $payable->team,
-            default                          => null,
+            default => null,
         };
     }
 
@@ -75,10 +78,10 @@ class PaymentRegistry extends Model
 
         return match (true) {
             $payable instanceof RegattaEntry => 'Заявка: '
-                . ($payable->team?->name ?? '—')
-                . ' — ' . ($payable->regatta?->name ?? '—'),
-            $payable instanceof Team => 'Команда: ' . ($payable->name ?? '—'),
-            default => class_basename($payable) . ' #' . $payable->getKey(),
+                .($payable->team?->name ?? '—')
+                .' — '.($payable->regatta?->name ?? '—'),
+            $payable instanceof Team => 'Команда: '.($payable->name ?? '—'),
+            default => class_basename($payable).' #'.$payable->getKey(),
         };
     }
 }

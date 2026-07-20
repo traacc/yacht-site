@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\PaymentRegistries;
 
+use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\PaymentRegistries\Pages\ManagePaymentRegistries;
 use App\Models\PaymentRegistry;
 use App\Models\RegattaEntry;
@@ -28,7 +30,7 @@ use Filament\Tables\Table;
 
 class PaymentRegistryResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected static ?string $model = PaymentRegistry::class;
 
@@ -68,6 +70,11 @@ class PaymentRegistryResource extends Resource
                     ->options(PaymentStatus::class)
                     ->default(PaymentStatus::Pending)
                     ->required(),
+                Select::make('payment_method')
+                    ->label('Способ оплаты')
+                    ->options(PaymentMethod::class)
+                    ->placeholder('Не указан')
+                    ->native(false),
                 MorphToSelect::make('payable')
                     ->label('Источник платежа')
                     ->types([
@@ -79,7 +86,7 @@ class PaymentRegistryResource extends Resource
                             ->titleAttribute('id')
                             ->getOptionLabelFromRecordUsing(
                                 fn (RegattaEntry $record): string => trim(
-                                    ($record->team?->name ?? '—') . ' — ' . ($record->regatta?->name ?? '—')
+                                    ($record->team?->name ?? '—').' — '.($record->regatta?->name ?? '—')
                                 )
                             ),
                     ])
@@ -113,6 +120,12 @@ class PaymentRegistryResource extends Resource
                     ->label('Статус оплаты')
                     ->badge()
                     ->sortable(),
+                TextColumn::make('payment_method')
+                    ->label('Способ оплаты')
+                    ->badge()
+                    ->placeholder('—')
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('team')
                     ->label('Команда')
                     ->getStateUsing(fn (PaymentRegistry $record): ?string => $record->payableTeam()?->name)
@@ -124,7 +137,7 @@ class PaymentRegistryResource extends Resource
                     ->getStateUsing(fn (PaymentRegistry $record): string => $record->payableLabel())
                     ->placeholder('—')
                     ->toggleable(),
-                
+
                 TextColumn::make('created_at')
                     ->label('Создан')
                     ->dateTime('d.m.Y H:i')
@@ -138,6 +151,9 @@ class PaymentRegistryResource extends Resource
                 SelectFilter::make('status')
                     ->label('Статус оплаты')
                     ->options(PaymentStatus::class),
+                SelectFilter::make('payment_method')
+                    ->label('Способ оплаты')
+                    ->options(PaymentMethod::class),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
             ->deferFilters(false)
