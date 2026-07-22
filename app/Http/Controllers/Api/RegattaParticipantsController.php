@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ParticipantResource;
 use App\Models\Regatta;
+use App\Models\RegattaEvents;
 use App\Services\RgdParticipantsExporter;
 use Illuminate\Http\JsonResponse;
 
@@ -32,8 +33,15 @@ class RegattaParticipantsController extends Controller
                 'water_area' => $regatta->water_area,
                 'date_start' => $regatta->date_start?->format('Y-m-d'),
                 'date_end' => $regatta->date_end?->format('Y-m-d'),
+                'level_coefficient' => $regatta->level_coefficient !== null ? (float) $regatta->level_coefficient : null,
             ],
             'class' => RgdParticipantsExporter::CLASS_NAME,
+            // Гонки регаты по порядку (по времени старта) — тот же формат, что
+            // ожидает импорт результатов (races[].name / races[].at).
+            'races' => $regatta->races->map(fn (RegattaEvents $race) => [
+                'name' => $race->name,
+                'at' => $race->event_datetime?->format('Y-m-d H:i:s'),
+            ])->values(),
             'participants' => ParticipantResource::collection($entries),
         ]);
     }

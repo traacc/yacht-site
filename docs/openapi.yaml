@@ -84,6 +84,11 @@ paths:
                   class:
                     type: string
                     example: КАРТЕР 30
+                  races:
+                    type: array
+                    description: Гонки регаты по порядку (тот же формат, что принимает импорт).
+                    items:
+                      $ref: '#/components/schemas/RegattaRace'
                   participants:
                     type: array
                     items:
@@ -215,6 +220,10 @@ components:
           type: [string, 'null']
           format: date
           example: '2026-06-12'
+        level_coefficient:
+          type: [number, 'null']
+          description: Коэффициент уровня регаты.
+          example: 1.5
         status:
           $ref: '#/components/schemas/RegattaStatus'
         entries_count:
@@ -238,7 +247,22 @@ components:
         date_end:
           type: [string, 'null']
           format: date
+        level_coefficient:
+          type: [number, 'null']
+          description: Коэффициент уровня регаты.
+          example: 1.5
       description: Краткая карточка регаты в ответе экспорта участников.
+
+    RegattaRace:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Гонка 1
+        at:
+          type: [string, 'null']
+          format: date-time
+          example: '2026-06-12 12:00:00'
 
     Participant:
       type: object

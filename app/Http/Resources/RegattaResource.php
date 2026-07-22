@@ -32,6 +32,7 @@ class RegattaResource extends JsonResource
             'location' => $this->location,
             'date_start' => $this->date_start?->format('Y-m-d'),
             'date_end' => $this->date_end?->format('Y-m-d'),
+            'level_coefficient' => $this->level_coefficient !== null ? (float) $this->level_coefficient : null,
             'status' => $status instanceof RegattaStatus ? $status->value : $status,
             'entries_count' => $this->whenCounted('entries'),
         ];

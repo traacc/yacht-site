@@ -87,6 +87,7 @@ GET /api/regattas
       "location": null,
       "date_start": "2026-06-12",
       "date_end": "2026-06-12",
+      "level_coefficient": 1.5,
       "status": "finished",
       "entries_count": 21
     }
@@ -101,6 +102,7 @@ GET /api/regattas
 | `water_area` | string \| null | Акватория |
 | `location` | string \| null | Место проведения |
 | `date_start` / `date_end` | string \| null | Даты, `YYYY-MM-DD` |
+| `level_coefficient` | number \| null | Коэффициент уровня регаты (напр. `1.5`) |
 | `status` | string | Статус (см. ниже) |
 | `entries_count` | int | Число заявок |
 
@@ -127,9 +129,13 @@ GET /api/regattas/{external_id}/participants
     "name": "Кубок памяти В.Я. Потапова",
     "water_area": "Пирогово",
     "date_start": "2026-06-12",
-    "date_end": "2026-06-12"
+    "date_end": "2026-06-12",
+    "level_coefficient": 1.5
   },
   "class": "КАРТЕР 30",
+  "races": [
+    { "name": "Гонка 1", "at": "2026-06-12 12:00:00" }
+  ],
   "participants": [
     {
       "entry_id": "019ebb56-033e-7390-8f2b-3b957c657e17",
@@ -160,6 +166,16 @@ GET /api/regattas/{external_id}/participants
   ]
 }
 ```
+
+### Поля гонки (`races[]`)
+
+Гонки регаты по порядку (по времени старта) — в том же формате, что принимает
+импорт результатов (`races[]`), чтобы согласовать порядок результатов по гонкам.
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `name` | string | Имя гонки |
+| `at` | string \| null | Дата/время старта, `YYYY-MM-DD HH:MM:SS` |
 
 ### Поля участника
 
