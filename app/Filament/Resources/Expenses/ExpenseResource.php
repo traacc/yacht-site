@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Expenses;
 
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\Expenses\Pages\ManageExpenses;
 use App\Models\Expense;
 use BackedEnum;
@@ -21,7 +22,7 @@ use Filament\Tables\Table;
 
 class ExpenseResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected static ?string $model = Expense::class;
 
@@ -54,7 +55,7 @@ class ExpenseResource extends Resource
                     ->disk('public')
                     ->directory('expenses')
                     ->visibility('public')
-                    ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+                    ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif'])
                     ->maxSize(10240)
                     ->downloadable()
                     ->openable()

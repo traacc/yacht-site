@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\SystemRole;
 use App\Enums\TeamMemberRole;
+use App\Models\Concerns\NormalizesHeicImageColumns;
 use App\Models\Concerns\RegistersResponsiveFormats;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -23,10 +24,13 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Team extends Model implements HasMedia
 {
-    use HasFactory, HasUuids, InteractsWithMedia, RegistersResponsiveFormats, SoftDeletes;
+    use HasFactory, HasUuids, InteractsWithMedia, NormalizesHeicImageColumns, RegistersResponsiveFormats, SoftDeletes;
 
     /** Максимальное количество активных участников в команде */
     public const int MAX_MEMBERS = 50;
+
+    /** @var array<string> Строковые колонки-пути, где heic нормализуется в webp. */
+    protected array $heicImageColumns = ['picture'];
 
     protected $fillable = [
         'name',

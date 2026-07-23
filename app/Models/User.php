@@ -6,6 +6,7 @@ use App\Enums\CreationSource;
 use App\Enums\SportCategory;
 use App\Enums\SystemRole;
 use App\Mail\ResetPasswordMail;
+use App\Models\Concerns\NormalizesHeicImageColumns;
 use Carbon\Carbon;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -25,7 +26,10 @@ use Illuminate\Validation\ValidationException;
 
 class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
-    use HasFactory, HasUuids, Notifiable, SoftDeletes;
+    use HasFactory, HasUuids, NormalizesHeicImageColumns, Notifiable, SoftDeletes;
+
+    /** @var array<string> Строковые колонки-пути, где heic нормализуется в webp. */
+    protected array $heicImageColumns = ['photo_url'];
 
     protected $fillable = [
         'name',

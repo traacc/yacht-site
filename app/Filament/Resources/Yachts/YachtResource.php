@@ -4,8 +4,16 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Yachts;
 
+use App\Actions\Document\SyncDocumentFilesAction;
+use App\Actions\Yacht\SyncYachtOptionsAction;
+use App\Filament\Concerns\RestrictsAccessByRole;
+use App\Filament\Forms\Components\RentalCalendar;
 use App\Filament\Resources\Yachts\Pages\ManageYachts;
+use App\Models\Scopes\OwnedScope;
 use App\Models\Yacht;
+use App\Models\YachtDocumentType;
+use App\Models\YachtRental;
+use App\Support\SafeDelete;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -16,13 +24,14 @@ use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
-use App\Filament\Forms\Components\RentalCalendar;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
@@ -32,13 +41,12 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-
-use Filament\Forms\Components\Placeholder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
 
 class YachtResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected static ?string $model = Yacht::class;
 
@@ -58,8 +66,8 @@ class YachtResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        $maxFiles       = (int) config('documents.max_files_per_type', 10);
-        $acceptedTypes  = [
+        $maxFiles = (int) config('documents.max_files_per_type', 10);
+        $acceptedTypes = [
             'application/pdf',
             'application/msword',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -72,57 +80,58 @@ class YachtResource extends Resource
 
         return $schema
             ->components([
-                
+
                 Placeholder::make('note_form')
-                ->hiddenLabel()
-                ->content(new HtmlString('Выберите яхту из базы Ассоциации или заполните данные вручную. Номер ВФПС будет использован как уникальный ID яхты в системе.'))
-                ->columnSpanFull(),
+                    ->hiddenLabel()
+                    ->content(new HtmlString('Выберите яхту из базы Ассоциации или заполните данные вручную. Номер ВФПС будет использован как уникальный ID яхты в системе.'))
+                    ->columnSpanFull(),
                 Hidden::make('selected_yacht_id'),
                 Select::make('yacht_search')->placeholder('Номер ВФПС или название яхты')->columnSpanFull()->label('Найти яхту в базе')->searchable()
-                ->options(fn (): array => \App\Models\Yacht::query()
-                    ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
-                    ->whereNull('user_id')
-                    ->orderBy('name')
-                    ->get()
-                    ->mapWithKeys(fn ($yacht) => [$yacht->id => trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : ''))])
-                    ->toArray())
-                ->getSearchResultsUsing(fn (string $search): array => \App\Models\Yacht::query()
-                    ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
-                    ->whereNull('user_id')
-                    ->where(function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%")
-                          ->orWhere('vfps_number', 'like', "%{$search}%");
+                    ->options(fn (): array => Yacht::query()
+                        ->withoutGlobalScope(OwnedScope::class)
+                        ->whereNull('user_id')
+                        ->orderBy('name')
+                        ->get()
+                        ->mapWithKeys(fn ($yacht) => [$yacht->id => trim(($yacht->name ?? '').($yacht->vfps_number ? " ({$yacht->vfps_number})" : ''))])
+                        ->toArray())
+                    ->getSearchResultsUsing(fn (string $search): array => Yacht::query()
+                        ->withoutGlobalScope(OwnedScope::class)
+                        ->whereNull('user_id')
+                        ->where(function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                                ->orWhere('vfps_number', 'like', "%{$search}%");
+                        })
+                        ->limit(50)
+                        ->get()
+                        ->mapWithKeys(fn ($yacht) => [$yacht->id => trim(($yacht->name ?? '').($yacht->vfps_number ? " ({$yacht->vfps_number})" : ''))])
+                        ->toArray())
+                    ->getOptionLabelUsing(function ($value): ?string {
+                        $yacht = Yacht::query()
+                            ->withoutGlobalScope(OwnedScope::class)
+                            ->find($value);
+
+                        return $yacht ? trim(($yacht->name ?? '').($yacht->vfps_number ? " ({$yacht->vfps_number})" : '')) : null;
                     })
-                    ->limit(50)
-                    ->get()
-                    ->mapWithKeys(fn ($yacht) => [$yacht->id => trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : ''))])
-                    ->toArray())
-                ->getOptionLabelUsing(function ($value): ?string {
-                    $yacht = \App\Models\Yacht::query()
-                        ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
-                        ->find($value);
-                    return $yacht ? trim(($yacht->name ?? '') . ($yacht->vfps_number ? " ({$yacht->vfps_number})" : '')) : null;
-                })
-                ->live()
-                ->afterStateUpdated(function ($state, $set) {
-                    $yacht = \App\Models\Yacht::query()
-                        ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
-                        ->find($state);
-                    if ($yacht) {
-                        $set('selected_yacht_id', $yacht->id);
-                        $set('name', $yacht->name);
-                        $set('vfps_number', $yacht->vfps_number);
-                        $set('gims_number', $yacht->gims_number);
-                        $set('class', $yacht->class);
-                        $set('project', $yacht->project);
-                        $set('year', $yacht->year);
-                        $set('reg_place', $yacht->reg_place);
-                        $set('home_region', $yacht->home_region);
-                        $set('mooring_place', $yacht->mooring_place);
-                        $set('current_mass_kg', $yacht->current_mass_kg);
-                    }
-                }),
-                
+                    ->live()
+                    ->afterStateUpdated(function ($state, $set) {
+                        $yacht = Yacht::query()
+                            ->withoutGlobalScope(OwnedScope::class)
+                            ->find($state);
+                        if ($yacht) {
+                            $set('selected_yacht_id', $yacht->id);
+                            $set('name', $yacht->name);
+                            $set('vfps_number', $yacht->vfps_number);
+                            $set('gims_number', $yacht->gims_number);
+                            $set('class', $yacht->class);
+                            $set('project', $yacht->project);
+                            $set('year', $yacht->year);
+                            $set('reg_place', $yacht->reg_place);
+                            $set('home_region', $yacht->home_region);
+                            $set('mooring_place', $yacht->mooring_place);
+                            $set('current_mass_kg', $yacht->current_mass_kg);
+                        }
+                    }),
+
                 TextInput::make('name')
                     ->label('Название')
                     ->placeholder('Введите название яхты')
@@ -175,7 +184,7 @@ class YachtResource extends Resource
                     ->label('Статус одобрения')
                     ->placeholder('Выберите статус')
                     ->options([
-                        'pending'  => 'На рассмотрении',
+                        'pending' => 'На рассмотрении',
                         'approved' => 'Одобрена',
                         'rejected' => 'Отклонена',
                     ])
@@ -183,7 +192,7 @@ class YachtResource extends Resource
                     ->required(),
 
                 Placeholder::make('Опции')->columnSpanFull(),
-                ...app(\App\Actions\Yacht\SyncYachtOptionsAction::class)->formComponents(),
+                ...app(SyncYachtOptionsAction::class)->formComponents(),
 
                 // ── Аренда яхты ──
                 Placeholder::make('Аренда')->columnSpanFull(),
@@ -196,7 +205,7 @@ class YachtResource extends Resource
                     ->label('Периоды аренды')
                     ->helperText('Отметьте периоды аренды на календаре и укажите стоимость.')
                     ->columnSpanFull()
-                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get): bool => (bool) $get('for_rent')),
+                    ->visible(fn (Get $get): bool => (bool) $get('for_rent')),
                 /*
                 Repeater::make('past_regattas')
                     ->label('Прошедшие соревнования')
@@ -212,12 +221,12 @@ class YachtResource extends Resource
                             ->required(),
                         DatePicker::make('date_start')
                             ->label('Дата начала')
-                            ->minDate(now()->subYears(100)) 
+                            ->minDate(now()->subYears(100))
                             ->maxDate(now()->addYears(100))
                             ->required(),
                         DatePicker::make('date_end')
                             ->label('Дата окончания')
-                            ->minDate(now()->subYears(100)) 
+                            ->minDate(now()->subYears(100))
                             ->maxDate(now()->addYears(100))
                             ->required(),
                     ])
@@ -241,7 +250,7 @@ class YachtResource extends Resource
                     ->multiple()
                     ->reorderable()
                     ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
                     ->imageEditor()
                     ->disk('public')
                     ->visibility('public')
@@ -254,7 +263,7 @@ class YachtResource extends Resource
                     ->multiple()
                     ->reorderable()
                     ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
                     ->imageEditor()
                     ->disk('public')
                     ->visibility('public')
@@ -332,7 +341,7 @@ class YachtResource extends Resource
                     ->schema([
                         Hidden::make('doc_type')
                             ->label('Тип')
-                            //->options(fn () => \App\Models\YachtDocumentType::options())
+                            // ->options(fn () => \App\Models\YachtDocumentType::options())
                             ->default('other')
                             ->required(),
                         TextInput::make('title')
@@ -350,7 +359,7 @@ class YachtResource extends Resource
                             ->maxSize(20480)
                             ->maxFiles($maxFiles)
                             ->downloadable()
-                            ->helperText('Можно загрузить до ' . $maxFiles . ' файлов'),
+                            ->helperText('Можно загрузить до '.$maxFiles.' файлов'),
                     ]),
             ]);
     }
@@ -380,18 +389,18 @@ class YachtResource extends Resource
                     ->label('Статус')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending'   => 'На рассмотрении',
-                        'approved'  => 'Одобрена',
-                        'rejected'  => 'Отклонена',
+                        'pending' => 'На рассмотрении',
+                        'approved' => 'Одобрена',
+                        'rejected' => 'Отклонена',
                         'withdrawn' => 'Отозвана',
-                        default     => $state,
+                        default => $state,
                     })
                     ->color(fn (string $state): string => match ($state) {
-                        'pending'   => 'warning',
-                        'approved'  => 'success',
-                        'rejected'  => 'danger',
+                        'pending' => 'warning',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
                         'withdrawn' => 'gray',
-                        default     => 'gray',
+                        default => 'gray',
                     })->toggleable(),
             ])
             ->stackedOnMobile()
@@ -400,9 +409,9 @@ class YachtResource extends Resource
                 SelectFilter::make('approval_status')
                     ->label('Статус')
                     ->options([
-                        'pending'   => 'На рассмотрении',
-                        'approved'  => 'Одобрена',
-                        'rejected'  => 'Отклонена',
+                        'pending' => 'На рассмотрении',
+                        'approved' => 'Одобрена',
+                        'rejected' => 'Отклонена',
                         'withdrawn' => 'Отозвана',
                     ]),
                 /*
@@ -420,28 +429,28 @@ class YachtResource extends Resource
                         blank: fn (Builder $query) => $query,
                     ),
                 */
-                TrashedFilter::make()
+                TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
             ->deferFilters(false)
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать яхту')
                     ->mountUsing(function (Schema $form, Yacht $record): void {
-                        $sync = app(\App\Actions\Document\SyncDocumentFilesAction::class);
+                        $sync = app(SyncDocumentFilesAction::class);
                         $requiredDocs = ManageYachts::getRequiredDocuments();
                         $requiredDocTypes = array_column($requiredDocs, 'doc_type');
 
                         $data = $record->toArray();
                         $data['required_documents'] = $sync->load($record, $requiredDocs);
-                        $data['extra_documents']    = $sync->loadExtra($record, $requiredDocTypes);
-                        $data += app(\App\Actions\Yacht\SyncYachtOptionsAction::class)->load($record);
+                        $data['extra_documents'] = $sync->loadExtra($record, $requiredDocTypes);
+                        $data += app(SyncYachtOptionsAction::class)->load($record);
                         $data['rentals'] = $record->rentals()
                             ->get()
-                            ->map(fn (\App\Models\YachtRental $rental): array => [
-                                'date_start'  => $rental->date_start?->toDateString(),
-                                'date_end'    => $rental->date_end?->toDateString(),
+                            ->map(fn (YachtRental $rental): array => [
+                                'date_start' => $rental->date_start?->toDateString(),
+                                'date_end' => $rental->date_end?->toDateString(),
                                 'price_event' => $rental->price_event,
-                                'price_pro'   => $rental->price_pro,
+                                'price_pro' => $rental->price_pro,
                             ])
                             ->toArray();
 
@@ -449,15 +458,15 @@ class YachtResource extends Resource
                     })
                     ->using(function (Yacht $record, array $data): Yacht {
                         $requiredDocs = $data['required_documents'] ?? [];
-                        $extraDocs    = $data['extra_documents'] ?? [];
-                        $rentals      = $data['rentals'] ?? [];
-                        $optionSync   = app(\App\Actions\Yacht\SyncYachtOptionsAction::class);
+                        $extraDocs = $data['extra_documents'] ?? [];
+                        $rentals = $data['rentals'] ?? [];
+                        $optionSync = app(SyncYachtOptionsAction::class);
                         $optionSelections = $optionSync->extract($data);
                         unset($data['required_documents'], $data['extra_documents'], $data['rentals']);
 
                         $record->update($data);
 
-                        $sync = app(\App\Actions\Document\SyncDocumentFilesAction::class);
+                        $sync = app(SyncDocumentFilesAction::class);
                         $sync->execute($record, $requiredDocs);
                         $sync->execute($record, $extraDocs);
 
@@ -475,14 +484,14 @@ class YachtResource extends Resource
                     ->label('Удалить')
                     ->modalHeading('Удалить яхту')
                     ->hidden(false) // показывать и для уже удалённых записей
-                    ->using(fn (Yacht $record, DeleteAction $action) => \App\Support\SafeDelete::single($record, $action, 'яхту')),
+                    ->using(fn (Yacht $record, DeleteAction $action) => SafeDelete::single($record, $action, 'яхту')),
                 RestoreAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
                         ->label('Удалить')
-                        ->using(fn (\Illuminate\Support\Collection $records, DeleteBulkAction $action) => \App\Support\SafeDelete::bulk($records, $action, 'яхты')),
+                        ->using(fn (Collection $records, DeleteBulkAction $action) => SafeDelete::bulk($records, $action, 'яхты')),
                     RestoreBulkAction::make(),
                 ]),
             ]);
@@ -514,8 +523,8 @@ class YachtResource extends Resource
             return $state['title'] ?? null;
         }
 
-        $model = \App\Models\YachtDocumentType::cachedAll()
-            ->first(fn (\App\Models\YachtDocumentType $t) => $t->key === $docType);
+        $model = YachtDocumentType::cachedAll()
+            ->first(fn (YachtDocumentType $t) => $t->key === $docType);
 
         return $model?->label ?? ($state['title'] ?? null);
     }
@@ -539,17 +548,17 @@ class YachtResource extends Resource
 
         foreach ($rentals as $rental) {
             $start = $rental['date_start'] ?? null;
-            $end   = $rental['date_end'] ?? null;
+            $end = $rental['date_end'] ?? null;
 
             if (! $start || ! $end) {
                 continue;
             }
 
             $yacht->rentals()->create([
-                'date_start'  => $start,
-                'date_end'    => $end,
+                'date_start' => $start,
+                'date_end' => $end,
                 'price_event' => $rental['price_event'] ?? null,
-                'price_pro'   => $rental['price_pro'] ?? null,
+                'price_pro' => $rental['price_pro'] ?? null,
             ]);
         }
     }

@@ -2,13 +2,17 @@
 
 namespace App\Filament\Resources\Users;
 
+use App\Enums\CreationSource;
 use App\Enums\SportCategory;
+use App\Enums\SystemRole;
 use App\Enums\TeamMemberRole;
+use App\Exports\UserExport;
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\Users\Pages\ManageUsers;
 use App\Models\Regatta;
 use App\Models\User;
+use App\Support\SafeDelete;
 use BackedEnum;
-use App\Exports\UserExport;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -20,30 +24,28 @@ use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-
-use Filament\Tables\Filters\Filter;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Enums\FiltersLayout;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 
 class UserResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     public static function getModelLabel(): string
     {
@@ -54,7 +56,7 @@ class UserResource extends Resource
     {
         return 'Пользователи'; // Название во множественном числе
     }
-    
+
     protected static ?string $model = User::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'user';
@@ -69,7 +71,7 @@ class UserResource extends Resource
                     ->label('Изменить фотографию')
                     ->avatar()
                     ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
                     ->imageEditor()
                     ->disk('public')
                     ->directory('avatars')
@@ -114,13 +116,13 @@ class UserResource extends Resource
                 TextInput::make('last_name')
                     ->label('Фамилия')
                     ->placeholder('Фамилия')
-                    ->required(),                        
+                    ->required(),
                 TextInput::make('patronymic')
                     ->label('Отчество')
                     ->maxLength(255),
                 */
                 DatePicker::make('birth_date')
-                    ->minDate(now()->subYears(100)) 
+                    ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100))
                     ->displayFormat('d.m.Y')
                     ->native(false)
@@ -132,7 +134,7 @@ class UserResource extends Resource
                     ->email()
                     ->required()
                     ->rules([
-                        fn ($record) => \Illuminate\Validation\Rule::unique('users', 'email')->ignore($record?->id),
+                        fn ($record) => Rule::unique('users', 'email')->ignore($record?->id),
                     ])
                     ->validationMessages([
                         'unique' => 'Пользователь с таким email уже зарегистрирован',
@@ -153,7 +155,7 @@ class UserResource extends Resource
                     ->required()
                     ->telRegex('/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/')
                     ->rules([
-                        fn ($record) => \Illuminate\Validation\Rule::unique('users', 'phone')->ignore($record?->id),
+                        fn ($record) => Rule::unique('users', 'phone')->ignore($record?->id),
                     ])
                     ->validationMessages([
                         'unique' => 'Пользователь с таким телефоном уже зарегистрирован',
@@ -170,13 +172,11 @@ class UserResource extends Resource
                     ->maxLength(2000)
                     ->columnSpanFull(),
 
-
-
                 Select::make('system_role')
                     ->label('Системная роль')
                     ->placeholder('Выберите роль')
-                    ->options(\App\Enums\SystemRole::class)
-                    ->default(\App\Enums\SystemRole::User->value)
+                    ->options(SystemRole::class)
+                    ->default(SystemRole::User->value)
                     ->required(),
                 Toggle::make('is_banned')
                     ->label('Забанен'),
@@ -213,10 +213,10 @@ class UserResource extends Resource
                         Select::make('status')
                             ->label('Статус')
                             ->options([
-                                'invited'  => 'Приглашён',
-                                'active'   => 'Активен',
+                                'invited' => 'Приглашён',
+                                'active' => 'Активен',
                                 'declined' => 'Отказался',
-                                'left'     => 'Покинул команду',
+                                'left' => 'Покинул команду',
                             ])
                             ->default('active')
                             ->required(),
@@ -312,16 +312,16 @@ class UserResource extends Resource
                     ->sortable()->toggleable(),
                 TextColumn::make('sport_category')
                     ->label('Разряд')
-                    ->formatStateUsing(fn ($state) => $state instanceof \App\Enums\SportCategory ? $state->getLabel() : '—')
+                    ->formatStateUsing(fn ($state) => $state instanceof SportCategory ? $state->getLabel() : '—')
                     ->badge()->toggleable(),
                 TextColumn::make('system_role')
                     ->label('Роль')
                     ->badge()
-                    ->formatStateUsing(fn (\App\Enums\SystemRole $state): string => $state->getLabel())->toggleable(),
+                    ->formatStateUsing(fn (SystemRole $state): string => $state->getLabel())->toggleable(),
                 TextColumn::make('creation_source')
                     ->label('Источник')
                     ->badge()
-                    ->formatStateUsing(fn (\App\Enums\CreationSource $state): string => $state->label())
+                    ->formatStateUsing(fn (CreationSource $state): string => $state->label())
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label('Рег.')
@@ -335,16 +335,16 @@ class UserResource extends Resource
             ->filters([
                 SelectFilter::make('system_role')
                     ->label('Роль')
-                    ->options(\App\Enums\SystemRole::class),
+                    ->options(SystemRole::class),
                 SelectFilter::make('sport_category')
                     ->label('Спортивный разряд')
                     ->options(SportCategory::class),
                 SelectFilter::make('creation_source')
                     ->label('Источник создания')
                     ->options(
-                        collect(\App\Enums\CreationSource::cases())
-                        ->reject(fn ($case) => $case === \App\Enums\CreationSource::Unknown)
-                        ->mapWithKeys(fn ($case) => [$case->value => $case->getLabel()])
+                        collect(CreationSource::cases())
+                            ->reject(fn ($case) => $case === CreationSource::Unknown)
+                            ->mapWithKeys(fn ($case) => [$case->value => $case->getLabel()])
                     ),
                 TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
@@ -363,14 +363,14 @@ class UserResource extends Resource
                 DeleteAction::make()->label('Удалить')
                     ->modalHeading('Удалить пользователя')
                     ->hidden(false) // показывать и для уже удалённых записей
-                    ->using(fn (User $record, DeleteAction $action) => \App\Support\SafeDelete::single($record, $action, 'пользователя')),
+                    ->using(fn (User $record, DeleteAction $action) => SafeDelete::single($record, $action, 'пользователя')),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()->label('Удалить')
-                        ->using(fn (\Illuminate\Support\Collection $records, DeleteBulkAction $action) => \App\Support\SafeDelete::bulk($records, $action, 'пользователи')),
+                        ->using(fn (Collection $records, DeleteBulkAction $action) => SafeDelete::bulk($records, $action, 'пользователи')),
                     ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),
                 ]),

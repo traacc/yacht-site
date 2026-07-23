@@ -2,30 +2,27 @@
 
 namespace App\Filament\User\Pages;
 
-use Filament\Auth\Pages\EditProfile as BaseEditProfile;
 use App\Enums\SportCategory;
+use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Auth\Pages\EditProfile as BaseEditProfile;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Schema;
-use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
-use App\Models\User;
-use Illuminate\Validation\Rule;
-
-use BackedEnum;
-use Filament\Support\Icons\Heroicon;
 
 class EditProfile extends BaseEditProfile
 {
     protected static string|BackedEnum|null $navigationIcon = 'profile';
+
     protected static ?string $navigationLabel = 'Профиль';          // название вкладки
+
     protected static ?int $navigationSort = -1;
 
     protected static bool $shouldRegisterNavigation = true;
@@ -94,31 +91,30 @@ class EditProfile extends BaseEditProfile
         return $schema
             ->components([
 
+                FileUpload::make('photo_url')
+                    ->label('Изменить фотографию')
+                    ->avatar()
+                    ->image()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
+                    ->imageEditor()
+                    ->disk('public')
+                    ->directory('avatars')
+                    ->columnSpanFull()
+                    ->visibility('public')
+                    ->imageEditor()
+                    ->imageEditorViewportWidth(2000)
+                    ->imageEditorViewportHeight(2000)
+                    ->imageEditorAspectRatios([
+                        '1:1',
+                        null,
+                    ])
+                    ->extraFieldWrapperAttributes(['class' => 'photo_wrapper']),
 
-                        FileUpload::make('photo_url')
-                            ->label('Изменить фотографию')
-                            ->avatar()
-                            ->image()
-                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                            ->imageEditor()
-                            ->disk('public')
-                            ->directory('avatars')
-                            ->columnSpanFull()
-                            ->visibility('public')
-                            ->imageEditor()
-                            ->imageEditorViewportWidth(2000)
-                            ->imageEditorViewportHeight(2000)
-                            ->imageEditorAspectRatios([
-                                '1:1',
-                                null,
-                            ])
-                            ->extraFieldWrapperAttributes(['class' => 'photo_wrapper']),
-
-                        TextInput::make('name')
-                            ->label('ФИО')
-                            ->columnSpanFull()
-                            ->maxLength(255),
-                        /*
+                TextInput::make('name')
+                    ->label('ФИО')
+                    ->columnSpanFull()
+                    ->maxLength(255),
+                /*
                         TextInput::make('first_name')
                             ->label('Имя')
                             ->maxLength(255),
@@ -129,34 +125,34 @@ class EditProfile extends BaseEditProfile
                             ->label('Отчество')
                             ->maxLength(255),
                         */
-                        DatePicker::make('birth_date')
-                            ->label('Дата рождения')
-                            ->minDate(now()->subYears(100)) 
-                            ->maxDate(now()->addYears(100))
-                            ->displayFormat('d.m.Y')
-                            ->native(false),
-                        TextInput::make('email')
-                            ->label('Email')
-                            ->email()
-                            ->required()
-                            ->maxLength(255)
-                            ->unique(ignoreRecord: true),
-                        TextInput::make('phone')
-                            ->label('Телефон')
-                            ->telRegex('/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/')
-                            ->mask('+7 (999) 999-99-99')
-                            ->placeholder('+7 (___) ___-__-__')
-                            ->maxLength(255),
-                        Select::make('sport_category')
-                            ->label('Спортивный разряд')
-                            ->options(SportCategory::class),
+                DatePicker::make('birth_date')
+                    ->label('Дата рождения')
+                    ->minDate(now()->subYears(100))
+                    ->maxDate(now()->addYears(100))
+                    ->displayFormat('d.m.Y')
+                    ->native(false),
+                TextInput::make('email')
+                    ->label('Email')
+                    ->email()
+                    ->required()
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true),
+                TextInput::make('phone')
+                    ->label('Телефон')
+                    ->telRegex('/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/')
+                    ->mask('+7 (999) 999-99-99')
+                    ->placeholder('+7 (___) ___-__-__')
+                    ->maxLength(255),
+                Select::make('sport_category')
+                    ->label('Спортивный разряд')
+                    ->options(SportCategory::class),
 
-                        Textarea::make('about')
-                            ->label('О себе')
-                            ->placeholder('О себе')
-                            ->rows(4)
-                            ->maxLength(2000)
-                            ->columnSpanFull(),
+                Textarea::make('about')
+                    ->label('О себе')
+                    ->placeholder('О себе')
+                    ->rows(4)
+                    ->maxLength(2000)
+                    ->columnSpanFull(),
 
             ])->columns(2)->extraAttributes(['class' => 'profile_user_block']);
     }

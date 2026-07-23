@@ -2,8 +2,10 @@
 
 namespace App\Filament\Resources\Galleries;
 
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\Galleries\Pages\ManageGalleries;
 use App\Models\Gallery;
+use App\Models\Season;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -15,21 +17,21 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
 // ★ ЗАМЕНЕНО: FileUpload → SpatieMediaLibraryFileUpload
 // Было: use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+// ★ ДОБАВЛЕНО: SpatieMediaLibraryImageColumn для отображения обложки в таблице
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-// ★ ДОБАВЛЕНО: SpatieMediaLibraryImageColumn для отображения обложки в таблице
-use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
-use Filament\Tables\Columns\IconColumn;
 // ↓↓↓ УДАЛЕНО: ImageColumn — заменён на SpatieMediaLibraryImageColumn
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -38,17 +40,19 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\Support\MediaStream;
 
 class GalleryResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected static ?string $model = Gallery::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'gallery';
-    
+
     protected static ?int $navigationSort = 8;
 
     public static function getModelLabel(): string
@@ -77,28 +81,28 @@ class GalleryResource extends Resource
                 Select::make('season_id')
                     ->label('Сезон')
                     ->relationship('season', 'year',
-                    modifyQueryUsing: fn (Builder $query) => $query->orderByDesc('year'),)
+                        modifyQueryUsing: fn (Builder $query) => $query->orderByDesc('year'), )
                     ->searchable()
                     ->preload()
                     ->createOptionForm([
-                        Forms\Components\TextInput::make('year')
+                        TextInput::make('year')
                             ->label('Год')
                             ->required()
                             ->numeric()
                             ->minValue(2000)
                             ->maxValue(2099),
-                        Forms\Components\DatePicker::make('start_date')
+                        DatePicker::make('start_date')
                             ->label('Дата начала сезона')
                             ->displayFormat('d.m.Y')
                             ->native(false)
                             ->required(),
-                        Forms\Components\DatePicker::make('end_date')
+                        DatePicker::make('end_date')
                             ->label('Дата окончания сезона')
                             ->displayFormat('d.m.Y')
                             ->native(false)
                             ->required(),
                     ])
-                    ->createOptionUsing(fn (array $data): string => \App\Models\Season::create($data)->id),
+                    ->createOptionUsing(fn (array $data): string => Season::create($data)->id),
 
                 Select::make('regatta_id')
                     ->label('Регата')
@@ -128,7 +132,7 @@ class GalleryResource extends Resource
                     ->label('Обложка')
                     ->collection('cover')                 // коллекция из registerMediaCollections()
                     ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
                     ->imageEditor()
                     ->imageEditorViewportWidth(2000)
                     ->imageEditorViewportHeight(2000)
@@ -150,7 +154,7 @@ class GalleryResource extends Resource
                     ->label('Фотографии галереи')
                     ->collection('images')                // коллекция из registerMediaCollections()
                     ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
                     ->panelLayout('grid')
                     ->multiple()
                     ->reorderable()
@@ -354,14 +358,13 @@ class GalleryResource extends Resource
                     ->sortable()
                     ->toggleable(),
 
-
                 // ★ ДОБАВЛЕНО: количество фото и видео
                 TextColumn::make('media_count')
                     ->label('Фото/Ссылки')
                     ->state(fn (Gallery $record): string => sprintf(
                         '%d фото / %d ссылок',
                         $record->getMedia('images')->count(),
-                        //$record->getMedia('videos')->count(),
+                        // $record->getMedia('videos')->count(),
                         $record->videoLinks()->count(),
                     ))
                     ->toggleable(),
@@ -404,9 +407,9 @@ class GalleryResource extends Resource
                     ->color('gray')
                     ->visible(fn (Gallery $record): bool => $record->getMedia('images')->isNotEmpty())
                     ->action(function (Gallery $record) {
-                        $fileName = \Illuminate\Support\Str::slug($record->name ?: 'gallery') . '.zip';
+                        $fileName = Str::slug($record->name ?: 'gallery').'.zip';
 
-                        return \Spatie\MediaLibrary\Support\MediaStream::create($fileName)
+                        return MediaStream::create($fileName)
                             ->addMedia($record->getMedia('images'));
                     }),
                 DeleteAction::make(),

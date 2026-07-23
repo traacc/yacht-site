@@ -16,6 +16,10 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  *     очередь не отработала (или для старых медиа до media-library:regenerate)
  *     ключи отсутствуют и `<source>` не выводятся — битых источников не будет.
  *
+ * HEIC не хранится как оригинал: при загрузке он нормализуется в JPEG
+ * (см. App\Providers\AppServiceProvider — Spatie saveUploadedFileUsing), поэтому
+ * оригинал всегда браузеро-совместим и специальной обработки здесь не требуется.
+ *
  * Конверсии webp/avif регистрируются трейтом App\Models\Concerns\RegistersResponsiveFormats.
  */
 class ResponsiveMedia

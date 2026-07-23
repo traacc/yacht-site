@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\News;
 
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\News\Pages\ManageNews;
 use App\Jobs\PublishNewsToTelegram;
 use App\Jobs\PublishNewsToVk;
@@ -23,7 +24,6 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -36,7 +36,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class NewsResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected static ?string $model = News::class;
 
@@ -71,7 +71,7 @@ class NewsResource extends Resource
                     ->label('Обложка')
                     ->helperText('После загрузки нажмите на карандаш, чтобы кадрировать, приблизить или повернуть изображение')
                     ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
                     ->disk('public')
                     ->directory('news/covers')
                     ->visibility('public')
@@ -96,7 +96,7 @@ class NewsResource extends Resource
                     ->multiple()
                     ->reorderable()
                     ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
                     ->imageEditor()
                     ->disk('public')
                     ->visibility('public')

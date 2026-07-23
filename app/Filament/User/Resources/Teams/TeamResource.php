@@ -12,31 +12,25 @@ use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\TeamMemberInvitation;
 use App\Models\User;
+use App\Models\Yacht;
 use App\Services\TeamRoleGuard;
 use BackedEnum;
-use Filament\Notifications\Notification;
-use Filament\Schemas\Components\Utilities\Get;
-use Illuminate\Validation\ValidationException;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
-use Filament\Actions\RestoreBulkAction;
-use App\Models\Yacht;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
@@ -44,6 +38,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\HtmlString;
+use Illuminate\Validation\ValidationException;
 
 class TeamResource extends Resource
 {
@@ -136,7 +131,7 @@ class TeamResource extends Resource
                 FileUpload::make('picture')
                     ->label('Добавить фотографию')
                     ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
                     ->avatar()
                     ->directory('owners')
                     ->imageEditor()
@@ -182,7 +177,7 @@ class TeamResource extends Resource
                     ->multiple()
                     ->reorderable()
                     ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
                     ->imageEditor()
                     ->disk('public')
                     ->visibility('public')
@@ -203,9 +198,9 @@ class TeamResource extends Resource
 
                         return [
                             [
-                                'user_id'      => (string) auth()->id(),
-                                'role'         => TeamMemberRole::Organizer->value,
-                                'status'       => 'active',
+                                'user_id' => (string) auth()->id(),
+                                'role' => TeamMemberRole::Organizer->value,
+                                'status' => 'active',
                                 'is_permanent' => true,
                             ],
                         ];
@@ -318,8 +313,8 @@ class TeamResource extends Resource
                                 )[$get('user_id')] ?? '';
 
                                 return "Этот пользователь уже является постоянным участником команды «{$teamName}». "
-                                    . 'При сохранении ему будет отправлен запрос на смену главной команды; '
-                                    . 'он станет участником вашей команды только после подтверждения.';
+                                    .'При сохранении ему будет отправлен запрос на смену главной команды; '
+                                    .'он станет участником вашей команды только после подтверждения.';
                             }),
                         Select::make('role')
                             ->label('Роль')
@@ -332,7 +327,7 @@ class TeamResource extends Resource
                             ->label('Статус')
                             ->options([
                                 'active' => 'Активен',
-                                'left'   => 'Покинул команду',
+                                'left' => 'Покинул команду',
                             ])
                             ->default('active')
                             ->selectablePlaceholder(false)
@@ -363,7 +358,7 @@ class TeamResource extends Resource
                             ->latest()
                             ->get()
                             ->map(fn (TeamMemberInvitation $invitation): string => e(
-                                ($invitation->user?->name ?? '—') . ' — ожидает подтверждения',
+                                ($invitation->user?->name ?? '—').' — ожидает подтверждения',
                             ));
 
                         return new HtmlString($lines->implode('<br>'));
@@ -412,18 +407,18 @@ class TeamResource extends Resource
                 TextColumn::make('approval_status')
                     ->label('Статус')
                     ->badge()->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending'   => 'На рассмотрении',
-                        'approved'  => 'Одобрена',
-                        'rejected'  => 'Отклонена',
+                        'pending' => 'На рассмотрении',
+                        'approved' => 'Одобрена',
+                        'rejected' => 'Отклонена',
                         'withdrawn' => 'Отозвана',
-                        default     => $state,
+                        default => $state,
                     })
                     ->color(fn (string $state): string => match ($state) {
-                        'pending'   => 'warning',
-                        'approved'  => 'success',
-                        'rejected'  => 'danger',
+                        'pending' => 'warning',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
                         'withdrawn' => 'gray',
-                        default     => 'gray',
+                        default => 'gray',
                     }),
                 TextColumn::make('created_at')
                     ->dateTime()
@@ -604,7 +599,7 @@ class TeamResource extends Resource
                 ->success()
                 ->title('Запрос отправлен')
                 ->body("Участнику «{$user->name}» отправлен запрос на смену главной команды. "
-                    . 'Он станет участником команды после подтверждения.')
+                    .'Он станет участником команды после подтверждения.')
                 ->send();
         } catch (ValidationException $e) {
             Notification::make()

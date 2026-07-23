@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Filament\Concerns\RestrictsAccessByRole;
+use App\Services\ImageConverter;
 use App\Services\SettingsService;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -19,11 +21,12 @@ use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use UnitEnum;
 
 class TrusteesPageSettings extends Page
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected string $view = 'filament-panels::pages.page';
 
@@ -63,6 +66,7 @@ class TrusteesPageSettings extends Page
                 } else {
                     $member['photo'] = [];
                 }
+
                 return $member;
             })
             ->values()
@@ -134,7 +138,7 @@ class TrusteesPageSettings extends Page
                                     ->directory('trustees')
                                     ->visibility('public')
                                     ->maxSize(2048)
-                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
                                     ->nullable()
                                     ->imageEditor()
                                     ->imageEditorViewportWidth(1710)
@@ -192,8 +196,12 @@ class TrusteesPageSettings extends Page
                 if (is_array($photo)) {
                     $photo = ! empty($photo) ? reset($photo) : null;
                 }
-                if ($photo instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
+                if ($photo instanceof TemporaryUploadedFile) {
                     $photo = null;
+                }
+                // HEIC-фото нормализуем в webp (браузер heic не покажет).
+                if (is_string($photo) && $photo !== '') {
+                    $photo = app(ImageConverter::class)->normalizeHeicToWebp($photo, 'public');
                 }
 
                 $responsibilities = collect((array) ($member['responsibilities'] ?? []))
@@ -203,10 +211,10 @@ class TrusteesPageSettings extends Page
                     ->all();
 
                 return [
-                    'name'            => $member['name'] ?? '',
-                    'position'        => $member['position'] ?? '',
-                    'description'     => $member['description'] ?? '',
-                    'photo'           => $photo,
+                    'name' => $member['name'] ?? '',
+                    'position' => $member['position'] ?? '',
+                    'description' => $member['description'] ?? '',
+                    'photo' => $photo,
                     'responsibilities' => $responsibilities,
                 ];
             })

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\FinancialReports;
 
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\FinancialReports\Pages\ManageFinancialReports;
 use App\Models\FinancialReport;
 use BackedEnum;
@@ -21,7 +22,7 @@ use Filament\Tables\Table;
 
 class FinancialReportResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected static ?string $model = FinancialReport::class;
 
@@ -54,7 +55,7 @@ class FinancialReportResource extends Resource
                     ->disk('public')
                     ->directory('financial-reports')
                     ->visibility('public')
-                    ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+                    ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif'])
                     ->maxSize(10240)
                     ->downloadable()
                     ->openable()

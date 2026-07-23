@@ -235,13 +235,13 @@ class HomePageSettings extends Page
                         FileUpload::make('hero_media')
                             ->label('Фон (изображение, видео или слайд-шоу)')
                             ->helperText('Один файл — статичный фон (изображение или видео). Загрузите несколько изображений — они будут показываться как автоматическое слайд-шоу. Порядок задаётся перетаскиванием.')
-                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'])
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'video/mp4', 'video/webm'])
                             ->multiple()
                             ->reorderable()
                             ->disk('public')
                             ->directory('home/hero')
                             ->visibility('public')
-                            //->maxSize(51200)
+                            // ->maxSize(51200)
                             ->maxFiles(20)
                             // Реактивно — чтобы превью viewport-контрола обновлялось сразу после загрузки.
                             ->live()
@@ -287,7 +287,7 @@ class HomePageSettings extends Page
                                 FileUpload::make('logo')
                                     ->label('Логотип')
                                     ->image()
-                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/svg+xml'])
                                     ->disk('public')
                                     ->directory('home/sponsors')
                                     ->visibility('public')
@@ -468,7 +468,7 @@ class HomePageSettings extends Page
                             ->label('Фотографии галереи')
                             ->helperText('Загрузите фотографии для галереи. Порядок файлов определяет порядок показа при ручной сортировке.')
                             ->image()
-                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
                             ->multiple()
                             ->reorderable()
                             ->disk('public')
@@ -562,6 +562,7 @@ class HomePageSettings extends Page
 
         /** @var SettingsService $settings */
         $settings = app(SettingsService::class);
+        $converter = app(ImageConverter::class);
 
         $settings->set('home.top_teams', [
             ['id' => $data['top_team_1'], 'points' => $data['top_team_1_points']],
@@ -583,6 +584,11 @@ class HomePageSettings extends Page
                     ->filter(fn ($v) => is_string($v) && $v !== '')
                     ->first();
 
+                // HEIC-логотип нормализуем в webp (браузер heic не покажет).
+                if (is_string($logo) && $logo !== '') {
+                    $logo = app(ImageConverter::class)->normalizeHeicToWebp($logo, 'public');
+                }
+
                 return [
                     'logo' => $logo,
                     'name' => trim((string) ($item['name'] ?? '')) ?: null,
@@ -596,9 +602,11 @@ class HomePageSettings extends Page
         $settings->set('home.sponsors', $sponsors, 'home');
 
         // Нормализуем пути фото в индексированный массив строк перед сохранением
+        // (HEIC → webp; прочие форматы не трогаем).
         $photos = collect((array) ($data['gallery_photos'] ?? []))
             ->flatten()
             ->filter(fn ($v) => is_string($v) && $v !== '')
+            ->map(fn (string $path) => $converter->normalizeHeicToWebp($path, 'public'))
             ->values()
             ->all();
 
@@ -608,12 +616,11 @@ class HomePageSettings extends Page
         $settings->set('home.gallery_sort', $data['gallery_sort'] ?? 'manual', 'home');
 
         // Hero-фон: нормализуем к списку путей.
-        // Изображения автоматически перекодируем в WebP (видео не трогаем).
-        $converter = app(ImageConverter::class);
+        // HEIC сперва декодируем в webp через Imagick, затем общий toWebp (jpg/png → webp; видео не трогаем).
         $heroMedia = collect((array) ($data['hero_media'] ?? []))
             ->flatten()
             ->filter(fn ($v) => is_string($v) && $v !== '')
-            ->map(fn (string $path) => $converter->toWebp($path, 'public'))
+            ->map(fn (string $path) => $converter->toWebp($converter->normalizeHeicToWebp($path, 'public'), 'public'))
             ->values()
             ->all();
 

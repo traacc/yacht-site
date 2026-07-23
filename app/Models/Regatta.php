@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RegattaStatus;
+use App\Models\Concerns\NormalizesHeicImageColumns;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -17,7 +18,10 @@ use Illuminate\Support\Facades\DB;
 
 class Regatta extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, HasUuids, NormalizesHeicImageColumns, SoftDeletes;
+
+    /** @var array<string> Строковые колонки-пути, где heic нормализуется в webp. */
+    protected array $heicImageColumns = ['background_image'];
 
     protected $fillable = [
         'season_id',

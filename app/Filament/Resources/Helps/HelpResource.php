@@ -2,11 +2,10 @@
 
 namespace App\Filament\Resources\Helps;
 
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\Helps\Pages\ManageHelps;
 use App\Models\Help;
-use App\Models\HelpCategory;
 use BackedEnum;
-use UnitEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -20,20 +19,20 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Illuminate\Support\Str;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Str;
+use UnitEnum;
 
 class HelpResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected static ?string $model = Help::class;
 
@@ -69,8 +68,7 @@ class HelpResource extends Resource
                             ->placeholder('Введите название')
                             ->required()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn (?string $state, callable $set) =>
-                                $set('slug', $state ? Str::slug($state) : '')
+                            ->afterStateUpdated(fn (?string $state, callable $set) => $set('slug', $state ? Str::slug($state) : '')
                             ),
                         TextInput::make('slug')
                             ->label('Slug')
@@ -89,8 +87,7 @@ class HelpResource extends Resource
                             ->placeholder('Введите название')
                             ->required()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn (?string $state, callable $set) =>
-                                $set('slug', $state ? Str::slug($state) : '')
+                            ->afterStateUpdated(fn (?string $state, callable $set) => $set('slug', $state ? Str::slug($state) : '')
                             ),
                         TextInput::make('slug')
                             ->label('Slug')
@@ -130,7 +127,7 @@ class HelpResource extends Resource
                     ->label('Тип контакта')
                     ->options([
                         'specialist' => 'Специалист',
-                        'manager'    => 'Менеджер',
+                        'manager' => 'Менеджер',
                     ])
                     ->default('specialist')
                     ->required()
@@ -162,9 +159,10 @@ class HelpResource extends Resource
                     ->label('Сайт')
                     ->placeholder('example.com')
                     ->dehydrateStateUsing(function ($state) {
-                        if ($state && !preg_match('~^https?://~i', $state)) {
-                            return 'https://' . $state;
+                        if ($state && ! preg_match('~^https?://~i', $state)) {
+                            return 'https://'.$state;
                         }
+
                         return $state;
                     })
                     ->rules([
@@ -176,12 +174,10 @@ class HelpResource extends Resource
                     ->label('Адрес')
                     ->placeholder('Москва'),
 
-
-
                 Select::make('status')
                     ->label('Статус')
                     ->options([
-                        'active'   => 'Активен',
+                        'active' => 'Активен',
                         'inactive' => 'Неактивен',
                     ])
                     ->default('active')
@@ -193,7 +189,7 @@ class HelpResource extends Resource
                     ->multiple()
                     ->reorderable()
                     ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
                     ->imageEditor()
                     ->disk('public')
                     ->visibility('public')
@@ -220,27 +216,27 @@ class HelpResource extends Resource
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'specialist' => 'Специалист',
-                        'manager'    => 'Менеджер',
-                        default      => $state,
+                        'manager' => 'Менеджер',
+                        default => $state,
                     })
                     ->color(fn (string $state): string => match ($state) {
                         'specialist' => 'info',
-                        'manager'    => 'warning',
-                        default      => 'gray',
+                        'manager' => 'warning',
+                        default => 'gray',
                     }),
 
                 TextColumn::make('status')
                     ->label('Статус')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'active'   => 'Активен',
+                        'active' => 'Активен',
                         'inactive' => 'Неактивен',
-                        default    => $state,
+                        default => $state,
                     })
                     ->color(fn (string $state): string => match ($state) {
-                        'active'   => 'success',
+                        'active' => 'success',
                         'inactive' => 'danger',
-                        default    => 'gray',
+                        default => 'gray',
                     }),
 
                 TextColumn::make('created_at')
@@ -274,13 +270,13 @@ class HelpResource extends Resource
                     ->label('Тип контакта')
                     ->options([
                         'specialist' => 'Специалист',
-                        'manager'    => 'Менеджер',
+                        'manager' => 'Менеджер',
                     ]),
 
                 SelectFilter::make('status')
                     ->label('Статус')
                     ->options([
-                        'active'   => 'Активен',
+                        'active' => 'Активен',
                         'inactive' => 'Неактивен',
                     ]),
 

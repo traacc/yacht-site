@@ -3,10 +3,11 @@
 namespace App\Filament\Resources\Teams;
 
 use App\Enums\TeamMemberRole;
-use App\Filament\Resources\Teams\Pages\EditTeam;
+use App\Exports\TeamExport;
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\Teams\Pages\ManageTeams;
 use App\Models\Team;
-use App\Exports\TeamExport;
+use App\Support\SafeDelete;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -21,28 +22,26 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-
-use Filament\Tables\Filters\Filter;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Enums\FiltersLayout;
+use Illuminate\Support\Collection;
 
 class TeamResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected static ?string $model = Team::class;
 
@@ -67,7 +66,7 @@ class TeamResource extends Resource
                 FileUpload::make('picture')
                     ->label('Добавить фотографию')
                     ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
                     ->avatar()
                     ->directory('owners')
                     ->imageEditor()
@@ -156,38 +155,38 @@ class TeamResource extends Resource
                                 name: 'user',
                                 titleAttribute: 'name',
                                 modifyQueryUsing: function (Builder $query, $component) {
-                                        // Текущая редактируемая команда (если есть) — её постоянных участников не исключаем
-                                        $currentTeamId = null;
-                                        $livewire = $component?->getLivewire();
-                                        if ($livewire && method_exists($livewire, 'getMountedTableActionRecord')) {
-                                            $currentTeamId = $livewire->getMountedTableActionRecord()?->getKey();
-                                        }
+                                    // Текущая редактируемая команда (если есть) — её постоянных участников не исключаем
+                                    $currentTeamId = null;
+                                    $livewire = $component?->getLivewire();
+                                    if ($livewire && method_exists($livewire, 'getMountedTableActionRecord')) {
+                                        $currentTeamId = $livewire->getMountedTableActionRecord()?->getKey();
+                                    }
 
-                                        // Показываем только пользователей, не являющихся постоянными участниками других команд
-                                        $query->withoutPermanentInOtherTeams($currentTeamId);
+                                    // Показываем только пользователей, не являющихся постоянными участниками других команд
+                                    $query->withoutPermanentInOtherTeams($currentTeamId);
 
-                                        // Исключаем пользователей, уже добавленных в других строках Repeater'а
-                                        $statePath = $component->getStatePath();
-                                        $segments = explode('.', $statePath);
-                                        array_pop($segments);              // убираем 'user_id'
-                                        $currentUuid = array_pop($segments); // UUID текущей строки
-                                        $repeaterPath = implode('.', $segments);
+                                    // Исключаем пользователей, уже добавленных в других строках Repeater'а
+                                    $statePath = $component->getStatePath();
+                                    $segments = explode('.', $statePath);
+                                    array_pop($segments);              // убираем 'user_id'
+                                    $currentUuid = array_pop($segments); // UUID текущей строки
+                                    $repeaterPath = implode('.', $segments);
 
-                                        $repeaterData = data_get($component->getLivewire(), $repeaterPath, []);
-                                        $currentValue = $component->getState();
-                                        $selectedIds = collect($repeaterData)
-                                            ->except([$currentUuid])
-                                            ->pluck('user_id')
-                                            ->filter()
-                                            ->reject(fn ($id) => $id === $currentValue)
-                                            ->values();
+                                    $repeaterData = data_get($component->getLivewire(), $repeaterPath, []);
+                                    $currentValue = $component->getState();
+                                    $selectedIds = collect($repeaterData)
+                                        ->except([$currentUuid])
+                                        ->pluck('user_id')
+                                        ->filter()
+                                        ->reject(fn ($id) => $id === $currentValue)
+                                        ->values();
 
-                                        if ($selectedIds->isNotEmpty()) {
-                                            $query->whereNotIn('id', $selectedIds->toArray());
-                                        }
+                                    if ($selectedIds->isNotEmpty()) {
+                                        $query->whereNotIn('id', $selectedIds->toArray());
+                                    }
 
-                                        return $query;
-                                    },
+                                    return $query;
+                                },
                             )
                             ->searchable()
                             ->preload()
@@ -202,10 +201,10 @@ class TeamResource extends Resource
                         Select::make('status')
                             ->label('Статус')
                             ->options([
-                                'invited'  => 'Приглашён',
-                                'active'   => 'Активен',
+                                'invited' => 'Приглашён',
+                                'active' => 'Активен',
                                 'declined' => 'Отказался',
-                                'left'     => 'Покинул команду',
+                                'left' => 'Покинул команду',
                             ])
                             ->default('active')
                             ->required(),
@@ -220,7 +219,7 @@ class TeamResource extends Resource
                     ->multiple()
                     ->reorderable()
                     ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
                     ->imageEditor()
                     ->disk('public')
                     ->visibility('public')
@@ -245,29 +244,29 @@ class TeamResource extends Resource
                 TextColumn::make('approval_status')
                     ->label('Статус')
                     ->badge()->formatStateUsing(fn (string $state): string => match ($state) {
-                    'pending' => 'На рассмотрении',
-                    'approved' => 'Одобрена',
-                    'rejected' => 'Отклонена',
-                    'withdrawn' => 'Отозвана',
-                    default => $state,
-                })->toggleable()
-                ->color(fn (string $state): string => match ($state) {
-                    'pending' => 'warning',
-                    'approved' => 'success',
-                    'rejected' => 'danger',
-                    'withdrawn' => 'gray',
-                    default => 'gray',
-                })->toggleable(),
+                        'pending' => 'На рассмотрении',
+                        'approved' => 'Одобрена',
+                        'rejected' => 'Отклонена',
+                        'withdrawn' => 'Отозвана',
+                        default => $state,
+                    })->toggleable()
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                        'withdrawn' => 'gray',
+                        default => 'gray',
+                    })->toggleable(),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
                 SelectFilter::make('approval_status')
-                ->label('Статус') // Красивое название для пользователя
-                ->options([
-                    'pending' => 'На рассмотрении',
-                    'approved' => 'Одобрена',
-                    'rejected' => 'Отклонена',
-                    'withdrawn' => 'Отозвана',
-                ]),
+                    ->label('Статус') // Красивое название для пользователя
+                    ->options([
+                        'pending' => 'На рассмотрении',
+                        'approved' => 'Одобрена',
+                        'rejected' => 'Отклонена',
+                        'withdrawn' => 'Отозвана',
+                    ]),
                 TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->defaultSort('name')
@@ -288,7 +287,7 @@ class TeamResource extends Resource
                     ->modalHeading('Удалить команду')
                     ->modalDescription('Команда будет удалена вместе с её заявками на регаты, составами и рейтингами. Итоговые результаты завершённых регат сохранятся в архиве обезличенно (без ссылки на команду). Действие необратимо.')
                     ->hidden(false) // показывать и для уже удалённых записей
-                    ->using(fn (Team $record, DeleteAction $action) => \App\Support\SafeDelete::single($record, $action, 'команду')),
+                    ->using(fn (Team $record, DeleteAction $action) => SafeDelete::single($record, $action, 'команду')),
                 ForceDeleteAction::make(),
                 RestoreAction::make(),
             ])
@@ -296,7 +295,7 @@ class TeamResource extends Resource
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
                         ->label('Удалить')
-                        ->using(fn (\Illuminate\Support\Collection $records, DeleteBulkAction $action) => \App\Support\SafeDelete::bulk($records, $action, 'команды')),
+                        ->using(fn (Collection $records, DeleteBulkAction $action) => SafeDelete::bulk($records, $action, 'команды')),
                     ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),
                 ]),

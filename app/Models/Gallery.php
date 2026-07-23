@@ -110,12 +110,12 @@ class Gallery extends Model implements HasMedia
         // ─── Коллекция «cover» — обложка галереи ───
         $this->addMediaCollection('cover')
             ->singleFile()                                         // только один файл
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
             ->useDisk('public');                                   // соответствует старому ->disk('public')
 
         // ─── Коллекция «images» — фотографии галереи ───
         $this->addMediaCollection('images')
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
             ->useDisk('public');                                   // соответствует старому ->disk('public')
         // Spatie v11 не имеет встроенного ->maxFiles(); ограничение реализуется
         // на уровне Filament-формы через ->maxFiles(200), как и было ранее.

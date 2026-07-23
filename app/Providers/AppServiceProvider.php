@@ -15,12 +15,17 @@ use App\Observers\RegattaEntryResultObserver;
 use App\Observers\RegattaResultItemObserver;
 use App\Observers\TeamMemberObserver;
 use App\Policies\TeamPolicy;
+use App\Services\ImageConverter;
+use Filament\Actions\Action;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Notifications\Notification;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
-
-use Filament\Actions\Action;
-use Filament\Tables\Table;
+use League\Flysystem\UnableToCheckFileExistence;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Spatie\MediaLibrary\MediaCollections\FileAdder;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -51,12 +56,12 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Table::configureUsing(function (Table $table): void {
-        $table
-            // 1. Устанавливаем дефолтное количество записей на страницу
-            ->defaultPaginationPageOption(50)
-            
-            // 2. Настраиваем доступные варианты в выпадающем списке (опционально)
-            ->paginated([10, 25, 50, 100, 'all']);
+            $table
+                // 1. Устанавливаем дефолтное количество записей на страницу
+                ->defaultPaginationPageOption(50)
+
+                // 2. Настраиваем доступные варианты в выпадающем списке (опционально)
+                ->paginated([10, 25, 50, 100, 'all']);
         });
 
         Action::configureUsing(function (Action $action) {
@@ -64,5 +69,60 @@ class AppServiceProvider extends ServiceProvider
             $action->closeModalByEscaping(false);
         });
 
+        // HEIC/HEIF нельзя хранить как оригинал в Spatie Media Library: Imagick не умеет
+        // кодировать heic, а медиатека именует temp-файл конверсии по расширению оригинала,
+        // из-за чего webp/avif выходят пустыми. Поэтому heic-загрузки нормализуем в JPEG
+        // ДО сохранения — дальше с JPEG-оригинала штатно генерируются webp/avif (<picture>).
+        // Переопределяет плагинный saveUploadedFileUsing (см. vendor SpatieMediaLibraryFileUpload).
+        SpatieMediaLibraryFileUpload::configureUsing(function (SpatieMediaLibraryFileUpload $component): void {
+            $component->saveUploadedFileUsing(static function (
+                SpatieMediaLibraryFileUpload $component,
+                TemporaryUploadedFile $file,
+                ?Model $record
+            ): ?string {
+                if (! method_exists($record, 'addMediaFromString')) {
+                    return $file;
+                }
+
+                try {
+                    if (! $file->exists()) {
+                        return null;
+                    }
+                } catch (UnableToCheckFileExistence) {
+                    return null;
+                }
+
+                $bytes = $file->get();
+                $filename = $component->getUploadedFileNameForStorage($file);
+                $mime = $file->getMimeType();
+
+                // HEIC/HEIF → JPEG до сохранения оригинала.
+                $extension = strtolower(pathinfo((string) $file->getClientOriginalName(), PATHINFO_EXTENSION));
+                if (in_array($extension, ['heic', 'heif'], true) || in_array($mime, ['image/heic', 'image/heif'], true)) {
+                    $jpeg = app(ImageConverter::class)->heicBytesToJpeg($bytes);
+                    if ($jpeg !== null) {
+                        $bytes = $jpeg;
+                        $filename = preg_replace('/\.[^.]+$/', '.jpg', $filename);
+                        $mime = 'image/jpeg';
+                    }
+                }
+
+                /** @var FileAdder $mediaAdder */
+                $mediaAdder = $record->addMediaFromString($bytes);
+
+                $media = $mediaAdder
+                    ->addCustomHeaders([...['ContentType' => $mime], ...$component->getCustomHeaders()])
+                    ->usingFileName($filename)
+                    ->usingName($component->getMediaName($file) ?? pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME))
+                    ->storingConversionsOnDisk($component->getConversionsDisk() ?? '')
+                    ->withCustomProperties($component->getCustomProperties($file))
+                    ->withManipulations($component->getManipulations())
+                    ->withResponsiveImagesIf($component->hasResponsiveImages())
+                    ->withProperties($component->getProperties())
+                    ->toMediaCollection($component->getCollection() ?? 'default', $component->getDiskName());
+
+                return $media->getAttributeValue('uuid');
+            });
+        });
     }
 }
