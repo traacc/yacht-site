@@ -481,8 +481,12 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                     {{-- Gallery --}}
                     <div x-show="galleryTab === 'exterior'" x-data="{ activeIndex: 0, lightboxOpen: false }">
                         <div class="relative mb-4">
-                            <img :src="selectedYacht.gallery[activeIndex]?.url" :alt="selectedYacht.gallery[activeIndex]?.name"
-                                 class="w-full aspect-video object-contain cursor-pointer max-h-[400px]" @click="lightboxOpen = true">
+                            <picture>
+                                <source :srcset="selectedYacht.gallery[activeIndex]?.avif || ''" type="image/avif">
+                                <source :srcset="selectedYacht.gallery[activeIndex]?.webp || ''" type="image/webp">
+                                <img :src="selectedYacht.gallery[activeIndex]?.url" :alt="selectedYacht.gallery[activeIndex]?.name"
+                                     class="w-full aspect-video object-contain cursor-pointer max-h-[400px]" @click="lightboxOpen = true">
+                            </picture>
                             <template x-if="selectedYacht.gallery.length > 1">
                                 <div>
                                     <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.gallery.length - 1"
@@ -514,9 +518,13 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                                 </button>
                                 <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.gallery.length - 1"
                                         class="absolute left-4 top-1/2 -translate-y-1/2 text-white text-5xl hover:opacity-70 transition-opacity">‹</button>
-                                <img :src="selectedYacht.gallery[activeIndex]?.url"
-                                     :alt="selectedYacht.gallery[activeIndex]?.name"
-                                     class="max-w-full max-h-[85vh] object-contain mx-auto">
+                                <picture class="mx-auto">
+                                    <source :srcset="selectedYacht.gallery[activeIndex]?.avif || ''" type="image/avif">
+                                    <source :srcset="selectedYacht.gallery[activeIndex]?.webp || ''" type="image/webp">
+                                    <img :src="selectedYacht.gallery[activeIndex]?.url"
+                                         :alt="selectedYacht.gallery[activeIndex]?.name"
+                                         class="max-w-full max-h-[85vh] object-contain mx-auto">
+                                </picture>
                                 <button @click="activeIndex = activeIndex < selectedYacht.gallery.length - 1 ? activeIndex + 1 : 0"
                                         class="absolute right-4 top-1/2 -translate-y-1/2 text-white text-5xl hover:opacity-70 transition-opacity">›</button>
                                 <div class="absolute bottom-4 text-white text-sm" x-text="`${activeIndex + 1} / ${selectedYacht.gallery.length}`"></div>
@@ -527,8 +535,12 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                     {{-- Interior Gallery --}}
                     <div x-show="galleryTab === 'interior'" x-data="{ activeIndex: 0, lightboxOpen: false }">
                         <div class="relative mb-4">
-                            <img :src="selectedYacht.interior_gallery[activeIndex]?.url" :alt="selectedYacht.interior_gallery[activeIndex]?.name"
-                                 class="w-full aspect-video object-contain cursor-pointer max-h-[400px]" @click="lightboxOpen = true">
+                            <picture>
+                                <source :srcset="selectedYacht.interior_gallery[activeIndex]?.avif || ''" type="image/avif">
+                                <source :srcset="selectedYacht.interior_gallery[activeIndex]?.webp || ''" type="image/webp">
+                                <img :src="selectedYacht.interior_gallery[activeIndex]?.url" :alt="selectedYacht.interior_gallery[activeIndex]?.name"
+                                     class="w-full aspect-video object-contain cursor-pointer max-h-[400px]" @click="lightboxOpen = true">
+                            </picture>
                             <template x-if="selectedYacht.interior_gallery.length > 1">
                                 <div>
                                     <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.interior_gallery.length - 1"
@@ -560,9 +572,13 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                                 </button>
                                 <button @click="activeIndex = activeIndex > 0 ? activeIndex - 1 : selectedYacht.interior_gallery.length - 1"
                                         class="absolute left-4 top-1/2 -translate-y-1/2 text-white text-5xl hover:opacity-70 transition-opacity">‹</button>
-                                <img :src="selectedYacht.interior_gallery[activeIndex]?.url"
-                                     :alt="selectedYacht.interior_gallery[activeIndex]?.name"
-                                     class="max-w-full max-h-[85vh] object-contain mx-auto">
+                                <picture class="mx-auto">
+                                    <source :srcset="selectedYacht.interior_gallery[activeIndex]?.avif || ''" type="image/avif">
+                                    <source :srcset="selectedYacht.interior_gallery[activeIndex]?.webp || ''" type="image/webp">
+                                    <img :src="selectedYacht.interior_gallery[activeIndex]?.url"
+                                         :alt="selectedYacht.interior_gallery[activeIndex]?.name"
+                                         class="max-w-full max-h-[85vh] object-contain mx-auto">
+                                </picture>
                                 <button @click="activeIndex = activeIndex < selectedYacht.interior_gallery.length - 1 ? activeIndex + 1 : 0"
                                         class="absolute right-4 top-1/2 -translate-y-1/2 text-white text-5xl hover:opacity-70 transition-opacity">›</button>
                                 <div class="absolute bottom-4 text-white text-sm" x-text="`${activeIndex + 1} / ${selectedYacht.interior_gallery.length}`"></div>

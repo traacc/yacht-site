@@ -9,6 +9,9 @@ use App\Actions\RegattaEntry\UpdateRegattaEntryRequiredDocumentsAction;
 use App\Actions\RegattaResult\GenerateRegattaResultPdfAction;
 use App\Actions\Team\GenerateTeamHistoryPdfAction;
 use App\Actions\Voting\CastVoteAction;
+use App\Actions\YachtRental\SubmitYachtRentalRequestAction;
+use App\Enums\RegattaStatus;
+use App\Enums\RentalRequestStatus;
 use App\Enums\VotingStatus;
 use App\Models\Faq;
 use App\Models\Gallery;
@@ -31,6 +34,8 @@ use App\Services\RatingCalculator;
 use App\Services\SettingsService;
 use App\Services\WeatherService;
 use App\Services\YandexMapService;
+use App\Support\ResponsiveMedia;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -387,7 +392,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
 
     // Расписание: мероприятия регаты + гонки, сгруппированные по дням
     $scheduleDays = $regatta->scheduleEvents
-        //->concat($regatta->races)
+        // ->concat($regatta->races)
         ->sortBy('event_datetime') // 1. Гарантируем хронологический порядок событий
         ->groupBy(function ($event) {
             // 2. Используем isoFormat для поддержки русского языка (Carbon)
@@ -473,7 +478,7 @@ Route::view('/teams', 'pages.teams')->name('teams');
 Route::get('/yachts', function () {
     $yachts = Yacht::with([
         'user', 'documents', 'regattaEntries.regatta', 'regattaEntries.team', 'rentals', 'optionValues.option',
-        'rentalRequests' => fn ($query) => $query->where('status', \App\Enums\RentalRequestStatus::Approved)->whereNotNull('desired_date'),
+        'rentalRequests' => fn ($query) => $query->where('status', RentalRequestStatus::Approved)->whereNotNull('desired_date'),
     ])
         ->where('approval_status', 'approved')
         ->orderBy('name')
@@ -523,7 +528,7 @@ Route::get('/yachts', function () {
             'team' => $entry->team?->name ?? '—',
             'date_registration' => $entry->submitted_at?->format('d.m.Y') ?? '—',
             'status' => $entry->status,
-            'regatta_finished' => $entry->regatta?->regatta_status === \App\Enums\RegattaStatus::Finished,
+            'regatta_finished' => $entry->regatta?->regatta_status === RegattaStatus::Finished,
         ])->values()->toArray(),
         'participation_count' => $yacht->regattaEntries->count(),
         'for_rent' => (bool) $yacht->for_rent,
@@ -542,7 +547,7 @@ Route::get('/yachts', function () {
                     ? number_format((float) $rental->price_pro, 0, '.', ' ').' ₽/день'
                     : 'по запросу',
                 'price_event_raw' => $rental->price_event !== null ? (float) $rental->price_event : null,
-                'price_pro_raw'   => $rental->price_pro !== null ? (float) $rental->price_pro : null,
+                'price_pro_raw' => $rental->price_pro !== null ? (float) $rental->price_pro : null,
             ])->values()->toArray()
             : [],
         // Даты одобренных заявок на аренду — помечаются в календаре как «Занято»
@@ -557,20 +562,32 @@ Route::get('/yachts', function () {
                     $end = $request->desired_date;
                 }
 
-                return collect(\Carbon\CarbonPeriod::create($request->desired_date, $end))
+                return collect(CarbonPeriod::create($request->desired_date, $end))
                     ->map(fn ($date) => $date->format('Y-m-d'));
             })->unique()->values()->toArray()
             : [],
-        'gallery' => $yacht->getMedia('gallery')->map(fn ($media) => [
-            'url' => $media->getUrl(),
-            'thumbnail' => $media->getUrl('thumb'),
-            'name' => $media->name,
-        ])->values()->toArray(),
-        'interior_gallery' => $yacht->getMedia('interior_gallery')->map(fn ($media) => [
-            'url' => $media->getUrl(),
-            'thumbnail' => $media->getUrl('thumb'),
-            'name' => $media->name,
-        ])->values()->toArray(),
+        'gallery' => $yacht->getMedia('gallery')->map(function ($media) {
+            $urls = ResponsiveMedia::urls($media);
+
+            return [
+                'url' => $urls['src'],
+                'webp' => $urls['webp'] ?? null,
+                'avif' => $urls['avif'] ?? null,
+                'thumbnail' => $media->getUrl('thumb'),
+                'name' => $media->name,
+            ];
+        })->values()->toArray(),
+        'interior_gallery' => $yacht->getMedia('interior_gallery')->map(function ($media) {
+            $urls = ResponsiveMedia::urls($media);
+
+            return [
+                'url' => $urls['src'],
+                'webp' => $urls['webp'] ?? null,
+                'avif' => $urls['avif'] ?? null,
+                'thumbnail' => $media->getUrl('thumb'),
+                'name' => $media->name,
+            ];
+        })->values()->toArray(),
         'params' => [
             ['label' => 'Класс',       'value' => $yacht->class ?? 'Carter 30'],
             ['label' => 'Парус №',     'value' => $yacht->vfps_number],
@@ -791,7 +808,15 @@ Route::get('/help', function () {
                 'city' => $help->specialist_city,
                 'site' => $help->specialist_site,
                 'contactType' => $help->contact_type,
-                'gallery' => $help->getMedia('gallery')->map(fn ($m) => $m->getUrl())->values()->toArray(),
+                'gallery' => $help->getMedia('gallery')->map(function ($m) {
+                    $urls = ResponsiveMedia::urls($m);
+
+                    return [
+                        'url' => $urls['src'],
+                        'webp' => $urls['webp'] ?? null,
+                        'avif' => $urls['avif'] ?? null,
+                    ];
+                })->values()->toArray(),
             ])->values()->toArray(),
         ],
     ])->toArray();
@@ -861,7 +886,7 @@ Route::post('/yachts/{yacht}/rental-request', function (Request $request, Yacht 
         'comment' => ['nullable', 'string', 'max:2000'],
     ]);
 
-    app(\App\Actions\YachtRental\SubmitYachtRentalRequestAction::class)->handle(
+    app(SubmitYachtRentalRequestAction::class)->handle(
         $yacht,
         $validated,
         auth()->id()

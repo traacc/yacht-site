@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\SystemRole;
 use App\Enums\TeamMemberRole;
+use App\Models\Concerns\RegistersResponsiveFormats;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,14 +16,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-
-use Illuminate\Support\Facades\DB;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Team extends Model implements HasMedia
 {
-    use HasFactory, HasUuids, SoftDeletes, InteractsWithMedia;
+    use HasFactory, HasUuids, InteractsWithMedia, RegistersResponsiveFormats, SoftDeletes;
 
     /** Максимальное количество активных участников в команде */
     public const int MAX_MEMBERS = 50;
@@ -39,8 +40,6 @@ class Team extends Model implements HasMedia
         'rejection_reason',
     ];
 
-
-    
     protected function casts(): array
     {
         return [
@@ -71,19 +70,19 @@ class Team extends Model implements HasMedia
         static::creating(function (self $team) {
             if ($team->external_id === null) {
                 // Атомарно увеличиваем счетчик и забираем новое значение
-                    $sequence = DB::table('sequences')
-                        ->where('name', 'teams_external_id')
-                        ->sharedLock() // Защита от race condition
-                        ->first();
+                $sequence = DB::table('sequences')
+                    ->where('name', 'teams_external_id')
+                    ->sharedLock() // Защита от race condition
+                    ->first();
 
-                    $nextId = ($sequence ? $sequence->current_value : 0) + 1;
+                $nextId = ($sequence ? $sequence->current_value : 0) + 1;
 
-                    DB::table('sequences')->updateOrInsert(
-                        ['name' => 'teams_external_id'],
-                        ['current_value' => $nextId]
-                    );
+                DB::table('sequences')->updateOrInsert(
+                    ['name' => 'teams_external_id'],
+                    ['current_value' => $nextId]
+                );
 
-                    $team->external_id = $nextId;
+                $team->external_id = $nextId;
             }
         });
     }
@@ -137,7 +136,12 @@ class Team extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('gallery')
-             ->useDisk('public');
+            ->useDisk('public');
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addResponsiveFormatConversions();
     }
 
     // ──────────────────────────────────────────────
@@ -172,7 +176,7 @@ class Team extends Model implements HasMedia
             return '—';
         }
 
-        return 'K' . str_pad((string) $this->external_id, 4, '0', STR_PAD_LEFT);
+        return 'K'.str_pad((string) $this->external_id, 4, '0', STR_PAD_LEFT);
     }
 
     // ──────────────────────────────────────────────
@@ -220,6 +224,7 @@ class Team extends Model implements HasMedia
                 );
         });
     }
+
     public function pruningScope(): Builder
     {
         // Удаляем записи, которые были "мягко удалены" более 7 дней назад

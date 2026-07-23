@@ -306,7 +306,11 @@
                     <template x-if="activeTeam?.gallery?.length">
                         <template x-for="(img, i) in activeTeam.gallery" :key="i">
                             <div class="card bg-[#F8F8F8]">
-                                <img :src="img" alt="">
+                                <picture>
+                                    <template x-if="img.avif"><source :srcset="img.avif" type="image/avif"></template>
+                                    <template x-if="img.webp"><source :srcset="img.webp" type="image/webp"></template>
+                                    <img :src="img.url" alt="">
+                                </picture>
                             </div>
                         </template>
                     </template>

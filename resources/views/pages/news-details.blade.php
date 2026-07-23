@@ -52,9 +52,9 @@
                             @foreach($galleryImages as $media)
                                 <div class="overflow-hidden cursor-pointer group"
                                      @click="open('{{ $media->getUrl() }}')">
-                                    <img src="{{ $media->getUrl() }}"
-                                         alt="{{ $media->name }}"
-                                         class="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105">
+                                    <x-responsive-picture :media="$media"
+                                        alt="{{ $media->name }}"
+                                        img-class="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105" />
                                 </div>
                             @endforeach
                         </div>

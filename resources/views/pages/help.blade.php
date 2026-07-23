@@ -120,7 +120,11 @@
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         <template x-for="(img, idx) in activeItem.gallery" :key="idx">
                             <div class="card bg-[#F8F8F8]">
-                                <img :src="img" :alt="'Пример работы ' + (idx + 1)" class="w-full h-full object-cover">
+                                <picture>
+                                    <template x-if="img.avif"><source :srcset="img.avif" type="image/avif"></template>
+                                    <template x-if="img.webp"><source :srcset="img.webp" type="image/webp"></template>
+                                    <img :src="img.url" :alt="'Пример работы ' + (idx + 1)" class="w-full h-full object-cover">
+                                </picture>
                             </div>
                         </template>
                     </div>

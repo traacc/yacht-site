@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistersResponsiveFormats;
+use App\Support\ResponsiveMedia;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -20,7 +23,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
  */
 class Gallery extends Model implements HasMedia
 {
-    use HasFactory, HasUuids, SoftDeletes, InteractsWithMedia, Prunable;
+    use HasFactory, HasUuids, InteractsWithMedia, Prunable, RegistersResponsiveFormats, SoftDeletes;
 
     // ──────────────────────────────────────────────
     // Table & Fillable
@@ -49,10 +52,10 @@ class Gallery extends Model implements HasMedia
     protected function casts(): array
     {
         return [
-            'date'         => 'date',
+            'date' => 'date',
             // ↓↓↓ УДАЛЕНО: 'images' => 'array' — больше не хранится в таблице
             'is_published' => 'boolean',
-            'sort_order'   => 'integer',
+            'sort_order' => 'integer',
         ];
     }
 
@@ -70,7 +73,7 @@ class Gallery extends Model implements HasMedia
         return $this->belongsTo(Regatta::class);
     }
 
-    public function videoLinks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function videoLinks(): HasMany
     {
         return $this->hasMany(VideoLink::class)->orderBy('sort_order');
     }
@@ -106,30 +109,30 @@ class Gallery extends Model implements HasMedia
     {
         // ─── Коллекция «cover» — обложка галереи ───
         $this->addMediaCollection('cover')
-             ->singleFile()                                         // только один файл
-             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-             ->useDisk('public');                                   // соответствует старому ->disk('public')
+            ->singleFile()                                         // только один файл
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->useDisk('public');                                   // соответствует старому ->disk('public')
 
         // ─── Коллекция «images» — фотографии галереи ───
         $this->addMediaCollection('images')
-             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-             ->useDisk('public');                                   // соответствует старому ->disk('public')
-             // Spatie v11 не имеет встроенного ->maxFiles(); ограничение реализуется
-             // на уровне Filament-формы через ->maxFiles(200), как и было ранее.
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->useDisk('public');                                   // соответствует старому ->disk('public')
+        // Spatie v11 не имеет встроенного ->maxFiles(); ограничение реализуется
+        // на уровне Filament-формы через ->maxFiles(200), как и было ранее.
 
         // ─── Коллекция «videos» — видеофайлы галереи ───
         // ★ ДОБАВЛЕНО: отдельная коллекция для видео. В старой схеме видео отсутствовали.
         // В публичной части галереи уже есть табы «Видео»/«Фотографии» (см. gallery.blade.php),
         // но раньше оба таба показывали одни и те же images. Теперь видео — отдельная коллекция.
         $this->addMediaCollection('videos')
-             ->acceptsMimeTypes([
-                 'video/mp4',
-                 'video/webm',
-                 'video/ogg',
-                 'video/quicktime',         // .mov
-                 'video/x-msvideo',         // .avi
-             ])
-             ->useDisk('public');
+            ->acceptsMimeTypes([
+                'video/mp4',
+                'video/webm',
+                'video/ogg',
+                'video/quicktime',         // .mov
+                'video/x-msvideo',         // .avi
+            ])
+            ->useDisk('public');
     }
 
     /**
@@ -152,22 +155,46 @@ class Gallery extends Model implements HasMedia
         // `php artisan queue:work redis` (на проде — через Supervisor/systemd),
         // иначе превью не сгенерируются.
         $this->addMediaConversion('thumb')
-             ->width(150)
-             ->height(150)
-             ->sharpen(5)
-             ->queued();
+            ->width(150)
+            ->height(150)
+            ->sharpen(5)
+            ->queued();
 
         $this->addMediaConversion('preview')
-             ->width(400)
-             ->height(300)
-             ->quality(85)
-             ->queued();
+            ->width(400)
+            ->height(300)
+            ->quality(85)
+            ->queued();
 
         $this->addMediaConversion('gallery_lg')
-             ->width(1200)
-             ->height(800)
-             ->quality(92)
-             ->queued();
+            ->width(1200)
+            ->height(800)
+            ->quality(92)
+            ->queued();
+
+        // Полноразмерные webp/avif для отдачи через <picture> (грид фото + обложка).
+        $this->addResponsiveFormatConversions();
+    }
+
+    /**
+     * Обложка галереи как Media-объект (для <x-responsive-picture>).
+     */
+    public function coverMedia(): ?SpatieMedia
+    {
+        return $this->getFirstMedia('cover');
+    }
+
+    /**
+     * Изображения галереи в виде наборов URL-ов для <picture>.
+     *
+     * @return array<int, array{src: string, webp?: string, avif?: string}>
+     */
+    public function imagesResponsive(): array
+    {
+        return $this->getMedia('images')
+            ->map(fn (SpatieMedia $media) => ResponsiveMedia::urls($media))
+            ->values()
+            ->toArray();
     }
 
     // ══════════════════════════════════════════════
@@ -184,7 +211,7 @@ class Gallery extends Model implements HasMedia
      * ⚠️ Код, который ранее делал Storage::disk('public')->url($gallery->cover_path),
      *   должен быть обновлён до простого $gallery->cover_path (URL уже полный).
      *
-     * @return string|null  Полный URL обложки или null, если обложка не задана.
+     * @return string|null Полный URL обложки или null, если обложка не задана.
      */
     public function getCoverPathAttribute(): ?string
     {
@@ -203,14 +230,14 @@ class Gallery extends Model implements HasMedia
      * ⚠️ Код, который ранее делал collect($gallery->images)->map(fn($i) => Storage::disk('public')->url($i)),
      *   должен быть обновлён до простого $gallery->images (URL уже полные).
      *
-     * @return array  Массив полных URL изображений галереи.
+     * @return array Массив полных URL изображений галереи.
      */
     public function getImagesAttribute(): array
     {
         return $this->getMedia('images')
-                    ->map(fn(SpatieMedia $media) => $media->getUrl())
-                    ->values()
-                    ->toArray();
+            ->map(fn (SpatieMedia $media) => $media->getUrl())
+            ->values()
+            ->toArray();
     }
 
     /**
@@ -220,15 +247,16 @@ class Gallery extends Model implements HasMedia
      *   хотя в blade-шаблоне уже были табы «Видео»/«Фотографии» (оба показывали images).
      *   Теперь таб «Видео» должен использовать $gallery->videos.
      *
-     * @return array  Массив полных URL видеофайлов галереи.
+     * @return array Массив полных URL видеофайлов галереи.
      */
     public function getVideosAttribute(): array
     {
         return $this->getMedia('videos')
-                    ->map(fn(SpatieMedia $media) => $media->getUrl())
-                    ->values()
-                    ->toArray();
+            ->map(fn (SpatieMedia $media) => $media->getUrl())
+            ->values()
+            ->toArray();
     }
+
     public function pruningScope(): Builder
     {
         // Удаляем записи, которые были "мягко удалены" более 7 дней назад

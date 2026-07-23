@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistersResponsiveFormats;
 use App\Models\Scopes\OwnedScope;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -14,11 +15,12 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 #[ScopedBy([OwnedScope::class])]
 class Yacht extends Model implements HasMedia
 {
-    use HasFactory, HasUuids, InteractsWithMedia, SoftDeletes;
+    use HasFactory, HasUuids, InteractsWithMedia, RegistersResponsiveFormats, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -50,9 +52,9 @@ class Yacht extends Model implements HasMedia
     {
         return [
             'current_mass_kg' => 'decimal:2',
-            'past_regattas'   => 'array',
-            'suitable_for'    => 'array',
-            'for_rent'        => 'boolean',
+            'past_regattas' => 'array',
+            'suitable_for' => 'array',
+            'for_rent' => 'boolean',
         ];
     }
 
@@ -68,10 +70,10 @@ class Yacht extends Model implements HasMedia
     {
         return $query->whereDoesntHave('regattaEntries', function ($q) use ($dateStart, $dateEnd) {
             $q->where('status', 'approved')
-              ->whereHas('regatta', function ($regattaQuery) use ($dateStart, $dateEnd) {
-                  $regattaQuery->where('date_start', '<=', $dateEnd)
-                               ->where('date_end', '>=', $dateStart);
-              });
+                ->whereHas('regatta', function ($regattaQuery) use ($dateStart, $dateEnd) {
+                    $regattaQuery->where('date_start', '<=', $dateEnd)
+                        ->where('date_end', '>=', $dateStart);
+                });
         });
     }
 
@@ -131,23 +133,32 @@ class Yacht extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('gallery')
-             ->useDisk('public');
+            ->useDisk('public');
 
         $this->addMediaCollection('interior_gallery')
-             ->useDisk('public');
+            ->useDisk('public');
     }
 
-    public function registerMediaConversions(\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
+    public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')
-             ->width(300)
-             ->height(300)
-             ->sharpen(10)
-             ->nonQueued();
+            ->width(300)
+            ->height(300)
+            ->sharpen(10)
+            ->nonQueued();
+
+        $this->addResponsiveFormatConversions();
     }
 
-    public function isApproved(): bool { return $this->approval_status === 'approved'; }
-    public function isPending(): bool  { return $this->approval_status === 'pending'; }
+    public function isApproved(): bool
+    {
+        return $this->approval_status === 'approved';
+    }
+
+    public function isPending(): bool
+    {
+        return $this->approval_status === 'pending';
+    }
 
     /**
      * Проверить занятость яхты в указанный период.
@@ -156,11 +167,11 @@ class Yacht extends Model implements HasMedia
     public function isBusyDuring(string $dateStart, string $dateEnd): bool
     {
         return $this->regattaEntries()
-                    ->where('status', 'approved')
-                    ->whereHas('regatta', function ($q) use ($dateStart, $dateEnd) {
-                        $q->where('date_start', '<=', $dateEnd)
-                          ->where('date_end', '>=', $dateStart);
-                    })
-                    ->exists();
+            ->where('status', 'approved')
+            ->whereHas('regatta', function ($q) use ($dateStart, $dateEnd) {
+                $q->where('date_start', '<=', $dateEnd)
+                    ->where('date_end', '>=', $dateStart);
+            })
+            ->exists();
     }
 }

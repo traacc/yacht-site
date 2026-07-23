@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire;
 
 use App\Models\Team;
+use App\Support\ResponsiveMedia;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -108,7 +109,15 @@ class TeamsList extends Component
                     ->firstWhere('regattaResult.regatta_id', $entry->regatta_id)
                     ?->final_position ?? null,
             ])->values()->toArray(),
-            'gallery' => $team->getMedia('gallery')->map(fn ($media) => $media->getUrl())->values()->toArray(),
+            'gallery' => $team->getMedia('gallery')->map(function ($media) {
+                $urls = ResponsiveMedia::urls($media);
+
+                return [
+                    'url' => $urls['src'],
+                    'webp' => $urls['webp'] ?? null,
+                    'avif' => $urls['avif'] ?? null,
+                ];
+            })->values()->toArray(),
             'download_url' => route('team.history.pdf', $team),
             'can_edit' => auth()->check() && auth()->user()->can('editTeam', $team),
             'edit_url' => auth()->check() && auth()->user()->isAdmin() ? '/admin/teams' : '/user/teams',

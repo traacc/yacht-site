@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistersResponsiveFormats;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,10 +11,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Help extends Model implements HasMedia
 {
-    use HasFactory, HasUuids, SoftDeletes, InteractsWithMedia;
+    use HasFactory, HasUuids, InteractsWithMedia, RegistersResponsiveFormats, SoftDeletes;
 
     protected $table = 'help';
 
@@ -35,7 +37,7 @@ class Help extends Model implements HasMedia
     protected function casts(): array
     {
         return [
-            'includes'         => 'array',
+            'includes' => 'array',
             'specialist_phone' => 'array',
         ];
     }
@@ -47,7 +49,12 @@ class Help extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('gallery')
-             ->useDisk('public');
+            ->useDisk('public');
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addResponsiveFormatConversions();
     }
 
     public function category(): BelongsTo
@@ -73,6 +80,7 @@ class Help extends Model implements HasMedia
     {
         return $query->where('contact_type', 'manager');
     }
+
     public function pruningScope(): Builder
     {
         // Удаляем записи, которые были "мягко удалены" более 7 дней назад

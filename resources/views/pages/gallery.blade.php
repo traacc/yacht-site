@@ -200,7 +200,10 @@
                          // ★ ИЗМЕНЕНО: аксессор cover_path теперь возвращает готовый URL (см. Gallery::getCoverPathAttribute)
                          'cover'       => $gallery->cover_path ?: asset('images/news/news_1.webp'),
                          // ★ ИЗМЕНЕНО: аксессор images теперь возвращает массив готовых URL (см. Gallery::getImagesAttribute)
+                         // Используется для лайтбокса (полноэкранный просмотр — оригинал).
                          'images'      => $gallery->images,
+                         // Наборы URL {url, webp, avif} для грида-превью через <picture>.
+                         'images_responsive' => $gallery->imagesResponsive(),
                          // ★ ДОБАВЛЕНО: video_links из таблицы video_links (embed-блоки)
                          'video_links' => $gallery->videoLinks->map(fn ($vl) => [
                              'url'       => $vl->url,
@@ -209,10 +212,16 @@
                          ])->values()->toArray(),
                      ]) }})">
 
-                    {{-- ★ ИЗМЕНЕНО: аксессор cover_path уже возвращает готовый URL, Storage::disk()->url() не нужен --}}
-                    <img src="{{ $gallery->cover_path ?: asset('images/news/news_1.webp') }}"
-                         alt="{{ $gallery->name }}"
-                         class="absolute w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105">
+                    {{-- Обложка через <picture> (avif/webp + оригинал-фолбэк); при отсутствии обложки — статичный плейсхолдер --}}
+                    @if($coverMedia = $gallery->coverMedia())
+                        <x-responsive-picture :media="$coverMedia"
+                            alt="{{ $gallery->name }}"
+                            img-class="absolute w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105" />
+                    @else
+                        <img src="{{ asset('images/news/news_1.webp') }}"
+                             alt="{{ $gallery->name }}"
+                             class="absolute w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105">
+                    @endif
                     <div class="bg-[#2E325C] opacity-30 absolute z-15 w-full h-full transition-transform duration-500 group-hover:scale-105"></div>
                     <div class="info relative z-20 p-6 pt-56 text-white">
                         <h4 class="title a-font text-2xl mb-1">{{ $gallery->regatta?->name ?? $gallery->name ?? $gallery->date?->isoFormat('D MMMM') }}</h4>
@@ -293,9 +302,13 @@
                     </a>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    <template x-for="item in activeGallery?.images ?? []">
-                        <div class="card bg-[#F8F8F8]"  @click="lightbox_open = true; gallery_modal_open = false; activeImage = item; lbImages = activeGallery?.images ?? []">
-                            <img class="h-full object-cover" :src="item" alt="">
+                    <template x-for="(item, idx) in activeGallery?.images_responsive ?? []" :key="idx">
+                        <div class="card bg-[#F8F8F8]"  @click="lightbox_open = true; gallery_modal_open = false; activeImage = item.url; lbImages = activeGallery?.images ?? []">
+                            <picture>
+                                <template x-if="item.avif"><source :srcset="item.avif" type="image/avif"></template>
+                                <template x-if="item.webp"><source :srcset="item.webp" type="image/webp"></template>
+                                <img class="h-full object-cover" :src="item.url" alt="">
+                            </picture>
                         </div>
                     </template>
                 </div>

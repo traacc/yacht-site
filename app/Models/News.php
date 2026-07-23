@@ -2,18 +2,20 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Models\Concerns\RegistersResponsiveFormats;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class News extends Model implements HasMedia
 {
-    use HasFactory, HasUuids, SoftDeletes, InteractsWithMedia;
+    use HasFactory, HasUuids, InteractsWithMedia, RegistersResponsiveFormats, SoftDeletes;
 
     protected $fillable = [
         'author_id',
@@ -42,7 +44,7 @@ class News extends Model implements HasMedia
         return [
             'published_to_tg' => 'boolean',
             'published_to_vk' => 'boolean',
-            'published_at'    => 'datetime',
+            'published_at' => 'datetime',
         ];
     }
 
@@ -62,7 +64,7 @@ class News extends Model implements HasMedia
     public function scopePublished(Builder $query): Builder
     {
         return $query->whereNotNull('published_at')
-                     ->where('published_at', '<=', now());
+            ->where('published_at', '<=', now());
     }
 
     public function scopeManual(Builder $query): Builder
@@ -82,7 +84,12 @@ class News extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('gallery')
-             ->useDisk('public');
+            ->useDisk('public');
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addResponsiveFormatConversions();
     }
 
     // ──────────────────────────────────────────────
@@ -98,7 +105,7 @@ class News extends Model implements HasMedia
     {
         $this->update(['published_at' => now()]);
     }
-    
+
     public function pruningScope(): Builder
     {
         // Удаляем записи, которые были "мягко удалены" более 7 дней назад
