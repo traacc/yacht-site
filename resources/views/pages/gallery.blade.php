@@ -303,11 +303,11 @@
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     <template x-for="(item, idx) in activeGallery?.images_responsive ?? []" :key="idx">
-                        <div class="card bg-[#F8F8F8]"  @click="lightbox_open = true; gallery_modal_open = false; activeImage = item.url; lbImages = activeGallery?.images ?? []">
+                        <div class="card bg-[#F8F8F8]"  @click="lightbox_open = true; gallery_modal_open = false; activeImage = item.src; lbImages = activeGallery?.images ?? []">
                             <picture>
                                 <template x-if="item.avif"><source :srcset="item.avif" type="image/avif"></template>
                                 <template x-if="item.webp"><source :srcset="item.webp" type="image/webp"></template>
-                                <img class="h-full object-cover" :src="item.url" alt="">
+                                <img class="h-full object-cover" :src="item.src" alt="">
                             </picture>
                         </div>
                     </template>
