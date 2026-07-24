@@ -306,7 +306,7 @@ class RegattaResource extends Resource
                 FileUpload::make('background_image')
                     ->label('Загрузить обложку')
                     ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif'])
                     ->disk('public')
                     ->directory('regattas/covers')
                     ->visibility('public'),

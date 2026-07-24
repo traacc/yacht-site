@@ -147,7 +147,7 @@ class ManagementPageSettings extends Page
                                     ->directory('management')
                                     ->visibility('public')
                                     ->maxSize(2048)
-                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif'])
                                     ->nullable()
                                     ->columnSpanFull()
                                     ->imageEditor()

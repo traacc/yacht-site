@@ -95,7 +95,7 @@ class EditProfile extends BaseEditProfile
                     ->label('Изменить фотографию')
                     ->avatar()
                     ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif'])
                     ->imageEditor()
                     ->disk('public')
                     ->directory('avatars')

@@ -189,7 +189,7 @@ class HelpResource extends Resource
                     ->multiple()
                     ->reorderable()
                     ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif'])
                     ->imageEditor()
                     ->disk('public')
                     ->visibility('public')

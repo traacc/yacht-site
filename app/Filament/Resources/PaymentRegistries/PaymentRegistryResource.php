@@ -96,7 +96,7 @@ class PaymentRegistryResource extends Resource
                     ->disk('public')
                     ->directory('payment-registries')
                     ->visibility('public')
-                    ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif'])
+                    ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/avif', 'image/heic', 'image/heif'])
                     ->maxSize(10240)
                     ->downloadable()
                     ->openable()
