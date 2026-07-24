@@ -23,19 +23,17 @@ class RaceResult extends Model
         'regatta_entry_id',
         'position',
         'points',
+        'is_discarded',
         'penalty_code',
     ];
 
-    /*
     protected function casts(): array
     {
         return [
-            'position' => 'integer',
-            'points'   => 'decimal:3',
+            'is_discarded' => 'boolean',
         ];
     }
-    */
-    
+
     // ──────────────────────────────────────────────
     // Relationships
     // ──────────────────────────────────────────────
@@ -62,6 +60,19 @@ class RaceResult extends Model
     public function hasPenalty(): bool
     {
         return $this->penalty_code !== null;
+    }
+
+    /**
+     * Выброшен ли результат из зачёта: флаг авторасчёта (выброс худших
+     * результатов по настройке регаты) или скобки в очках — так помечают
+     * выброс судейские протоколы (.rgd / внешний API).
+     */
+    public function isDiscarded(): bool
+    {
+        $points = trim((string) $this->points);
+
+        return $this->is_discarded
+            || (str_starts_with($points, '(') && str_ends_with($points, ')'));
     }
 
     public function getDisplayPositionAttribute(): string

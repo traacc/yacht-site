@@ -8,6 +8,7 @@ use App\Filament\Concerns\ScopesToOwnedRegattas;
 use App\Filament\Resources\RegattaEntries\RegattaEntryResource;
 use App\Filament\Resources\RegattaResults\Pages\ManageRegattaResults;
 use App\Models\RaceResult;
+use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use App\Models\RegattaEvents;
 use App\Models\RegattaResult;
@@ -867,24 +868,52 @@ class RegattaResultResource extends Resource
     /**
      * Пересчитывает итоговые очки и места участников по результатам гонок.
      *
-     * Система малых очков без отбросов: total_points — сумма points по всем
-     * гонкам регаты, final_position — ранг по возрастанию суммы (равные суммы
-     * получают одно и то же место, например 1-2-2-4). Участникам без единого
-     * результата гонки место не присваивается (final_position = null), чтобы
-     * они не оказались на первом месте с нулём очков.
+     * Система малых очков с выбросом худших результатов: total_points — сумма
+     * points по гонкам регаты за вычетом худших результатов, если в регате
+     * включён выброс и проведено достаточно гонок (discardsToApply). Выброшенные
+     * результаты помечаются флагом is_discarded (идемпотентно при каждом
+     * пересчёте) и показываются в протоколах в скобках. Выбрасываемы любые
+     * результаты, включая буквенные статусы: DNF/DSQ/… к этому моменту уже
+     * получили числовые очки «лодки + 1» (recomputeRacePoints); невыбрасываемых
+     * статусов (DNE/DGM) в проекте нет.
      *
-     * Поля с флагом *_overridden заданы вручную — авторасчёт их не трогает,
-     * но ручная сумма по-прежнему участвует в ранжировании остальных.
+     * final_position — ранг по возрастанию суммы; при равных суммах тай-брейк:
+     * сравнение отсортированных по возрастанию зачётных очков за гонки, затем
+     * результат последней проведённой гонки (assignPositions). Участникам без
+     * единого результата гонки место не присваивается (final_position = null),
+     * чтобы они не оказались на первом месте с нулём очков.
+     *
+     * Поля с флагом *_overridden заданы вручную (в т.ч. импорт судейских
+     * протоколов) — авторасчёт их не трогает, но ручная сумма по-прежнему
+     * участвует в ранжировании остальных.
      */
     public static function recomputeItemTotals(RegattaResult $record): void
     {
         // load (не loadMissing) — нужны свежие значения и флаги после сохранения формы.
         $record->load('items');
+        $record->loadMissing('regatta');
 
-        $eventIds = self::raceEventsForRegatta($record->regatta_id)->pluck('id');
+        $events = self::raceEventsForRegatta($record->regatta_id);
+        $eventIds = $events->pluck('id');
+        // Порядок гонок: id события → порядковый индекс.
+        $eventOrder = $eventIds->flip();
 
-        // 1) Сумма очков по каждому участнику + признак участия (есть ли гонки).
+        // Проведённые гонки — события, по которым есть хоть один результат.
+        $heldEventIds = RaceResult::query()
+            ->whereIn('event_id', $eventIds)
+            ->distinct()
+            ->pluck('event_id');
+        $lastHeldEventId = $heldEventIds
+            ->sortBy(fn ($id) => $eventOrder[$id] ?? -1)
+            ->last();
+
+        $discardQuota = self::discardsToApply($record->regatta, $heldEventIds->count());
+
+        // 1) Сумма очков и пометка выбросов по каждому участнику
+        //    + данные для тай-брейка.
         $ranked = collect();
+        $countedPoints = [];
+        $lastRacePoints = [];
 
         foreach ($record->items as $item) {
             $entryId = blank($item->team_id) ? null : RegattaEntry::query()
@@ -900,13 +929,47 @@ class RegattaResultResource extends Resource
                     ->get()
                 : collect();
 
-            // В очки гонки можно вписать нечисловое значение (DNF, DSQ, прочерк) —
-            // такие результаты в сумму не идут. Ручную сумму не перезаписываем.
+            // В очки гонки можно вписать нечисловое значение (судейские скобки
+            // «(5)», прочерк) — такие результаты в сумму не идут. Ручную сумму
+            // не перезаписываем, а авто-выбросы при ней снимаем: отображение
+            // скобок остаётся на судейских строках-скобках.
+            $numeric = $results->filter(fn (RaceResult $r) => is_numeric($r->points));
+            $discardedIds = [];
+
             if (! $item->total_points_overridden) {
-                $item->total_points = (float) $results
-                    ->filter(fn (RaceResult $r) => is_numeric($r->points))
+                // Худшие — максимальные очки; при равных очках выбрасывается
+                // более поздняя гонка. Минимум один зачётный результат остаётся.
+                $take = min($discardQuota, max(0, $numeric->count() - 1));
+                $discardedIds = $numeric
+                    ->sort(fn (RaceResult $a, RaceResult $b) => [(float) $b->points, $eventOrder[$b->event_id] ?? -1]
+                        <=> [(float) $a->points, $eventOrder[$a->event_id] ?? -1])
+                    ->take($take)
+                    ->pluck('id')
+                    ->all();
+
+                $item->total_points = (float) $numeric
+                    ->reject(fn (RaceResult $r) => in_array($r->id, $discardedIds, true))
                     ->sum(fn (RaceResult $r) => (float) $r->points);
             }
+
+            foreach ($results as $result) {
+                $flag = in_array($result->id, $discardedIds, true);
+                if ($result->is_discarded !== $flag) {
+                    $result->is_discarded = $flag;
+                    $result->save();
+                }
+            }
+
+            // Тай-брейк: зачётные очки по возрастанию + очки последней гонки.
+            $countedPoints[$item->id] = $numeric
+                ->reject(fn (RaceResult $r) => $r->is_discarded)
+                ->map(fn (RaceResult $r) => (float) $r->points)
+                ->sort()
+                ->values();
+            $lastRace = $lastHeldEventId ? $results->firstWhere('event_id', $lastHeldEventId) : null;
+            $lastRacePoints[$item->id] = $lastRace && is_numeric($lastRace->points)
+                ? (float) $lastRace->points
+                : PHP_FLOAT_MAX;
 
             if ($results->isNotEmpty()) {
                 $ranked->push($item);
@@ -915,20 +978,70 @@ class RegattaResultResource extends Resource
             }
         }
 
-        // 2) Места по возрастанию суммы; равные суммы — одинаковое место.
-        // Ручные места оставляем как есть.
-        foreach ($ranked as $item) {
-            if ($item->final_position_overridden) {
-                continue;
-            }
-
-            $item->final_position = $ranked
-                ->filter(fn (RegattaResultItem $other) => (float) $other->total_points < (float) $item->total_points)
-                ->count() + 1;
-        }
+        // 2) Места по возрастанию суммы с тай-брейком.
+        self::assignPositions($ranked, $countedPoints, $lastRacePoints);
 
         foreach ($record->items as $item) {
             $item->save();
+        }
+    }
+
+    /**
+     * Сколько худших результатов выбросить из зачёта при данном числе
+     * проведённых гонок — по настройке выброса в карточке регаты.
+     */
+    protected static function discardsToApply(?Regatta $regatta, int $heldRaces): int
+    {
+        return match ((int) ($regatta?->discards_count ?? 0)) {
+            1 => $heldRaces >= ($regatta->discard_1_after_races ?? 6) ? 1 : 0,
+            2 => $heldRaces >= ($regatta->discard_2_after_races ?? 9) ? 2
+                : ($heldRaces >= ($regatta->discard_1_after_races ?? 6) ? 1 : 0),
+            default => 0,
+        };
+    }
+
+    /**
+     * Расставляет final_position по возрастанию total_points с тай-брейком:
+     * при равных суммах сравниваются отсортированные по возрастанию зачётные
+     * очки за гонки (у кого раньше лучший результат — тот выше), затем очки
+     * в последней проведённой гонке регаты. Полностью неразличимые участники
+     * делят место (1-2-2-4). Места с флагом final_position_overridden
+     * (судейские протоколы) не перезаписываются, но участвуют в порядке.
+     *
+     * @param  Collection<int, RegattaResultItem>  $ranked
+     * @param  array<string, Collection<int, float>>  $countedPoints
+     * @param  array<string, float>  $lastRacePoints
+     */
+    protected static function assignPositions(Collection $ranked, array $countedPoints, array $lastRacePoints): void
+    {
+        $compare = function (RegattaResultItem $a, RegattaResultItem $b) use ($countedPoints, $lastRacePoints): int {
+            if (($byTotal = round((float) $a->total_points, 1) <=> round((float) $b->total_points, 1)) !== 0) {
+                return $byTotal;
+            }
+
+            $seqA = $countedPoints[$a->id] ?? collect();
+            $seqB = $countedPoints[$b->id] ?? collect();
+
+            for ($i = 0, $len = max($seqA->count(), $seqB->count()); $i < $len; $i++) {
+                if (($byRace = ($seqA[$i] ?? PHP_FLOAT_MAX) <=> ($seqB[$i] ?? PHP_FLOAT_MAX)) !== 0) {
+                    return $byRace;
+                }
+            }
+
+            return ($lastRacePoints[$a->id] ?? PHP_FLOAT_MAX) <=> ($lastRacePoints[$b->id] ?? PHP_FLOAT_MAX);
+        };
+
+        $sorted = $ranked->sort($compare)->values();
+        $positions = [];
+
+        foreach ($sorted as $index => $item) {
+            $positions[$index] = $index > 0 && $compare($sorted[$index - 1], $item) === 0
+                ? $positions[$index - 1]
+                : $index + 1;
+
+            if (! $item->final_position_overridden) {
+                $item->final_position = $positions[$index];
+            }
         }
     }
 

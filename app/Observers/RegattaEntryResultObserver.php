@@ -83,9 +83,9 @@ class RegattaEntryResultObserver
 
         $entry->loadMissing('crew.teamMember.user', 'raceResults', 'regatta.races');
 
-        $crewSnapshot  = $this->buildCrewSnapshot($entry);
+        $crewSnapshot = $this->buildCrewSnapshot($entry);
         $raceBreakdown = $this->buildRaceBreakdown($entry);
-        $captainName   = collect($crewSnapshot)
+        $captainName = collect($crewSnapshot)
             ->firstWhere('role', 'captain')['name'] ?? null;
 
         RegattaResultItem::query()
@@ -99,15 +99,15 @@ class RegattaEntryResultObserver
             ->each(function (RegattaResultItem $item) use ($captainName, $crewSnapshot, $raceBreakdown): void {
                 $item->forceFill([
                     // Перезаписываем снимок актуальными значениями на момент заморозки.
-                    'team_name'      => $item->team?->name ?? $item->team_name,
-                    'yacht_name'     => $item->yacht?->name ?? $item->yacht_name,
-                    'sail_number'    => $item->yacht?->vfps_number ?? $item->sail_number,
-                    'captain_name'   => $captainName ?? $item->captain_name,
-                    'crew_snapshot'  => $crewSnapshot ?: $item->crew_snapshot,
+                    'team_name' => $item->team?->name ?? $item->team_name,
+                    'yacht_name' => $item->yacht?->name ?? $item->yacht_name,
+                    'sail_number' => $item->yacht?->vfps_number ?? $item->sail_number,
+                    'captain_name' => $captainName ?? $item->captain_name,
+                    'crew_snapshot' => $crewSnapshot ?: $item->crew_snapshot,
                     'race_breakdown' => $raceBreakdown ?: $item->race_breakdown,
                     // Отвязываем от удаляемых сущностей — итоговые очки и место остаются.
-                    'team_id'        => null,
-                    'yacht_id'       => null,
+                    'team_id' => null,
+                    'yacht_id' => null,
                 ])->saveQuietly();
             });
 
@@ -129,12 +129,12 @@ class RegattaEntryResultObserver
                 $user = $c->teamMember?->user;
 
                 return [
-                    'id'       => $user?->id,
-                    'name'     => $user?->name ?? '',
+                    'id' => $user?->id,
+                    'name' => $user?->name ?? '',
                     'birthday' => $user?->birth_date?->format('d.m.Y') ?? '—',
-                    'rank'     => $user?->sport_category?->getLabel() ?? '—',
-                    'avatar'   => $user?->photo_url ? asset('storage/' . $user->photo_url) : null,
-                    'role'     => $c->role,
+                    'rank' => $user?->sport_category?->getLabel() ?? '—',
+                    'avatar' => $user?->photo_url ? asset('storage/'.$user->photo_url) : null,
+                    'role' => $c->role,
                 ];
             })
             ->sort(function (array $a, array $b): int {
@@ -158,7 +158,7 @@ class RegattaEntryResultObserver
      * RegattaResults::buildRacesMap. Возвращает пустой массив, если у заявки
      * нет ни одного результата гонки (модалку показывать не за что).
      *
-     * @return array<int, array{num: int, name: string, pos: string, pts: float|string|null}>
+     * @return array<int, array{num: int, name: string, pos: string, pts: float|string|null, discarded: bool}>
      */
     private function buildRaceBreakdown(RegattaEntry $entry): array
     {
@@ -171,7 +171,7 @@ class RegattaEntryResultObserver
         $resultsByEvent = $entry->raceResults->keyBy('event_id');
 
         $breakdown = [];
-        $hasAny    = false;
+        $hasAny = false;
 
         foreach ($races->values() as $i => $event) {
             $rr = $resultsByEvent->get($event->id);
@@ -187,10 +187,11 @@ class RegattaEntryResultObserver
             }
 
             $breakdown[] = [
-                'num'  => $i + 1,
-                'name' => $event->name ?: ('Гонка ' . ($i + 1)),
-                'pos'  => $pos,
-                'pts'  => $rr && $rr->points !== null ? $rr->points : null,
+                'num' => $i + 1,
+                'name' => $event->name ?: ('Гонка '.($i + 1)),
+                'pos' => $pos,
+                'pts' => $rr && $rr->points !== null ? $rr->points : null,
+                'discarded' => $rr ? $rr->isDiscarded() : false,
             ];
         }
 

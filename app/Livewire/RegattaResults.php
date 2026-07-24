@@ -332,6 +332,7 @@ class RegattaResults extends Component
                     'name' => $meta['name'],
                     'pos' => $pos,
                     'pts' => $rr && $rr->points !== null ? $rr->points : null,
+                    'discarded' => $rr ? $rr->isDiscarded() : false,
                 ];
             }
 

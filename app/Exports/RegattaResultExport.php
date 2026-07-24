@@ -2,16 +2,15 @@
 
 namespace App\Exports;
 
-use App\Models\RegattaResult;
 use App\Models\RegattaEntry;
+use App\Models\RegattaResult;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Font;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RegattaResultExport
@@ -44,7 +43,7 @@ class RegattaResultExport
         });
 
         $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        $response->headers->set('Content-Disposition', 'attachment; filename="' . $filename . '"');
+        $response->headers->set('Content-Disposition', 'attachment; filename="'.$filename.'"');
         $response->headers->set('Cache-Control', 'max-age=0');
 
         return $response;
@@ -52,12 +51,14 @@ class RegattaResultExport
 
     /**
      * RegattaEntry индексированы по team_id (нужны экипаж и результаты гонок).
+     *
      * @var Collection<string, RegattaEntry>
      */
     protected Collection $entriesByTeam;
 
     /**
      * Карта: event_id гонки => её порядковый номер (1..N).
+     *
      * @var array<string, int>
      */
     protected array $raceNumberByEvent = [];
@@ -99,7 +100,7 @@ class RegattaResultExport
         // Determine the number of races dynamically (template supports 1–6)
         $raceCount = max(1, min(count($this->raceNumberByEvent), 6));
 
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Результаты');
 
@@ -142,7 +143,7 @@ class RegattaResultExport
         $headers = [
             1 => $regatta->name,
             2 => 'Зачётная группа Carter 30', // Adjust or make dynamic as needed
-            3 => $regatta->water_area . '. ' . $dateRange,
+            3 => $regatta->water_area.'. '.$dateRange,
         ];
 
         $rowHeights = [1 => 12.9, 2 => 14.6, 3 => 12.9, 4 => 16.75];
@@ -154,7 +155,7 @@ class RegattaResultExport
             $sheet->mergeCells("A{$row}:S{$row}");
             $sheet->setCellValue("A{$row}", $text);
             $sheet->getStyle("A{$row}")->applyFromArray([
-                'font'      => ['bold' => true, 'size' => 10],
+                'font' => ['bold' => true, 'size' => 10],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT, 'vertical' => Alignment::VERTICAL_CENTER],
             ]);
         }
@@ -170,7 +171,7 @@ class RegattaResultExport
         $sheet->getRowDimension(6)->setRowHeight(15.0);
 
         $headerStyle = [
-            'font'      => ['bold' => true, 'size' => 7],
+            'font' => ['bold' => true, 'size' => 7],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
         ];
 
@@ -236,8 +237,8 @@ class RegattaResultExport
                     $user = $crew->teamMember->user ?? null;
 
                     return $user ? [
-                        'name'     => $user->name,
-                        'birth'    => $user->birth_date,               // Carbon|null
+                        'name' => $user->name,
+                        'birth' => $user->birth_date,               // Carbon|null
                         'category' => $user->sport_category?->getLabel(),
                     ] : null;
                 })
@@ -246,9 +247,9 @@ class RegattaResultExport
         } else {
             $crewMembers = collect($item->crew_snapshot ?? [])
                 ->map(fn ($m) => [
-                    'name'     => $m['name'] ?? '',
-                    'birth'    => (! empty($m['birthday']) && $m['birthday'] !== '—')
-                        ? \Carbon\Carbon::createFromFormat('d.m.Y', $m['birthday'])
+                    'name' => $m['name'] ?? '',
+                    'birth' => (! empty($m['birthday']) && $m['birthday'] !== '—')
+                        ? Carbon::createFromFormat('d.m.Y', $m['birthday'])
                         : null,
                     'category' => ($m['rank'] ?? null) === '—' ? null : ($m['rank'] ?? null),
                 ])
@@ -256,8 +257,8 @@ class RegattaResultExport
                 ->values();
         }
 
-        $crewCount  = max(1, $crewMembers->count());
-        $endRow     = $startRow + $crewCount - 1;
+        $crewCount = max(1, $crewMembers->count());
+        $endRow = $startRow + $crewCount - 1;
 
         // ── Merges for all spanned columns ──────────────────────────────────
         $spannedCols = ['A', 'B', 'C', 'D']; // position, sail, team, yacht
@@ -283,19 +284,19 @@ class RegattaResultExport
 
         // ── Cell styles ──────────────────────────────────────────────────────
         $centerBold = [
-            'font'      => ['bold' => true, 'size' => 8],
+            'font' => ['bold' => true, 'size' => 8],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-            'borders'   => ['top' => ['borderStyle' => Border::BORDER_THIN], 'bottom' => ['borderStyle' => Border::BORDER_THIN]],
+            'borders' => ['top' => ['borderStyle' => Border::BORDER_THIN], 'bottom' => ['borderStyle' => Border::BORDER_THIN]],
         ];
         $centerNormal = [
-            'font'      => ['bold' => false, 'size' => 8],
+            'font' => ['bold' => false, 'size' => 8],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-            'borders'   => ['top' => ['borderStyle' => Border::BORDER_THIN], 'bottom' => ['borderStyle' => Border::BORDER_THIN]],
+            'borders' => ['top' => ['borderStyle' => Border::BORDER_THIN], 'bottom' => ['borderStyle' => Border::BORDER_THIN]],
         ];
         $leftSmall = [
-            'font'      => ['size' => 6],
+            'font' => ['size' => 6],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER],
-            'borders'   => ['top' => ['borderStyle' => Border::BORDER_THIN]],
+            'borders' => ['top' => ['borderStyle' => Border::BORDER_THIN]],
         ];
 
         // ── Position ─────────────────────────────────────────────────────────
@@ -323,10 +324,6 @@ class RegattaResultExport
         // Фолбэк для удалённой команды: разбивка по гонкам из снапшота (по № гонки).
         $breakdownByNum = collect($item->race_breakdown ?? [])->keyBy('num');
 
-        // Collect points columns that are NOT discarded (the two worst are discarded)
-        // The template formula sums only non-parenthesised columns — we replicate that logic.
-        $pointsCols = [];
-
         foreach (self::RACE_COLUMNS as $raceNum => $cols) {
             if ($raceNum > $raceCount) {
                 break;
@@ -334,8 +331,9 @@ class RegattaResultExport
             $posCol = $cols['pos'];
             $ptsCol = $cols['pts'];
 
-            $eventId    = $eventByRaceNumber[$raceNum] ?? null;
+            $eventId = $eventByRaceNumber[$raceNum] ?? null;
             $raceResult = $eventId ? $raceResultsByEvent->get($eventId) : null;
+            $snap = $breakdownByNum->get($raceNum);
 
             // Место: код пенальти (dns/dnf/dsq…) в нижнем регистре либо число
             if ($entry) {
@@ -344,58 +342,41 @@ class RegattaResultExport
                 } else {
                     $posValue = $raceResult && $raceResult->position !== null
                         ? $raceResult->position
-                        //: 'dns';
                         : '-';
                 }
+                $ptsRaw = $raceResult?->points;
+                $discarded = $raceResult ? $raceResult->isDiscarded() : false;
             } else {
-                // Удалённая команда — берём место из снапшота гонок.
-                $snap     = $breakdownByNum->get($raceNum);
+                // Удалённая команда — берём место и очки из снапшота гонок.
                 $posValue = $snap ? ($snap['pos'] === '—' ? '-' : mb_strtolower((string) $snap['pos'])) : '-';
+                $ptsRaw = $snap['pts'] ?? null;
+                $discarded = $snap['discarded'] ?? false;
             }
 
-            // Очки: при отсутствии результата начисляем N+1 (как DNS/DNF по правилам)
-            $ptsValue = $raceResult && $raceResult->points !== null
-                ? (float) $raceResult->points
-                : ($raceCount + 1);
-
-            $ptsValue = 0;
+            // Очки: выброшенные из зачёта — строкой в скобках (судейские «(5)»
+            // уже со скобками); зачётные числовые — числом.
+            if ($ptsRaw === null) {
+                $ptsValue = '-';
+            } elseif (is_numeric($ptsRaw)) {
+                $ptsValue = $discarded ? '('.((float) $ptsRaw).')' : (float) $ptsRaw;
+            } else {
+                $ptsValue = (string) $ptsRaw;
+            }
 
             $sheet->setCellValue("{$posCol}{$startRow}", $posValue);
             $sheet->getStyle("{$posCol}{$startRow}")->applyFromArray($centerNormal);
 
             $sheet->setCellValue("{$ptsCol}{$startRow}", $ptsValue);
             $sheet->getStyle("{$ptsCol}{$startRow}")->applyFromArray($centerBold);
-
-            $pointsCols[$raceNum] = "{$ptsCol}{$startRow}";
         }
 
-        // ── Total formula: sum all points cols except the 2 worst ────────────
-        // Determine the 2 highest-points (worst) race columns to exclude
-        $pointsValues = collect($pointsCols)->map(fn ($cell) => (float) $sheet->getCell($cell)->getValue());
-        $sortedDesc   = $pointsValues->sortDesc();
-        $excludeRaces = $sortedDesc->keys()->take(min(2, max(0, $raceCount - 2)))->all();
-
-        $sumCols = [];
-        foreach ($pointsCols as $raceNum => $cell) {
-            if (!in_array($raceNum, $excludeRaces)) {
-                $sumCols[] = $cell;
-            }
-        }
-
-        /*
-        if (!empty($sumCols)) {
-            $formula = '=' . implode('+', $sumCols);
-        } else {
-            $formula = $item->total_points ?? 0;
-        }
-        */
-        $formula = $item->total_points ?? 0;
-        $sheet->setCellValue("T{$startRow}", $formula);
+        // ── Total: движок уже вычел выброшенные результаты по настройке регаты ──
+        $sheet->setCellValue("T{$startRow}", $item->total_points ?? 0);
         $sheet->getStyle("T{$startRow}")->applyFromArray($centerBold);
 
         // ── Crew members ──────────────────────────────────────────────────────
         foreach ($crewMembers as $index => $member) {
-            $crewRow  = $startRow + $index;
+            $crewRow = $startRow + $index;
             $isCaptain = ($index === 0);
 
             // Name
@@ -405,21 +386,21 @@ class RegattaResultExport
 
             // Birthday
             if (! empty($member['birth'])) {
-                $sheet->setCellValue("F{$crewRow}", \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($member['birth']));
+                $sheet->setCellValue("F{$crewRow}", Date::PHPToExcel($member['birth']));
                 $sheet->getStyle("F{$crewRow}")->getNumberFormat()->setFormatCode('DD.MM.YYYY');
             }
             $sheet->getStyle("F{$crewRow}")->applyFromArray([
-                'font'      => ['size' => 6],
+                'font' => ['size' => 6],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-                'borders'   => ['top' => ['borderStyle' => Border::BORDER_THIN]],
+                'borders' => ['top' => ['borderStyle' => Border::BORDER_THIN]],
             ]);
 
             // Sport category (enum SportCategory → читаемая метка: КМС, МС, …)
             $sheet->setCellValue("G{$crewRow}", $member['category'] ?? '');
             $sheet->getStyle("G{$crewRow}")->applyFromArray([
-                'font'      => ['size' => 6],
+                'font' => ['size' => 6],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-                'borders'   => ['top' => ['borderStyle' => Border::BORDER_THIN]],
+                'borders' => ['top' => ['borderStyle' => Border::BORDER_THIN]],
             ]);
         }
 
@@ -432,7 +413,7 @@ class RegattaResultExport
 
     protected function formatDateRange(?string $dateStart, ?string $dateEnd): string
     {
-        if (!$dateStart) {
+        if (! $dateStart) {
             return '';
         }
 
@@ -442,11 +423,11 @@ class RegattaResultExport
             9 => 'сентября', 10 => 'октября', 11 => 'ноября', 12 => 'декабря',
         ];
 
-        $start = \Carbon\Carbon::parse($dateStart);
-        $end   = $dateEnd ? \Carbon\Carbon::parse($dateEnd) : $start;
+        $start = Carbon::parse($dateStart);
+        $end = $dateEnd ? Carbon::parse($dateEnd) : $start;
 
         $monthName = $months[(int) $end->format('n')];
-        $year      = $end->format('Y');
+        $year = $end->format('Y');
 
         if ($start->isSameDay($end)) {
             return "{$start->format('j')} {$monthName} {$year} года";
@@ -457,6 +438,7 @@ class RegattaResultExport
         }
 
         $startMonth = $months[(int) $start->format('n')];
+
         return "{$start->format('j')} {$startMonth} - {$end->format('j')} {$monthName} {$year} года";
     }
 }

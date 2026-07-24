@@ -539,7 +539,11 @@
                         </thead>
                         <tbody class="divide-y text-center font-medium text-sm md:text-base">
                             @forelse($activeTeamModal['members'] as $member)
-                                @php($isCaptain = ($member['role'] ?? null) === 'captain')
+                                {{-- Только блочная (парная) форма php-вставок: однострочная форма
+                                     со скобками не имеет закрывающей директивы, и компилятор Blade
+                                     склеивает её с ближайшей закрывающей ниже по файлу, превращая
+                                     всё между ними в сырой PHP. --}}
+                                @php $isCaptain = ($member['role'] ?? null) === 'captain'; @endphp
                                 <tr @class([
                                     'hover:bg-white transition-colors border-b border-brand-border pb-8! md:pb-0!',
                                     'font-bold' => $isCaptain,
@@ -631,10 +635,30 @@
                         </thead>
                         <tbody class="divide-y text-center font-medium text-sm md:text-base">
                             @forelse($activeRacesModal['races'] as $race)
-                                <tr class="hover:bg-white transition-colors border-b border-brand-border">
+                                @php
+                                    // Выброшенный результат показываем в скобках; значения из
+                                    // судейских протоколов уже приходят со скобками — не дублируем.
+                                    $discarded = $race['discarded'] ?? false;
+                                    $pos = (string) $race['pos'];
+                                    if ($discarded && ! str_starts_with($pos, '(') && $pos !== '—') {
+                                        $pos = "({$pos})";
+                                    }
+                                    if ($race['pts'] === null) {
+                                        $pts = '—';
+                                    } elseif (is_numeric($race['pts'])) {
+                                        $pts = number_format((float) $race['pts'], 1, ',', ' ');
+                                        if ($discarded) {
+                                            $pts = "({$pts})";
+                                        }
+                                    } else {
+                                        // Нечисловые очки («(5)» из импорта) — как есть, а не 0,0.
+                                        $pts = $race['pts'];
+                                    }
+                                @endphp
+                                <tr class="hover:bg-white transition-colors border-b border-brand-border {{ $discarded ? 'text-brand-gray' : '' }}">
                                     <td data-label="Гонка" class="py-3 text-center">{{ $race['name'] }}</td>
-                                    <td data-label="Место" class="py-3">{{ $race['pos'] }}</td>
-                                    <td data-label="Очки" class="py-3">{{ $race['pts'] !== null ? number_format((float) $race['pts'], 1, ',', ' ') : '—' }}</td>
+                                    <td data-label="Место" class="py-3">{{ $pos }}</td>
+                                    <td data-label="Очки" class="py-3">{{ $pts }}</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -652,6 +676,9 @@
                             </tfoot>
                         @endif
                     </table>
+                    @if(collect($activeRacesModal['races'])->contains(fn ($race) => ($race['discarded'] ?? false) || str_starts_with((string) ($race['pts'] ?? ''), '(')))
+                        <p class="mt-3 text-sm text-brand-gray">В скобках — выброшенные результаты, не идущие в зачёт.</p>
+                    @endif
                 </div>
             </div>
         </div>

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RegattaStatus;
+use App\Filament\Resources\RegattaResults\RegattaResultResource;
 use App\Models\Concerns\NormalizesHeicImageColumns;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -41,6 +42,9 @@ class Regatta extends Model
         'schedule',
         'race_days_count',
         'races_count',
+        'discards_count',
+        'discard_1_after_races',
+        'discard_2_after_races',
         'prizes',
         'entry_fee_required',
         'entry_fee_amount',
@@ -63,6 +67,9 @@ class Regatta extends Model
             'time_end' => 'datetime:H:i',
             'race_days_count' => 'integer',
             'races_count' => 'integer',
+            'discards_count' => 'integer',
+            'discard_1_after_races' => 'integer',
+            'discard_2_after_races' => 'integer',
             'regatta_status' => RegattaStatus::class,
             'postponed_to_date' => 'date',
             'entry_required_documents' => 'array',
@@ -130,6 +137,19 @@ class Regatta extends Model
             } elseif ($start && $start > $now) {
                 $regatta->regatta_status = RegattaStatus::Upcoming;
             }
+        });
+
+        static::saved(function (self $regatta) {
+            // Смена настройки выброса меняет итоговые суммы и места —
+            // пересчитываем протоколы и рейтинги регаты.
+            if (! $regatta->wasChanged(['discards_count', 'discard_1_after_races', 'discard_2_after_races'])) {
+                return;
+            }
+
+            $regatta->results()->get()->each(function (RegattaResult $result): void {
+                RegattaResultResource::recomputeItemTotals($result);
+                RegattaResultResource::recalculateRatings($result);
+            });
         });
     }
     // ──────────────────────────────────────────────

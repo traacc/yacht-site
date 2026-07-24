@@ -2,9 +2,10 @@
 
 namespace App\Actions\RegattaResult;
 
-use App\Models\RegattaResult;
 use App\Models\RegattaEntry;
+use App\Models\RegattaResult;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -71,9 +72,10 @@ final class GenerateRegattaResultPdfAction
                         if (! $user) {
                             return null;
                         }
+
                         return [
-                            'name'     => $user->name,
-                            'birth'    => $user->birth_date?->format('d.m.Y'),
+                            'name' => $user->name,
+                            'birth' => $user->birth_date?->format('d.m.Y'),
                             'category' => $user->sport_category?->getLabel(),
                         ];
                     })
@@ -82,8 +84,8 @@ final class GenerateRegattaResultPdfAction
             } else {
                 $crew = collect($item->crew_snapshot ?? [])
                     ->map(fn ($m) => [
-                        'name'     => $m['name'] ?? '',
-                        'birth'    => ($m['birthday'] ?? null) === '—' ? null : ($m['birthday'] ?? null),
+                        'name' => $m['name'] ?? '',
+                        'birth' => ($m['birthday'] ?? null) === '—' ? null : ($m['birthday'] ?? null),
                         'category' => ($m['rank'] ?? null) === '—' ? null : ($m['rank'] ?? null),
                     ])
                     ->filter(fn ($m) => filled($m['name']))
@@ -92,12 +94,12 @@ final class GenerateRegattaResultPdfAction
 
             // Результаты гонок: из заявки, иначе из снапшота (race_breakdown по № гонки).
             $raceResultsByEvent = $entry ? $entry->raceResults->keyBy('event_id') : collect();
-            $breakdownByNum     = collect($item->race_breakdown ?? [])->keyBy('num');
+            $breakdownByNum = collect($item->race_breakdown ?? [])->keyBy('num');
 
             $races = [];
             for ($raceNum = 1; $raceNum <= $raceCount; $raceNum++) {
                 if ($entry) {
-                    $eventId    = $eventByRaceNumber[$raceNum] ?? null;
+                    $eventId = $eventByRaceNumber[$raceNum] ?? null;
                     $raceResult = $eventId ? $raceResultsByEvent->get($eventId) : null;
 
                     // Место: код пенальти (dns/dnf/dsq…) либо число, иначе прочерк.
@@ -112,30 +114,46 @@ final class GenerateRegattaResultPdfAction
                     $pts = $raceResult && $raceResult->points !== null
                         ? $raceResult->points
                         : null;
+                    $discarded = $raceResult ? $raceResult->isDiscarded() : false;
                 } else {
                     $snap = $breakdownByNum->get($raceNum);
-                    $pos  = $snap ? ($snap['pos'] === '—' ? '-' : mb_strtolower((string) $snap['pos'])) : '-';
-                    $pts  = $snap['pts'] ?? null;
+                    $pos = $snap ? ($snap['pos'] === '—' ? '-' : mb_strtolower((string) $snap['pos'])) : '-';
+                    $pts = $snap['pts'] ?? null;
+                    $discarded = $snap['discarded'] ?? false;
+                }
+
+                // Выброшенный из зачёта результат — в скобках; значения из
+                // судейских протоколов уже приходят со скобками, их не дублируем.
+                if ($discarded) {
+                    $posStr = (string) $pos;
+                    if ($posStr !== '' && $posStr !== '-' && ! str_starts_with($posStr, '(')) {
+                        $pos = "({$posStr})";
+                    }
+
+                    $ptsStr = (string) ($pts ?? '');
+                    if ($ptsStr !== '' && ! str_starts_with($ptsStr, '(')) {
+                        $pts = "({$ptsStr})";
+                    }
                 }
 
                 $races[$raceNum] = ['pos' => $pos, 'pts' => $pts];
             }
 
             return [
-                'position'  => $item->final_position,
-                'sail'      => $item->display_sail_number ?? '',
-                'team'      => $item->display_team_name ?? '',
+                'position' => $item->final_position,
+                'sail' => $item->display_sail_number ?? '',
+                'team' => $item->display_team_name ?? '',
                 'not_participate' => $item->not_participate ?? '',
-                'yacht'     => $item->display_yacht_name ?? '',
-                'total'     => $item->total_points ?? 0,
-                'crew'      => $crew,
-                'races'     => $races,
+                'yacht' => $item->display_yacht_name ?? '',
+                'total' => $item->total_points ?? 0,
+                'crew' => $crew,
+                'races' => $races,
             ];
         });
 
         $pdf = Pdf::loadView('pdf.regatta-result', [
-            'regatta'   => $regatta,
-            'rows'      => $rows,
+            'regatta' => $regatta,
+            'rows' => $rows,
             'raceCount' => $raceCount,
             'dateRange' => $this->formatDateRange($regatta?->date_start, $regatta?->date_end),
         ])
@@ -150,8 +168,9 @@ final class GenerateRegattaResultPdfAction
             $result_type = $regattaResult->result_type;
             $result_type_label = 'итоговые_результаты';
 
-            if($result_type == 'preliminary')
+            if ($result_type == 'preliminary') {
                 $result_type_label = 'предварительные_результаты';
+            }
 
             $filename = "{$safeName}_{$result_type_label}.pdf";
         }
@@ -163,9 +182,9 @@ final class GenerateRegattaResultPdfAction
         return new StreamedResponse(function () use ($output) {
             echo $output;
         }, 200, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-            'Cache-Control'       => 'max-age=0',
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Cache-Control' => 'max-age=0',
         ]);
     }
 
@@ -181,11 +200,11 @@ final class GenerateRegattaResultPdfAction
             9 => 'сентября', 10 => 'октября', 11 => 'ноября', 12 => 'декабря',
         ];
 
-        $start = \Carbon\Carbon::parse($dateStart);
-        $end   = $dateEnd ? \Carbon\Carbon::parse($dateEnd) : $start;
+        $start = Carbon::parse($dateStart);
+        $end = $dateEnd ? Carbon::parse($dateEnd) : $start;
 
         $monthName = $months[(int) $end->format('n')];
-        $year      = $end->format('Y');
+        $year = $end->format('Y');
 
         if ($start->isSameDay($end)) {
             return "{$start->format('j')} {$monthName} {$year} года";
@@ -196,6 +215,7 @@ final class GenerateRegattaResultPdfAction
         }
 
         $startMonth = $months[(int) $start->format('n')];
+
         return "{$start->format('j')} {$startMonth} - {$end->format('j')} {$monthName} {$year} года";
     }
 }

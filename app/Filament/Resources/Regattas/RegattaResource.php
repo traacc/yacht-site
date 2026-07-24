@@ -257,6 +257,33 @@ class RegattaResource extends Resource
                     ->required()
                     ->numeric()
                     ->default(1),
+                Select::make('discards_count')
+                    ->label('Выброс худших результатов')
+                    ->options([
+                        0 => 'Без выброса',
+                        1 => '1 худший результат',
+                        2 => '2 худших результата',
+                    ])
+                    // Стандарт для новых регат — один выброс после 6 гонок;
+                    // существующие регаты остаются «без выброса» (дефолт БД).
+                    ->default(1)
+                    ->required()
+                    ->live(),
+                TextInput::make('discard_1_after_races')
+                    ->label('Выброс 1 результата после N гонок')
+                    ->numeric()
+                    ->minValue(1)
+                    ->default(6)
+                    ->visible(fn (Get $get): bool => (int) $get('discards_count') >= 1)
+                    ->required(fn (Get $get): bool => (int) $get('discards_count') >= 1),
+                TextInput::make('discard_2_after_races')
+                    ->label('Выброс 2 результатов после N гонок')
+                    ->numeric()
+                    ->minValue(2)
+                    ->default(9)
+                    ->gte('discard_1_after_races')
+                    ->visible(fn (Get $get): bool => (int) $get('discards_count') === 2)
+                    ->required(fn (Get $get): bool => (int) $get('discards_count') === 2),
                 TextInput::make('water_area')
                     ->label('Акватория')
                     ->placeholder('Введите акваторию')
