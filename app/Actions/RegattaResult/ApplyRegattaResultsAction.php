@@ -69,7 +69,10 @@ class ApplyRegattaResultsAction
             &$errors, &$imported, &$skipped, &$createdYachts, &$createdTeams,
         ): void {
             if ($replace) {
-                $result->items()->delete();
+                // Не через связь items(): у неё orderByRaw с CAST(final_position AS UNSIGNED),
+                // и MySQL в строгом режиме падает на нечисловых значениях (напр. '----')
+                // при переносе ORDER BY в DELETE. Чистое удаление без сортировки.
+                RegattaResultItem::where('regatta_result_id', $result->id)->delete();
             }
 
             // Гонки регаты — идемпотентно по имени; порядок сохраняем для RaceResult.

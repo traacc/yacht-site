@@ -23,33 +23,34 @@ use RuntimeException;
 class ImportRegattaResultItemsAction
 {
     /**
-     * @param  RegattaResult  $result
-     * @param  string         $csvContent  Содержимое CSV-файла
-     * @param  bool           $replace     Заменить существующие items (true) или добавить (false)
+     * @param  string  $csvContent  Содержимое CSV-файла
+     * @param  bool  $replace  Заменить существующие items (true) или добавить (false)
      * @return array{imported: int, skipped: int, errors: string[]}
      */
     public function execute(RegattaResult $result, string $csvContent, bool $replace = false): array
     {
-        $rows   = $this->parseCsv($csvContent);
+        $rows = $this->parseCsv($csvContent);
         $errors = [];
-        $items  = [];
+        $items = [];
 
         foreach ($rows as $index => $row) {
             $line = $index + 2; // +1 заголовок, +1 нумерация с 1
 
-            $teamName  = trim($row['team_name'] ?? '');
+            $teamName = trim($row['team_name'] ?? '');
             $yachtName = trim($row['yacht_name'] ?? '');
-            $points    = $row['total_points'] ?? null;
-            $position  = $row['final_position'] ?? null;
+            $points = $row['total_points'] ?? null;
+            $position = $row['final_position'] ?? null;
 
             if ($teamName === '') {
                 $errors[] = "Строка {$line}: пустое поле team_name";
+
                 continue;
             }
 
             $team = Team::whereRaw('LOWER(name) = ?', [mb_strtolower($teamName)])->first();
             if ($team === null) {
                 $errors[] = "Строка {$line}: команда «{$teamName}» не найдена";
+
                 continue;
             }
 
@@ -58,6 +59,7 @@ class ImportRegattaResultItemsAction
                 $yacht = Yacht::whereRaw('LOWER(name) = ?', [mb_strtolower($yachtName)])->first();
                 if ($yacht === null) {
                     $errors[] = "Строка {$line}: яхта «{$yachtName}» не найдена";
+
                     continue;
                 }
                 $yachtId = $yacht->id;
@@ -65,25 +67,28 @@ class ImportRegattaResultItemsAction
 
             if ($points === null || $points === '') {
                 $errors[] = "Строка {$line}: пустое поле total_points";
+
                 continue;
             }
 
             $items[] = [
-                'team_id'       => $team->id,
-                'yacht_id'      => $yachtId,
+                'team_id' => $team->id,
+                'yacht_id' => $yachtId,
                 // Запятую как десятичный разделитель приводим к точке (русская раскладка).
-                'total_points'  => (float) str_replace(',', '.', trim((string) $points)),
+                'total_points' => (float) str_replace(',', '.', trim((string) $points)),
                 'final_position' => ($position !== null && $position !== '') ? $position : null,
-                //'final_position' => ($position !== null && $position !== '') ? (int) $position : null,
+                // 'final_position' => ($position !== null && $position !== '') ? (int) $position : null,
             ];
         }
 
         $imported = 0;
-        $skipped  = 0;
+        $skipped = 0;
 
         DB::transaction(function () use ($result, $items, $replace, &$imported, &$skipped) {
             if ($replace) {
-                $result->items()->delete();
+                // Не через связь items(): её orderByRaw с CAST(final_position AS UNSIGNED)
+                // ломает DELETE в строгом режиме MySQL на нечисловых значениях (напр. '----').
+                RegattaResultItem::where('regatta_result_id', $result->id)->delete();
             }
 
             $existingTeamIds = $replace
@@ -93,6 +98,7 @@ class ImportRegattaResultItemsAction
             foreach ($items as $item) {
                 if ($existingTeamIds->contains($item['team_id'])) {
                     $skipped++;
+
                     continue;
                 }
 
@@ -120,7 +126,7 @@ class ImportRegattaResultItemsAction
         }
 
         $delimiter = $this->detectDelimiter($lines[0]);
-        $headers   = array_map('trim', str_getcsv(array_shift($lines), $delimiter));
+        $headers = array_map('trim', str_getcsv(array_shift($lines), $delimiter));
 
         $required = ['team_name', 'total_points'];
         foreach ($required as $col) {
@@ -130,10 +136,11 @@ class ImportRegattaResultItemsAction
         }
 
         return collect($lines)
-            ->filter(fn(string $line) => trim($line) !== '')
+            ->filter(fn (string $line) => trim($line) !== '')
             ->values()
             ->map(function (string $line) use ($headers, $delimiter) {
                 $values = str_getcsv($line, $delimiter);
+
                 return array_combine(
                     $headers,
                     array_pad($values, count($headers), '')
@@ -144,11 +151,12 @@ class ImportRegattaResultItemsAction
     private function detectDelimiter(string $headerLine): string
     {
         $counts = [
-            ','  => substr_count($headerLine, ','),
-            ';'  => substr_count($headerLine, ';'),
+            ',' => substr_count($headerLine, ','),
+            ';' => substr_count($headerLine, ';'),
             "\t" => substr_count($headerLine, "\t"),
         ];
         arsort($counts);
+
         return array_key_first($counts);
     }
 }
