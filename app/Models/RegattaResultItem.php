@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Points;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -33,12 +34,12 @@ class RegattaResultItem extends Model
     protected function casts(): array
     {
         return [
-            //'total_points'   => 'decimal:3',
-            //'final_position' => 'integer',
-            'total_points_overridden'   => 'boolean',
+            // 'total_points'   => 'decimal:3',
+            // 'final_position' => 'integer',
+            'total_points_overridden' => 'boolean',
             'final_position_overridden' => 'boolean',
-            'crew_snapshot'             => 'array',
-            'race_breakdown'            => 'array',
+            'crew_snapshot' => 'array',
+            'race_breakdown' => 'array',
         ];
     }
 
@@ -82,5 +83,14 @@ class RegattaResultItem extends Model
     public function getDisplaySailNumberAttribute(): ?string
     {
         return $this->yacht?->vfps_number ?? $this->sail_number;
+    }
+
+    /**
+     * Сумма очков для показа: минимум один знак после запятой, сотые —
+     * только если они значащие (12 → «12,0», 12.25 → «12,25»).
+     */
+    public function getDisplayTotalPointsAttribute(): string
+    {
+        return Points::format($this->total_points);
     }
 }

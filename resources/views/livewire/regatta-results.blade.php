@@ -139,10 +139,10 @@
                                                 <button
                                                     wire:click="openRacesModal('{{ addslashes($result->displayTeamName) }}', '{{ addslashes($result->displayYachtName ?? '') }}', '{{ $result->total_points }}', {{ json_encode($races) }})"
                                                     class="text-[#2D92CE] font-medium underline hover:no-underline cursor-pointer bg-transparent border-0 p-0">
-                                                    {{ number_format($result->total_points, 1, ',', ' ') }}
+                                                    {{ $result->displayTotalPoints }}
                                                 </button>
                                             @else
-                                                {{ number_format($result->total_points, 1, ',', ' ') }}
+                                                {{ $result->displayTotalPoints }}
                                             @endif
                                         </td>
                                     </tr>
@@ -250,10 +250,10 @@
                                                 <button
                                                     wire:click="openRacesModal('{{ addslashes($result->displayTeamName) }}', '{{ addslashes($result->displayYachtName ?? '') }}', '{{ $result->total_points }}', {{ json_encode($races) }})"
                                                     class="text-[#2D92CE] font-medium underline hover:no-underline cursor-pointer bg-transparent border-0 p-0">
-                                                    {{ number_format($result->total_points, 1, ',', ' ') }}
+                                                    {{ $result->displayTotalPoints }}
                                                 </button>
                                             @else
-                                                {{ number_format($result->total_points, 1, ',', ' ') }}
+                                                {{ $result->displayTotalPoints }}
                                             @endif
                                         </td>
                                     </tr>
@@ -379,10 +379,10 @@
                                                         <button
                                                             wire:click="openRacesModal('{{ addslashes($result->displayTeamName) }}', '{{ addslashes($result->displayYachtName ?? '') }}', '{{ $result->total_points }}', {{ json_encode($races) }})"
                                                             class="text-[#2D92CE] font-medium underline hover:no-underline cursor-pointer bg-transparent border-0 p-0">
-                                                            {{ number_format($result->total_points, 1, ',', ' ') }}
+                                                            {{ $result->displayTotalPoints }}
                                                         </button>
                                                     @else
-                                                        {{ number_format($result->total_points, 1, ',', ' ') }}
+                                                        {{ $result->displayTotalPoints }}
                                                     @endif
                                                 </td>
                                             </tr>
@@ -646,7 +646,7 @@
                                     if ($race['pts'] === null) {
                                         $pts = '—';
                                     } elseif (is_numeric($race['pts'])) {
-                                        $pts = number_format((float) $race['pts'], 1, ',', ' ');
+                                        $pts = \App\Support\Points::format($race['pts']);
                                         if ($discarded) {
                                             $pts = "({$pts})";
                                         }
@@ -671,7 +671,7 @@
                                 <tr class="border-t border-brand-border font-bold text-brand-dark">
                                     <td class="py-3 pl-2">Итого</td>
                                     <td class="py-3"></td>
-                                    <td class="py-3 text-center">{{ number_format((float) $activeRacesModal['total'], 1, ',', ' ') }}</td>
+                                    <td class="py-3 text-center">{{ \App\Support\Points::format($activeRacesModal['total']) }}</td>
                                 </tr>
                             </tfoot>
                         @endif

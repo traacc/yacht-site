@@ -947,9 +947,11 @@ class RegattaResultResource extends Resource
                     ->pluck('id')
                     ->all();
 
-                $item->total_points = (float) $numeric
+                // Округление до сотых убирает хвосты сложения float
+                // (0.1 + 0.7 = 0.7999999999999999) — колонка строковая.
+                $item->total_points = round((float) $numeric
                     ->reject(fn (RaceResult $r) => in_array($r->id, $discardedIds, true))
-                    ->sum(fn (RaceResult $r) => (float) $r->points);
+                    ->sum(fn (RaceResult $r) => (float) $r->points), 2);
             }
 
             foreach ($results as $result) {
@@ -1015,7 +1017,7 @@ class RegattaResultResource extends Resource
     protected static function assignPositions(Collection $ranked, array $countedPoints, array $lastRacePoints): void
     {
         $compare = function (RegattaResultItem $a, RegattaResultItem $b) use ($countedPoints, $lastRacePoints): int {
-            if (($byTotal = round((float) $a->total_points, 1) <=> round((float) $b->total_points, 1)) !== 0) {
+            if (($byTotal = round((float) $a->total_points, 2) <=> round((float) $b->total_points, 2)) !== 0) {
                 return $byTotal;
             }
 
@@ -1137,7 +1139,7 @@ class RegattaResultResource extends Resource
      *    очки, а «(5)» нечисловое.
      *
      * Введённые вручную очки сохраняются как есть (числовые — округляются до
-     * десятых); скобки у очков (как и скобки места) помечают сброшенную гонку.
+     * сотых); скобки у очков (как и скобки места) помечают сброшенную гонку.
      */
     public static function deriveRacePoints(mixed $position, mixed $points, int $boatCount): mixed
     {
@@ -1167,9 +1169,9 @@ class RegattaResultResource extends Resource
             $value = (string) ($boatCount + 1);
         }
 
-        // Числовые очки округляем до десятых; нечисловые (DNF…) — как есть.
+        // Числовые очки округляем до сотых; нечисловые (DNF…) — как есть.
         if (is_numeric($value)) {
-            $value = (string) round((float) $value, 1);
+            $value = (string) round((float) $value, 2);
         }
 
         return $isDiscard ? "({$value})" : $value;
