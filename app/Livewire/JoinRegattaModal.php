@@ -2,8 +2,10 @@
 
 namespace App\Livewire;
 
+use App\Actions\Payment\StartOnlinePaymentAction;
 use App\Actions\Regatta\SubmitRegattaEntryAction;
 use App\Enums\CreationSource;
+use App\Enums\PaymentStatus;
 use App\Enums\SportCategory;
 use App\Enums\TeamMemberRole;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
@@ -18,15 +20,19 @@ use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
 use App\Models\Yacht;
+use App\Services\Payments\PaymentManager;
+use App\Services\SettingsService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
 class JoinRegattaModal extends Component
@@ -46,11 +52,14 @@ class JoinRegattaModal extends Component
 
     public bool $leftCrew = false;
 
-    /** @var array<string, \Livewire\TemporaryUploadedFile[]> */
+    /** @var array<string, TemporaryUploadedFile[]> */
     public array $documentFiles = [];
 
     /** Отметка участника об оплате сбора (если регата требует сбор) */
     public bool $feePaid = false;
+
+    /** ID только что поданной заявки — для кнопки «Оплатить онлайн» на экране успеха */
+    public ?string $submittedEntryId = null;
 
     /** Специальный пароль заявки — для редактирования на странице регаты без входа */
     public string $entryPassword = '';
@@ -152,6 +161,7 @@ class JoinRegattaModal extends Component
         $this->yachtId = null;
         $this->documentFiles = [];
         $this->submitted = false;
+        $this->submittedEntryId = null;
         $this->leftCrew = false;
         $this->isOpen = true;
         $this->feePaid = false;
@@ -187,7 +197,7 @@ class JoinRegattaModal extends Component
     {
         $this->isOpen = false;
         $this->reset([
-            'regattaId', 'yachtId', 'documentFiles', 'submitted', 'leftCrew',
+            'regattaId', 'yachtId', 'documentFiles', 'submitted', 'submittedEntryId', 'leftCrew',
             'feePaid', 'entryPassword', 'entryPasswordConfirmation', 'freeYachts',
             'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'guestBirthDate', 'guestSportCategory',
             'captainMode', 'captainUserId', 'captainName', 'captainSearchQuery', 'captainSearchResults',
@@ -247,9 +257,9 @@ class JoinRegattaModal extends Component
 
         $this->freeYachts = $this->allFreeYachts
             ->map(fn (Yacht $y): array => [
-                'id'    => (string) $y->id,
-                'name'  => $y->name,
-                'vfps'  => $y->vfps_number,
+                'id' => (string) $y->id,
+                'name' => $y->name,
+                'vfps' => $y->vfps_number,
                 'taken' => (bool) $y->getAttribute('is_taken'),
             ])
             ->values()
@@ -432,9 +442,9 @@ class JoinRegattaModal extends Component
         $excludeIds = array_values(array_filter(array_column($this->guestMembers, 'user_id')));
 
         $this->captainSearchResults = User::where(function ($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('email', 'like', "%{$query}%");
-            })
+            $q->where('name', 'like', "%{$query}%")
+                ->orWhere('email', 'like', "%{$query}%");
+        })
             ->when($excludeIds !== [], fn ($q) => $q->whereNotIn('id', $excludeIds))
             ->limit(10)
             ->get(['id', 'name', 'email', 'birth_date'])
@@ -496,9 +506,9 @@ class JoinRegattaModal extends Component
         $excludeIds = array_values(array_filter(array_column($this->guestMembers, 'user_id')));
 
         $user = User::where(function ($q) use ($query) {
-                $q->whereRaw('LOWER(name) = ?', [mb_strtolower($query)])
-                  ->orWhereRaw('LOWER(email) = ?', [mb_strtolower($query)]);
-            })
+            $q->whereRaw('LOWER(name) = ?', [mb_strtolower($query)])
+                ->orWhereRaw('LOWER(email) = ?', [mb_strtolower($query)]);
+        })
             ->when($excludeIds !== [], fn ($q) => $q->whereNotIn('id', $excludeIds))
             ->first(['id']);
 
@@ -529,19 +539,19 @@ class JoinRegattaModal extends Component
     private function emptySlot(): array
     {
         return [
-            'ref'              => (string) Str::uuid(),
-            'mode'             => 'empty',
-            'registered'       => null,
-            'user_id'          => null,
-            'name'             => '',
-            'email'            => '',
-            'birth_date'       => null,
-            'sport_category'   => null,
-            'role'             => 'main',
-            'query'            => '',
-            'results'          => [],
-            'newName'          => '',
-            'newBirthDate'     => '',
+            'ref' => (string) Str::uuid(),
+            'mode' => 'empty',
+            'registered' => null,
+            'user_id' => null,
+            'name' => '',
+            'email' => '',
+            'birth_date' => null,
+            'sport_category' => null,
+            'role' => 'main',
+            'query' => '',
+            'results' => [],
+            'newName' => '',
+            'newBirthDate' => '',
             'newSportCategory' => '',
         ];
     }
@@ -611,9 +621,9 @@ class JoinRegattaModal extends Component
         $excludeIds = $this->excludedMemberUserIds($i);
 
         $this->guestMembers[$i]['results'] = User::where(function ($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('email', 'like', "%{$query}%");
-            })
+            $q->where('name', 'like', "%{$query}%")
+                ->orWhere('email', 'like', "%{$query}%");
+        })
             ->when($excludeIds !== [], fn ($q) => $q->whereNotIn('id', $excludeIds))
             ->limit(10)
             ->get(['id', 'name', 'email', 'birth_date'])
@@ -642,13 +652,13 @@ class JoinRegattaModal extends Component
 
         $ref = $this->guestMembers[$i]['ref'];
         $this->guestMembers[$i] = array_merge($this->emptySlot(), [
-            'ref'        => $ref,
-            'mode'       => 'filled',
+            'ref' => $ref,
+            'mode' => 'filled',
             'registered' => true,
-            'user_id'    => (string) $user->id,
-            'name'       => $user->name,
-            'email'      => (string) $user->email,
-            'role'       => 'main',
+            'user_id' => (string) $user->id,
+            'name' => $user->name,
+            'email' => (string) $user->email,
+            'role' => 'main',
         ]);
     }
 
@@ -694,9 +704,9 @@ class JoinRegattaModal extends Component
         $excludeIds = $this->excludedMemberUserIds($i);
 
         $user = User::where(function ($q) use ($query) {
-                $q->whereRaw('LOWER(name) = ?', [mb_strtolower($query)])
-                  ->orWhereRaw('LOWER(email) = ?', [mb_strtolower($query)]);
-            })
+            $q->whereRaw('LOWER(name) = ?', [mb_strtolower($query)])
+                ->orWhereRaw('LOWER(email) = ?', [mb_strtolower($query)]);
+        })
             ->when($excludeIds !== [], fn ($q) => $q->whereNotIn('id', $excludeIds))
             ->first(['id']);
 
@@ -715,7 +725,7 @@ class JoinRegattaModal extends Component
         }
 
         $rules = [
-            "guestMembers.$i.newName"      => ['required', 'string', 'max:255', $this->fullNameRule()],
+            "guestMembers.$i.newName" => ['required', 'string', 'max:255', $this->fullNameRule()],
             "guestMembers.$i.newBirthDate" => ['required', 'date', 'before:today'],
         ];
 
@@ -724,8 +734,8 @@ class JoinRegattaModal extends Component
         }
 
         $this->validate($rules, [], [
-            "guestMembers.$i.newName"          => 'ФИО',
-            "guestMembers.$i.newBirthDate"     => 'дата рождения',
+            "guestMembers.$i.newName" => 'ФИО',
+            "guestMembers.$i.newBirthDate" => 'дата рождения',
             "guestMembers.$i.newSportCategory" => 'разряд',
         ]);
 
@@ -745,13 +755,13 @@ class JoinRegattaModal extends Component
 
         $ref = $this->guestMembers[$i]['ref'];
         $this->guestMembers[$i] = array_merge($this->emptySlot(), [
-            'ref'            => $ref,
-            'mode'           => 'filled',
-            'registered'     => false,
-            'name'           => $name,
-            'birth_date'     => $birthDate,
+            'ref' => $ref,
+            'mode' => 'filled',
+            'registered' => false,
+            'name' => $name,
+            'birth_date' => $birthDate,
             'sport_category' => $this->guestMembers[$i]['newSportCategory'] ?: null,
-            'role'           => 'main',
+            'role' => 'main',
         ]);
     }
 
@@ -787,7 +797,7 @@ class JoinRegattaModal extends Component
     private function generateUniqueEmail(): string
     {
         do {
-            $email = 'noemail_' . Str::lower(Str::random(24)) . '@noemail.local';
+            $email = 'noemail_'.Str::lower(Str::random(24)).'@noemail.local';
         } while (User::where('email', $email)->exists());
 
         return $email;
@@ -797,7 +807,7 @@ class JoinRegattaModal extends Component
     private function generateUniquePhone(): string
     {
         do {
-            $phone = '+7' . str_pad((string) random_int(0, 9999999999), 10, '0', STR_PAD_LEFT);
+            $phone = '+7'.str_pad((string) random_int(0, 9999999999), 10, '0', STR_PAD_LEFT);
         } while (User::where('phone', $phone)->exists());
 
         return $phone;
@@ -819,7 +829,7 @@ class JoinRegattaModal extends Component
         $selectsCaptain = $this->captainMode === 'select';
 
         $rules = [
-            'regattaId'     => ['required', 'string', 'exists:regattas,id'],
+            'regattaId' => ['required', 'string', 'exists:regattas,id'],
             'entryPassword' => ['required', 'string', 'min:4', 'max:255'],
             'entryPasswordConfirmation' => ['required', 'string', 'same:entryPassword'],
         ];
@@ -833,9 +843,9 @@ class JoinRegattaModal extends Component
         if ($selectsCaptain) {
             $rules['captainUserId'] = ['required', 'string', 'exists:users,id'];
         } else {
-            $rules['guestName']      = ['required', 'string', 'max:255', $this->fullNameRule()];
-            $rules['guestEmail']     = ['required', 'email', 'unique:users,email'];
-            $rules['guestPhone']     = ['required', 'unique:users,phone'];
+            $rules['guestName'] = ['required', 'string', 'max:255', $this->fullNameRule()];
+            $rules['guestEmail'] = ['required', 'email', 'unique:users,email'];
+            $rules['guestPhone'] = ['required', 'unique:users,phone'];
             $rules['guestBirthDate'] = ['required', 'date', 'before:today'];
 
             if ($this->guestSportCategory !== '') {
@@ -861,27 +871,27 @@ class JoinRegattaModal extends Component
         // Документы не блокируют подачу: заявку можно подать без файлов.
         // Недостающие обязательные документы помечаются на заявке (documents_complete).
         foreach ($this->requiredDocuments() as $doc) {
-            $key = 'documentFiles.' . $doc['doc_type'];
+            $key = 'documentFiles.'.$doc['doc_type'];
             $rules[$key] = ['nullable', 'array'];
-            $rules[$key . '.*'] = ['file', 'mimes:pdf,doc,docx,jpg,jpeg,png,webp', 'max:20480'];
+            $rules[$key.'.*'] = ['file', 'mimes:pdf,doc,docx,jpg,jpeg,png,webp', 'max:20480'];
         }
 
         $this->validate($rules, [
-            'guestEmail.unique'  => 'Пользователь с таким email уже зарегистрирован',
-            'guestPhone.unique'  => 'Пользователь с таким телефоном уже зарегистрирован',
+            'guestEmail.unique' => 'Пользователь с таким email уже зарегистрирован',
+            'guestPhone.unique' => 'Пользователь с таким телефоном уже зарегистрирован',
             'entryPasswordConfirmation.same' => 'Пароли не совпадают',
         ], [
-            'regattaId'     => 'регата',
+            'regattaId' => 'регата',
             'entryPassword' => 'пароль заявки',
             'entryPasswordConfirmation' => 'подтверждение пароля',
-            'guestName'    => 'ФИО',
-            'guestEmail'   => 'email',
-            'guestPhone'   => 'телефон',
+            'guestName' => 'ФИО',
+            'guestEmail' => 'email',
+            'guestPhone' => 'телефон',
             'guestBirthDate' => 'дата рождения',
             'guestSportCategory' => 'разряд',
-            'teamId'       => 'команда',
-            'teamName'     => 'название команды',
-            'yachtId'      => 'яхта',
+            'teamId' => 'команда',
+            'teamName' => 'название команды',
+            'yachtId' => 'яхта',
             'newYachtName' => 'название яхты',
             'newYachtVfps' => 'номер паруса',
             'captainUserId' => 'капитан',
@@ -925,7 +935,7 @@ class JoinRegattaModal extends Component
             }
         }
 
-        //$password = Str::password(12);
+        // $password = Str::password(12);
         $password = 'Carter30pro';
 
         try {
@@ -936,12 +946,12 @@ class JoinRegattaModal extends Component
                     $captain = User::findOrFail($this->captainUserId);
                 } else {
                     $captain = User::create([
-                        'name'           => $this->guestName,
-                        'email'          => $this->guestEmail,
-                        'phone'          => $this->guestPhone,
-                        'birth_date'     => $this->guestBirthDate,
+                        'name' => $this->guestName,
+                        'email' => $this->guestEmail,
+                        'phone' => $this->guestPhone,
+                        'birth_date' => $this->guestBirthDate,
                         'sport_category' => $this->guestSportCategory ?: null,
-                        'password'       => $password,
+                        'password' => $password,
                         'creation_source' => CreationSource::QuickRequest,
                     ]);
                 }
@@ -965,22 +975,22 @@ class JoinRegattaModal extends Component
                         ?? $team->organizer;
 
                     if (! $submitActor instanceof User) {
-                        throw \Illuminate\Validation\ValidationException::withMessages([
+                        throw ValidationException::withMessages([
                             'teamId' => 'У выбранной команды нет организатора, подача невозможна.',
                         ]);
                     }
                 } else {
                     $team = Team::create([
-                        'name'            => $this->teamName,
-                        'organizer_id'    => $submitter->id,
+                        'name' => $this->teamName,
+                        'organizer_id' => $submitter->id,
                         'approval_status' => 'approved',
                     ]);
 
                     TeamMember::firstOrCreate(
                         ['team_id' => $team->id, 'user_id' => $submitter->id],
                         [
-                            'role'      => TeamMemberRole::Organizer->value,
-                            'status'    => 'active',
+                            'role' => TeamMemberRole::Organizer->value,
+                            'status' => 'active',
                             'joined_at' => now(),
                         ],
                     );
@@ -993,8 +1003,8 @@ class JoinRegattaModal extends Component
                 $captainMember = TeamMember::firstOrCreate(
                     ['team_id' => $team->id, 'user_id' => $captain->id],
                     [
-                        'role'      => TeamMemberRole::Member->value,
-                        'status'    => 'active',
+                        'role' => TeamMemberRole::Member->value,
+                        'status' => 'active',
                         'joined_at' => now(),
                     ],
                 );
@@ -1016,12 +1026,12 @@ class JoinRegattaModal extends Component
                     // Незарегистрированный участник: создаём аккаунт со случайным email/телефоном
                     if ($isUnregistered) {
                         $memberUser = User::create([
-                            'name'           => $m['name'],
-                            'birth_date'     => $m['birth_date'],
+                            'name' => $m['name'],
+                            'birth_date' => $m['birth_date'],
                             'sport_category' => $m['sport_category'],
-                            'email'          => $this->generateUniqueEmail(),
-                            'phone'          => $this->generateUniquePhone(),
-                            'password'       => 'Carter30pro',
+                            'email' => $this->generateUniqueEmail(),
+                            'phone' => $this->generateUniquePhone(),
+                            'password' => 'Carter30pro',
                             'creation_source' => CreationSource::QuickRequest,
                         ]);
                         $memberUserId = (string) $memberUser->id;
@@ -1041,10 +1051,10 @@ class JoinRegattaModal extends Component
                             'user_id' => $memberUserId,
                         ],
                         [
-                            'role'         => TeamMemberRole::Member->value,
-                            'status'       => 'active',
+                            'role' => TeamMemberRole::Member->value,
+                            'status' => 'active',
                             'is_permanent' => $isUnregistered,
-                            'joined_at'    => now(),
+                            'joined_at' => now(),
                         ],
                     );
                     $crew[(string) $member->id] = in_array($m['role'], ['main', 'reserve'], true) ? $m['role'] : 'main';
@@ -1053,9 +1063,9 @@ class JoinRegattaModal extends Component
                 // 5. Яхта: новая или выбранная свободная
                 if ($this->yachtMode === 'create') {
                     $yacht = Yacht::create([
-                        'name'            => $this->newYachtName,
-                        'vfps_number'     => $this->newYachtVfps ?: null,
-                        'user_id'         => $submitter->id,
+                        'name' => $this->newYachtName,
+                        'vfps_number' => $this->newYachtVfps ?: null,
+                        'user_id' => $submitter->id,
                         'approval_status' => 'approved',
                     ]);
                 } else {
@@ -1067,7 +1077,7 @@ class JoinRegattaModal extends Component
 
                 return [$entry, $captain];
             });
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             foreach ($e->errors() as $field => $messages) {
                 if ($field === 'teamId' && ! $selectsTeam) {
                     $field = 'teamName';
@@ -1113,8 +1123,8 @@ class JoinRegattaModal extends Component
                 $path = $file->store('documents', 'public');
                 $entry->documents()->create([
                     'doc_type' => $doc['doc_type'],
-                    'title'    => $doc['title'],
-                    'url'      => $path,
+                    'title' => $doc['title'],
+                    'url' => $path,
                 ]);
             }
         }
@@ -1124,7 +1134,7 @@ class JoinRegattaModal extends Component
         }
 
         // Уведомляем администраторов о новой заявке на регату.
-        $adminEmails = app(\App\Services\SettingsService::class)->adminNotificationEmails();
+        $adminEmails = app(SettingsService::class)->adminNotificationEmails();
 
         if ($adminEmails !== []) {
             try {
@@ -1160,7 +1170,66 @@ class JoinRegattaModal extends Component
         }
 
         $this->dispatch('regatta-entry-submitted', entryId: $entry->id);
+        $this->submittedEntryId = $entry->id;
         $this->submitted = true;
+    }
+
+    // ──────────────────────────────────────────────
+    // Онлайн-оплата стартового взноса
+    // ──────────────────────────────────────────────
+
+    /** Доступна ли онлайн-оплата взноса для только что поданной заявки. */
+    #[Computed]
+    public function canPayOnline(): bool
+    {
+        return $this->submittedEntryId !== null
+            && (bool) $this->selectedRegatta?->entry_fee_required
+            && ! $this->feePaid
+            && app(PaymentManager::class)->isEnabled();
+    }
+
+    /** Редирект на страницу оплаты стартового взноса поданной заявки. */
+    public function payOnline(): void
+    {
+        $entry = $this->submittedEntryId
+            ? RegattaEntry::find($this->submittedEntryId)
+            : null;
+
+        if ($entry === null) {
+            $this->addError('general', 'Заявка не найдена. Оплатить взнос можно из личного кабинета.');
+
+            return;
+        }
+
+        $registry = $entry->paymentRegistries()
+            ->where('status', '!=', PaymentStatus::Paid->value)
+            ->latest()
+            ->first();
+
+        if ($registry === null) {
+            $this->addError('general', 'Платёж не найден. Оплатить взнос можно из личного кабинета.');
+
+            return;
+        }
+
+        $actor = Auth::user();
+
+        if (! $actor instanceof User) {
+            $this->addError('general', 'Для онлайн-оплаты войдите в личный кабинет.');
+
+            return;
+        }
+
+        try {
+            $transaction = app(StartOnlinePaymentAction::class)
+                ->handle($registry, $actor);
+        } catch (ValidationException $e) {
+            $this->addError('general', collect($e->errors())->flatten()->first());
+
+            return;
+        }
+
+        $this->redirect($transaction->confirmation_url);
     }
 
     #[Computed]

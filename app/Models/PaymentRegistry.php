@@ -8,6 +8,7 @@ use App\Models\Concerns\NormalizesHeicImageColumns;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\Storage;
 
@@ -23,6 +24,7 @@ class PaymentRegistry extends Model
         'amount',
         'status',
         'payment_method',
+        'paid_at',
         'document',
         'payable_type',
         'payable_id',
@@ -34,6 +36,7 @@ class PaymentRegistry extends Model
             'amount' => 'decimal:2',
             'status' => PaymentStatus::class,
             'payment_method' => PaymentMethod::class,
+            'paid_at' => 'datetime',
         ];
     }
 
@@ -45,6 +48,12 @@ class PaymentRegistry extends Model
     public function payable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /** Транзакции эквайринга (попытки онлайн-оплаты). */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(PaymentTransaction::class);
     }
 
     // ──────────────────────────────────────────────

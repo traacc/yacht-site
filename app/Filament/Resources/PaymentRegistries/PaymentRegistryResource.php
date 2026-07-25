@@ -12,6 +12,7 @@ use App\Models\PaymentRegistry;
 use App\Models\RegattaEntry;
 use App\Models\Team;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -137,6 +138,18 @@ class PaymentRegistryResource extends Resource
                     ->getStateUsing(fn (PaymentRegistry $record): string => $record->payableLabel())
                     ->placeholder('—')
                     ->toggleable(),
+                TextColumn::make('transactions_count')
+                    ->label('Транзакции')
+                    ->counts('transactions')
+                    ->badge()
+                    ->color('gray')
+                    ->toggleable(),
+                TextColumn::make('paid_at')
+                    ->label('Оплачен')
+                    ->dateTime('d.m.Y H:i')
+                    ->placeholder('—')
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('created_at')
                     ->label('Создан')
@@ -158,6 +171,18 @@ class PaymentRegistryResource extends Resource
             ->filtersFormColumns(3)
             ->deferFilters(false)
             ->recordActions([
+                Action::make('transactions')
+                    ->label('Транзакции')
+                    ->icon(Heroicon::OutlinedCreditCard)
+                    ->color('gray')
+                    ->visible(fn (PaymentRegistry $record): bool => $record->transactions()->exists())
+                    ->modalHeading('Транзакции эквайринга')
+                    ->modalContent(fn (PaymentRegistry $record) => view(
+                        'filament.resources.payment-registry-transactions',
+                        ['transactions' => $record->transactions()->latest()->get()],
+                    ))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Закрыть'),
                 EditAction::make()->modalHeading('Редактировать реестр платежей'),
                 DeleteAction::make(),
             ])

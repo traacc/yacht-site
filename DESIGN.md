@@ -225,6 +225,9 @@ REST API для судейской программы «КАРТЕР 30». Middl
 ### 7.6. Статусы регат
 Команда `regattas:update-statuses` (ежеминутно) переводит регаты по датам: upcoming → closest → active → finished; поддерживаются cancelled/postponed (с переносом на дату или другую регату).
 
+### 7.7. Онлайн-оплата (эквайринг)
+Провайдер-агностичный движок в `app/Services/Payments`: контракт `PaymentGateway` (создание платежа, статус, верификация вебхука, cancel/refund; DTO с заделом под чеки 54-ФЗ), резолв активного провайдера — `PaymentManager` по настройкам группы `payments` (страница «Онлайн-оплата» в админке). Попытки оплаты — `PaymentTransaction` (N транзакций на запись `PaymentRegistry`); `StartOnlinePaymentAction` создаёт транзакцию и редиректит на `confirmation_url`, результат идемпотентно применяет `ApplyPaymentResultAction` (атомарный захват статуса; реестр → `Paid`/`Online` обычным `update()`, чтобы сработал `PaymentRegistryObserver` → `fee_paid`; письмо `PaymentSucceeded`). Вебхук — `POST /api/payments/webhook/{provider}` (без CSRF/MaintenanceMode), возврат плательщика — `payments.return`, сверка зависших — `payments:reconcile` (каждые 15 мин). Реальный банк не подключён: реализован `TestPaymentProvider` (внутренний симулятор по подписанной ссылке, работает в local/staging или по явному флагу). Первая точка использования — стартовый взнос заявки (кнопки в ЛК и в `JoinRegattaModal`).
+
 ## 8. Интеграции
 
 | Интеграция | Реализация | Конфигурация (env) |
@@ -235,6 +238,7 @@ REST API для судейской программы «КАРТЕР 30». Middl
 | Yandex SmartCaptcha | `Rules/YandexCaptcha` (формы feedback/questions/rental) | `YANDEX_SMARTCAPTCHA_SITE_KEY/SERVER_KEY` |
 | Погода | `WeatherService` (кэшируется) | — |
 | Почта | Mailable-классы `app/Mail`; в dev — Mailpit | `MAIL_*`, `FEEDBACK_NOTIFICATION_EMAIL` |
+| Эквайринг (онлайн-оплата) | `Services/Payments` (`PaymentGateway`/`PaymentManager`), пока только `TestPaymentProvider`; настройки — `settings`, группа `payments` | — (креденшелы реальных провайдеров добавятся в `config/services.php`) |
 
 ## 9. Медиа-файлы (Spatie Media Library)
 

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\PaymentWebhookController;
 use App\Http\Controllers\Api\RegattaListController;
 use App\Http\Controllers\Api\RegattaParticipantsController;
 use App\Http\Controllers\Api\RegattaResultsController;
@@ -20,6 +21,12 @@ use Illuminate\Support\Facades\Route;
 |   POST /api/regattas/{regatta}/results       — импорт результатов (КАРТЕР 30)
 |
 */
+
+// Вебхуки эквайринга: вне api.token (провайдеры не шлют Bearer),
+// аутентификация — подпись запроса внутри адаптера провайдера.
+Route::post('payments/webhook/{provider}', PaymentWebhookController::class)
+    ->middleware('throttle:60,1')
+    ->name('api.payments.webhook');
 
 Route::middleware('api.token')->group(function (): void {
     Route::get('regattas', RegattaListController::class)

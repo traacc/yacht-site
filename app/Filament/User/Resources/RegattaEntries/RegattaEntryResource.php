@@ -4,23 +4,29 @@ declare(strict_types=1);
 
 namespace App\Filament\User\Resources\RegattaEntries;
 
+use App\Actions\Document\SyncDocumentFilesAction;
+use App\Actions\Payment\StartOnlinePaymentAction;
+use App\Enums\PaymentStatus;
+use App\Enums\RegattaStatus;
 use App\Enums\SystemRole;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
+use App\Models\Regatta;
 use App\Models\RegattaEntry;
-use App\Models\Team;
-use App\Models\TeamMember;
 use App\Models\RegattaEntryCrew;
+use App\Models\TeamMember;
 use App\Models\User;
+use App\Models\Yacht;
+use App\Models\YachtDocumentType;
+use App\Services\Payments\PaymentManager;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
-use Filament\Notifications\Notification;
-use Filament\Actions\Action;
-use Filament\Schemas\Components\Actions;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -30,6 +36,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\ValidationException;
 
 class RegattaEntryResource extends Resource
 {
@@ -57,13 +64,13 @@ class RegattaEntryResource extends Resource
             ->whereHas('regatta', fn (Builder $q) => $q->whereIn(
                 'regatta_status',
                 [
-                    \App\Enums\RegattaStatus::Closest->value,
-                    \App\Enums\RegattaStatus::Upcoming->value,
-                    \App\Enums\RegattaStatus::Active->value,
+                    RegattaStatus::Closest->value,
+                    RegattaStatus::Upcoming->value,
+                    RegattaStatus::Active->value,
                 ],
             ))
             ->orderBy(
-                \App\Models\Regatta::select('date_start')
+                Regatta::select('date_start')
                     ->whereColumn('regattas.id', 'regatta_entries.regatta_id'),
                 'asc'
             );
@@ -87,10 +94,10 @@ class RegattaEntryResource extends Resource
                     ->afterStateUpdated(function (?string $state, Set $set): void {
                         $docs = array_map(
                             fn (array $doc) => [
-                                'doc_type'    => $doc['doc_type'],
-                                'title'       => $doc['title'],
+                                'doc_type' => $doc['doc_type'],
+                                'title' => $doc['title'],
                                 'is_required' => $doc['is_required'] ?? false,
-                                'files'       => [],
+                                'files' => [],
                             ],
                             ManageRegattaEntries::getRequiredDocuments($state),
                         );
@@ -118,8 +125,8 @@ class RegattaEntryResource extends Resource
                     }),
                 Select::make('yacht_id')
                     ->label('Яхта')
-                    ->options(fn (Get $get, ?\App\Models\RegattaEntry $record = null) => \App\Models\Yacht::query()
-                        //->where('user_id', auth()->id())
+                    ->options(fn (Get $get, ?RegattaEntry $record = null) => Yacht::query()
+                        // ->where('user_id', auth()->id())
                         ->when(
                             $get('regatta_id'),
                             fn (Builder $query, string $regattaId) => $query->whereDoesntHave(
@@ -138,7 +145,7 @@ class RegattaEntryResource extends Resource
                     ->label('Экипаж')
                     ->columnSpanFull()
                     ->addable(true)
-                    //->deletable(false)
+                    // ->deletable(false)
                     ->reorderable(false)
                     ->default([])
                     ->rules([
@@ -159,61 +166,62 @@ class RegattaEntryResource extends Resource
                         },
                     ])
                     ->itemLabel(fn (array $state): string => ($state['member_name'] ?? 'Участник')
-                        . (($state['is_captain'] ?? false) ? ' ⭐ Рулевой' : '')
-                        . ' — ' . match ($state['role'] ?? '') {
-                        'main'              => 'Основной',
-                        'reserve'           => 'Запасной',
-                        'captain'           => 'Рулевой',
-                        //'not_participating' => 'Не участвует',
-                        default             => '—',
-                    })
+                        .(($state['is_captain'] ?? false) ? ' ⭐ Рулевой' : '')
+                        .' — '.match ($state['role'] ?? '') {
+                            'main' => 'Основной',
+                            'reserve' => 'Запасной',
+                            'captain' => 'Рулевой',
+                            // 'not_participating' => 'Не участвует',
+                            default => '—',
+                        })
                     ->schema([
-                        Select::make('team_member_id')
-                            ->label('Участник')
-                            ->options(function (Get $get): array {
-                                $teamId = $get('../../team_id');
+                            Select::make('team_member_id')
+                                ->label('Участник')
+                                ->options(function (Get $get): array {
+                                    $teamId = $get('../../team_id');
 
-                                if (! $teamId) {
-                                    return [];
-                                }
+                                    if (! $teamId) {
+                                        return [];
+                                    }
 
-                                return TeamMember::query()
-                                    ->where('team_id', $teamId)
-                                    ->where('status', 'active')
-                                    ->with('user')
-                                    ->get()
-                                    ->mapWithKeys(fn (TeamMember $member): array => [
-                                        $member->id => $member->user?->name ?? 'Неизвестный',
-                                    ])
-                                    ->sort(fn (string $a, string $b): int => strnatcasecmp($a, $b))
-                                    ->all();
-                            })
-                            ->required()
-                            ->live()
-                            ->searchable()
-                            ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                            ->afterStateUpdated(function (?string $state, Set $set): void {
-                                if (! $state) {
-                                    $set('member_name', '');
-                                    return;
-                                }
+                                    return TeamMember::query()
+                                        ->where('team_id', $teamId)
+                                        ->where('status', 'active')
+                                        ->with('user')
+                                        ->get()
+                                        ->mapWithKeys(fn (TeamMember $member): array => [
+                                            $member->id => $member->user?->name ?? 'Неизвестный',
+                                        ])
+                                        ->sort(fn (string $a, string $b): int => strnatcasecmp($a, $b))
+                                        ->all();
+                                })
+                                ->required()
+                                ->live()
+                                ->searchable()
+                                ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                                ->afterStateUpdated(function (?string $state, Set $set): void {
+                                    if (! $state) {
+                                        $set('member_name', '');
 
-                                $member = TeamMember::with('user')->find($state);
-                                $set('member_name', $member?->user?->name ?? '');
-                            }),
-                        Hidden::make('member_name'),
-                        Hidden::make('is_captain')
-                            ->default(false),
-                        Select::make('role')
-                            ->label('Роль')
-                            ->options([
-                                'main'              => 'Основной',
-                                'reserve'           => 'Запасной',
-                                'captain'           => 'Рулевой',
-                                //'not_participating' => 'Не участвует',
-                            ])
-                            ->required(),
-                    ])->columns(3)
+                                        return;
+                                    }
+
+                                    $member = TeamMember::with('user')->find($state);
+                                    $set('member_name', $member?->user?->name ?? '');
+                                }),
+                            Hidden::make('member_name'),
+                            Hidden::make('is_captain')
+                                ->default(false),
+                            Select::make('role')
+                                ->label('Роль')
+                                ->options([
+                                    'main' => 'Основной',
+                                    'reserve' => 'Запасной',
+                                    'captain' => 'Рулевой',
+                                    // 'not_participating' => 'Не участвует',
+                                ])
+                                ->required(),
+                        ])->columns(3)
                     ->itemLabel(null)
                     ->addActionLabel('Добавить члена экипажа')
                     ->deleteAction(
@@ -231,10 +239,10 @@ class RegattaEntryResource extends Resource
                     ->reorderable(false)
                     ->default(fn (Get $get) => array_map(
                         fn (array $doc) => [
-                            'doc_type'    => $doc['doc_type'],
-                            'title'       => $doc['title'],
+                            'doc_type' => $doc['doc_type'],
+                            'title' => $doc['title'],
                             'is_required' => $doc['is_required'] ?? false,
-                            'files'       => [],
+                            'files' => [],
                         ],
                         ManageRegattaEntries::getRequiredDocuments($get('regatta_id')),
                     ))
@@ -263,7 +271,7 @@ class RegattaEntryResource extends Resource
                             ->maxSize(20480)
                             ->maxFiles(config('documents.max_files_per_type', 10))
                             ->downloadable()
-                            ->helperText(fn () => 'Можно загрузить до ' . config('documents.max_files_per_type', 10) . ' файлов'),
+                            ->helperText(fn () => 'Можно загрузить до '.config('documents.max_files_per_type', 10).' файлов'),
                     ]),
             ]);
     }
@@ -284,21 +292,21 @@ class RegattaEntryResource extends Resource
                     ->searchable(),
                 TextColumn::make('status')
                     ->badge()->label('Статус')->formatStateUsing(fn (string $state): string => match ($state) {
-                    'pending'  => 'На проверке',
-                    'approved' => 'Активная',
-                    'rejected' => 'Отклонена',
-                    default    => $state,
-                })->color(fn (string $state): string => match ($state) {
-                    'pending'  => 'gray',
-                    'approved' => 'success',
-                    'rejected' => 'danger',
-                    default    => 'gray',
-                }),
+                        'pending' => 'На проверке',
+                        'approved' => 'Активная',
+                        'rejected' => 'Отклонена',
+                        default => $state,
+                    })->color(fn (string $state): string => match ($state) {
+                        'pending' => 'gray',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                        default => 'gray',
+                    }),
                 TextColumn::make('crew')
                     ->label('Экипаж')
                     ->state(fn (RegattaEntry $record): string => (string) $record->crew()
-                        ->whereIn('role', ['main', 'reserve', 'captain'])
-                        ->count()
+                            ->whereIn('role', ['main', 'reserve', 'captain'])
+                            ->count()
                     ),
                 IconColumn::make('documents_complete')
                     ->label('Документы')
@@ -313,11 +321,11 @@ class RegattaEntryResource extends Resource
 
                 TextColumn::make('created_at')
                     ->dateTime()
-                    //->sortable()
+                    // ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->dateTime()
-                    //->sortable()
+                    // ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->stackedOnMobile()
@@ -325,10 +333,45 @@ class RegattaEntryResource extends Resource
                 //
             ])->emptyStateHeading('Записей пока нет')
             ->recordActions([
+                Action::make('payOnline')
+                    ->label('Оплатить взнос')
+                    ->icon(Heroicon::OutlinedCreditCard)
+                    ->color('success')
+                    ->visible(fn (RegattaEntry $record): bool => (bool) $record->regatta?->entry_fee_required
+                        && ! $record->fee_paid
+                        && app(PaymentManager::class)->isEnabled())
+                    ->action(function (RegattaEntry $record) {
+                        $registry = $record->paymentRegistries()
+                            ->where('status', '!=', PaymentStatus::Paid->value)
+                            ->latest()
+                            ->first();
+
+                        // Заявка могла быть создана до внедрения сборов — реестра нет.
+                        $registry ??= $record->paymentRegistries()->create([
+                            'name' => "Сбор за участие — {$record->regatta->name} ({$record->team?->name})",
+                            'amount' => $record->regatta->entry_fee_amount ?? 0,
+                            'status' => PaymentStatus::Pending,
+                        ]);
+
+                        try {
+                            $transaction = app(StartOnlinePaymentAction::class)
+                                ->handle($registry, auth()->user());
+                        } catch (ValidationException $e) {
+                            Notification::make()
+                                ->title('Оплата недоступна')
+                                ->body(collect($e->errors())->flatten()->first())
+                                ->danger()
+                                ->send();
+
+                            return null;
+                        }
+
+                        return redirect()->away($transaction->confirmation_url);
+                    }),
                 EditAction::make()->modalHeading('Редактировать заявку на регату')
                     ->mountUsing(function (Schema $form, RegattaEntry $record): void {
                         $data = $record->toArray();
-                        $data['required_documents'] = app(\App\Actions\Document\SyncDocumentFilesAction::class)
+                        $data['required_documents'] = app(SyncDocumentFilesAction::class)
                             ->load($record, ManageRegattaEntries::getRequiredDocuments($record->regatta_id));
                         $data['crew'] = static::loadCrew($record);
                         $form->fill($data);
@@ -357,7 +400,7 @@ class RegattaEntryResource extends Resource
                         $data['documents_complete'] = static::documentsComplete($docs);
                         $record->update($data);
 
-                        app(\App\Actions\Document\SyncDocumentFilesAction::class)
+                        app(SyncDocumentFilesAction::class)
                             ->execute($record, $docs);
 
                         static::syncCrew($record, $crew);
@@ -382,7 +425,7 @@ class RegattaEntryResource extends Resource
     /**
      * Все ли обязательные документы загружены среди элементов repeater'а.
      *
-     * @param array<int, array{doc_type?: string, is_required?: bool, files?: array}> $docs
+     * @param  array<int, array{doc_type?: string, is_required?: bool, files?: array}>  $docs
      */
     public static function documentsComplete(array $docs): bool
     {
@@ -407,13 +450,13 @@ class RegattaEntryResource extends Resource
             return $state['title'] ?? null;
         }
 
-        $model = \App\Models\YachtDocumentType::cachedAll()
-            ->first(fn (\App\Models\YachtDocumentType $t) => $t->key === $docType);
+        $model = YachtDocumentType::cachedAll()
+            ->first(fn (YachtDocumentType $t) => $t->key === $docType);
 
         $label = $model?->label ?? ($state['title'] ?? null);
         $isRequired = (bool) ($state['is_required'] ?? false);
 
-        return $label ? ($label . ($isRequired ? ' *' : ' (необязательный)')) : null;
+        return $label ? ($label.($isRequired ? ' *' : ' (необязательный)')) : null;
     }
 
     // ──────────────────────────────────────────────
@@ -436,7 +479,7 @@ class RegattaEntryResource extends Resource
             ->where('status', 'active');
 
         if ($regattaId) {
-            $participatingIds = \App\Models\RegattaEntryCrew::query()
+            $participatingIds = RegattaEntryCrew::query()
                 ->whereHas('regattaEntry', fn (Builder $q) => $q->where('regatta_id', $regattaId))
                 ->pluck('team_member_id');
 
@@ -448,9 +491,9 @@ class RegattaEntryResource extends Resource
             ->get()
             ->map(fn (TeamMember $member): array => [
                 'team_member_id' => $member->id,
-                'member_name'    => $member->user?->name ?? 'Неизвестный',
-                'is_captain'     => false,
-                'role'           => 'main',
+                'member_name' => $member->user?->name ?? 'Неизвестный',
+                'is_captain' => false,
+                'role' => 'main',
             ])
             ->all();
     }
@@ -465,11 +508,11 @@ class RegattaEntryResource extends Resource
         return $record->crew()
             ->with('teamMember.user')
             ->get()
-            ->map(fn (\App\Models\RegattaEntryCrew $crew): array => [
+            ->map(fn (RegattaEntryCrew $crew): array => [
                 'team_member_id' => $crew->team_member_id,
-                'member_name'    => $crew->teamMember?->user?->name ?? 'Неизвестный',
-                'is_captain'     => $crew->role === 'captain',
-                'role'           => $crew->role,
+                'member_name' => $crew->teamMember?->user?->name ?? 'Неизвестный',
+                'is_captain' => $crew->role === 'captain',
+                'role' => $crew->role,
             ])
             ->all();
     }
@@ -477,7 +520,7 @@ class RegattaEntryResource extends Resource
     /**
      * Синхронизирует экипаж после сохранения формы.
      *
-     * @param array<int, array{team_member_id: string, role: string}> $crew
+     * @param  array<int, array{team_member_id: string, role: string}>  $crew
      */
     public static function syncCrew(RegattaEntry $record, array $crew): void
     {
@@ -493,7 +536,7 @@ class RegattaEntryResource extends Resource
 
             $record->crew()->updateOrCreate(
                 ['team_member_id' => $item['team_member_id']],
-                ['role'           => $item['role'] ?? 'main'],
+                ['role' => $item['role'] ?? 'main'],
             );
         }
     }

@@ -2,6 +2,8 @@
 
 use App\Actions\Feedback\SubmitFeedbackAction;
 use App\Actions\GenerateCalendarPdfAction;
+use App\Actions\Payment\ApplyPaymentResultAction;
+use App\Actions\Payment\HandleWebhookAction;
 use App\Actions\Regatta\DownloadRegattaDocumentsAction;
 use App\Actions\Regatta\DownloadRegattaTeamsAction;
 use App\Actions\Regatta\GenerateRegattaTeamsPdfAction;
@@ -10,6 +12,8 @@ use App\Actions\RegattaResult\GenerateRegattaResultPdfAction;
 use App\Actions\Team\GenerateTeamHistoryPdfAction;
 use App\Actions\Voting\CastVoteAction;
 use App\Actions\YachtRental\SubmitYachtRentalRequestAction;
+use App\Enums\PaymentProviderCode;
+use App\Enums\PaymentTransactionStatus;
 use App\Enums\RegattaStatus;
 use App\Enums\RentalRequestStatus;
 use App\Enums\VotingStatus;
@@ -18,6 +22,7 @@ use App\Models\Gallery;
 use App\Models\Help;
 use App\Models\HelpCategory;
 use App\Models\News;
+use App\Models\PaymentTransaction;
 use App\Models\PersonalRating;
 use App\Models\Regatta;
 use App\Models\RegattaEntryCrew;
@@ -30,6 +35,8 @@ use App\Models\UserQuestion;
 use App\Models\Vote;
 use App\Models\Voting;
 use App\Models\Yacht;
+use App\Services\Payments\PaymentManager;
+use App\Services\Payments\Providers\TestPaymentProvider;
 use App\Services\RatingCalculator;
 use App\Services\SettingsService;
 use App\Services\WeatherService;
@@ -39,6 +46,7 @@ use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Spatie\MediaLibrary\Support\MediaStream;
@@ -916,6 +924,77 @@ Route::post('/questions', function (Request $request) {
 
     return back()->with('question_sent', true);
 })->middleware('auth')->name('questions.store');
+
+// ──────────────────────────────────────────────
+// Онлайн-оплата (эквайринг)
+// ──────────────────────────────────────────────
+
+// Страница результата, куда провайдер возвращает плательщика.
+// Если вебхук ещё не пришёл — синхронно сверяем статус у провайдера.
+Route::get('/payments/{transaction}/return', function (PaymentTransaction $transaction) {
+    if ($transaction->status === PaymentTransactionStatus::Pending && $transaction->external_id !== null) {
+        $provider = app(PaymentManager::class)->provider($transaction->provider);
+
+        if ($provider->isConfigured()) {
+            $result = $provider->getPayment($transaction->external_id);
+
+            if ($result !== null) {
+                app(ApplyPaymentResultAction::class)->handle($transaction, $result);
+                $transaction->refresh();
+            }
+        }
+    }
+
+    return view('pages.payment-return', ['transaction' => $transaction]);
+})->name('payments.return');
+
+// Симулятор «страницы оплаты» тестового провайдера. Доступен только
+// по временной подписанной ссылке и только при активном тестовом провайдере.
+Route::get('/payments/test/{transaction}/pay', function (PaymentTransaction $transaction) {
+    abort_unless(app(PaymentManager::class)->activeProvider() instanceof TestPaymentProvider, 404);
+    abort_unless($transaction->provider === PaymentProviderCode::Test, 404);
+
+    return view('pages.payment-test-simulator', [
+        'transaction' => $transaction,
+        'confirmUrl' => URL::temporarySignedRoute(
+            'payments.test.confirm',
+            now()->addHour(),
+            ['transaction' => $transaction->id],
+        ),
+    ]);
+})->middleware('signed')->name('payments.test.pay');
+
+// Колбэк симулятора: формирует payload «вебхука» и прогоняет его через
+// тот же путь верификации и обработки, что и настоящий вебхук провайдера.
+Route::post('/payments/test/{transaction}/confirm', function (Request $request, PaymentTransaction $transaction) {
+    abort_unless(app(PaymentManager::class)->activeProvider() instanceof TestPaymentProvider, 404);
+    abort_unless($transaction->provider === PaymentProviderCode::Test, 404);
+
+    $succeeded = $request->input('outcome') === 'success';
+
+    $payload = json_encode([
+        'external_id' => $transaction->external_id,
+        'status' => $succeeded ? PaymentTransactionStatus::Succeeded->value : PaymentTransactionStatus::Canceled->value,
+        'failure_reason' => $succeeded ? null : 'Плательщик отказался от оплаты',
+    ], JSON_UNESCAPED_UNICODE);
+
+    $webhook = Request::create(
+        route('api.payments.webhook', ['provider' => PaymentProviderCode::Test->value]),
+        'POST',
+        [],
+        [],
+        [],
+        [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_TEST_SIGNATURE' => TestPaymentProvider::sign($payload),
+        ],
+        $payload,
+    );
+
+    app(HandleWebhookAction::class)->handle(PaymentProviderCode::Test, $webhook);
+
+    return redirect()->route('payments.return', $transaction);
+})->middleware('signed')->name('payments.test.confirm');
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth'])

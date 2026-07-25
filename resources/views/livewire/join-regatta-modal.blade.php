@@ -50,6 +50,22 @@
                 @if ($guestRegistered)
                     <p class="text-gray-600 mt-3">Мы создали для вас личный кабинет. Данные для входа отправлены на указанный email.</p>
                 @endif
+                @if ($this->canPayOnline)
+                    <div class="mt-4 rounded bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+                        Для участия необходимо оплатить стартовый взнос
+                        @if ($this->selectedRegatta?->entry_fee_amount !== null)
+                            в размере <span class="font-semibold">{{ number_format((float) $this->selectedRegatta->entry_fee_amount, 2, ',', ' ') }} ₽</span>
+                        @endif
+                    </div>
+                    <button type="button" wire:click="payOnline" wire:loading.attr="disabled"
+                            class="mt-4 inline-flex justify-center bg-[#2D92CE] px-6 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90">
+                        Оплатить онлайн
+                    </button>
+                    <p class="text-xs text-gray-500 mt-2">Оплатить можно и позже — из личного кабинета.</p>
+                @endif
+                @error('general')
+                    <p class="text-sm text-red-600 mt-3">{{ $message }}</p>
+                @enderror
             </div>
         @elseif ($leftCrew)
             <div class="flex items-center justify-between pb-3 mb-4">
@@ -635,6 +651,9 @@
                                 в размере <span class="font-semibold">{{ number_format((float) $this->selectedRegatta->entry_fee_amount, 2, ',', ' ') }} ₽</span>.
                             @else
                                 .
+                            @endif
+                            @if (app(\App\Services\Payments\PaymentManager::class)->isEnabled())
+                                Оплатить онлайн можно будет сразу после подачи заявки или позже из личного кабинета.
                             @endif
                         </div>
                     </div>
