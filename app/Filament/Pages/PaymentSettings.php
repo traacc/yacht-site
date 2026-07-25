@@ -134,9 +134,12 @@ class PaymentSettings extends Page
         /** @var SettingsService $settings */
         $settings = app(SettingsService::class);
 
+        // Select с options(Enum::class) возвращает enum-объект, а не строку.
+        $provider = $data['provider'] ?? null;
+
         $settings->setMany([
             'payments.enabled' => (bool) ($data['enabled'] ?? false),
-            'payments.provider' => (string) ($data['provider'] ?? ''),
+            'payments.provider' => $provider instanceof PaymentProviderCode ? $provider->value : (string) ($provider ?? ''),
             'payments.test_enabled' => (bool) ($data['test_enabled'] ?? false),
             'payments.test_allow_production' => (bool) ($data['test_allow_production'] ?? false),
         ], 'payments');
