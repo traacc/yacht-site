@@ -226,7 +226,14 @@ REST API для судейской программы «КАРТЕР 30». Middl
 Команда `regattas:update-statuses` (ежеминутно) переводит регаты по датам: upcoming → closest → active → finished; поддерживаются cancelled/postponed (с переносом на дату или другую регату).
 
 ### 7.7. Онлайн-оплата (эквайринг)
+**Верификация e-mail — обязательное условие оплаты** (см. 7.8).
+
 Провайдер-агностичный движок в `app/Services/Payments`: контракт `PaymentGateway` (создание платежа, статус, верификация вебхука, cancel/refund; DTO с заделом под чеки 54-ФЗ), резолв активного провайдера — `PaymentManager` по настройкам группы `payments` (страница «Онлайн-оплата» в админке). Попытки оплаты — `PaymentTransaction` (N транзакций на запись `PaymentRegistry`); `StartOnlinePaymentAction` создаёт транзакцию и редиректит на `confirmation_url`, результат идемпотентно применяет `ApplyPaymentResultAction` (атомарный захват статуса; реестр → `Paid`/`Online` обычным `update()`, чтобы сработал `PaymentRegistryObserver` → `fee_paid`; письмо `PaymentSucceeded`). Вебхук — `POST /api/payments/webhook/{provider}` (без CSRF/MaintenanceMode), возврат плательщика — `payments.return`, сверка зависших — `payments:reconcile` (каждые 15 мин). Реальный банк не подключён: реализован `TestPaymentProvider` (внутренний симулятор по подписанной ссылке, работает в local/staging или по явному флагу). Первая точка использования — стартовый взнос заявки (кнопки в ЛК и в `JoinRegattaModal`).
+
+### 7.8. Верификация e-mail
+`User` реализует `MustVerifyEmail`; письмо — брендированное `VerifyEmailMail` через переопределённый `sendEmailVerificationNotification()` (подписанная ссылка формата Laravel, срок — `config('auth.verification.expire')`, сутки). Единая точка отправки — `SendEmailVerificationLinkAction` (троттлинг 3 письма / 10 мин на пару «e-mail + IP», отказ для технических адресов `@noemail.local`); её вызывают регистрация (`LoginModal::register`), гостевая быстрая заявка, смена e-mail в профиле ЛК (`EditProfile` сбрасывает `email_verified_at`) и все кнопки «отправить ещё раз». Подтверждение — стандартный `VerifyEmailController`; `markEmailAsVerified()` переопределён на `saveQuietly()`, иначе хук `saving` (проверка дублей ФИО) блокирует подтверждение.
+
+**Гейт**: онлайн-оплата доступна только с подтверждённым e-mail — проверка в `StartOnlinePaymentAction` (до переиспользования транзакции). UI: в ЛК и на экране поданной заявки вместо «Оплатить» показывается «Подтвердите e-mail», в панели ЛК — баннер (`EmailVerificationBanner`, renderHook `TOPBAR_AFTER`). В админке — колонка/фильтр статуса и действия «Письмо для подтверждения» / «Подтвердить вручную» (для офлайн-оплат, только админ).
 
 ## 8. Интеграции
 

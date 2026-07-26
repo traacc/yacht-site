@@ -52,6 +52,23 @@ final class StartOnlinePaymentAction
             ]);
         }
 
+        // Финансовые операции — только для пользователей с подтверждённым e-mail.
+        // Проверка стоит до переиспользования транзакции, иначе неподтверждённый
+        // пользователь получил бы ранее выданную ссылку на оплату.
+        if ($actor->hasTechnicalEmail()) {
+            throw ValidationException::withMessages([
+                'payment' => 'Онлайн-оплата недоступна: в профиле не указан настоящий e-mail. '
+                    .'Укажите e-mail в личном кабинете и подтвердите его.',
+            ]);
+        }
+
+        if (! $actor->hasVerifiedEmail()) {
+            throw ValidationException::withMessages([
+                'payment' => 'Онлайн-оплата доступна только после подтверждения e-mail. '
+                    ."Мы отправили ссылку на {$actor->email} — перейдите по ней и повторите оплату.",
+            ]);
+        }
+
         // Переиспользуем недавнюю незавершённую попытку вместо создания дубля.
         $existing = $registry->transactions()
             ->where('status', PaymentTransactionStatus::Pending->value)

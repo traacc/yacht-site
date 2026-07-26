@@ -6,6 +6,7 @@ use App\Enums\CreationSource;
 use App\Enums\SportCategory;
 use App\Enums\SystemRole;
 use App\Mail\ResetPasswordMail;
+use App\Mail\VerifyEmailMail;
 use App\Models\Concerns\NormalizesHeicImageColumns;
 use Carbon\Carbon;
 use Filament\Models\Contracts\FilamentUser;
@@ -79,6 +80,47 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     {
         Mail::to($this->email)
             ->send(new ResetPasswordMail($this, $token));
+    }
+
+    // ──────────────────────────────────────────────
+    // Подтверждение e-mail
+    // ──────────────────────────────────────────────
+
+    /**
+     * Технический адрес, сгенерированный при быстрой заявке для участника
+     * без собственной почты. На такие адреса письма не отправляются.
+     */
+    public function hasTechnicalEmail(): bool
+    {
+        return $this->email === null || str_ends_with($this->email, '@noemail.local');
+    }
+
+    /**
+     * Отправить письмо для подтверждения e-mail
+     * (брендированное письмо на русском вместо стандартного уведомления Laravel).
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        if ($this->hasTechnicalEmail()) {
+            return;
+        }
+
+        Mail::to($this->email)
+            ->send(new VerifyEmailMail($this));
+    }
+
+    /**
+     * Отметить e-mail подтверждённым.
+     *
+     * Переопределено: стандартная реализация вызывает save(), а хук saving()
+     * бросает ValidationException при дубле ФИО + даты рождения — такой
+     * пользователь никогда не смог бы подтвердить почту.
+     */
+    public function markEmailAsVerified(): bool
+    {
+        return $this->forceFill([
+            'email_verified_at' => $this->freshTimestamp(),
+        ])->saveQuietly();
     }
 
     // ──────────────────────────────────────────────

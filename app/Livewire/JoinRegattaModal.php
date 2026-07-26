@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Actions\Auth\SendEmailVerificationLinkAction;
 use App\Actions\Payment\StartOnlinePaymentAction;
 use App\Actions\Regatta\SubmitRegattaEntryAction;
 use App\Enums\CreationSource;
@@ -60,6 +61,9 @@ class JoinRegattaModal extends Component
 
     /** ID только что поданной заявки — для кнопки «Оплатить онлайн» на экране успеха */
     public ?string $submittedEntryId = null;
+
+    /** Письмо для подтверждения e-mail отправлено повторно (экран успеха) */
+    public bool $verificationEmailSent = false;
 
     /** Специальный пароль заявки — для редактирования на странице регаты без входа */
     public string $entryPassword = '';
@@ -162,6 +166,7 @@ class JoinRegattaModal extends Component
         $this->documentFiles = [];
         $this->submitted = false;
         $this->submittedEntryId = null;
+        $this->verificationEmailSent = false;
         $this->leftCrew = false;
         $this->isOpen = true;
         $this->feePaid = false;
@@ -197,7 +202,8 @@ class JoinRegattaModal extends Component
     {
         $this->isOpen = false;
         $this->reset([
-            'regattaId', 'yachtId', 'documentFiles', 'submitted', 'submittedEntryId', 'leftCrew',
+            'regattaId', 'yachtId', 'documentFiles', 'submitted', 'submittedEntryId',
+            'verificationEmailSent', 'leftCrew',
             'feePaid', 'entryPassword', 'entryPasswordConfirmation', 'freeYachts',
             'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'guestBirthDate', 'guestSportCategory',
             'captainMode', 'captainUserId', 'captainName', 'captainSearchQuery', 'captainSearchResults',
@@ -1166,6 +1172,13 @@ class JoinRegattaModal extends Component
                 report($e);
             }
 
+            // Письмо для подтверждения e-mail — без него недоступна онлайн-оплата взноса.
+            try {
+                app(SendEmailVerificationLinkAction::class)->handle($captain, throttle: false);
+            } catch (\Exception $e) {
+                report($e);
+            }
+
             $this->guestRegistered = true;
         }
 
@@ -1178,14 +1191,57 @@ class JoinRegattaModal extends Component
     // Онлайн-оплата стартового взноса
     // ──────────────────────────────────────────────
 
-    /** Доступна ли онлайн-оплата взноса для только что поданной заявки. */
-    #[Computed]
-    public function canPayOnline(): bool
+    /** Есть ли по поданной заявке неоплаченный взнос с доступной онлайн-оплатой. */
+    private function feeIsPayable(): bool
     {
         return $this->submittedEntryId !== null
             && (bool) $this->selectedRegatta?->entry_fee_required
             && ! $this->feePaid
             && app(PaymentManager::class)->isEnabled();
+    }
+
+    /** Доступна ли онлайн-оплата взноса для только что поданной заявки. */
+    #[Computed]
+    public function canPayOnline(): bool
+    {
+        return $this->feeIsPayable()
+            && (bool) Auth::user()?->hasVerifiedEmail();
+    }
+
+    /** Нужно ли перед оплатой подтвердить e-mail (вместо кнопки оплаты). */
+    #[Computed]
+    public function needsEmailVerification(): bool
+    {
+        $user = Auth::user();
+
+        return $this->feeIsPayable()
+            && $user instanceof User
+            && ! $user->hasVerifiedEmail()
+            && ! $user->hasTechnicalEmail();
+    }
+
+    /** Повторная отправка письма для подтверждения e-mail. */
+    public function resendVerificationEmail(): void
+    {
+        $user = Auth::user();
+
+        if (! $user instanceof User) {
+            $this->addError('general', 'Войдите в личный кабинет, чтобы подтвердить e-mail.');
+
+            return;
+        }
+
+        $this->verificationEmailSent = false;
+
+        try {
+            app(SendEmailVerificationLinkAction::class)->handle($user);
+        } catch (ValidationException $e) {
+            $this->addError('general', collect($e->errors())->flatten()->first());
+
+            return;
+        }
+
+        $this->verificationEmailSent = true;
     }
 
     /** Редирект на страницу оплаты стартового взноса поданной заявки. */

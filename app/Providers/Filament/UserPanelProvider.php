@@ -3,14 +3,16 @@
 namespace App\Providers\Filament;
 
 use App\Filament\User\Pages\EditProfile;
-use Filament\Http\Middleware\Authenticate;
+use App\Http\Middleware\FilamentAuthenticate;
+use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages\Dashboard;
+use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -20,15 +22,6 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
-use App\Http\Middleware\FilamentAuthenticate;
-
-use Filament\FontProviders\LocalFontProvider;
-
-use Filament\View\PanelsRenderHook;
-
-use Filament\Navigation\NavigationItem;
-
-
 class UserPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -37,7 +30,7 @@ class UserPanelProvider extends PanelProvider
             ->id('user')
             ->path('user')
             ->login()
-            ->profile(\App\Filament\User\Pages\EditProfile::class, isSimple: false) 
+            ->profile(EditProfile::class, isSimple: false)
             ->darkMode(false)
             ->favicon(asset('favicon.jpg?v=4'))
             ->brandLogo(asset('images/logo.svg'))
@@ -49,14 +42,18 @@ class UserPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/User/Pages'), for: 'App\Filament\User\Pages')
             ->navigationItems([
                 NavigationItem::make('Профиль')
-                    ->url(fn (): string => \App\Filament\User\Pages\EditProfile::getUrl(), shouldOpenInNewTab: false)
+                    ->url(fn (): string => EditProfile::getUrl(), shouldOpenInNewTab: false)
                     ->icon('profile')
-                    ->isActiveWhen(fn () => request()->routeIs('filament.user.auth.profile'))
-                    
+                    ->isActiveWhen(fn () => request()->routeIs('filament.user.auth.profile')),
+
             ])
             ->renderHook(
                 name: PanelsRenderHook::TOPBAR_BEFORE,
                 hook: fn () => view('filament.user-header')
+            )
+            ->renderHook(
+                name: PanelsRenderHook::TOPBAR_AFTER,
+                hook: fn () => view('filament.user.email-verification-banner-wrapper')
             )
             ->renderHook(
                 name: PanelsRenderHook::BODY_END,
@@ -71,12 +68,12 @@ class UserPanelProvider extends PanelProvider
             /*
             ->font(
                 'TTLakesCondensed-DemiBold',
-                url: asset('css/app.css'), 
+                url: asset('css/app.css'),
                 provider: LocalFontProvider::class
             )
             ->font(
                 'Montserrat',
-                url: asset('css/app.css'), 
+                url: asset('css/app.css'),
                 provider: LocalFontProvider::class
             )
             */
@@ -84,7 +81,7 @@ class UserPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
-                //AuthenticateSession::class,
+                // AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,
                 SubstituteBindings::class,

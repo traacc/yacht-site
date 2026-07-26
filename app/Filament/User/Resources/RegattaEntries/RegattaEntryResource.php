@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\User\Resources\RegattaEntries;
 
+use App\Actions\Auth\SendEmailVerificationLinkAction;
 use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\Payment\StartOnlinePaymentAction;
 use App\Enums\PaymentStatus;
@@ -175,53 +176,53 @@ class RegattaEntryResource extends Resource
                             default => '—',
                         })
                     ->schema([
-                            Select::make('team_member_id')
-                                ->label('Участник')
-                                ->options(function (Get $get): array {
-                                    $teamId = $get('../../team_id');
+                        Select::make('team_member_id')
+                            ->label('Участник')
+                            ->options(function (Get $get): array {
+                                $teamId = $get('../../team_id');
 
-                                    if (! $teamId) {
-                                        return [];
-                                    }
+                                if (! $teamId) {
+                                    return [];
+                                }
 
-                                    return TeamMember::query()
-                                        ->where('team_id', $teamId)
-                                        ->where('status', 'active')
-                                        ->with('user')
-                                        ->get()
-                                        ->mapWithKeys(fn (TeamMember $member): array => [
-                                            $member->id => $member->user?->name ?? 'Неизвестный',
-                                        ])
-                                        ->sort(fn (string $a, string $b): int => strnatcasecmp($a, $b))
-                                        ->all();
-                                })
-                                ->required()
-                                ->live()
-                                ->searchable()
-                                ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                                ->afterStateUpdated(function (?string $state, Set $set): void {
-                                    if (! $state) {
-                                        $set('member_name', '');
+                                return TeamMember::query()
+                                    ->where('team_id', $teamId)
+                                    ->where('status', 'active')
+                                    ->with('user')
+                                    ->get()
+                                    ->mapWithKeys(fn (TeamMember $member): array => [
+                                        $member->id => $member->user?->name ?? 'Неизвестный',
+                                    ])
+                                    ->sort(fn (string $a, string $b): int => strnatcasecmp($a, $b))
+                                    ->all();
+                            })
+                            ->required()
+                            ->live()
+                            ->searchable()
+                            ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                            ->afterStateUpdated(function (?string $state, Set $set): void {
+                                if (! $state) {
+                                    $set('member_name', '');
 
-                                        return;
-                                    }
+                                    return;
+                                }
 
-                                    $member = TeamMember::with('user')->find($state);
-                                    $set('member_name', $member?->user?->name ?? '');
-                                }),
-                            Hidden::make('member_name'),
-                            Hidden::make('is_captain')
-                                ->default(false),
-                            Select::make('role')
-                                ->label('Роль')
-                                ->options([
-                                    'main' => 'Основной',
-                                    'reserve' => 'Запасной',
-                                    'captain' => 'Рулевой',
-                                    // 'not_participating' => 'Не участвует',
-                                ])
-                                ->required(),
-                        ])->columns(3)
+                                $member = TeamMember::with('user')->find($state);
+                                $set('member_name', $member?->user?->name ?? '');
+                            }),
+                        Hidden::make('member_name'),
+                        Hidden::make('is_captain')
+                            ->default(false),
+                        Select::make('role')
+                            ->label('Роль')
+                            ->options([
+                                'main' => 'Основной',
+                                'reserve' => 'Запасной',
+                                'captain' => 'Рулевой',
+                                // 'not_participating' => 'Не участвует',
+                            ])
+                            ->required(),
+                    ])->columns(3)
                     ->itemLabel(null)
                     ->addActionLabel('Добавить члена экипажа')
                     ->deleteAction(
@@ -305,8 +306,8 @@ class RegattaEntryResource extends Resource
                 TextColumn::make('crew')
                     ->label('Экипаж')
                     ->state(fn (RegattaEntry $record): string => (string) $record->crew()
-                            ->whereIn('role', ['main', 'reserve', 'captain'])
-                            ->count()
+                        ->whereIn('role', ['main', 'reserve', 'captain'])
+                        ->count()
                     ),
                 IconColumn::make('documents_complete')
                     ->label('Документы')
@@ -337,9 +338,8 @@ class RegattaEntryResource extends Resource
                     ->label('Оплатить взнос')
                     ->icon(Heroicon::OutlinedCreditCard)
                     ->color('success')
-                    ->visible(fn (RegattaEntry $record): bool => (bool) $record->regatta?->entry_fee_required
-                        && ! $record->fee_paid
-                        && app(PaymentManager::class)->isEnabled())
+                    ->visible(fn (RegattaEntry $record): bool => static::feeIsPayable($record)
+                        && (bool) auth()->user()?->hasVerifiedEmail())
                     ->action(function (RegattaEntry $record) {
                         $registry = $record->paymentRegistries()
                             ->where('status', '!=', PaymentStatus::Paid->value)
@@ -367,6 +367,37 @@ class RegattaEntryResource extends Resource
                         }
 
                         return redirect()->away($transaction->confirmation_url);
+                    }),
+                // Пока e-mail не подтверждён, вместо оплаты предлагаем подтвердить его.
+                Action::make('verifyEmailFirst')
+                    ->label('Подтвердите e-mail')
+                    ->icon(Heroicon::OutlinedEnvelope)
+                    ->color('warning')
+                    ->visible(fn (RegattaEntry $record): bool => static::feeIsPayable($record)
+                        && ! auth()->user()?->hasVerifiedEmail())
+                    ->requiresConfirmation()
+                    ->modalHeading('Подтверждение e-mail')
+                    ->modalDescription(fn (): string => 'Онлайн-оплата доступна только после подтверждения e-mail. '
+                        .'Отправить письмо со ссылкой на '.auth()->user()?->email.'?')
+                    ->modalSubmitActionLabel('Отправить письмо')
+                    ->action(function (): void {
+                        try {
+                            app(SendEmailVerificationLinkAction::class)->handle(auth()->user());
+                        } catch (ValidationException $e) {
+                            Notification::make()
+                                ->title('Не удалось отправить письмо')
+                                ->body(collect($e->errors())->flatten()->first())
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
+
+                        Notification::make()
+                            ->title('Письмо отправлено')
+                            ->body('Перейдите по ссылке из письма — после этого можно будет оплатить взнос.')
+                            ->success()
+                            ->send();
                     }),
                 EditAction::make()->modalHeading('Редактировать заявку на регату')
                     ->mountUsing(function (Schema $form, RegattaEntry $record): void {
@@ -417,6 +448,17 @@ class RegattaEntryResource extends Resource
         return [
             'index' => ManageRegattaEntries::route('/'),
         ];
+    }
+
+    /**
+     * Есть ли по заявке неоплаченный взнос, который можно оплатить онлайн
+     * (без учёта подтверждения e-mail — оно проверяется отдельно).
+     */
+    protected static function feeIsPayable(RegattaEntry $record): bool
+    {
+        return (bool) $record->regatta?->entry_fee_required
+            && ! $record->fee_paid
+            && app(PaymentManager::class)->isEnabled();
     }
 
     /**

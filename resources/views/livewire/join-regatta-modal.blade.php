@@ -62,6 +62,26 @@
                         Оплатить онлайн
                     </button>
                     <p class="text-xs text-gray-500 mt-2">Оплатить можно и позже — из личного кабинета.</p>
+                @elseif ($this->needsEmailVerification)
+                    <div class="mt-4 rounded bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+                        Для участия необходимо оплатить стартовый взнос
+                        @if ($this->selectedRegatta?->entry_fee_amount !== null)
+                            в размере <span class="font-semibold">{{ number_format((float) $this->selectedRegatta->entry_fee_amount, 2, ',', ' ') }} ₽</span>.
+                        @else
+                            .
+                        @endif
+                        Онлайн-оплата станет доступна после подтверждения e-mail — мы отправили письмо со ссылкой на
+                        <span class="font-semibold">{{ auth()->user()->email }}</span>.
+                    </div>
+                    @if ($verificationEmailSent)
+                        <p class="text-sm text-green-600 mt-3">Письмо отправлено повторно. Проверьте почту, в том числе папку «Спам».</p>
+                    @else
+                        <button type="button" wire:click="resendVerificationEmail" wire:loading.attr="disabled"
+                                class="mt-4 inline-flex justify-center bg-[#2D92CE] px-6 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90">
+                            Отправить письмо ещё раз
+                        </button>
+                    @endif
+                    <p class="text-xs text-gray-500 mt-2">После подтверждения оплатить взнос можно в личном кабинете.</p>
                 @endif
                 @error('general')
                     <p class="text-sm text-red-600 mt-3">{{ $message }}</p>

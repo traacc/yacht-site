@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users;
 
+use App\Actions\Auth\SendEmailVerificationLinkAction;
 use App\Enums\CreationSource;
 use App\Enums\SportCategory;
 use App\Enums\SystemRole;
@@ -14,6 +15,7 @@ use App\Models\User;
 use App\Support\SafeDelete;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -29,19 +31,23 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UserResource extends Resource
 {
@@ -323,6 +329,11 @@ class UserResource extends Resource
                     ->badge()
                     ->formatStateUsing(fn (CreationSource $state): string => $state->label())
                     ->toggleable(isToggledHiddenByDefault: true),
+                IconColumn::make('email_verified_at')
+                    ->label('E-mail подтверждён')
+                    ->boolean()
+                    ->tooltip(fn (User $record): ?string => $record->email_verified_at?->format('d.m.Y H:i'))
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->label('Рег.')
                     ->dateTime('d.m.Y H:i')
@@ -346,6 +357,16 @@ class UserResource extends Resource
                             ->reject(fn ($case) => $case === CreationSource::Unknown)
                             ->mapWithKeys(fn ($case) => [$case->value => $case->getLabel()])
                     ),
+                TernaryFilter::make('email_verified')
+                    ->label('E-mail подтверждён')
+                    ->placeholder('Все')
+                    ->trueLabel('Подтверждён')
+                    ->falseLabel('Не подтверждён')
+                    ->queries(
+                        true: fn (Builder $query) => $query->whereNotNull('email_verified_at'),
+                        false: fn (Builder $query) => $query->whereNull('email_verified_at'),
+                        blank: fn (Builder $query) => $query,
+                    ),
                 TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->headerActions([
@@ -359,6 +380,46 @@ class UserResource extends Resource
                     )),
             ])
             ->recordActions([
+                ActionGroup::make([
+                    Action::make('sendEmailVerification')
+                        ->label('Письмо для подтверждения')
+                        ->icon(Heroicon::OutlinedEnvelope)
+                        ->visible(fn (User $record): bool => ! $record->hasVerifiedEmail() && ! $record->hasTechnicalEmail())
+                        ->requiresConfirmation()
+                        ->modalHeading('Отправить письмо для подтверждения e-mail?')
+                        ->modalDescription(fn (User $record): string => 'Письмо со ссылкой будет отправлено на '.$record->email.'.')
+                        ->action(function (User $record): void {
+                            try {
+                                app(SendEmailVerificationLinkAction::class)->handle($record, throttle: false);
+                            } catch (ValidationException $e) {
+                                Notification::make()
+                                    ->title('Не удалось отправить письмо')
+                                    ->body(collect($e->errors())->flatten()->first())
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            Notification::make()->title('Письмо отправлено')->success()->send();
+                        }),
+                    Action::make('verifyEmailManually')
+                        ->label('Подтвердить вручную')
+                        ->icon(Heroicon::OutlinedCheckBadge)
+                        ->color('warning')
+                        // Нужно, когда участник платит офлайн и не имеет доступа к почте.
+                        ->visible(fn (User $record): bool => ! $record->hasVerifiedEmail()
+                            && auth()->user()?->system_role === SystemRole::Admin)
+                        ->requiresConfirmation()
+                        ->modalHeading('Подтвердить e-mail вручную?')
+                        ->modalDescription('Пользователь получит доступ к онлайн-оплате без перехода по ссылке из письма. Убедитесь, что адрес принадлежит именно ему.')
+                        ->action(function (User $record): void {
+                            $record->markEmailAsVerified();
+
+                            Notification::make()->title('E-mail подтверждён')->success()->send();
+                        }),
+                ])->label('E-mail')->icon(Heroicon::OutlinedEnvelope)->button()->color('gray')
+                    ->visible(fn (User $record): bool => ! $record->hasVerifiedEmail()),
                 EditAction::make()->modalHeading('Редактировать пользователя'),
                 DeleteAction::make()->label('Удалить')
                     ->modalHeading('Удалить пользователя')

@@ -2,6 +2,7 @@
 
 namespace App\Filament\User\Pages;
 
+use App\Actions\Auth\SendEmailVerificationLinkAction;
 use App\Enums\SportCategory;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -13,6 +14,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
@@ -32,6 +34,9 @@ class EditProfile extends BaseEditProfile
         return 'Аккаунт'; // Or set a group name like 'Аккаунт'
     }
 
+    /** Новый e-mail, на который нужно отправить письмо после сохранения. */
+    protected ?string $pendingVerificationEmail = null;
+
     public function save(): void
     {
         try {
@@ -42,7 +47,56 @@ class EditProfile extends BaseEditProfile
                 ->body($exception->validator->errors()->first())
                 ->danger()
                 ->send();
+
+            return;
         }
+
+        // Письмо отправляем только после коммита: parent::save() оборачивает
+        // сохранение в транзакцию, а отправленное письмо не откатится.
+        if ($this->pendingVerificationEmail === null) {
+            return;
+        }
+
+        $this->pendingVerificationEmail = null;
+
+        try {
+            app(SendEmailVerificationLinkAction::class)->handle($this->getUser(), throttle: false);
+        } catch (ValidationException $e) {
+            Notification::make()
+                ->title('Не удалось отправить письмо')
+                ->body(collect($e->errors())->flatten()->first())
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        Notification::make()
+            ->title('Подтвердите новый e-mail')
+            ->body('Мы отправили письмо со ссылкой на новый адрес. Онлайн-оплата будет доступна после подтверждения.')
+            ->success()
+            ->send();
+    }
+
+    /**
+     * При смене e-mail подтверждение сбрасывается — новый адрес нужно подтвердить заново.
+     */
+    protected function handleRecordUpdate(Model $record, array $data): Model
+    {
+        $emailChanged = array_key_exists('email', $data)
+            && $data['email'] !== $record->getAttributeValue('email');
+
+        $record = parent::handleRecordUpdate($record, $data);
+
+        if ($emailChanged && ! $record->hasTechnicalEmail()) {
+            // email_verified_at не в $fillable — только forceFill;
+            // saveQuietly, чтобы не запускать проверку дублей ФИО в хуке saving.
+            $record->forceFill(['email_verified_at' => null])->saveQuietly();
+
+            $this->pendingVerificationEmail = $record->email;
+        }
+
+        return $record;
     }
 
     protected function getFormActions(): array
