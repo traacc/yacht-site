@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\News;
+use App\Services\Telegram\TelegramSendResult;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
@@ -16,10 +17,12 @@ class TelegramService
 {
     // Через прокси и при загрузке картинки соединение бывает медленным.
     private const TIMEOUT_SECONDS = 25;
+
     private const CONNECT_TIMEOUT_SECONDS = 8;
 
     // Лимиты Telegram Bot API на длину текста.
     private const CAPTION_LIMIT = 1024;
+
     private const MESSAGE_LIMIT = 4096;
 
     public function __construct(
@@ -45,9 +48,18 @@ class TelegramService
         return $this->proxy ?? config('services.telegram.proxy');
     }
 
+    /** Публикация в канал: нужны и токен, и общий chat_id канала. */
     public function isConfigured(): bool
     {
         return ! empty($this->token()) && ! empty($this->chat());
+    }
+
+    /**
+     * Личные сообщения: достаточно токена, общий chat_id канала для них не нужен.
+     */
+    public function hasToken(): bool
+    {
+        return ! empty($this->token());
     }
 
     /**
@@ -65,48 +77,77 @@ class TelegramService
         }
 
         $coverPath = $this->coverPath($news);
+        $context = ['news_id' => $news->id];
 
-        return $coverPath !== null
-            ? $this->sendPhoto($coverPath, $this->caption($news, self::CAPTION_LIMIT), $news)
-            : $this->sendMessage($this->caption($news, self::MESSAGE_LIMIT), $news);
+        $result = $coverPath !== null
+            ? $this->sendPhoto((string) $this->chat(), $coverPath, $this->caption($news, self::CAPTION_LIMIT), $context)
+            : $this->sendMessage((string) $this->chat(), $this->caption($news, self::MESSAGE_LIMIT), $context);
+
+        return $result->ok;
+    }
+
+    /**
+     * Отправляет сообщение в произвольный чат (личный чат пользователя с ботом).
+     *
+     * @param  array<string, mixed>|null  $inlineKeyboard  reply_markup, если нужна кнопка
+     */
+    public function sendToChat(string $chatId, string $text, ?array $inlineKeyboard = null): TelegramSendResult
+    {
+        if (! $this->hasToken()) {
+            return new TelegramSendResult(ok: false, description: 'Токен Telegram-бота не настроен.');
+        }
+
+        return $this->sendMessage($chatId, $text, ['chat_id' => $chatId], $inlineKeyboard);
     }
 
     /**
      * Отправляет обложку как загружаемый файл (multipart), а не ссылкой:
      * это не зависит от публичной доступности сайта и идёт через наш прокси.
+     *
+     * @param  array<string, mixed>  $context
      */
-    private function sendPhoto(string $coverPath, string $caption, News $news): bool
+    private function sendPhoto(string $chatId, string $coverPath, string $caption, array $context): TelegramSendResult
     {
         $contents = Storage::disk('public')->get($coverPath);
 
-        return $this->execute('sendPhoto', $news, fn (PendingRequest $request): Response => $request
+        return $this->execute('sendPhoto', $context, fn (PendingRequest $request): Response => $request
             ->attach('photo', $contents, basename($coverPath))
             ->post($this->endpoint('sendPhoto'), [
-                'chat_id'    => $this->chat(),
-                'caption'    => $caption,
+                'chat_id' => $chatId,
+                'caption' => $caption,
                 'parse_mode' => 'HTML',
             ]));
     }
 
-    private function sendMessage(string $text, News $news): bool
+    /**
+     * @param  array<string, mixed>  $context
+     * @param  array<string, mixed>|null  $inlineKeyboard
+     */
+    private function sendMessage(string $chatId, string $text, array $context, ?array $inlineKeyboard = null): TelegramSendResult
     {
-        return $this->execute('sendMessage', $news, fn (PendingRequest $request): Response => $request
+        $payload = [
+            'chat_id' => $chatId,
+            'text' => $text,
+            'parse_mode' => 'HTML',
+            'disable_web_page_preview' => false,
+        ];
+
+        if ($inlineKeyboard !== null) {
+            $payload['reply_markup'] = $inlineKeyboard;
+        }
+
+        return $this->execute('sendMessage', $context, fn (PendingRequest $request): Response => $request
             ->asJson()
-            ->post($this->endpoint('sendMessage'), [
-                'chat_id'                  => $this->chat(),
-                'text'                     => $text,
-                'parse_mode'               => 'HTML',
-                'disable_web_page_preview' => false,
-            ]));
+            ->post($this->endpoint('sendMessage'), $payload));
     }
 
     /**
      * Базовый запрос с таймаутами, ретраями и прокси (если задан).
      */
-    private function baseRequest(): PendingRequest
+    private function baseRequest(?int $timeoutSeconds = null): PendingRequest
     {
         $request = Http::connectTimeout(self::CONNECT_TIMEOUT_SECONDS)
-            ->timeout(self::TIMEOUT_SECONDS)
+            ->timeout($timeoutSeconds ?? self::TIMEOUT_SECONDS)
             ->retry(2, 1000, throw: false);
 
         if (! empty($this->proxy())) {
@@ -124,34 +165,117 @@ class TelegramService
     /**
      * Выполняет запрос к API и обрабатывает ответ/ошибки единообразно.
      *
+     * @param  array<string, mixed>  $context  что писать в лог при ошибке
      * @param  callable(PendingRequest): Response  $send
      */
-    private function execute(string $method, News $news, callable $send): bool
+    private function execute(string $method, array $context, callable $send, ?int $timeoutSeconds = null): TelegramSendResult
     {
         try {
-            $response = $send($this->baseRequest());
+            $response = $send($this->baseRequest($timeoutSeconds));
 
             if ($response->successful() && $response->json('ok') === true) {
-                return true;
+                $payload = $response->json('result');
+
+                return new TelegramSendResult(
+                    ok: true,
+                    status: $response->status(),
+                    payload: is_array($payload) ? $payload : null,
+                );
             }
 
             Log::warning('Telegram API responded with error', [
-                'news_id' => $news->id,
-                'method'  => $method,
-                'status'  => $response->status(),
-                'body'    => $response->body(),
+                ...$context,
+                'method' => $method,
+                'status' => $response->status(),
+                'body' => $response->body(),
             ]);
 
-            return false;
-        } catch (ConnectionException | RequestException $e) {
+            return new TelegramSendResult(
+                ok: false,
+                status: $response->status(),
+                description: (string) $response->json('description', $response->body()),
+            );
+        } catch (ConnectionException|RequestException $e) {
             Log::warning('Telegram API connection failed', [
-                'news_id' => $news->id,
-                'method'  => $method,
-                'error'   => $e->getMessage(),
+                ...$context,
+                'method' => $method,
+                'error' => $e->getMessage(),
             ]);
 
-            return false;
+            return new TelegramSendResult(ok: false, description: $e->getMessage());
         }
+    }
+
+    // ──────────────────────────────────────────────
+    // Управление ботом: webhook и получение обновлений
+    // ──────────────────────────────────────────────
+
+    /** Устанавливает webhook; secret приходит обратно в заголовке X-Telegram-Bot-Api-Secret-Token. */
+    public function setWebhook(string $url, string $secret, bool $dropPendingUpdates = false): TelegramSendResult
+    {
+        return $this->execute('setWebhook', ['url' => $url], fn (PendingRequest $request): Response => $request
+            ->asJson()
+            ->post($this->endpoint('setWebhook'), [
+                'url' => $url,
+                'secret_token' => $secret,
+                // Нужны только сообщения: /start с токеном привязки и /stop.
+                'allowed_updates' => ['message'],
+                'drop_pending_updates' => $dropPendingUpdates,
+            ]));
+    }
+
+    public function deleteWebhook(): TelegramSendResult
+    {
+        return $this->execute('deleteWebhook', [], fn (PendingRequest $request): Response => $request
+            ->asJson()
+            ->post($this->endpoint('deleteWebhook')));
+    }
+
+    public function getWebhookInfo(): TelegramSendResult
+    {
+        return $this->execute('getWebhookInfo', [], fn (PendingRequest $request): Response => $request
+            ->get($this->endpoint('getWebhookInfo')));
+    }
+
+    /** @return array<string, mixed>|null */
+    public function getMe(): ?array
+    {
+        if (! $this->hasToken()) {
+            return null;
+        }
+
+        return $this->execute('getMe', [], fn (PendingRequest $request): Response => $request
+            ->get($this->endpoint('getMe')))->payload;
+    }
+
+    /**
+     * Long polling — запасной вариант для локальной разработки, когда Telegram
+     * не может достучаться до сайта по webhook.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function getUpdates(?int $offset = null, int $timeout = 30): array
+    {
+        $result = $this->execute(
+            'getUpdates',
+            [],
+            fn (PendingRequest $request): Response => $request->get($this->endpoint('getUpdates'), array_filter([
+                'offset' => $offset,
+                'timeout' => $timeout,
+                'allowed_updates' => ['message'],
+            ], static fn (mixed $value): bool => $value !== null)),
+            // Соединение должно пережить длинный опрос.
+            timeoutSeconds: $timeout + 10,
+        );
+
+        if (! $result->ok) {
+            return [];
+        }
+
+        /** @var list<array<string, mixed>> $updates */
+        $updates = $result->payload ?? [];
+
+        return $updates;
     }
 
     /**
@@ -163,12 +287,12 @@ class TelegramService
      */
     private function caption(News $news, int $limit): string
     {
-        $url      = route('news-details', $news);
-        $title    = trim((string) $news->title);
+        $url = route('news-details', $news);
+        $title = trim((string) $news->title);
         $linkText = 'Читать полностью';
 
         // Видимая длина фиксированных частей: заголовок + ссылка + два «\n\n».
-        $fixed  = mb_strlen($title) + mb_strlen($linkText) + 4;
+        $fixed = mb_strlen($title) + mb_strlen($linkText) + 4;
         // Запас (16): многоточие Str::limit + расхождение код-поинтов и UTF-16.
         $budget = $limit - $fixed - 16;
 
@@ -176,9 +300,9 @@ class TelegramService
         $body = $budget > 0 ? Str::limit($body, $budget, '…') : '';
 
         $parts = array_filter([
-            '<b>' . e($title) . '</b>',
+            '<b>'.e($title).'</b>',
             $body !== '' ? e($body) : null,
-            '<a href="' . e($url) . '">' . e($linkText) . '</a>',
+            '<a href="'.e($url).'">'.e($linkText).'</a>',
         ]);
 
         return implode("\n\n", $parts);

@@ -278,6 +278,18 @@
                     <span class="checkbox-box shrink-0"></span>
                     <div class="text-sm text-brand-gray-light">Регистрируясь на этом сайте, вы соглашаетесь с <a class='underline' href="/files/Политика_обработки_персональных_данных_1.pdf">политикой обработки персональных данных</a></div>
                 </label>
+
+                <div class="mt-4">
+                    <div class="text-sm font-semibold">Хочу получать уведомления:</div>
+                    @foreach (\App\Enums\NotificationCategory::cases() as $notificationCategory)
+                        <label class="custom-checkbox">
+                            <input type="checkbox" value="{{ $notificationCategory->value }}" wire:model="notification_categories" @checked(in_array($notificationCategory->value, $notification_categories, true))/>
+                            <span class="checkbox-box shrink-0"></span>
+                            <div class="text-sm text-brand-gray-light">{{ $notificationCategory->getLabel() }}</div>
+                        </label>
+                    @endforeach
+                    <div class="text-sm text-brand-gray-light">Изменить настройки или отписаться можно в личном кабинете в любой момент.</div>
+                </div>
                 <div class="mt-5 sm:mt-6">
                     <button type="submit" 
                             wire:loading.attr="disabled"

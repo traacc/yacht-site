@@ -3,6 +3,7 @@
 use App\Http\Middleware\FilamentAuthenticate;
 use App\Http\Middleware\MaintenanceMode;
 use App\Http\Middleware\VerifyApiToken;
+use App\Http\Middleware\VerifyTelegramWebhook;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'filament.auth' => FilamentAuthenticate::class,
             'api.token' => VerifyApiToken::class,
+            'telegram.webhook' => VerifyTelegramWebhook::class,
         ]);
         // Режим обновления применяется только к публичному сайту (группа web).
         // Панель администратора (/admin) использует собственный стек middleware

@@ -31,6 +31,9 @@ class UserPanelProvider extends PanelProvider
             ->path('user')
             ->login()
             ->profile(EditProfile::class, isSimple: false)
+            // Канал «В личном кабинете» центра уведомлений: колокольчик в топбаре.
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('60s')
             ->darkMode(false)
             ->favicon(asset('favicon.jpg?v=4'))
             ->brandLogo(asset('images/logo.svg'))

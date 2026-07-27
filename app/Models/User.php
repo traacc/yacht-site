@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -443,6 +444,26 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function ownedRegattas(): HasMany
     {
         return $this->hasMany(Regatta::class, 'user_id');
+    }
+
+    /** Настройки уведомлений. Отсутствие строки для пары «категория+канал» = включено. */
+    public function notificationPreferences(): HasMany
+    {
+        return $this->hasMany(NotificationPreference::class);
+    }
+
+    /** Привязанный чат с ботом в Telegram (если пользователь прошёл привязку) */
+    public function telegramAccount(): HasOne
+    {
+        return $this->hasOne(TelegramAccount::class);
+    }
+
+    /** Telegram привязан и бот не заблокирован — уведомления доставимы. */
+    public function hasLinkedTelegram(): bool
+    {
+        $account = $this->telegramAccount;
+
+        return $account !== null && ! $account->isBlocked();
     }
 
     /**

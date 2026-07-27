@@ -2,14 +2,20 @@
 
 namespace App\Providers\Filament;
 
-use Filament\Http\Middleware\Authenticate;
+use App\Filament\Pages\EditProfile;
+use App\Filament\Widgets\StatsOverview;
+use App\Filament\Widgets\UpcomingBirthdaysWidget;
+use App\Filament\Widgets\UpcomingRegattas;
+use App\Http\Middleware\FilamentAuthenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -19,14 +25,6 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
-use App\Http\Middleware\FilamentAuthenticate;
-
-use Filament\View\PanelsRenderHook;
-
-use App\Filament\Widgets\UpcomingBirthdaysWidget;
-
-use Filament\Navigation\NavigationItem;
-
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -35,8 +33,11 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->profile(\App\Filament\Pages\EditProfile::class, isSimple: false) 
+            ->profile(EditProfile::class, isSimple: false)
             ->login()
+            // Тот же колокольчик, что и в ЛК: уведомления администраторам.
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('60s')
             ->darkMode(false)
             ->favicon(asset('favicon.jpg?v=4'))
             ->brandLogo(asset('images/logo.svg'))
@@ -51,7 +52,7 @@ class AdminPanelProvider extends PanelProvider
                     ->url(fn (): string => \App\Filament\Pages\EditProfile::getUrl(), shouldOpenInNewTab: false)
                     ->icon('profile')
                     ->isActiveWhen(fn () => request()->routeIs('filament.admin.auth.profile'))
-                    
+
             ])*/
             /*
             ->renderHook(
@@ -69,17 +70,17 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
-                //AccountWidget::class,
-                //FilamentInfoWidget::class,
+                // AccountWidget::class,
+                // FilamentInfoWidget::class,
                 UpcomingBirthdaysWidget::class,
-                \App\Filament\Widgets\StatsOverview::class,
-                \App\Filament\Widgets\UpcomingRegattas::class,
+                StatsOverview::class,
+                UpcomingRegattas::class,
             ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
-                //AuthenticateSession::class,
+                // AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,
                 SubstituteBindings::class,
@@ -89,7 +90,7 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 FilamentAuthenticate::class,
             ])->topNavigation(false)->renderHook(
-    name: PanelsRenderHook::BODY_START,
-    hook: fn () => view('components.nav'));
+                name: PanelsRenderHook::BODY_START,
+                hook: fn () => view('components.nav'));
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Actions\Feedback\SubmitFeedbackAction;
 use App\Actions\GenerateCalendarPdfAction;
+use App\Actions\Notifications\UnsubscribeAction;
 use App\Actions\Payment\ApplyPaymentResultAction;
 use App\Actions\Payment\HandleWebhookAction;
 use App\Actions\Regatta\DownloadRegattaDocumentsAction;
@@ -12,6 +13,8 @@ use App\Actions\RegattaResult\GenerateRegattaResultPdfAction;
 use App\Actions\Team\GenerateTeamHistoryPdfAction;
 use App\Actions\Voting\CastVoteAction;
 use App\Actions\YachtRental\SubmitYachtRentalRequestAction;
+use App\Enums\NotificationCategory;
+use App\Enums\NotificationChannel;
 use App\Enums\PaymentProviderCode;
 use App\Enums\PaymentTransactionStatus;
 use App\Enums\RegattaStatus;
@@ -995,6 +998,27 @@ Route::post('/payments/test/{transaction}/confirm', function (Request $request, 
 
     return redirect()->route('payments.return', $transaction);
 })->middleware('signed')->name('payments.test.confirm');
+
+// Отписка по ссылке из письма. Аутентификация — подпись ссылки, вход не нужен
+// (пользователь мог открыть письмо в другом браузере).
+Route::get('unsubscribe/{user}/{category}/{channel?}', function (
+    User $user,
+    string $category,
+    ?string $channel,
+    UnsubscribeAction $unsubscribe,
+) {
+    $notificationCategory = NotificationCategory::tryFrom($category);
+    $notificationChannel = $channel !== null ? NotificationChannel::tryFrom($channel) : null;
+
+    abort_if($notificationCategory === null, 404);
+
+    $unsubscribe->handle($user, $notificationCategory, $notificationChannel);
+
+    return view('pages.unsubscribed', [
+        'category' => $notificationCategory,
+        'channel' => $notificationChannel,
+    ]);
+})->middleware(['signed', 'throttle:10,1'])->name('notifications.unsubscribe');
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth'])

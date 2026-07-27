@@ -10,9 +10,9 @@ use App\Services\SettingsService;
 use App\Services\SitemapGenerator;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -73,6 +73,8 @@ class SiteSettings extends Page
             'telegram_autopublish' => (bool) $settings->get('home.telegram_autopublish', true),
             // Автопубликация новостей в VK
             'vk_autopublish' => (bool) $settings->get('home.vk_autopublish', true),
+            // Рассылка уведомлений о новостях пользователям сайта
+            'news_notifications' => (bool) $settings->get('home.news_notifications', true),
         ]);
     }
 
@@ -201,6 +203,16 @@ class SiteSettings extends Page
                             ->default(true),
                     ]),
 
+                // ── Уведомления пользователям о новостях ──────
+                Section::make('Рассылка новостей пользователям')
+                    ->description('Если включено — при публикации новости подписчики категории «Анонсы и новости» получают уведомление выбранными в личном кабинете способами.')
+                    ->schema([
+                        Toggle::make('news_notifications')
+                            ->label('Уведомлять пользователей о новых новостях')
+                            ->helperText('Отключите, чтобы временно приостановить массовую рассылку по сайту.')
+                            ->default(true),
+                    ]),
+
                 // ── API для внешней программы ─────────────────
                 Section::make('API для внешней программы')
                     ->description('Токены доступа к API (экспорт участников, импорт и чтение результатов). Кнопка выпуска — в шапке страницы. Токен хранится только хешем и показывается один раз.')
@@ -280,6 +292,7 @@ class SiteSettings extends Page
             'data.admin_notification_emails.*' => ['email'],
             'data.telegram_autopublish' => ['boolean'],
             'data.vk_autopublish' => ['boolean'],
+            'data.news_notifications' => ['boolean'],
         ]);
 
         /** @var SettingsService $settings */
@@ -309,6 +322,9 @@ class SiteSettings extends Page
 
         // Автопубликация новостей в VK
         $settings->set('home.vk_autopublish', (bool) ($data['vk_autopublish'] ?? true), 'home');
+
+        // Рассылка уведомлений о новостях пользователям сайта
+        $settings->set('home.news_notifications', (bool) ($data['news_notifications'] ?? true), 'home');
 
         $settings->forgetGroup('home');
 

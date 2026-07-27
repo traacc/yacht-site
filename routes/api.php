@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\PaymentWebhookController;
 use App\Http\Controllers\Api\RegattaListController;
 use App\Http\Controllers\Api\RegattaParticipantsController;
 use App\Http\Controllers\Api\RegattaResultsController;
+use App\Http\Controllers\Api\TelegramWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,6 +28,12 @@ use Illuminate\Support\Facades\Route;
 Route::post('payments/webhook/{provider}', PaymentWebhookController::class)
     ->middleware('throttle:60,1')
     ->name('api.payments.webhook');
+
+// Обновления Telegram-бота (привязка чата к аккаунту, команда /stop).
+// Аутентификация — секрет из setWebhook в заголовке, см. VerifyTelegramWebhook.
+Route::post('telegram/webhook', TelegramWebhookController::class)
+    ->middleware(['telegram.webhook', 'throttle:240,1'])
+    ->name('api.telegram.webhook');
 
 Route::middleware('api.token')->group(function (): void {
     Route::get('regattas', RegattaListController::class)

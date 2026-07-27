@@ -8,6 +8,7 @@ use App\Models\RegattaEntry;
 use App\Models\RegattaResultItem;
 use App\Models\Team;
 use App\Models\TeamMember;
+use App\Models\UserQuestion;
 use App\Observers\NewsObserver;
 use App\Observers\PaymentRegistryLogObserver;
 use App\Observers\PaymentRegistryObserver;
@@ -15,8 +16,10 @@ use App\Observers\RegattaEntryFeeObserver;
 use App\Observers\RegattaEntryResultObserver;
 use App\Observers\RegattaResultItemObserver;
 use App\Observers\TeamMemberObserver;
+use App\Observers\UserQuestionObserver;
 use App\Policies\TeamPolicy;
 use App\Services\ImageConverter;
+use App\Services\Notifications\NotificationPreferences;
 use App\Services\PaymentRegistryLogger;
 use Filament\Actions\Action;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
@@ -38,6 +41,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // Синглтон обязателен: withoutAutoLog() глушит запись через состояние экземпляра.
         $this->app->singleton(PaymentRegistryLogger::class);
+
+        // Синглтон ради мемоизации: via() дёргает резолвер на каждого получателя рассылки.
+        $this->app->singleton(NotificationPreferences::class);
     }
 
     /**
@@ -54,6 +60,7 @@ class AppServiceProvider extends ServiceProvider
         RegattaResultItem::observe(RegattaResultItemObserver::class);
         PaymentRegistry::observe(PaymentRegistryObserver::class);
         PaymentRegistry::observe(PaymentRegistryLogObserver::class);
+        UserQuestion::observe(UserQuestionObserver::class);
 
         Notification::configureUsing(function (Notification $notification): void {
             $notification->duration(6000); // 2000 мс = 2 секунды

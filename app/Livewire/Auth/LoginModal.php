@@ -3,7 +3,9 @@
 namespace App\Livewire\Auth;
 
 use App\Actions\Auth\SendEmailVerificationLinkAction;
+use App\Actions\Notifications\ApplyRegistrationPreferencesAction;
 use App\Enums\CreationSource;
+use App\Enums\NotificationCategory;
 use App\Enums\SportCategory;
 use App\Mail\PasswordResetRequested;
 use App\Mail\UserRegistered;
@@ -57,6 +59,15 @@ class LoginModal extends Component
 
     // Восстановление пароля
     public bool $resetLinkSent = false;
+
+    /** @var list<string> Категории уведомлений, отмеченные при регистрации. */
+    public array $notification_categories = [];
+
+    public function mount(): void
+    {
+        // По умолчанию отмечены все категории — требование ТЗ.
+        $this->notification_categories = array_column(NotificationCategory::cases(), 'value');
+    }
 
     public function login()
     {
@@ -135,6 +146,8 @@ class LoginModal extends Component
             'birth_month' => ['required', 'integer', 'min:1', 'max:12'],
             'birth_year' => ['required', 'integer', 'min:1926', 'max:2016'],
             'sports_category' => ['nullable', Rule::enum(SportCategory::class)],
+            'notification_categories' => ['array'],
+            'notification_categories.*' => [Rule::enum(NotificationCategory::class)],
             // 'registerCaptchaToken' => ['required', new YandexCaptcha()],
         ], attributes: [
             'registerCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
@@ -183,6 +196,9 @@ class LoginModal extends Component
             'password' => $this->password,
             'creation_source' => CreationSource::Registration,
         ]);
+
+        // Настройки уведомлений по галочкам с формы регистрации.
+        app(ApplyRegistrationPreferencesAction::class)->handle($user, $this->notification_categories);
 
         // Уведомляем администраторов о регистрации нового пользователя.
         $adminEmails = app(SettingsService::class)->adminNotificationEmails();

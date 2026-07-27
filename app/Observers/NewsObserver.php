@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Jobs\NotifyUsersAboutNews;
 use App\Jobs\PublishNewsToTelegram;
 use App\Jobs\PublishNewsToVk;
 use App\Models\News;
@@ -35,6 +36,11 @@ class NewsObserver
 
         if (! $news->published_to_vk && $settings->get('home.vk_autopublish', true)) {
             PublishNewsToVk::dispatch($news->id);
+        }
+
+        // Рассылка подписчикам категории «Анонсы и новости» центра уведомлений.
+        if (! $news->notified_users && $settings->get('home.news_notifications', true)) {
+            NotifyUsersAboutNews::dispatch($news->id);
         }
     }
 }
