@@ -94,7 +94,7 @@
                             Вы в экипаже →
                         </button>
                     @elseif($userIsEntered)
-                        <a href="{{ \App\Filament\User\Resources\RegattaEntries\RegattaEntryResource::getUrl('index') }}"
+                        <a href="{{ \App\Filament\User\Resources\RegattaEntries\RegattaEntryResource::getUrl('index', panel: 'user') }}"
                            class="mt-6 bg-brand-light-bg border border-brand-blue text-brand-blue py-2 px-6 text-lg font-semibold inline-block hover:bg-brand-blue hover:text-white transition-colors">
                             Ваша команда уже заявлена
                         </a>

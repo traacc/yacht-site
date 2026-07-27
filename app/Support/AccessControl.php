@@ -95,6 +95,10 @@ final class AccessControl
      * местах, расходился между ними и игнорировал матрицу прав — судья видел
      * ссылки на закрытые для него разделы.
      *
+     * Панель указывается явно: шапка рендерится в том числе внутри панели
+     * `user` (renderHook), а без явного панели getUrl() берёт текущую и
+     * собирает несуществующий маршрут filament.user.resources.*.
+     *
      * @return list<array{url: string, label: string}>
      */
     public static function adminMenuLinks(): array
@@ -115,7 +119,7 @@ final class AccessControl
 
         foreach ($sections as $class => $label) {
             if (self::allows($class)) {
-                $links[] = ['url' => $class::getUrl('index'), 'label' => $label];
+                $links[] = ['url' => $class::getUrl('index', panel: 'admin'), 'label' => $label];
             }
         }
 
