@@ -3,18 +3,30 @@
 namespace App\Models;
 
 use App\Enums\PaymentMethod;
+use App\Enums\PaymentSettlement;
 use App\Enums\PaymentStatus;
 use App\Models\Concerns\NormalizesHeicImageColumns;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Запись бухгалтерского реестра платежей.
+ *
+ * ВНИМАНИЕ: все изменения записываются в журнал (payment_registry_logs)
+ * через PaymentRegistryLogObserver. Изменения, сделанные через
+ * updateQuietly()/saveQuietly() или Query Builder, событий модели не порождают
+ * и в журнал НЕ попадут — в таких местах логгер нужно вызывать явно
+ * (@see \App\Observers\RegattaEntryFeeObserver).
+ */
 class PaymentRegistry extends Model
 {
-    use HasFactory, HasUuids, NormalizesHeicImageColumns;
+    use HasFactory, HasUuids, NormalizesHeicImageColumns, SoftDeletes;
 
     /** @var array<string> Колонки-пути (чек/документ), где heic нормализуется в webp. */
     protected array $heicImageColumns = ['document'];
@@ -37,6 +49,7 @@ class PaymentRegistry extends Model
             'status' => PaymentStatus::class,
             'payment_method' => PaymentMethod::class,
             'paid_at' => 'datetime',
+            'confirmed_at' => 'datetime',
         ];
     }
 
@@ -56,9 +69,45 @@ class PaymentRegistry extends Model
         return $this->hasMany(PaymentTransaction::class);
     }
 
+    /** Бухгалтер, подтвердивший фактический приход средств. */
+    public function confirmedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'confirmed_by');
+    }
+
+    /** Кто последним изменил запись (null — изменение выполнила система). */
+    public function updatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    /** Журнал изменений записи. */
+    public function logs(): HasMany
+    {
+        return $this->hasMany(PaymentRegistryLog::class);
+    }
+
     // ──────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────
+
+    /** Бухгалтер подтвердил фактический приход средств. */
+    public function isConfirmed(): bool
+    {
+        return $this->confirmed_at !== null;
+    }
+
+    /** Форма расчёта (наличные/безнал); null — способ оплаты не указан. */
+    public function settlement(): ?PaymentSettlement
+    {
+        return $this->payment_method?->settlement();
+    }
+
+    /** Кто последним изменил запись — для колонки реестра. */
+    public function lastEditorLabel(): string
+    {
+        return $this->updatedBy?->name ?? 'Система';
+    }
 
     /** Публичный URL прикреплённого документа. */
     public function getDocumentUrlAttribute(): ?string

@@ -44,4 +44,13 @@ enum SystemRole: string implements HasLabel
     {
         return in_array($this, [self::Admin, self::Secretary, self::DeveloperAdmin]);
     }
+
+    /**
+     * Доступ к финансовому контуру: реестр платежей, подтверждение прихода,
+     * журнал изменений и его выгрузка.
+     */
+    public function canManagePayments(): bool
+    {
+        return in_array($this, [self::Admin, self::Accountant]);
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Enums\PaymentStatus;
 use App\Models\RegattaEntry;
+use App\Services\PaymentRegistryLogger;
 
 /**
  * Синхронизирует отметку об оплате сбора на заявке (fee_paid)
@@ -32,7 +33,17 @@ class RegattaEntryFeeObserver
                 continue;
             }
 
-            $registry->updateQuietly(['status' => $status]);
+            // Тихое сохранение разрывает цикл с PaymentRegistryObserver, но не
+            // порождает событий модели — поэтому журнал изменений пишем явно,
+            // передавая снимок значений до изменения.
+            $before = ['status' => $registry->status];
+
+            $registry->forceFill([
+                'status' => $status,
+                'updated_by' => auth()->id(),
+            ])->saveQuietly();
+
+            app(PaymentRegistryLogger::class)->updatedQuietly($registry, $before);
         }
     }
 }

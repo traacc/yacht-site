@@ -12,6 +12,8 @@ use App\Filament\Pages\YachtDocumentSettings;
 use App\Filament\Resources\ArchivedRegattaEntries\ArchivedRegattaEntryResource;
 use App\Filament\Resources\Galleries\GalleryResource;
 use App\Filament\Resources\News\NewsResource;
+use App\Filament\Resources\PaymentRegistries\PaymentRegistryResource;
+use App\Filament\Resources\PaymentRegistryLogs\PaymentRegistryLogResource;
 use App\Filament\Resources\PendingRegattaEntries\PendingRegattaEntryResource;
 use App\Filament\Resources\RaceResults\RaceResultResource;
 use App\Filament\Resources\RegattaEntries\RegattaEntryResource;
@@ -134,6 +136,10 @@ final class AccessControl
             Dashboard::class,
             // Имеет собственное ограничение «только администратор».
             YachtDocumentSettings::class,
+            // Финансовый контур: собственное ограничение «администратор + бухгалтер».
+            // @see \App\Filament\Concerns\RestrictsToPaymentRoles
+            PaymentRegistryResource::class,
+            PaymentRegistryLogResource::class,
         ];
     }
 

@@ -37,6 +37,20 @@ enum PaymentMethod: string implements HasColor, HasLabel
         };
     }
 
+    /** Платёж внесён наличными (в кассу), а не на счёт. */
+    public function isCash(): bool
+    {
+        return $this === self::Cash;
+    }
+
+    /** Форма расчёта: наличные или безналичные. */
+    public function settlement(): PaymentSettlement
+    {
+        return $this->isCash()
+            ? PaymentSettlement::Cash
+            : PaymentSettlement::Cashless;
+    }
+
     public function getLabel(): string
     {
         return $this->label();

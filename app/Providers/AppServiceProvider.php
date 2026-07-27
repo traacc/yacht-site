@@ -9,6 +9,7 @@ use App\Models\RegattaResultItem;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Observers\NewsObserver;
+use App\Observers\PaymentRegistryLogObserver;
 use App\Observers\PaymentRegistryObserver;
 use App\Observers\RegattaEntryFeeObserver;
 use App\Observers\RegattaEntryResultObserver;
@@ -16,6 +17,7 @@ use App\Observers\RegattaResultItemObserver;
 use App\Observers\TeamMemberObserver;
 use App\Policies\TeamPolicy;
 use App\Services\ImageConverter;
+use App\Services\PaymentRegistryLogger;
 use Filament\Actions\Action;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Notifications\Notification;
@@ -34,7 +36,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Синглтон обязателен: withoutAutoLog() глушит запись через состояние экземпляра.
+        $this->app->singleton(PaymentRegistryLogger::class);
     }
 
     /**
@@ -50,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
         RegattaEntry::observe(RegattaEntryResultObserver::class);
         RegattaResultItem::observe(RegattaResultItemObserver::class);
         PaymentRegistry::observe(PaymentRegistryObserver::class);
+        PaymentRegistry::observe(PaymentRegistryLogObserver::class);
 
         Notification::configureUsing(function (Notification $notification): void {
             $notification->duration(6000); // 2000 мс = 2 секунды

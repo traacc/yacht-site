@@ -293,6 +293,12 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return $this->system_role === SystemRole::Accountant;
     }
 
+    /** Доступ к финансовому контуру: реестр платежей, подтверждение, журнал. */
+    public function canManagePayments(): bool
+    {
+        return $this->system_role->canManagePayments();
+    }
+
     /** Админ-разработчик: видит и правит только собственные регаты. */
     public function isDeveloperAdmin(): bool
     {
