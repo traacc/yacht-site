@@ -158,6 +158,7 @@ class GalleryResource extends Resource
                     ->panelLayout('grid')
                     ->multiple()
                     ->reorderable()
+                    ->imageEditor()
                     ->deletable(true)
                     ->maxSize(10240)                      // 10 МБ на файл
                     ->validationMessages([
