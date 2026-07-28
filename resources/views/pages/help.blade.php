@@ -197,6 +197,20 @@
             @else
             <p class="text-[#2E325C]">Вопросы появятся позже.</p>
             @endif
+
+            {{-- Не нашли ответ — открываем плавающий чат из общего layout. --}}
+            <div class="px-3 mt-10 border-t border-gray-200 pt-8">
+                <h3 class="text-2xl font-semibold text-[#2E325C]">Не нашли ответ?</h3>
+                <p class="mt-2 text-brand-gray">Напишите в службу поддержки — ответим в чате на сайте.</p>
+
+                <button
+                    type="button"
+                    @click="Livewire.dispatch('open-support-chat')"
+                    class="mt-4 bg-[#2D92CE] text-white py-2 px-6 hover:bg-[#0074CC] transition-colors text-lg font-semibold cursor-pointer"
+                >
+                    Написать в поддержку
+                </button>
+            </div>
         </section>
     </div>
     {{-- ===== /Таб: Для пользователей (FAQ) ===== --}}

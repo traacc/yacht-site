@@ -10,6 +10,11 @@
 @source '../../../../app/Filament/User/**/*';
 @source '../../../../resources/views/filament/user/**/*';
 
+/* Чат поддержки: общий Livewire-компонент переписки и рабочее место оператора
+   живут вне каталогов Filament, без этих путей их классы в тему не попадут. */
+@source '../../../../resources/views/livewire/chat/**/*';
+@source '../../../../resources/views/filament/pages/**/*';
+
 
   @font-face {
     font-family: 'TTLakesCondensed-DemiBold';

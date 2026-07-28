@@ -452,6 +452,14 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return $this->hasMany(NotificationPreference::class);
     }
 
+    /** Диалоги, в которых пользователь состоит участником (обращения в поддержку и переписки). */
+    public function conversations(): BelongsToMany
+    {
+        return $this->belongsToMany(Conversation::class, 'conversation_participants')
+            ->withPivot(['role', 'last_read_at'])
+            ->withTimestamps();
+    }
+
     /** Привязанный чат с ботом в Telegram (если пользователь прошёл привязку) */
     public function telegramAccount(): HasOne
     {

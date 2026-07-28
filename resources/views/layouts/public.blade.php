@@ -99,6 +99,7 @@
 <livewire:team-card-modal />
 <livewire:entry-crew-modal />
 <livewire:cookie-consent />
+<livewire:chat.support-chat-widget />
 
 </body>
 </html>
