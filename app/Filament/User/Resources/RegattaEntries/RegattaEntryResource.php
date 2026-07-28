@@ -7,6 +7,7 @@ namespace App\Filament\User\Resources\RegattaEntries;
 use App\Actions\Auth\SendEmailVerificationLinkAction;
 use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\Payment\StartOnlinePaymentAction;
+use App\Enums\PaymentPurpose;
 use App\Enums\PaymentStatus;
 use App\Enums\RegattaStatus;
 use App\Enums\SystemRole;
@@ -350,6 +351,7 @@ class RegattaEntryResource extends Resource
                         $registry ??= $record->paymentRegistries()->create([
                             'name' => "Сбор за участие — {$record->regatta->name} ({$record->team?->name})",
                             'amount' => $record->regatta->entry_fee_amount ?? 0,
+                            'purpose' => PaymentPurpose::EntryFee,
                             'status' => PaymentStatus::Pending,
                         ]);
 

@@ -13,6 +13,7 @@ use App\Observers\NewsObserver;
 use App\Observers\PaymentRegistryLogObserver;
 use App\Observers\PaymentRegistryObserver;
 use App\Observers\RegattaEntryFeeObserver;
+use App\Observers\RegattaEntryPaymentLinksObserver;
 use App\Observers\RegattaEntryResultObserver;
 use App\Observers\RegattaResultItemObserver;
 use App\Observers\TeamMemberObserver;
@@ -56,8 +57,12 @@ class AppServiceProvider extends ServiceProvider
         TeamMember::observe(TeamMemberObserver::class);
         News::observe(NewsObserver::class);
         RegattaEntry::observe(RegattaEntryFeeObserver::class);
+        RegattaEntry::observe(RegattaEntryPaymentLinksObserver::class);
         RegattaEntry::observe(RegattaEntryResultObserver::class);
         RegattaResultItem::observe(RegattaResultItemObserver::class);
+        // Порядок важен: PaymentRegistryObserver::saving() заполняет
+        // денормализованные связи, и только после этого лог-обсервер видит их
+        // как изменённые (updated_by + запись в журнал).
         PaymentRegistry::observe(PaymentRegistryObserver::class);
         PaymentRegistry::observe(PaymentRegistryLogObserver::class);
         UserQuestion::observe(UserQuestionObserver::class);

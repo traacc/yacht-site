@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Regatta;
 
+use App\Enums\PaymentPurpose;
 use App\Enums\PaymentStatus;
 use App\Enums\RegattaEntrySource;
 use App\Enums\TeamMemberRole;
@@ -11,7 +12,6 @@ use App\Exceptions\InsufficientTeamRoleException;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use App\Models\Team;
-use App\Models\TeamMember;
 use App\Models\User;
 use App\Models\Yacht;
 use App\Services\TeamRoleGuard;
@@ -23,7 +23,7 @@ final class SubmitRegattaEntryAction
      * Подать заявку команды на участие в регате.
      * Требует роль Organizer или TeamAdmin у вызывающего пользователя.
      *
-     * @param array<string, 'main'|'reserve'|'captain'> $crew  team_member_id => role
+     * @param  array<string, 'main'|'reserve'|'captain'>  $crew  team_member_id => role
      *
      * @throws InsufficientTeamRoleException
      * @throws ValidationException
@@ -40,7 +40,7 @@ final class SubmitRegattaEntryAction
             ]);
         }
         */
-        
+
         // Проверяем, не подана ли уже заявка от этой команды
         if ($regatta->hasTeam($team)) {
             throw ValidationException::withMessages([
@@ -59,14 +59,14 @@ final class SubmitRegattaEntryAction
         }
 
         $entry = RegattaEntry::create([
-            'regatta_id'     => $regatta->id,
-            'team_id'        => $team->id,
-            'yacht_id'       => $yacht->id,
-            'status'         => 'approved',
-            'source'         => RegattaEntrySource::QuickRequest,
-            'submitted_at'   => now(),
+            'regatta_id' => $regatta->id,
+            'team_id' => $team->id,
+            'yacht_id' => $yacht->id,
+            'status' => 'approved',
+            'source' => RegattaEntrySource::QuickRequest,
+            'submitted_at' => now(),
             // Сбор за участие отмечается участником только если регата его требует
-            'fee_paid'       => $regatta->entry_fee_required ? $feePaid : false,
+            'fee_paid' => $regatta->entry_fee_required ? $feePaid : false,
             // Хешируется кастом 'hashed' в модели
             'entry_password' => $entryPassword ?: null,
         ]);
@@ -75,8 +75,9 @@ final class SubmitRegattaEntryAction
         // привязанную к заявке (полиморфная связь payable).
         if ($regatta->entry_fee_required) {
             $entry->paymentRegistries()->create([
-                'name'   => "Сбор за участие — {$regatta->name} ({$team->name})",
+                'name' => "Сбор за участие — {$regatta->name} ({$team->name})",
                 'amount' => $regatta->entry_fee_amount,
+                'purpose' => PaymentPurpose::EntryFee,
                 'status' => $feePaid ? PaymentStatus::Paid : PaymentStatus::Pending,
             ]);
         }
@@ -111,7 +112,7 @@ final class SubmitRegattaEntryAction
 
                 $entry->crew()->create([
                     'team_member_id' => $memberId,
-                    'role'           => $role,
+                    'role' => $role,
                 ]);
             }
         }

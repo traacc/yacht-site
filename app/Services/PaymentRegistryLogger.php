@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\PaymentMethod;
+use App\Enums\PaymentPurpose;
 use App\Enums\PaymentRegistryLogEvent;
 use App\Enums\PaymentStatus;
 use App\Models\PaymentRegistry;
 use App\Models\PaymentRegistryLog;
+use App\Models\Regatta;
+use App\Models\Scopes\OwnedScope;
+use App\Models\Team;
 use App\Models\User;
+use App\Models\Yacht;
 use BackedEnum;
 use Carbon\CarbonInterface;
 use Closure;
@@ -28,6 +33,11 @@ class PaymentRegistryLogger
     public const TRACKED = [
         'name' => 'Название',
         'amount' => 'Сумма',
+        'purpose' => 'Назначение платежа',
+        'payer_name' => 'Плательщик',
+        'regatta_id' => 'Регата',
+        'yacht_id' => 'Яхта',
+        'team_id' => 'Команда',
         'status' => 'Статус оплаты',
         'payment_method' => 'Способ оплаты',
         'paid_at' => 'Дата оплаты',
@@ -243,7 +253,14 @@ class PaymentRegistryLogger
 
         return match ($field) {
             'status' => PaymentStatus::tryFrom((string) $value)?->label() ?? (string) $value,
+            'purpose' => PaymentPurpose::tryFrom((string) $value)?->label() ?? (string) $value,
             'payment_method' => $this->methodLabel((string) $value),
+            // В журнале должны быть названия, а не UUID.
+            'regatta_id' => Regatta::withTrashed()->find($value)?->name ?? (string) $value,
+            'yacht_id' => Yacht::withoutGlobalScope(OwnedScope::class)
+                ->withTrashed()
+                ->find($value)?->name ?? (string) $value,
+            'team_id' => Team::withTrashed()->find($value)?->name ?? (string) $value,
             'amount' => number_format((float) $value, 2, ',', ' ').' ₽',
             'paid_at', 'confirmed_at', 'deleted_at' => $this->dateLabel($value),
             'confirmed_by' => User::query()->find($value)?->name ?? (string) $value,

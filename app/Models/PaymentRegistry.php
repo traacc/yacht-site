@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Enums\PaymentMethod;
+use App\Enums\PaymentPurpose;
 use App\Enums\PaymentSettlement;
 use App\Enums\PaymentStatus;
 use App\Models\Concerns\NormalizesHeicImageColumns;
+use App\Models\Scopes\OwnedScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -34,18 +36,24 @@ class PaymentRegistry extends Model
     protected $fillable = [
         'name',
         'amount',
+        'purpose',
+        'payer_name',
         'status',
         'payment_method',
         'paid_at',
         'document',
         'payable_type',
         'payable_id',
+        'regatta_id',
+        'yacht_id',
+        'team_id',
     ];
 
     protected function casts(): array
     {
         return [
             'amount' => 'decimal:2',
+            'purpose' => PaymentPurpose::class,
             'status' => PaymentStatus::class,
             'payment_method' => PaymentMethod::class,
             'paid_at' => 'datetime',
@@ -87,6 +95,31 @@ class PaymentRegistry extends Model
         return $this->hasMany(PaymentRegistryLog::class);
     }
 
+    /** Регата (денормализовано из заявки) — с удалёнными, чтобы не терять историю. */
+    public function regatta(): BelongsTo
+    {
+        return $this->belongsTo(Regatta::class)->withTrashed();
+    }
+
+    /**
+     * Яхта (денормализовано из заявки).
+     *
+     * Глобальный OwnedScope снимается обязательно: без этого яхты без владельца
+     * (импорт из реестра ВФПС) вернут null — заголовки групп и экспорт опустеют.
+     */
+    public function yacht(): BelongsTo
+    {
+        return $this->belongsTo(Yacht::class)
+            ->withoutGlobalScope(OwnedScope::class)
+            ->withTrashed();
+    }
+
+    /** Команда (денормализовано из заявки или прямой привязки). */
+    public function team(): BelongsTo
+    {
+        return $this->belongsTo(Team::class)->withTrashed();
+    }
+
     // ──────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────
@@ -107,6 +140,36 @@ class PaymentRegistry extends Model
     public function lastEditorLabel(): string
     {
         return $this->updatedBy?->name ?? 'Система';
+    }
+
+    /** Назначение платежа для колонок и заголовков групп. */
+    public function purposeLabel(): string
+    {
+        return $this->purpose?->label() ?? 'Не указано';
+    }
+
+    /** Яхта: название и парусный номер. */
+    public function yachtLabel(): string
+    {
+        $yacht = $this->yacht;
+
+        if ($yacht === null) {
+            return 'Без яхты';
+        }
+
+        return $yacht->vfps_number
+            ? "{$yacht->name} ({$yacht->vfps_number})"
+            : (string) $yacht->name;
+    }
+
+    public function regattaLabel(): string
+    {
+        return $this->regatta?->name ?? 'Без регаты';
+    }
+
+    public function teamLabel(): string
+    {
+        return $this->team?->name ?? 'Без команды';
     }
 
     /** Публичный URL прикреплённого документа. */
