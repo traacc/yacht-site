@@ -10,7 +10,7 @@
 @endif
 
 @component('mail::subcopy')
-Вы получаете это письмо, потому что подписаны на уведомления категории «{{ $category->getLabel() }}» на сайте Carter Pro.
+Вы получаете это письмо, потому что подписаны на уведомления категории «{{ $category->getLabel() }}» на сайте {{ config('mail.brand.name') }}.
 
 [Отписаться от этой рассылки]({{ $unsubscribeUrl }}) · [Настроить уведомления]({{ route('filament.user.pages.notification-settings') }})
 @endcomponent

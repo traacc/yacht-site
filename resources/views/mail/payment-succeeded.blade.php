@@ -11,5 +11,5 @@
 | **Дата оплаты** | {{ optional($transaction->paid_at)->format('d.m.Y H:i') ?? '—' }} |
 
 С уважением,<br>
-{{ config('app.name') }}
+{{ config('mail.brand.name') }}
 </x-mail::message>

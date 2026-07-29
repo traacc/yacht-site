@@ -47,7 +47,7 @@ return [
             'password' => env('MAIL_PASSWORD') ?: null,
             'encryption' => env('MAIL_ENCRYPTION') ?: null,
             'timeout' => null,
-            //'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+            // 'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
             'verify_peer' => false,
         ],
 
@@ -115,6 +115,26 @@ return [
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Оформление писем
+    |--------------------------------------------------------------------------
+    |
+    | Логотип в шапке и подпись в подвале всех писем. Намеренно НЕ завязано на
+    | APP_NAME: иначе при незаполненной переменной окружения письма уходят с
+    | брендом Laravel. Логотип — растровый: SVG почтовые клиенты не показывают.
+    |
+    */
+
+    'brand' => [
+        'name' => env('MAIL_BRAND_NAME', 'CarterPro'),
+        // Путь относительно public/. Файл собран из public/images/logo-pdf.svg
+        // (вариант логотипа с явными цветами, а не currentColor).
+        'logo' => env('MAIL_BRAND_LOGO', 'images/logo-email.png'),
+        // Ширина отображения в письме, px (файл отрисован в 2× для retina).
+        'logo_width' => (int) env('MAIL_BRAND_LOGO_WIDTH', 267),
     ],
 
 ];
