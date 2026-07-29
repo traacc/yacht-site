@@ -8,6 +8,7 @@ use App\Enums\NotificationCategory;
 use App\Enums\NotificationChannel;
 use App\Models\NotificationPreference;
 use App\Models\User;
+use App\Services\SettingsService;
 
 /**
  * Резолвер настроек уведомлений.
@@ -23,6 +24,8 @@ class NotificationPreferences
 {
     /** @var array<string, array<string, array<string, bool>>> user_id => категория => канал => bool */
     private array $cache = [];
+
+    public function __construct(private readonly SettingsService $settings) {}
 
     /**
      * Матрица для формы личного кабинета.
@@ -76,11 +79,23 @@ class NotificationPreferences
         unset($this->cache[(string) $user->getKey()]);
     }
 
+    /**
+     * Технически доставим ли канал этому пользователю.
+     *
+     * Настройки пользователя здесь не участвуют: недоставимый канал — это не
+     * отписка, а невозможность доставки (нет привязки, неподтверждённый адрес).
+     *
+     * Значение настройки намеренно не мемоизируем в свойстве: резолвер —
+     * синглтон, а воркер живёт до часа, и запомненное значение пережило бы
+     * переключение галочки в админке. SettingsService уже кеширует его в Redis
+     * и сбрасывает кеш при сохранении.
+     */
     private function isDeliverable(User $user, NotificationChannel $channel): bool
     {
         return match ($channel) {
             // Технические адреса @noemail.local (гостевые заявки) письмами не беспокоим.
-            NotificationChannel::Email => ! $user->hasTechnicalEmail(),
+            NotificationChannel::Email => ! $user->hasTechnicalEmail()
+                && ($user->hasVerifiedEmail() || ! $this->settings->notifyVerifiedEmailsOnly()),
             NotificationChannel::Telegram => $user->hasLinkedTelegram(),
             default => true,
         };

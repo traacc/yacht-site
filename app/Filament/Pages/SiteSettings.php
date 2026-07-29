@@ -6,6 +6,7 @@ namespace App\Filament\Pages;
 
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Models\ApiClient;
+use App\Models\User;
 use App\Services\SettingsService;
 use App\Services\SitemapGenerator;
 use BackedEnum;
@@ -75,7 +76,29 @@ class SiteSettings extends Page
             'vk_autopublish' => (bool) $settings->get('home.vk_autopublish', true),
             // Рассылка уведомлений о новостях пользователям сайта
             'news_notifications' => (bool) $settings->get('home.news_notifications', true),
+            // Слать письма центра уведомлений только на подтверждённые адреса
+            'notify_verified_emails_only' => $settings->notifyVerifiedEmailsOnly(),
         ]);
+    }
+
+    /**
+     * Сводка по подтверждённым адресам — чтобы администратор видел последствия
+     * включения галочки до того, как её включит.
+     */
+    private function verifiedEmailsSummary(): string
+    {
+        $real = User::query()->where('email', 'not like', '%@noemail.local')->count();
+        $verified = User::query()
+            ->where('email', 'not like', '%@noemail.local')
+            ->whereNotNull('email_verified_at')
+            ->count();
+        $unverified = $real - $verified;
+
+        $summary = "подтверждено {$verified} из {$real} реальных адресов.";
+
+        return $unverified > 0
+            ? $summary." При включённой галочке письма центра уведомлений не будут приходить {$unverified} пользователям."
+            : $summary;
     }
 
     /**
@@ -203,14 +226,23 @@ class SiteSettings extends Page
                             ->default(true),
                     ]),
 
-                // ── Уведомления пользователям о новостях ──────
-                Section::make('Рассылка новостей пользователям')
-                    ->description('Если включено — при публикации новости подписчики категории «Анонсы и новости» получают уведомление выбранными в личном кабинете способами.')
+                // ── Центр уведомлений ─────────────────────────
+                Section::make('Уведомления пользователям')
+                    ->description('Настройки центра уведомлений. Способ получения (e-mail, Telegram, личный кабинет) каждый пользователь выбирает сам в своём кабинете.')
                     ->schema([
                         Toggle::make('news_notifications')
                             ->label('Уведомлять пользователей о новых новостях')
                             ->helperText('Отключите, чтобы временно приостановить массовую рассылку по сайту.')
                             ->default(true),
+
+                        Toggle::make('notify_verified_emails_only')
+                            ->label('Отправлять письма только на подтверждённые e-mail')
+                            ->helperText('Касается только уведомлений центра уведомлений. Письма подтверждения адреса, восстановления пароля и системные письма по заявкам отправляются всегда.')
+                            ->default(false),
+
+                        Placeholder::make('verified_emails_stats')
+                            ->label('Сейчас в базе')
+                            ->content(fn (): string => $this->verifiedEmailsSummary()),
                     ]),
 
                 // ── API для внешней программы ─────────────────
@@ -293,6 +325,7 @@ class SiteSettings extends Page
             'data.telegram_autopublish' => ['boolean'],
             'data.vk_autopublish' => ['boolean'],
             'data.news_notifications' => ['boolean'],
+            'data.notify_verified_emails_only' => ['boolean'],
         ]);
 
         /** @var SettingsService $settings */
@@ -325,6 +358,9 @@ class SiteSettings extends Page
 
         // Рассылка уведомлений о новостях пользователям сайта
         $settings->set('home.news_notifications', (bool) ($data['news_notifications'] ?? true), 'home');
+
+        // Слать письма центра уведомлений только на подтверждённые адреса
+        $settings->set('home.notify_verified_emails_only', (bool) ($data['notify_verified_emails_only'] ?? false), 'home');
 
         $settings->forgetGroup('home');
 

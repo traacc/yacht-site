@@ -19,6 +19,7 @@ class SettingsService
 
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($key, $default) {
             $setting = Setting::find($key);
+
             return $setting?->value ?? $default;
         });
     }
@@ -63,6 +64,18 @@ class SettingsService
     // ──────────────────────────────────────────────
 
     /**
+     * Слать письма центра уведомлений только на подтверждённые адреса.
+     *
+     * Касается только канала E-mail центра уведомлений (@see \App\Services\Notifications\NotificationPreferences).
+     * Письма подтверждения адреса, восстановления пароля и системные письма
+     * по заявкам отправляются всегда, независимо от этой настройки.
+     */
+    public function notifyVerifiedEmailsOnly(): bool
+    {
+        return (bool) $this->get('home.notify_verified_emails_only', false);
+    }
+
+    /**
      * E-mail'ы администраторов для системных уведомлений
      * (заявки на регату, регистрация команд / яхт / пользователей).
      *
@@ -95,14 +108,14 @@ class SettingsService
      *  - Если random_gallery = true  → перемешивает пул и берёт первые N.
      *  - Если random_gallery = false → сортирует по выбранному правилу и берёт первые N.
      *
-     * @return Collection<int, string>  Коллекция публичных URL изображений.
+     * @return Collection<int, string> Коллекция публичных URL изображений.
      */
     public function getGalleryPhotos(): Collection
     {
-        $raw    = $this->get('home.gallery_photos', []);
-        $count  = (int) $this->get('home.gallery_count', 10);
+        $raw = $this->get('home.gallery_photos', []);
+        $count = (int) $this->get('home.gallery_count', 10);
         $random = (bool) $this->get('home.gallery_random', false);
-        $sort   = $this->get('home.gallery_sort', 'manual') ?? 'manual';
+        $sort = $this->get('home.gallery_sort', 'manual') ?? 'manual';
 
         // Нормализуем: значение может быть массивом строк, ассоциативным массивом
         // или вложенным массивом — приводим к плоскому списку строк.
@@ -129,7 +142,7 @@ class SettingsService
                 // «Сначала старые» — оставляем исходный порядок
                 'oldest' => $collection->values(),
                 // «Ручной» — порядок как задан в настройках
-                default  => $collection->values(),
+                default => $collection->values(),
             };
         }
 
@@ -153,7 +166,7 @@ class SettingsService
      *  - видео среди набора игнорируются для слайд-шоу (слайды только из изображений).
      *
      * @return array{type: 'video'|'image', url: string}|array{type: 'slideshow', slides: list<string>}|null
-     *         Данные медиа, либо null если ничего не загружено.
+     *                                                                                                       Данные медиа, либо null если ничего не загружено.
      */
     public function getHeroMedia(): ?array
     {
@@ -179,7 +192,7 @@ class SettingsService
             $path = (string) $paths->first();
 
             return [
-                'url'  => $url($path),
+                'url' => $url($path),
                 'type' => $isVideo($path) ? 'video' : 'image',
             ];
         }
@@ -190,7 +203,7 @@ class SettingsService
         // Изображений не осталось (загружены только видео) — берём первое как одиночный фон.
         if ($slides->isEmpty()) {
             return [
-                'url'  => $url((string) $paths->first()),
+                'url' => $url((string) $paths->first()),
                 'type' => 'video',
             ];
         }
@@ -198,13 +211,13 @@ class SettingsService
         // Единственное изображение — обычный одиночный фон.
         if ($slides->count() === 1) {
             return [
-                'url'  => (string) $slides->first(),
+                'url' => (string) $slides->first(),
                 'type' => 'image',
             ];
         }
 
         return [
-            'type'   => 'slideshow',
+            'type' => 'slideshow',
             'slides' => $slides->all(),
         ];
     }

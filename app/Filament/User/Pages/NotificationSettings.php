@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\User\Pages;
 
+use App\Actions\Auth\SendEmailVerificationLinkAction;
 use App\Actions\Notifications\GenerateTelegramLinkTokenAction;
 use App\Actions\Notifications\SaveNotificationPreferencesAction;
 use App\Actions\Notifications\UnlinkTelegramAccountAction;
@@ -11,6 +12,7 @@ use App\Enums\NotificationCategory;
 use App\Enums\NotificationChannel;
 use App\Models\User;
 use App\Services\Notifications\NotificationPreferences;
+use App\Services\SettingsService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Checkbox;
@@ -24,6 +26,7 @@ use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
@@ -74,7 +77,11 @@ class NotificationSettings extends Page
 
     public function form(Schema $schema): Schema
     {
-        $hasTelegram = $this->user()->hasLinkedTelegram();
+        $user = $this->user();
+        $hasTelegram = $user->hasLinkedTelegram();
+        // Администратор мог запретить отправку писем на неподтверждённые адреса.
+        $emailBlocked = app(SettingsService::class)->notifyVerifiedEmailsOnly()
+            && ! $user->hasVerifiedEmail();
 
         $categories = array_map(
             fn (NotificationCategory $category) => Fieldset::make($category->getLabel())
@@ -82,13 +89,11 @@ class NotificationSettings extends Page
                     fn (NotificationChannel $channel) => Checkbox::make("{$category->value}.{$channel->value}")
                         ->label($channel->getLabel())
                         ->default(true)
-                        ->disabled($channel === NotificationChannel::Telegram && ! $hasTelegram)
+                        ->disabled($this->isChannelBlocked($channel, $hasTelegram, $emailBlocked))
                         // Отключённые поля Filament по умолчанию не дегидрируются:
-                        // без этого галочки Telegram сбрасывались бы при сохранении.
+                        // без этого недоступные галочки сбрасывались бы при сохранении.
                         ->dehydrated(true)
-                        ->helperText($channel === NotificationChannel::Telegram && ! $hasTelegram
-                            ? 'Сначала привяжите Telegram ниже'
-                            : null),
+                        ->helperText($this->channelHint($channel, $hasTelegram, $emailBlocked)),
                     NotificationChannel::available(),
                 ))
                 ->columns(3),
@@ -102,8 +107,28 @@ class NotificationSettings extends Page
                     ->description('Отметьте, какие уведомления и куда вы хотите получать. Снятая галочка — отписка от рассылки.')
                     ->schema($categories),
 
+                $this->emailSection($emailBlocked),
                 $this->telegramSection(),
             ]);
+    }
+
+    /** Канал недоступен для доставки — галочку показываем, но менять её бессмысленно. */
+    private function isChannelBlocked(NotificationChannel $channel, bool $hasTelegram, bool $emailBlocked): bool
+    {
+        return match ($channel) {
+            NotificationChannel::Telegram => ! $hasTelegram,
+            NotificationChannel::Email => $emailBlocked,
+            default => false,
+        };
+    }
+
+    private function channelHint(NotificationChannel $channel, bool $hasTelegram, bool $emailBlocked): ?string
+    {
+        return match (true) {
+            $channel === NotificationChannel::Telegram && ! $hasTelegram => 'Сначала привяжите Telegram ниже',
+            $channel === NotificationChannel::Email && $emailBlocked => 'Сначала подтвердите e-mail ниже',
+            default => null,
+        };
     }
 
     protected function getFormActions(): array
@@ -124,6 +149,65 @@ class NotificationSettings extends Page
             ->title('Настройки уведомлений сохранены')
             ->success()
             ->send();
+    }
+
+    /**
+     * @param  bool  $emailBlocked  включён запрет писать на неподтверждённые адреса,
+     *                              а адрес пользователя не подтверждён
+     */
+    private function emailSection(bool $emailBlocked): Section
+    {
+        $user = $this->user();
+        $isTechnical = $user->hasTechnicalEmail();
+
+        return Section::make('E-mail')
+            ->description($emailBlocked
+                ? 'Сейчас письма отправляются только на подтверждённые адреса — подтвердите свой, чтобы получать уведомления на почту.'
+                : 'Адрес, на который приходят уведомления. Изменить его можно в разделе «Профиль».')
+            ->schema([
+                Placeholder::make('email_status')
+                    ->label('Статус')
+                    ->content(match (true) {
+                        $isTechnical => 'Настоящий e-mail не указан — добавьте его в разделе «Профиль»',
+                        $user->hasVerifiedEmail() => 'Подтверждён: '.$user->email,
+                        default => 'Не подтверждён: '.$user->email,
+                    }),
+
+                Actions::make([
+                    Action::make('resendVerification')
+                        ->label('Отправить письмо повторно')
+                        ->icon(Heroicon::OutlinedEnvelope)
+                        ->visible(! $isTechnical && ! $user->hasVerifiedEmail())
+                        ->action(function () {
+                            try {
+                                // Экшен уже троттлит отправки (3 за 10 минут).
+                                app(SendEmailVerificationLinkAction::class)->handle($this->user());
+                            } catch (ValidationException $e) {
+                                Notification::make()
+                                    ->title('Не удалось отправить письмо')
+                                    ->body(collect($e->errors())->flatten()->first())
+                                    ->danger()
+                                    ->send();
+
+                                return null;
+                            }
+
+                            Notification::make()
+                                ->title('Письмо отправлено')
+                                ->body('Перейдите по ссылке из письма, затем вернитесь и обновите страницу.')
+                                ->success()
+                                ->send();
+
+                            return null;
+                        }),
+
+                    Action::make('refreshEmail')
+                        ->label('Проверить подтверждение')
+                        ->color('gray')
+                        ->visible(! $isTechnical && ! $user->hasVerifiedEmail())
+                        ->action(fn () => redirect(static::getUrl())),
+                ])->key('email-actions'),
+            ]);
     }
 
     private function telegramSection(): Section

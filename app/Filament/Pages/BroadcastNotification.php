@@ -9,6 +9,7 @@ use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Jobs\SendUserNotificationChunk;
 use App\Models\User;
 use App\Notifications\AdminBroadcastNotification;
+use App\Services\SettingsService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Placeholder;
@@ -107,9 +108,30 @@ class BroadcastNotification extends Page
 
                         Placeholder::make('recipients')
                             ->label('Потенциальных получателей')
-                            ->content(fn (): string => (string) User::query()->count()),
+                            ->content(fn (): string => $this->recipientsSummary()),
                     ]),
             ]);
+    }
+
+    /**
+     * Сколько людей увидит рассылку. Если включён запрет писать на
+     * неподтверждённые адреса, отдельно показываем, скольким дойдёт письмо —
+     * иначе общая цифра вводит в заблуждение.
+     */
+    private function recipientsSummary(): string
+    {
+        $total = User::query()->count();
+
+        if (! app(SettingsService::class)->notifyVerifiedEmailsOnly()) {
+            return (string) $total;
+        }
+
+        $withEmail = User::query()
+            ->where('email', 'not like', '%@noemail.local')
+            ->whereNotNull('email_verified_at')
+            ->count();
+
+        return "{$total}, из них письмо получат {$withEmail} (у остальных не подтверждён e-mail — им уведомление придёт в личный кабинет и Telegram)";
     }
 
     protected function getFormActions(): array
