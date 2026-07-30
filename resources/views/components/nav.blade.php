@@ -59,6 +59,8 @@
                         <a href="{{ route('carter30.regulations') }}" class="block px-4 py-2 text-gray-700">Технический регламент класса</a>
                         <a href="{{ route('carter30.repair') }}" class="block px-4 py-2 text-gray-700">Ремонт и модернизация</a>
                         <a href="{{ route('carter30.technical-help') }}" class="block px-4 py-2 text-gray-700">Техническая помощь</a>
+                        <a href="{{ route('carter30.marketplace') }}" class="block px-4 py-2 text-gray-700">Барахолка</a>
+                        <a href="{{ route('carter30.yacht-sale') }}" class="block px-4 py-2 text-gray-700">Продать яхту</a>
                     </div>
                 </div>
                 <a href="{{ route('teams') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Команды</a>
@@ -251,6 +253,8 @@
                             <a href="{{ route('carter30.regulations') }}" class="block px-4 py-2 text-sm">Технический регламент класса</a>
                             <a href="{{ route('carter30.repair') }}" class="block px-4 py-2 text-sm">Ремонт и модернизация</a>
                             <a href="{{ route('carter30.technical-help') }}" class="block px-4 py-2 text-sm">Техническая помощь</a>
+                            <a href="{{ route('carter30.marketplace') }}" class="block px-4 py-2 text-sm">Барахолка</a>
+                            <a href="{{ route('carter30.yacht-sale') }}" class="block px-4 py-2 text-sm">Продать яхту</a>
                         </div>
                     </div>
                     <a href="{{ route('teams') }}"  class="block py-2 text-sm">Команды</a>

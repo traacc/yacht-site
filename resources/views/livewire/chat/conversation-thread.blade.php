@@ -40,7 +40,10 @@
             @forelse ($this->visibleMessages as $message)
                 @php
                     $isSystem = $message->author_role->isSystem();
-                    $isMine = ! $isSystem && $message->author_role->isSupport() === $asSupport;
+                    // Сравниваем автора, а не роль: в личной переписке обе стороны
+                    // пишут с ролью Client, и проверка по роли отрисовала бы все
+                    // сообщения как свои. У поддержки автор тоже проставлен.
+                    $isMine = ! $isSystem && $message->user_id !== null && $message->user_id === auth()->id();
                 @endphp
 
                 @if ($isSystem)
@@ -107,7 +110,9 @@
                 @endif
             @empty
                 <div class="flex h-full items-center justify-center p-6 text-center text-sm text-gray-500">
-                    @if ($asSupport)
+                    @if ($this->conversation->type === \App\Enums\ConversationType::Direct)
+                        Сообщений пока нет. Напишите первым — собеседник получит уведомление.
+                    @elseif ($asSupport)
                         В этом обращении пока нет сообщений.
                     @else
                         Опишите вопрос — служба поддержки ответит здесь же, а уведомление придёт выбранным вами способом.
@@ -122,7 +127,7 @@
                 <p class="mb-2 text-xs text-red-600">{{ $error }}</p>
             @endif
 
-            @if ($this->conversation->isClosed() && ! $asSupport)
+            @if ($this->conversation->isClosed() && ! $asSupport && $this->conversation->type !== \App\Enums\ConversationType::Direct)
                 <p class="mb-2 text-xs text-gray-500">
                     Обращение закрыто. Новое сообщение откроет его снова.
                 </p>

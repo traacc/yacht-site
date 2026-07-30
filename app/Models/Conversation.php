@@ -81,6 +81,20 @@ class Conversation extends Model
         return $query->where('type', ConversationType::Support);
     }
 
+    /** Личные переписки пользователей (объявления бирж и барахолки). */
+    public function scopeDirect(Builder $query): Builder
+    {
+        return $query->where('type', ConversationType::Direct);
+    }
+
+    /** Диалоги, привязанные к конкретному объекту (объявлению и т.п.). */
+    public function scopeAboutSubject(Builder $query, Model $subject): Builder
+    {
+        return $query
+            ->where('subject_type', $subject::class)
+            ->where('subject_id', $subject->getKey());
+    }
+
     public function scopeOpen(Builder $query): Builder
     {
         return $query->where('status', ConversationStatus::Open);

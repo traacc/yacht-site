@@ -45,8 +45,12 @@ class ChatAttachments
             return false;
         }
 
-        // Оператор поддержки видит переписку любого обращения.
-        if (AccessControl::allows(SupportChat::class, $user)) {
+        // Оператор поддержки видит переписку любого ОБРАЩЕНИЯ. На личные
+        // переписки пользователей это исключение не распространяется: там
+        // поддержка не участвует и заглядывать во вложения не должна.
+        if (AccessControl::allows(SupportChat::class, $user)
+            && Conversation::query()->whereKey($message->conversation_id)->support()->exists()
+        ) {
             return true;
         }
 

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions\Chat;
 
+use App\Enums\ChatNotificationAudience;
 use App\Enums\ConversationStatus;
+use App\Enums\ConversationType;
 use App\Enums\MessageAuthorRole;
 use App\Models\ChatMessage;
 use App\Models\Conversation;
@@ -108,14 +110,39 @@ class SendChatMessageAction
         $this->attachFiles($message, $prepared);
 
         if ($recipients->isNotEmpty()) {
+            $audience = $this->audienceFor($conversation, $role);
+
             Notification::send($recipients, new ChatMessageReceivedNotification(
                 authorName: $message->authorName(),
                 excerpt: Str::limit($excerpt, 200),
-                forSupport: $role === MessageAuthorRole::Client,
+                audience: $audience,
+                // Личных переписок у пользователя много — ссылка должна вести
+                // именно в эту; у обращений в поддержку страница одна.
+                conversationId: $audience === ChatNotificationAudience::Direct
+                    ? (string) $conversation->getKey()
+                    : null,
+                subject: $audience === ChatNotificationAudience::Direct
+                    ? $conversation->title
+                    : null,
             ));
         }
 
         return $message;
+    }
+
+    /**
+     * Кому адресовано уведомление: от этого зависят заголовок и страница,
+     * куда ведёт ссылка «Открыть».
+     */
+    private function audienceFor(Conversation $conversation, MessageAuthorRole $role): ChatNotificationAudience
+    {
+        if ($conversation->type === ConversationType::Direct) {
+            return ChatNotificationAudience::Direct;
+        }
+
+        return $role === MessageAuthorRole::Client
+            ? ChatNotificationAudience::Support
+            : ChatNotificationAudience::Client;
     }
 
     /**
@@ -189,7 +216,11 @@ class SendChatMessageAction
             return new Collection;
         }
 
-        if ($role === MessageAuthorRole::Client) {
+        // Личная переписка: обе стороны — обычные участники с ролью Client,
+        // поэтому проверка типа обязана стоять ДО ветки поддержки. Иначе
+        // сообщение по объявлению ушло бы всем операторам, а собеседник не
+        // получил бы ничего.
+        if ($conversation->type !== ConversationType::Direct && $role === MessageAuthorRole::Client) {
             return $conversation->isUnansweredBySupport()
                 ? new Collection
                 : $this->recipients->forSupport();

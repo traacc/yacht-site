@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Advert;
 use App\Models\News;
 use App\Models\Regatta;
 use App\Models\RepairCase;
@@ -37,6 +38,8 @@ class SitemapGenerator
         'carter30.regulations',
         'carter30.repair',
         'carter30.technical-help',
+        'carter30.marketplace',
+        'carter30.yacht-sale',
     ];
 
     /**
@@ -72,6 +75,18 @@ class SitemapGenerator
                 $urls[] = [
                     'loc' => route('carter30.repair-case', $case),
                     'lastmod' => $case->updated_at?->toAtomString(),
+                ];
+            });
+
+        // Объявления досок раздела «Carter 30»
+        Advert::query()
+            ->visible()
+            ->orderByDesc('published_at')
+            ->get()
+            ->each(function (Advert $advert) use (&$urls): void {
+                $urls[] = [
+                    'loc' => $advert->publicUrl(),
+                    'lastmod' => $advert->updated_at?->toAtomString(),
                 ];
             });
 

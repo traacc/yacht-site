@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Carter30\SubmitRepairRequestAction;
+use App\Actions\Chat\StartDirectConversationAction;
 use App\Actions\Feedback\SubmitFeedbackAction;
 use App\Actions\GenerateCalendarPdfAction;
 use App\Actions\Notifications\UnsubscribeAction;
@@ -15,6 +16,7 @@ use App\Actions\RegattaResult\GenerateRegattaResultPdfAction;
 use App\Actions\Team\GenerateTeamHistoryPdfAction;
 use App\Actions\Voting\CastVoteAction;
 use App\Actions\YachtRental\SubmitYachtRentalRequestAction;
+use App\Enums\AdvertType;
 use App\Enums\NotificationCategory;
 use App\Enums\NotificationChannel;
 use App\Enums\PaymentProviderCode;
@@ -22,6 +24,8 @@ use App\Enums\PaymentTransactionStatus;
 use App\Enums\RegattaStatus;
 use App\Enums\RentalRequestStatus;
 use App\Enums\VotingStatus;
+use App\Filament\User\Pages\Messages as UserMessagesPage;
+use App\Models\Advert;
 use App\Models\Faq;
 use App\Models\Gallery;
 use App\Models\News;
@@ -38,6 +42,7 @@ use App\Models\User;
 use App\Models\Vote;
 use App\Models\Voting;
 use App\Models\Yacht;
+use App\Services\AdvertBoard;
 use App\Services\Chat\ChatAttachments;
 use App\Services\HelpDirectory;
 use App\Services\Payments\PaymentManager;
@@ -291,6 +296,58 @@ Route::post('/carter30/repair-request', function (Request $request) {
 
     return back()->with('repair_request_sent', true);
 })->middleware('throttle:5,1')->name('carter30.repair-request');
+
+// ── Доски объявлений (ТЗ п. 5: «Барахолка», «Продать яхту») ──────────
+
+/** Витрина доски: выборка и фильтры живут в App\Services\AdvertBoard. */
+$advertBoard = function (AdvertType $type, Request $request) {
+    $board = app(AdvertBoard::class);
+
+    $filters = $request->only(['q', 'category', 'city', 'price_from', 'price_to', 'sort']);
+
+    return view('pages.carter30.advert-board', [
+        'type' => $type,
+        'adverts' => $board->paginate($type, $filters),
+        'categories' => $board->categories($type),
+        'cities' => $board->cities($type),
+        'filters' => $filters,
+    ]);
+};
+
+Route::get('/carter30/marketplace', fn (Request $request) => $advertBoard(AdvertType::Marketplace, $request))
+    ->name('carter30.marketplace');
+
+Route::get('/carter30/yachts-for-sale', fn (Request $request) => $advertBoard(AdvertType::YachtSale, $request))
+    ->name('carter30.yacht-sale');
+
+/** Страница объявления: одна вьюха на обе доски, тип задаёт хлебные крошки. */
+$advertItem = function (AdvertType $type, Advert $advert) {
+    abort_unless($advert->type === $type && $advert->isVisible(), 404);
+
+    $advert->load(['author', 'category', 'yacht', 'media']);
+
+    return view('pages.carter30.advert-item', compact('advert'));
+};
+
+Route::get('/carter30/marketplace/{advert}', fn (Advert $advert) => $advertItem(AdvertType::Marketplace, $advert))
+    ->name('carter30.marketplace-item');
+
+Route::get('/carter30/yachts-for-sale/{advert}', fn (Advert $advert) => $advertItem(AdvertType::YachtSale, $advert))
+    ->name('carter30.yacht-sale-item');
+
+/** «Написать автору»: заводит личную переписку и ведёт в неё. */
+Route::post('/carter30/adverts/{advert}/contact', function (Advert $advert, Request $request) {
+    try {
+        $conversation = app(StartDirectConversationAction::class)->handle($request->user(), $advert);
+    } catch (RuntimeException $e) {
+        return back()->with('advert_contact_error', $e->getMessage());
+    }
+
+    return redirect()->to(UserMessagesPage::getUrl(
+        parameters: ['conversation' => $conversation->getKey()],
+        panel: 'user',
+    ));
+})->middleware(['auth', 'throttle:10,1'])->name('carter30.advert-contact');
 
 Route::get('/regattas/calendar/pdf', function (Request $request) {
     $year = $request->integer('year', (int) now()->format('Y'));
