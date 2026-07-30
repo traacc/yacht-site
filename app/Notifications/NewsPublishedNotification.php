@@ -18,6 +18,7 @@ final class NewsPublishedNotification extends UserNotification
         public readonly string $newsTitle,
         public readonly string $newsUrl,
         public readonly string $excerpt,
+        public readonly ?string $coverUrl = null,
     ) {}
 
     public function category(): NotificationCategory
@@ -38,6 +39,12 @@ final class NewsPublishedNotification extends UserNotification
     public function url(): ?string
     {
         return $this->newsUrl;
+    }
+
+    /** Обложка новости, если она есть и файл лежит на диске. */
+    public function imageUrl(): ?string
+    {
+        return $this->coverUrl;
     }
 
     public function icon(): string

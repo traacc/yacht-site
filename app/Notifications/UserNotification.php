@@ -48,6 +48,18 @@ abstract class UserNotification extends Notification implements ShouldQueue
         return null;
     }
 
+    /**
+     * Абсолютный URL картинки-обложки для письма (например, обложка новости).
+     *
+     * Именно абсолютный: относительные пути в почтовых клиентах не работают.
+     * Наследник обязан отдавать null, если файла нет, — иначе получатель
+     * увидит «битую» картинку.
+     */
+    public function imageUrl(): ?string
+    {
+        return null;
+    }
+
     public function icon(): string
     {
         return 'heroicon-o-bell-alert';
@@ -79,6 +91,7 @@ abstract class UserNotification extends Notification implements ShouldQueue
                 'title' => $this->title(),
                 'body' => $this->body(),
                 'url' => $this->url(),
+                'imageUrl' => $this->imageUrl(),
                 'category' => $this->category(),
                 'unsubscribeUrl' => $this->unsubscribeUrl($notifiable),
             ]);

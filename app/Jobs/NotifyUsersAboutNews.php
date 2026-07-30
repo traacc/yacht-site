@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -59,6 +60,7 @@ class NotifyUsersAboutNews implements ShouldQueue
             newsTitle: (string) $news->title,
             newsUrl: route('news-details', $news),
             excerpt: $this->excerpt($news),
+            coverUrl: $this->coverUrl($news),
         );
 
         User::query()
@@ -66,6 +68,21 @@ class NotifyUsersAboutNews implements ShouldQueue
             ->chunkById(self::CHUNK_SIZE, function (Collection $users) use ($notification): void {
                 SendUserNotificationChunk::dispatch($users->modelKeys(), $notification);
             });
+    }
+
+    /**
+     * Абсолютный URL обложки для письма — или null, если обложки нет либо
+     * файл отсутствует на диске (иначе в письме будет «битая» картинка).
+     */
+    private function coverUrl(News $news): ?string
+    {
+        $path = (string) $news->cover_image_url;
+
+        if ($path === '' || ! Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($path);
     }
 
     private function excerpt(News $news): string
