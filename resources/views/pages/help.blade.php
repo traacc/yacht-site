@@ -1,12 +1,29 @@
 <x-public-layout title="Помощь CarterPro - актуальные вопросы и их решения" description="Готовые инструкции проверки электросистем перед регатой, ответы на частозадаваемые вопросы и помощь новым участникам CarterPro">
 <x-breadcrumbs_page title="Помощь">
 </x-breadcrumbs_page>
+{{--
+    Ключи табов: guide — «Помощь по сайту», users — F.A.Q., owners — справочник специалистов.
+    Ключ `users` исторический: на него ссылается якорь /help#users в шапке сайта
+    и внешние ссылки, поэтому переименованию не подлежит.
+--}}
 <main x-data="{
     help_modal_open: false,
     activeItem: null,
-    activeTab: window.location.hash === '#users' ? 'users' : 'owners',
+    activeTab: { '#users': 'users', '#owners': 'owners' }[window.location.hash] ?? 'guide',
     activeCategory: @js($defaultCategory),
-    categories: @js($categories)
+    categories: @js($categories),
+    ownersQuery: '',
+    ownerItems() {
+        const items = this.categories[this.activeCategory]?.items ?? [];
+        const q = this.ownersQuery.trim().toLowerCase();
+
+        if (q === '') {
+            return items;
+        }
+
+        return items.filter((item) => [item.title, item.desc, item.name, item.sphere]
+            .some((field) => (field ?? '').toLowerCase().includes(q)));
+    }
 }"
     x-on:switch-help-tab.window="activeTab = $event.detail.tab"
     class="main">
@@ -19,18 +36,49 @@
     {{-- Табы --}}
     <section class="container mx-auto mb-8">
         <div class="flex flex-wrap gap-2 border-b border-gray-200">
+            <button @click="activeTab = 'guide'"
+                    :class="activeTab === 'guide' ? 'text-[#2D92CE] border-b-2 border-[#2D92CE]' : 'text-[#2E325C] border-b-2 border-transparent hover:text-[#2D92CE]'"
+                    class="px-4 py-3 text-lg font-semibold transition-colors cursor-pointer -mb-px">
+                Помощь по сайту
+            </button>
+            <button @click="activeTab = 'users'"
+                    :class="activeTab === 'users' ? 'text-[#2D92CE] border-b-2 border-[#2D92CE]' : 'text-[#2E325C] border-b-2 border-transparent hover:text-[#2D92CE]'"
+                    class="px-4 py-3 text-lg font-semibold transition-colors cursor-pointer -mb-px">
+                F.A.Q.
+            </button>
             <button @click="activeTab = 'owners'"
                     :class="activeTab === 'owners' ? 'text-[#2D92CE] border-b-2 border-[#2D92CE]' : 'text-[#2E325C] border-b-2 border-transparent hover:text-[#2D92CE]'"
                     class="px-4 py-3 text-lg font-semibold transition-colors cursor-pointer -mb-px">
                 Для владельцев яхт
             </button>
-            <button @click="activeTab = 'users'"
-                    :class="activeTab === 'users' ? 'text-[#2D92CE] border-b-2 border-[#2D92CE]' : 'text-[#2E325C] border-b-2 border-transparent hover:text-[#2D92CE]'"
-                    class="px-4 py-3 text-lg font-semibold transition-colors cursor-pointer -mb-px">
-                Для пользователей
-            </button>
         </div>
     </section>
+
+    {{-- ===== Таб: Помощь по сайту ===== --}}
+    <div x-show="activeTab === 'guide'" x-cloak>
+        <section class="container mx-auto pb-12">
+            @if(trim(strip_tags($siteGuide)) !== '' || str_contains($siteGuide, '<img'))
+            <div class="px-3 prose max-w-none">{!! $siteGuide !!}</div>
+            @else
+            <p class="px-3 text-[#2E325C]">Раздел заполняется.</p>
+            @endif
+
+            {{-- Не нашли ответ — открываем плавающий чат из общего layout. --}}
+            <div class="px-3 mt-10 border-t border-gray-200 pt-8">
+                <h3 class="text-2xl font-semibold text-[#2E325C]">Остались вопросы по сайту?</h3>
+                <p class="mt-2 text-brand-gray">Напишите в службу поддержки — ответим в чате на сайте.</p>
+
+                <button
+                    type="button"
+                    @click="Livewire.dispatch('open-support-chat', { context: 'site-help' })"
+                    class="mt-4 bg-[#2D92CE] text-white py-2 px-6 hover:bg-[#0074CC] transition-colors text-lg font-semibold cursor-pointer"
+                >
+                    Написать в поддержку
+                </button>
+            </div>
+        </section>
+    </div>
+    {{-- ===== /Таб: Помощь по сайту ===== --}}
 
     {{-- ===== Таб: Для владельцев яхт ===== --}}
     <div x-show="activeTab === 'owners'" x-cloak>
@@ -52,10 +100,13 @@
             <h3 class="section-title a-font text-5xl mb-4" x-text="categories[activeCategory]?.title"></h3>
             <p x-show="categories[activeCategory]?.description" x-text="categories[activeCategory]?.description" class="text-[#2E325C] mb-8"></p>
             <div class="searchbar flex flex-col md:flex-row gap-4 mb-6">
-                <input class="w-full border-0 py-4 pl-12 bg-[#F8F8F8] focus:outline-hidden " type="text" placeholder="Поиск по объявлению">
+                <input x-model.debounce.200ms="ownersQuery" class="w-full border-0 py-4 pl-12 bg-[#F8F8F8] focus:outline-hidden " type="text" placeholder="Поиск по специалистам">
             </div>
+            <p x-show="ownersQuery.trim() !== '' && ownerItems().length === 0" x-cloak class="text-[#2E325C] mb-4">
+                Ничего не найдено. Попробуйте изменить запрос.
+            </p>
             <div class="help__list w-full">
-                <template x-for="(item, index) in categories[activeCategory]?.items" :key="index">
+                <template x-for="(item, index) in ownerItems()" :key="index">
                     <div class="help__item flex md:flex-row flex-col justify-between gap-6 bg-[#F8F8F8] p-4 mb-4">
                         <div class="pr-6 max-w-[620px]">
                             <h4 @click="activeItem = item; help_modal_open = true" class="font-semibold text-[#2E325C] text-lg mb-4 cursor-pointer" x-text="item.title"></h4>
@@ -154,9 +205,23 @@
                         <a :href="activeItem?.site" target="_blank" rel="noopener noreferrer" x-text="activeItem?.site" class="text-[#2D92CE] hover:underline break-all"></a>
                     </li>
                 </ul>
-                <button class="mt-6 bg-[#2D92CE] w-full text-white py-2 px-6 hover:bg-[#0074CC] transition-colors text-lg font-semibold">
-                    Связаться
-                </button>
+                {{--
+                    Связь идёт напрямую со специалистом: это его контакты, а не наша поддержка.
+                    Если контактов не указано — остаётся чат поддержки с контекстом карточки.
+                --}}
+                <template x-if="activeItem?.email || activeItem?.phone?.length">
+                    <a :href="activeItem?.email ? 'mailto:' + activeItem.email : 'tel:' + activeItem.phone[0]"
+                       class="mt-6 block text-center bg-[#2D92CE] w-full text-white py-2 px-6 hover:bg-[#0074CC] transition-colors text-lg font-semibold">
+                        Связаться
+                    </a>
+                </template>
+                <template x-if="!activeItem?.email && !activeItem?.phone?.length">
+                    <button type="button"
+                            @click="help_modal_open = false; Livewire.dispatch('open-support-chat', { context: 'help-specialist', id: activeItem?.id })"
+                            class="mt-6 bg-[#2D92CE] w-full text-white py-2 px-6 hover:bg-[#0074CC] transition-colors text-lg font-semibold cursor-pointer">
+                        Написать в поддержку
+                    </button>
+                </template>
             </div>
         </div>
     </div>
@@ -166,50 +231,36 @@
     {{-- ===== Таб: Для пользователей (FAQ) ===== --}}
     <div x-show="activeTab === 'users'" x-cloak>
         <section class="container mx-auto pb-12">
-            @if($faq->isNotEmpty())
-            <div class="px-3 divide-y divide-gray-200" x-data="{ open: null }">
-                @foreach($faq as $index => $item)
-                <div class="py-4">
-                    <button
-                        @click="open === {{ $index }} ? open = null : open = {{ $index }}"
-                        class="flex justify-between items-center w-full text-left gap-4 cursor-pointer border-b pb-5 border-gray-200"
-                    >
-                        <span class="text-lg font-semibold text-[#2E325C] pr-4">{{ $item['question'] }}</span>
-                        <svg
-                            class="w-5 h-5 shrink-0 text-[#2D92CE] transition-transform duration-300"
-                            :class="open === {{ $index }} ? 'rotate-180' : ''"
-                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
-                    <div
-                        x-show="open === {{ $index }}"
-                        x-collapse
-                        x-cloak
-                    >
-                        <div class="pt-4 text-brand-gray leading-relaxed prose prose-sm max-w-none">
-                            {!! $item['answer'] !!}
-                        </div>
-                    </div>
-                </div>
-                @endforeach
+            <div class="px-3">
+                <x-faq-accordion :items="$faq" :searchable="true" />
             </div>
-            @else
-            <p class="text-[#2E325C]">Вопросы появятся позже.</p>
-            @endif
 
-            {{-- Не нашли ответ — открываем плавающий чат из общего layout. --}}
+            {{--
+                Не нашли ответ — два пути: письменный вопрос администрации
+                (модалка из общего layout, ответ приходит в «Мои вопросы»)
+                и живой чат поддержки (плавающий виджет из общего layout).
+            --}}
             <div class="px-3 mt-10 border-t border-gray-200 pt-8">
                 <h3 class="text-2xl font-semibold text-[#2E325C]">Не нашли ответ?</h3>
-                <p class="mt-2 text-brand-gray">Напишите в службу поддержки — ответим в чате на сайте.</p>
+                <p class="mt-2 text-brand-gray">Задайте вопрос администрации или напишите в службу поддержки — ответим в чате на сайте.</p>
 
-                <button
-                    type="button"
-                    @click="Livewire.dispatch('open-support-chat')"
-                    class="mt-4 bg-[#2D92CE] text-white py-2 px-6 hover:bg-[#0074CC] transition-colors text-lg font-semibold cursor-pointer"
-                >
-                    Написать в поддержку
-                </button>
+                <div class="mt-4 flex flex-wrap gap-4">
+                    <button
+                        type="button"
+                        @click="isQuestionModalOpen = true"
+                        class="bg-[#2D92CE] text-white py-2 px-6 hover:bg-[#0074CC] transition-colors text-lg font-semibold cursor-pointer"
+                    >
+                        Задать вопрос
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="Livewire.dispatch('open-support-chat', { context: 'faq' })"
+                        class="border border-[#2D92CE] text-[#2D92CE] py-2 px-6 hover:bg-[#2D92CE] hover:text-white transition-colors text-lg font-semibold cursor-pointer"
+                    >
+                        Написать в поддержку
+                    </button>
+                </div>
             </div>
         </section>
     </div>

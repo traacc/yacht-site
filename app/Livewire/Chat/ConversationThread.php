@@ -11,9 +11,12 @@ use App\Models\ChatMessage;
 use App\Models\Conversation;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 use RuntimeException;
 
 /**
@@ -28,6 +31,11 @@ use RuntimeException;
  */
 class ConversationThread extends Component
 {
+    use WithFileUploads;
+
+    /** Сколько сообщений подгружается за раз. */
+    private const PAGE = 30;
+
     /** Идентификатор диалога. Locked: подмена id в браузере открыла бы чужую переписку. */
     #[Locked]
     public ?string $conversationId = null;
@@ -43,6 +51,16 @@ class ConversationThread extends Component
 
     public ?string $error = null;
 
+    /** Сколько последних сообщений показываем. Растёт по кнопке «Показать более ранние». */
+    public int $limit = self::PAGE;
+
+    /**
+     * Выбранные, но ещё не отправленные файлы.
+     *
+     * @var list<TemporaryUploadedFile>
+     */
+    public array $attachments = [];
+
     /** Последнее показанное сообщение — по нему понимаем, что пришло новое. */
     #[Locked]
     public ?string $lastMessageId = null;
@@ -53,7 +71,7 @@ class ConversationThread extends Component
         $this->asSupport = $asSupport;
         $this->polling = $polling;
 
-        $this->lastMessageId = $this->messages->last()?->getKey();
+        $this->lastMessageId = $this->visibleMessages->last()?->getKey();
 
         $this->markRead();
     }
@@ -86,9 +104,20 @@ class ConversationThread extends Component
         return $query->first();
     }
 
-    /** @return Collection<int, ChatMessage> */
+    /**
+     * Последние $limit сообщений в хронологическом порядке.
+     *
+     * Окном, а не всей перепиской: лента перечитывается каждым опросом (раз в
+     * 5 секунд), и длинный тред тянул бы сотни строк на каждый запрос.
+     *
+     * ★ Не `messages()`: это имя зарезервировано Livewire под сообщения
+     * валидации (HandlesValidation::getMessages() вызывает его и ждёт массив),
+     * и при отправке вложений валидация падала бы на array_merge().
+     *
+     * @return Collection<int, ChatMessage>
+     */
     #[Computed]
-    public function messages(): Collection
+    public function visibleMessages(): Collection
     {
         $conversation = $this->conversation;
 
@@ -96,7 +125,58 @@ class ConversationThread extends Component
             return collect();
         }
 
-        return $conversation->messages()->with('author')->get();
+        return $conversation->messages()
+            ->with(['author', 'media'])
+            // reorder(): у связи задана сортировка по created_at, иначе latest() к ней добавится.
+            ->reorder()
+            ->latest('created_at')
+            ->limit($this->limit)
+            ->get()
+            ->reverse()
+            ->values();
+    }
+
+    /** Есть ли сообщения старше показанного окна. */
+    #[Computed]
+    public function hasMore(): bool
+    {
+        $conversation = $this->conversation;
+
+        if (! $conversation instanceof Conversation) {
+            return false;
+        }
+
+        return $conversation->messages()->count() > $this->limit;
+    }
+
+    public function loadOlder(): void
+    {
+        $this->limit += self::PAGE;
+
+        unset($this->visibleMessages, $this->hasMore);
+    }
+
+    /** Правила вложений: у операторов лимит размера выше (ТЗ — админы без ограничений). */
+    protected function rules(): array
+    {
+        $maxKilobytes = $this->asSupport ? 10240 : 5120;
+
+        return [
+            'attachments' => ['array', 'max:'.SendChatMessageAction::MAX_ATTACHMENTS],
+            'attachments.*' => ['file', 'mimes:jpg,jpeg,png,webp,heic,heif,pdf', 'max:'.$maxKilobytes],
+        ];
+    }
+
+    protected function validationAttributes(): array
+    {
+        return ['attachments' => 'вложения', 'attachments.*' => 'файл'];
+    }
+
+    public function removeAttachment(int $index): void
+    {
+        unset($this->attachments[$index]);
+
+        $this->attachments = array_values($this->attachments);
     }
 
     public function send(): void
@@ -111,11 +191,20 @@ class ConversationThread extends Component
         }
 
         try {
+            $this->validate();
+        } catch (ValidationException $e) {
+            $this->error = $e->validator->errors()->first();
+
+            return;
+        }
+
+        try {
             app(SendChatMessageAction::class)->handle(
                 conversation: $conversation,
                 author: $user,
                 role: $this->asSupport ? MessageAuthorRole::Support : MessageAuthorRole::Client,
                 body: $this->draft,
+                attachments: array_values($this->attachments),
             );
         } catch (RuntimeException $e) {
             $this->error = $e->getMessage();
@@ -124,6 +213,7 @@ class ConversationThread extends Component
         }
 
         $this->draft = '';
+        $this->attachments = [];
         $this->refreshThread();
 
         // Список диалогов у оператора и счётчик непрочитанных в виджете
@@ -134,9 +224,9 @@ class ConversationThread extends Component
     /** Дёргается опросом: свежие сообщения приходят вместе с перерисовкой. */
     public function refreshThread(): void
     {
-        unset($this->conversation, $this->messages);
+        unset($this->conversation, $this->visibleMessages, $this->hasMore);
 
-        $latestId = $this->messages->last()?->getKey();
+        $latestId = $this->visibleMessages->last()?->getKey();
 
         if ($latestId !== $this->lastMessageId) {
             $this->lastMessageId = $latestId;

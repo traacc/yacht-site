@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Services\SettingsService;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -20,24 +21,21 @@ use UnitEnum;
 
 class HelpPageSettings extends Page
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected string $view = 'filament-panels::pages.page';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQuestionMarkCircle;
 
-    protected static ?string $navigationLabel = 'Помощь 2';
+    /** Лейбл «Помощь» занят HelpResource (справочник специалистов). */
+    protected static ?string $navigationLabel = 'Страница «Помощь»';
 
     protected static ?string $title = 'Настройки страницы «Помощь»';
 
-    protected static ?int $navigationSort = 25;
+    /** Сразу после HelpResource (25). */
+    protected static ?int $navigationSort = 26;
 
     protected static string|UnitEnum|null $navigationGroup = 'Сайт';
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        return false;
-    }
 
     public array $data = [];
 
@@ -48,6 +46,7 @@ class HelpPageSettings extends Page
 
         $this->form->fill([
             'before_note' => $settings->get('help.before_note', ''),
+            'site_guide' => $settings->get('help.site_guide', ''),
         ]);
     }
 
@@ -69,8 +68,20 @@ class HelpPageSettings extends Page
         return $schema
             ->statePath('data')
             ->components([
+                Section::make('Помощь по сайту')
+                    ->description('Описание разделов сайта и как ими пользоваться. Отображается в первой вкладке страницы «Помощь». Скриншоты добавляйте кнопкой «Прикрепить файлы» или перетаскиванием: при копировании из Word переносится только текст.')
+                    ->schema([
+                        RichEditor::make('site_guide')
+                            ->label('Содержание раздела')
+                            ->fileAttachmentsDisk('public')
+                            ->fileAttachmentsDirectory('help')
+                            ->fileAttachmentsVisibility('public')
+                            ->fileAttachmentsMaxSize(5120)
+                            ->columnSpanFull(),
+                    ]),
+
                 Section::make('Вводный текст')
-                    ->description('Текст отображается на странице «Помощь» перед основным контентом.')
+                    ->description('Текст отображается во вкладке «Для владельцев яхт» перед списком специалистов.')
                     ->schema([
                         RichEditor::make('before_note')
                             ->label('Текст перед контентом')
@@ -97,6 +108,7 @@ class HelpPageSettings extends Page
         $settings = app(SettingsService::class);
 
         $settings->set('help.before_note', $data['before_note'] ?? '', 'help');
+        $settings->set('help.site_guide', $data['site_guide'] ?? '', 'help');
         $settings->forgetGroup('help');
 
         Notification::make()

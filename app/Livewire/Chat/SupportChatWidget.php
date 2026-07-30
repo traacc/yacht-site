@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Livewire\Chat;
 
 use App\Actions\Chat\StartSupportConversationAction;
+use App\Enums\ChatContext;
 use App\Models\Conversation;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -32,8 +34,16 @@ class SupportChatWidget extends Component
     #[Locked]
     public ?string $conversationId = null;
 
+    /**
+     * Открыть чат, при желании — с контекстом обращения.
+     *
+     * Контекст приходит из браузера, поэтому принимается только алиас из
+     * ChatContext, а объект ищется по id внутри разрешённой для него модели.
+     * Неизвестные значения молча игнорируются: пользователю важно, чтобы чат
+     * открылся, а не сообщение об ошибке.
+     */
     #[On('open-support-chat')]
-    public function open(): void
+    public function open(?string $context = null, ?string $id = null): void
     {
         if (! auth()->check()) {
             // Гость сначала входит: чат только для авторизованных.
@@ -42,7 +52,11 @@ class SupportChatWidget extends Component
             return;
         }
 
-        $this->ensureConversation();
+        $this->ensureConversation(
+            ChatContext::tryFrom((string) $context),
+            $id,
+        );
+
         $this->isOpen = true;
     }
 
@@ -90,7 +104,15 @@ class SupportChatWidget extends Component
             ->value('id');
     }
 
-    private function ensureConversation(): void
+    /**
+     * Диалог для окна чата.
+     *
+     * Уже подхваченное в mount() обращение переиспользуется, даже если оно
+     * закрыто: иначе бейдж непрочитанных указывал бы на закрытый тред, а клик
+     * заводил бы новый — и ответ поддержки становился недостижимым. Закрытое
+     * обращение переоткроется первым же сообщением (@see SendChatMessageAction).
+     */
+    private function ensureConversation(?ChatContext $context = null, ?string $subjectId = null): void
     {
         $user = auth()->user();
 
@@ -98,9 +120,41 @@ class SupportChatWidget extends Component
             return;
         }
 
+        // Закрытое обращение открываем как есть: иначе непрочитанный ответ
+        // поддержки стал бы недостижим. Первое сообщение переоткроет тред.
+        if ($this->ownConversation($user)?->isClosed() === true) {
+            return;
+        }
+
+        // Для открытого обращения Action вернёт его же и дозаполнит контекст.
         $this->conversationId = app(StartSupportConversationAction::class)
-            ->handle($user)
+            ->handle($user, $context, $this->resolveSubject($context, $subjectId))
             ->getKey();
+    }
+
+    /** Подхваченный диалог, если он всё ещё принадлежит пользователю. */
+    private function ownConversation(User $user): ?Conversation
+    {
+        if ($this->conversationId === null) {
+            return null;
+        }
+
+        return Conversation::query()
+            ->whereKey($this->conversationId)
+            ->forParticipant($user)
+            ->first();
+    }
+
+    /** Объект контекста ищется только в модели, разрешённой для этого контекста. */
+    private function resolveSubject(?ChatContext $context, ?string $subjectId): ?Model
+    {
+        $modelClass = $context?->modelClass();
+
+        if ($modelClass === null || $subjectId === null || $subjectId === '') {
+            return null;
+        }
+
+        return $modelClass::query()->whereKey($subjectId)->first();
     }
 
     public function render()

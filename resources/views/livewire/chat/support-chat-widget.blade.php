@@ -17,14 +17,24 @@
                     <div class="text-xs text-white/70">Отвечаем в рабочее время</div>
                 </div>
 
-                <button
-                    type="button"
-                    wire:click="toggle"
-                    aria-label="Свернуть чат"
-                    class="text-2xl leading-none text-white/80 transition-colors hover:text-white"
-                >
-                    &times;
-                </button>
+                <div class="flex items-center gap-3">
+                    {{-- Все обращения, включая закрытые, доступны в личном кабинете. --}}
+                    <a
+                        href="{{ \App\Filament\User\Pages\SupportChat::getUrl(panel: 'user') }}"
+                        class="text-xs text-white/70 underline transition-colors hover:text-white"
+                    >
+                        История обращений
+                    </a>
+
+                    <button
+                        type="button"
+                        wire:click="toggle"
+                        aria-label="Свернуть чат"
+                        class="text-2xl leading-none text-white/80 transition-colors hover:text-white"
+                    >
+                        &times;
+                    </button>
+                </div>
             </div>
 
             <livewire:chat.conversation-thread

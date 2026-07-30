@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Chat;
 
-use App\Enums\SystemRole;
 use App\Filament\Pages\SupportChat;
 use App\Models\Conversation;
 use App\Models\User;
-use App\Support\AccessControl;
+use App\Services\Notifications\AdminRecipients;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -20,28 +19,24 @@ use Illuminate\Database\Eloquent\Collection;
  */
 class ChatRecipients
 {
+    public function __construct(
+        private readonly AdminRecipients $admins,
+    ) {}
+
     /**
      * Операторы поддержки: те, кому реально открыта страница чата.
-     *
-     * Права берём из общей матрицы, а не из захардкоженного списка ролей —
-     * иначе судья, которому чат закрыли в настройках доступа, всё равно
-     * получал бы письма о каждом обращении.
      *
      * @return Collection<int, User>
      */
     public function forSupport(): Collection
     {
-        $panelRoles = array_filter(
-            SystemRole::cases(),
-            static fn (SystemRole $role): bool => $role !== SystemRole::User,
-        );
+        $recipients = $this->admins->forSection(SupportChat::class);
 
-        return User::query()
-            ->whereIn('system_role', array_map(static fn (SystemRole $r): string => $r->value, $panelRoles))
-            ->with(['notificationPreferences', 'telegramAccount'])
-            ->get()
-            ->filter(static fn (User $user): bool => AccessControl::allows(SupportChat::class, $user))
-            ->values();
+        // UserNotification::via() дёргает настройки и привязку Telegram на каждом
+        // адресате — без предзагрузки это N+1.
+        $recipients->loadMissing(['notificationPreferences', 'telegramAccount']);
+
+        return $recipients;
     }
 
     /**

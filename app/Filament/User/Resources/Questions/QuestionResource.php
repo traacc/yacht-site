@@ -53,7 +53,7 @@ class QuestionResource extends Resource
                 Placeholder::make('answer')
                     ->label('Ответ администрации')
                     ->content(fn (UserQuestion $record): HtmlString => $record->isAnswered()
-                        ? new HtmlString('<div class="prose prose-sm max-w-none">' . $record->answer . '</div>')
+                        ? new HtmlString('<div class="prose prose-sm max-w-none">'.$record->answer.'</div>')
                         : new HtmlString('<span class="text-gray-500">Ответ ещё не получен. Мы ответим вам в ближайшее время.</span>'))
                     ->columnSpanFull(),
             ]);
@@ -86,7 +86,7 @@ class QuestionResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->emptyStateHeading('Вы пока не задавали вопросов')
-            ->emptyStateDescription('Задать вопрос можно на главной странице сайта.')
+            ->emptyStateDescription('Задать вопрос можно на главной странице сайта или в разделе «Помощь» → F.A.Q.')
             ->recordActions([
                 ViewAction::make()
                     ->label('Посмотреть')

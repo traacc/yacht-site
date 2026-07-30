@@ -74,7 +74,7 @@ class SupportChat extends Page
             ->support()
             ->when($this->filter === 'open', fn ($q) => $q->where('status', ConversationStatus::Open))
             ->when($this->filter === 'closed', fn ($q) => $q->where('status', ConversationStatus::Closed))
-            ->with(['creator', 'lastMessage'])
+            ->with(['creator', 'lastMessage', 'subject'])
             // Счётчик подзапросом, а не методом модели на каждой строке: иначе
             // сотня обращений в списке дала бы сотню отдельных COUNT-запросов.
             ->withCount(['messages as unread_support_count' => function ($q): void {
@@ -120,7 +120,7 @@ class SupportChat extends Page
     {
         return $this->selectedId === null
             ? null
-            : Conversation::query()->whereKey($this->selectedId)->first();
+            : Conversation::query()->with('subject')->whereKey($this->selectedId)->first();
     }
 
     /** Ответ оператора отправлен — перерисовываем список, чтобы обновились метки. */

@@ -78,11 +78,13 @@
                     <div x-show="open" x-cloak x-transition
                         class="absolute top-full left-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
                         @if(request()->routeIs('help'))
-                        <a href="{{ route('help') }}" @click.prevent="open = false; $dispatch('switch-help-tab', { tab: 'owners' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Для владельцев яхт</a>
-                        <a href="{{ route('help') }}#users" @click.prevent="open = false; $dispatch('switch-help-tab', { tab: 'users' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Для пользователей</a>
+                        <a href="{{ route('help') }}" @click.prevent="open = false; $dispatch('switch-help-tab', { tab: 'guide' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Помощь по сайту</a>
+                        <a href="{{ route('help') }}#users" @click.prevent="open = false; $dispatch('switch-help-tab', { tab: 'users' })" class="block px-4 py-2 text-gray-700 cursor-pointer">F.A.Q.</a>
+                        <a href="{{ route('help') }}#owners" @click.prevent="open = false; $dispatch('switch-help-tab', { tab: 'owners' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Для владельцев яхт</a>
                         @else
-                        <a href="{{ route('help') }}"  class="block px-4 py-2 text-gray-700">Для владельцев яхт</a>
-                        <a href="{{ route('help') }}#users"  class="block px-4 py-2 text-gray-700">Для пользователей</a>
+                        <a href="{{ route('help') }}"  class="block px-4 py-2 text-gray-700">Помощь по сайту</a>
+                        <a href="{{ route('help') }}#users"  class="block px-4 py-2 text-gray-700">F.A.Q.</a>
+                        <a href="{{ route('help') }}#owners"  class="block px-4 py-2 text-gray-700">Для владельцев яхт</a>
                         @endif
                     </div>
                 </div>
@@ -253,11 +255,13 @@
                         </button>
                         <div x-show="open" x-cloak x-transition class="">
                             @if(request()->routeIs('help'))
-                            <a href="{{ route('help') }}" @click.prevent="mobileOpen = false; $dispatch('switch-help-tab', { tab: 'owners' })" class="block px-4 py-2 text-sm">Для владельцев яхт</a>
-                            <a href="{{ route('help') }}#users" @click.prevent="mobileOpen = false; $dispatch('switch-help-tab', { tab: 'users' })" class="block px-4 py-2 text-sm">Для пользователей</a>
+                            <a href="{{ route('help') }}" @click.prevent="mobileOpen = false; $dispatch('switch-help-tab', { tab: 'guide' })" class="block px-4 py-2 text-sm">Помощь по сайту</a>
+                            <a href="{{ route('help') }}#users" @click.prevent="mobileOpen = false; $dispatch('switch-help-tab', { tab: 'users' })" class="block px-4 py-2 text-sm">F.A.Q.</a>
+                            <a href="{{ route('help') }}#owners" @click.prevent="mobileOpen = false; $dispatch('switch-help-tab', { tab: 'owners' })" class="block px-4 py-2 text-sm">Для владельцев яхт</a>
                             @else
-                            <a href="{{ route('help') }}"  class="block px-4 py-2 text-sm">Для владельцев яхт</a>
-                            <a href="{{ route('help') }}#users"  class="block px-4 py-2 text-sm">Для пользователей</a>
+                            <a href="{{ route('help') }}"  class="block px-4 py-2 text-sm">Помощь по сайту</a>
+                            <a href="{{ route('help') }}#users"  class="block px-4 py-2 text-sm">F.A.Q.</a>
+                            <a href="{{ route('help') }}#owners"  class="block px-4 py-2 text-sm">Для владельцев яхт</a>
                             @endif
                         </div>
                     </div>

@@ -64,6 +64,16 @@
                             {{ $selected->creator?->name ?? 'Пользователь удалён' }}
                         </div>
                         <div class="truncate text-xs text-gray-500">{{ $selected->title }}</div>
+
+                        {{-- Контекст: откуда пользователь открыл чат (см. App\Enums\ChatContext). --}}
+                        @if ($selected->subject)
+                            <div class="truncate text-xs text-gray-500">
+                                Контекст:
+                                <span class="font-medium text-gray-700">
+                                    {{ $selected->subject->title ?? $selected->subject->getKey() }}
+                                </span>
+                            </div>
+                        @endif
                     </div>
 
                     @unless ($selected->isClosed())

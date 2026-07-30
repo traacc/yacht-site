@@ -51,16 +51,24 @@
                             },
                             body: JSON.stringify({
                                 question: this.$refs.question.value,
+                                privacy: this.$refs.privacy.checked,
                             }),
                         });
 
                         if (!response.ok) {
+                            if (response.status === 429) {
+                                throw new Error('Слишком много вопросов подряд. Попробуйте через минуту.');
+                            }
+
                             const data = await response.json();
-                            throw new Error(data.message || 'Произошла ошибка при отправке.');
+                            // 422: сообщение лежит в message, детали — в errors.
+                            const firstError = Object.values(data.errors ?? {})[0]?.[0];
+                            throw new Error(firstError || data.message || 'Произошла ошибка при отправке.');
                         }
 
                         this.submitted = true;
                         this.$refs.question.value = '';
+                        this.$refs.privacy.checked = false;
                     } catch (err) {
                         this.error = err.message || 'Произошла ошибка при отправке. Попробуйте позже.';
                     } finally {
@@ -107,7 +115,7 @@
                             x-text="loading ? 'Отправка...' : 'Отправить вопрос'"></button>
                     <div class="privacy flex gap-4 mt-4">
                         <label class="custom-checkbox">
-                            <input type="checkbox" name="privacy" required/>
+                            <input type="checkbox" name="privacy" x-ref="privacy" required/>
                             <span class="checkbox-box shrink-0"></span>
                             <div class="text-sm text-brand-gray-light">Отправляя данные через форму, вы соглашаетесь с <a class='underline' href="/files/Политика_обработки_персональных_данных_1.pdf">политикой обработки персональных данных</a></div>
                         </label>

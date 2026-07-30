@@ -466,33 +466,8 @@ function sponsorsSlider() {
     <div class="container mx-auto">
         <h2 class="section-title a-font mb-8">Часто задаваемые вопросы</h2>
 
-        <div class="px-3 divide-y divide-gray-200"
-            x-data="{ open: null }">
-            @foreach($faq as $index => $item)
-            <div class="py-4">
-                <button
-                    @click="open === {{ $index }} ? open = null : open = {{ $index }}"
-                    class="flex justify-between items-center w-full text-left gap-4 cursor-pointer border-b pb-5 border-gray-200"
-                >
-                    <span class="text-lg font-semibold text-[#2E325C] pr-4">{{ $item['question'] }}</span>
-                    <svg
-                        class="w-5 h-5 shrink-0 text-[#2D92CE] transition-transform duration-300"
-                        :class="open === {{ $index }} ? 'rotate-180' : ''"
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </button>
-                <div
-                    x-show="open === {{ $index }}"
-                    x-collapse
-                    x-cloak
-                >
-                    <div class="pt-4 text-brand-gray leading-relaxed prose prose-sm max-w-none">
-                        {!! $item['answer'] !!}
-                    </div>
-                </div>
-            </div>
-            @endforeach
+        <div class="px-3">
+            <x-faq-accordion :items="$faq" />
         </div>
     </div>
 </section>

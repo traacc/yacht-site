@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\Faqs\Pages\ManageFaqs;
 use App\Models\Faq;
 use BackedEnum;
@@ -22,7 +23,7 @@ use UnitEnum;
 
 class FaqResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected static ?string $model = Faq::class;
 
@@ -59,19 +60,15 @@ class FaqResource extends Resource
                     ->label('Ответ')
                     ->placeholder('Введите развёрнутый ответ')
                     ->required()
+                    ->fileAttachmentsDisk('public')
+                    ->fileAttachmentsDirectory('faq')
+                    ->fileAttachmentsVisibility('public')
+                    ->fileAttachmentsMaxSize(5120)
                     ->columnSpanFull(),
-                
+
                 Toggle::make('is_active')
                     ->label('Показывать на сайте')
                     ->default(true),
-
-                /*
-                TextInput::make('sort_order')
-                    ->label('Порядок')
-                    ->helperText('Чем меньше число, тем выше в списке')
-                    ->numeric()
-                    ->default(0),
-                */
             ]);
     }
 

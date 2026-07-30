@@ -5,6 +5,7 @@ use App\Actions\GenerateCalendarPdfAction;
 use App\Actions\Notifications\UnsubscribeAction;
 use App\Actions\Payment\ApplyPaymentResultAction;
 use App\Actions\Payment\HandleWebhookAction;
+use App\Actions\Question\SubmitUserQuestionAction;
 use App\Actions\Regatta\DownloadRegattaDocumentsAction;
 use App\Actions\Regatta\DownloadRegattaTeamsAction;
 use App\Actions\Regatta\GenerateRegattaTeamsPdfAction;
@@ -34,10 +35,10 @@ use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\TeamRating;
 use App\Models\User;
-use App\Models\UserQuestion;
 use App\Models\Vote;
 use App\Models\Voting;
 use App\Models\Yacht;
+use App\Services\Chat\ChatAttachments;
 use App\Services\Payments\PaymentManager;
 use App\Services\Payments\Providers\TestPaymentProvider;
 use App\Services\RatingCalculator;
@@ -52,6 +53,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\Support\MediaStream;
 
 Route::get('/', function () {
@@ -796,6 +798,9 @@ Route::get('/help', function () {
     $helpCategories = HelpCategory::with(['helps' => fn ($q) => $q->active()->orderBy('title')->with('media'),
     ])
         ->whereHas('helps', fn ($q) => $q->active())
+        // Порядок категорий задаётся drag&drop в админке (HelpCategoryResource);
+        // title — вторичный ключ для категорий с одинаковым sort_order.
+        ->orderBy('sort_order')
         ->orderBy('title')
         ->get();
 
@@ -835,12 +840,15 @@ Route::get('/help', function () {
     // Определяем первый slug для активной категории по умолчанию
     $defaultCategory = $helpCategories->first()?->slug ?? '';
 
-    $beforeNote = app(SettingsService::class)->get('help.before_note', '');
+    $settings = app(SettingsService::class);
+    $beforeNote = $settings->get('help.before_note', '');
+    // Вкладка «Помощь по сайту» — единый документ из настроек (HelpPageSettings).
+    $siteGuide = $settings->get('help.site_guide', '');
 
     // FAQ для вкладки «Для пользователей» (те же вопросы, что и на главной)
     $faq = Faq::active()->ordered()->get();
 
-    return view('pages.help', compact('categories', 'defaultCategory', 'beforeNote', 'faq'));
+    return view('pages.help', compact('categories', 'defaultCategory', 'beforeNote', 'siteGuide', 'faq'));
 })->name('help');
 Route::get('/news', function () {
     $news = News::published()
@@ -910,23 +918,68 @@ Route::post('/yachts/{yacht}/rental-request', function (Request $request, Yacht 
     return back()->with('rental_request_sent', true);
 })->name('yacht-rental.request');
 
-// Вопрос администрации от зарегистрированного пользователя (модальное окно на главной)
+// Вложение из переписки чата поддержки.
+// Файлы лежат на приватном диске, поэтому отдаются только участникам диалога
+// и операторам поддержки. URL стабильный (не подписанный): лента обновляется
+// опросом раз в 5 секунд, и подписанная ссылка заставляла бы браузер
+// перекачивать все картинки заново.
+Route::get('/chat/attachments/{media:uuid}', function (Media $media, Request $request, ChatAttachments $attachments) {
+    $conversion = $attachments->resolveConversion($request->query('p'));
+
+    abort_unless($attachments->allows($media, $request->user(), $conversion), 403);
+
+    // Конверсия могла ещё не сгенерироваться очередью — отдаём оригинал.
+    if ($conversion !== null && ! $media->hasGeneratedConversion($conversion)) {
+        $conversion = null;
+    }
+
+    $path = $conversion === null
+        ? $media->getPathRelativeToRoot()
+        : $media->getPathRelativeToRoot($conversion);
+
+    $disk = $conversion === null ? $media->disk : ($media->conversions_disk ?? $media->disk);
+
+    abort_unless(Storage::disk($disk)->exists($path), 404);
+
+    // Тип берём из записи медиатеки (он определён сниффингом при загрузке), а не
+    // из имени файла. Не-картинки отдаём вложением: показывать в браузере
+    // присланный пользователем файл небезопасно.
+    $mime = $conversion === null ? (string) $media->mime_type : 'image/jpeg';
+    $isImage = str_starts_with($mime, 'image/');
+
+    $headers = [
+        'Content-Type' => $mime,
+        'Cache-Control' => 'private, max-age=600',
+        'X-Content-Type-Options' => 'nosniff',
+    ];
+
+    return $isImage
+        ? Storage::disk($disk)->response($path, $media->file_name, $headers)
+        : Storage::disk($disk)->download($path, $media->file_name, $headers);
+})->middleware('auth')->name('chat.attachment');
+
+// Вопрос администрации от зарегистрированного пользователя
+// (модальное окно на главной и в разделе «Помощь»)
 Route::post('/questions', function (Request $request) {
     $validated = $request->validate([
         'question' => ['required', 'string', 'max:2000'],
+        'privacy' => ['accepted'],
+    ], attributes: [
+        'question' => 'вопрос',
+        'privacy' => 'согласие с политикой конфиденциальности',
     ]);
 
-    UserQuestion::create([
-        'user_id' => auth()->id(),
-        'question' => $validated['question'],
-    ]);
+    app(SubmitUserQuestionAction::class)->handle(
+        $request->user(),
+        $validated['question'],
+    );
 
     if ($request->wantsJson()) {
         return response()->json(['message' => 'Спасибо! Ваш вопрос отправлен администрации.']);
     }
 
     return back()->with('question_sent', true);
-})->middleware('auth')->name('questions.store');
+})->middleware(['auth', 'throttle:5,1'])->name('questions.store');
 
 // ──────────────────────────────────────────────
 // Онлайн-оплата (эквайринг)

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Notifications;
 
 use App\Enums\NotificationCategory;
+use App\Filament\User\Resources\Questions\QuestionResource;
 use App\Observers\UserQuestionObserver;
 use Illuminate\Support\Str;
 
@@ -38,7 +39,10 @@ final class QuestionAnsweredNotification extends UserNotification
 
     public function url(): ?string
     {
-        return route('help');
+        // Ведём в «Мои вопросы», где виден и сам вопрос, и ответ.
+        // Панель указываем явно: уведомление отправляется из очереди, где текущей
+        // панели нет, и getUrl() собрал бы несуществующий маршрут.
+        return QuestionResource::getUrl(panel: 'user');
     }
 
     public function icon(): string
