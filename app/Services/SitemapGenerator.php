@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\News;
 use App\Models\Regatta;
+use App\Models\RepairCase;
 use Illuminate\Support\Carbon;
 
 class SitemapGenerator
@@ -32,6 +33,10 @@ class SitemapGenerator
         'gallery',
         'help',
         'news',
+        'carter30.history',
+        'carter30.regulations',
+        'carter30.repair',
+        'carter30.technical-help',
     ];
 
     /**
@@ -54,8 +59,19 @@ class SitemapGenerator
             ->get()
             ->each(function (News $news) use (&$urls): void {
                 $urls[] = [
-                    'loc'     => route('news-details', $news),
+                    'loc' => route('news-details', $news),
                     'lastmod' => $news->updated_at?->toAtomString(),
+                ];
+            });
+
+        // Кейсы ремонта раздела «Carter 30»
+        RepairCase::published()
+            ->ordered()
+            ->get()
+            ->each(function (RepairCase $case) use (&$urls): void {
+                $urls[] = [
+                    'loc' => route('carter30.repair-case', $case),
+                    'lastmod' => $case->updated_at?->toAtomString(),
                 ];
             });
 
@@ -65,7 +81,7 @@ class SitemapGenerator
             ->get()
             ->each(function (Regatta $regatta) use (&$urls): void {
                 $urls[] = [
-                    'loc'     => route('competition-details', $regatta),
+                    'loc' => route('competition-details', $regatta),
                     'lastmod' => $regatta->updated_at?->toAtomString(),
                 ];
             });
@@ -78,7 +94,7 @@ class SitemapGenerator
     /**
      * Собирает XML карты сайта.
      *
-     * @param list<array{loc: string, lastmod?: string|null}> $urls
+     * @param  list<array{loc: string, lastmod?: string|null}>  $urls
      */
     private function render(array $urls): string
     {
@@ -91,13 +107,13 @@ class SitemapGenerator
 
         foreach ($urls as $url) {
             $lines[] = '  <url>';
-            $lines[] = '    <loc>' . htmlspecialchars($url['loc'], ENT_XML1) . '</loc>';
-            $lines[] = '    <lastmod>' . ($url['lastmod'] ?? $now) . '</lastmod>';
+            $lines[] = '    <loc>'.htmlspecialchars($url['loc'], ENT_XML1).'</loc>';
+            $lines[] = '    <lastmod>'.($url['lastmod'] ?? $now).'</lastmod>';
             $lines[] = '  </url>';
         }
 
         $lines[] = '</urlset>';
 
-        return implode("\n", $lines) . "\n";
+        return implode("\n", $lines)."\n";
     }
 }

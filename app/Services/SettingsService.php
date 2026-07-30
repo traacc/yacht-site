@@ -60,8 +60,54 @@ class SettingsService
     }
 
     // ──────────────────────────────────────────────
+    // Документы контентных страниц
+    // ──────────────────────────────────────────────
+
+    /**
+     * Репитер документов из настроек → готовые для вывода ссылки.
+     *
+     * Страницы «Устав», «Регламент», «Решения», «Ремонт и модернизация» хранят
+     * документы одинаково: массив {title, desc, file}, где file — путь на диске
+     * public. Публичному сайту нужен URL, поэтому нормализация вынесена сюда —
+     * иначе она копируется в каждое замыкание роута.
+     *
+     * @return list<array{title: string, desc: string, file_url: string|null, original_name: string|null}>
+     */
+    public function documentLinks(string $key): array
+    {
+        return collect((array) $this->get($key, []))
+            ->filter(fn ($document) => is_array($document) && ! empty($document['title']))
+            ->map(function (array $document): array {
+                $filePath = $document['file'] ?? null;
+                $hasFile = is_string($filePath) && $filePath !== '';
+
+                return [
+                    'title' => (string) ($document['title'] ?? ''),
+                    'desc' => (string) ($document['desc'] ?? ''),
+                    'file_url' => $hasFile ? Storage::disk('public')->url($filePath) : null,
+                    'original_name' => $hasFile ? basename($filePath) : null,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    // ──────────────────────────────────────────────
     // Уведомления администраторам
     // ──────────────────────────────────────────────
+
+    /**
+     * Адрес отдела заказов: заявки на аренду, ремонт и услуги.
+     *
+     * По ТЗ 3-го этапа все запросы коммерческих разделов уходят на один ящик,
+     * поэтому адрес настраиваемый, а не захардкоженный в Action-классах.
+     */
+    public function orderEmail(): string
+    {
+        $email = trim((string) $this->get('site.order_email', ''));
+
+        return $email !== '' ? $email : 'order@carter-pro.ru';
+    }
 
     /**
      * Слать письма центра уведомлений только на подтверждённые адреса.

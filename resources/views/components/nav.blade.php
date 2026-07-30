@@ -47,6 +47,20 @@
                         <a href="{{ route('regatta-entries') }}" class="block w-full text-left px-4 py-2 text-gray-700">Заявки</a>
                     </div>
                 </div>
+                <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
+                    <button @click="open = !open"
+                        class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
+                        Carter 30
+                        <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" x-cloak x-transition
+                        class="absolute top-full left-0 mt-1 w-56 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
+                        <a href="{{ route('carter30.history') }}" class="block px-4 py-2 text-gray-700">История</a>
+                        <a href="{{ route('carter30.regulations') }}" class="block px-4 py-2 text-gray-700">Технический регламент класса</a>
+                        <a href="{{ route('carter30.repair') }}" class="block px-4 py-2 text-gray-700">Ремонт и модернизация</a>
+                        <a href="{{ route('carter30.technical-help') }}" class="block px-4 py-2 text-gray-700">Техническая помощь</a>
+                    </div>
+                </div>
                 <a href="{{ route('teams') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Команды</a>
                 <a href="{{ route('yachts') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Яхты</a>
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
@@ -224,6 +238,19 @@
                             @endif
                             <a href="{{ route('series-results', ['desc' => 1]) }}" class="block px-4 py-2 text-sm">Серии</a>
                             <a href="{{ route('regatta-entries') }}" class="block w-full text-left px-4 py-2 text-sm">Заявки</a>
+                        </div>
+                    </div>
+                    <div x-data="{ open: false }" class="relative">
+                        <button @click="open = !open"
+                            class="flex items-center gap-1 py-2 text-sm transition-colors">
+                            Carter 30
+                            <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" x-cloak x-transition class="">
+                            <a href="{{ route('carter30.history') }}" class="block px-4 py-2 text-sm">История</a>
+                            <a href="{{ route('carter30.regulations') }}" class="block px-4 py-2 text-sm">Технический регламент класса</a>
+                            <a href="{{ route('carter30.repair') }}" class="block px-4 py-2 text-sm">Ремонт и модернизация</a>
+                            <a href="{{ route('carter30.technical-help') }}" class="block px-4 py-2 text-sm">Техническая помощь</a>
                         </div>
                     </div>
                     <a href="{{ route('teams') }}"  class="block py-2 text-sm">Команды</a>

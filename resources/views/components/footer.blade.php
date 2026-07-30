@@ -22,6 +22,9 @@
                 <h4 class="font-semibold mb-6">Навигация</h4>
                 <ul class="space-y-4 font-light">
                     <li><a href="{{ route('competitions') }}"  class="hover:text-white transition-colors">Соревнования</a></li>
+                    <li><a href="{{ route('carter30.history') }}"  class="hover:text-white transition-colors">Carter 30</a></li>
+                    <li><a href="{{ route('carter30.repair') }}"  class="hover:text-white transition-colors">Ремонт и модернизация</a></li>
+                    <li><a href="{{ route('carter30.technical-help') }}"  class="hover:text-white transition-colors">Техническая помощь</a></li>
                     <li><a href="{{ route('teams') }}"  class="hover:text-white transition-colors">Команды</a></li>
                     <li><a href="{{ route('yachts') }}"  class="hover:text-white transition-colors">Яхты</a></li>
                     <li><a href="{{ route('ratings') }}"  class="hover:text-white transition-colors">Рейтинги</a></li>

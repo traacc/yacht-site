@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Carter30\SubmitRepairRequestAction;
 use App\Actions\Feedback\SubmitFeedbackAction;
 use App\Actions\GenerateCalendarPdfAction;
 use App\Actions\Notifications\UnsubscribeAction;
@@ -23,13 +24,12 @@ use App\Enums\RentalRequestStatus;
 use App\Enums\VotingStatus;
 use App\Models\Faq;
 use App\Models\Gallery;
-use App\Models\Help;
-use App\Models\HelpCategory;
 use App\Models\News;
 use App\Models\PaymentTransaction;
 use App\Models\PersonalRating;
 use App\Models\Regatta;
 use App\Models\RegattaEntryCrew;
+use App\Models\RepairCase;
 use App\Models\Series;
 use App\Models\Team;
 use App\Models\TeamMember;
@@ -39,6 +39,7 @@ use App\Models\Vote;
 use App\Models\Voting;
 use App\Models\Yacht;
 use App\Services\Chat\ChatAttachments;
+use App\Services\HelpDirectory;
 use App\Services\Payments\PaymentManager;
 use App\Services\Payments\Providers\TestPaymentProvider;
 use App\Services\RatingCalculator;
@@ -90,30 +91,7 @@ Route::get('/', function () {
     return view('pages.home', compact('latestNews', 'galleryPhotos', 'faq', 'birthdays', 'sponsors'));
 })->name('home');
 Route::get('/association/charter', function () {
-    $documents = app(SettingsService::class)->get('charter.documents', []);
-
-    // Нормализуем документы: генерируем публичные URL из путей storage
-    $documents = collect((array) $documents)
-        ->filter(fn (array $d) => ! empty($d['title']))
-        ->map(function (array $d): array {
-            $filePath = $d['file'] ?? null;
-            $fileUrl = null;
-            $originalName = null;
-
-            if (is_string($filePath) && $filePath !== '') {
-                $fileUrl = Storage::disk('public')->url($filePath);
-                $originalName = basename($filePath);
-            }
-
-            return [
-                'title' => $d['title'] ?? '',
-                'desc' => $d['desc'] ?? '',
-                'file_url' => $fileUrl,
-                'original_name' => $originalName,
-            ];
-        })
-        ->values()
-        ->all();
+    $documents = app(SettingsService::class)->documentLinks('charter.documents');
 
     return view('pages.association-info.charter', compact('documents'));
 })->name('charter');
@@ -174,59 +152,15 @@ Route::view('/association/policy', 'pages/association-info/policy')->name('polic
 Route::view('/association/rules', 'pages/association-info/rules')->name('rules');
 Route::get('/association/regulations', function () {
     $settings = app(SettingsService::class);
-    $documents = $settings->get('regulations.documents', []);
-    $before_note = $settings->get('regulations.before_note', '');
 
-    // Нормализуем документы: генерируем публичные URL из путей storage
-    $documents = collect((array) $documents)
-        ->filter(fn (array $d) => ! empty($d['title']))
-        ->map(function (array $d): array {
-            $filePath = $d['file'] ?? null;
-            $fileUrl = null;
-            $originalName = null;
-
-            if (is_string($filePath) && $filePath !== '') {
-                $fileUrl = Storage::disk('public')->url($filePath);
-                $originalName = basename($filePath);
-            }
-
-            return [
-                'title' => $d['title'] ?? '',
-                'desc' => $d['desc'] ?? '',
-                'file_url' => $fileUrl,
-                'original_name' => $originalName,
-            ];
-        })
-        ->values()
-        ->all();
-
-    return view('pages.association-info.regulations', compact('documents', 'before_note'));
+    return view('pages.association-info.regulations', [
+        'documents' => $settings->documentLinks('regulations.documents'),
+        'before_note' => $settings->get('regulations.before_note', ''),
+        'provisions' => $settings->get('regulations.provisions', ''),
+    ]);
 })->name('regulations');
 Route::get('/association/decisions', function () {
-    $documents = app(SettingsService::class)->get('decisions.documents', []);
-
-    // Нормализуем документы: генерируем публичные URL из путей storage
-    $documents = collect((array) $documents)
-        ->filter(fn (array $d) => ! empty($d['title']))
-        ->map(function (array $d): array {
-            $filePath = $d['file'] ?? null;
-            $fileUrl = null;
-            $originalName = null;
-
-            if (is_string($filePath) && $filePath !== '') {
-                $fileUrl = Storage::disk('public')->url($filePath);
-                $originalName = basename($filePath);
-            }
-
-            return [
-                'title' => $d['title'] ?? '',
-                'desc' => $d['desc'] ?? '',
-                'file_url' => $fileUrl,
-                'original_name' => $originalName,
-            ];
-        })
-        ->values()
-        ->all();
+    $documents = app(SettingsService::class)->documentLinks('decisions.documents');
 
     return view('pages.association-info.decisions', compact('documents'));
 })->name('decisions');
@@ -276,6 +210,88 @@ Route::post('/association/votings/{voting}/vote', function (Request $request, Vo
 
     return back()->with('vote_cast', $voting->id);
 })->middleware('auth')->name('votings.vote');
+
+// ──────────────────────────────────────────────
+// Раздел «Carter 30» (ТЗ 3-го этапа, п. 5)
+// ──────────────────────────────────────────────
+Route::get('/carter30/history', function () {
+    return view('pages.carter30.history', [
+        'content' => app(SettingsService::class)->get('carter30.history', ''),
+    ]);
+})->name('carter30.history');
+
+// Технический регламент: один источник контента с /association/regulations,
+// две страницы — по ТЗ он должен быть и в разделе класса.
+Route::get('/carter30/regulations', function () {
+    $settings = app(SettingsService::class);
+
+    return view('pages.carter30.regulations', [
+        'documents' => $settings->documentLinks('regulations.documents'),
+        'before_note' => $settings->get('regulations.before_note', ''),
+        'provisions' => $settings->get('regulations.provisions', ''),
+    ]);
+})->name('carter30.regulations');
+
+Route::get('/carter30/repair', function () {
+    $settings = app(SettingsService::class);
+
+    return view('pages.carter30.repair', [
+        'intro' => $settings->get('carter30.repair.intro', ''),
+        'documents' => $settings->documentLinks('carter30.repair.documents'),
+        'cases' => RepairCase::published()->ordered()->with(['yacht', 'media'])->get(),
+    ]);
+})->name('carter30.repair');
+
+Route::get('/carter30/repair/{case}', function (RepairCase $case) {
+    abort_unless($case->is_published, 404);
+
+    return view('pages.carter30.repair-case', compact('case'));
+})->name('carter30.repair-case');
+
+Route::get('/carter30/technical-help', function () {
+    $directory = app(HelpDirectory::class);
+
+    return view('pages.carter30.technical-help', [
+        'categories' => $directory->categories(),
+        'defaultCategory' => $directory->defaultCategory(),
+        // Вводный текст общий со страницей «Помощь»: контент один, редактируется
+        // в одном месте (HelpPageSettings).
+        'beforeNote' => app(SettingsService::class)->get('help.before_note', ''),
+    ]);
+})->name('carter30.technical-help');
+
+Route::post('/carter30/repair-request', function (Request $request) {
+    $validated = $request->validate([
+        'repair_case_id' => ['nullable', 'uuid', 'exists:repair_cases,id'],
+        'name' => ['required', 'string', 'max:255'],
+        'phone' => ['required', 'string', 'max:50'],
+        'email' => ['nullable', 'email', 'max:255'],
+        'comment' => ['nullable', 'string', 'max:2000'],
+        'privacy' => ['accepted'],
+    ]);
+
+    $case = isset($validated['repair_case_id'])
+        ? RepairCase::find($validated['repair_case_id'])
+        : null;
+
+    app(SubmitRepairRequestAction::class)->handle(
+        data: [
+            'name' => $validated['name'],
+            'phone' => $validated['phone'],
+            'email' => $validated['email'] ?? null,
+            'comment' => $validated['comment'] ?? null,
+        ],
+        case: $case,
+        user: $request->user(),
+    );
+
+    if ($request->expectsJson()) {
+        return response()->json(['message' => 'Заявка отправлена']);
+    }
+
+    return back()->with('repair_request_sent', true);
+})->middleware('throttle:5,1')->name('carter30.repair-request');
+
 Route::get('/regattas/calendar/pdf', function (Request $request) {
     $year = $request->integer('year', (int) now()->format('Y'));
 
@@ -795,50 +811,11 @@ Route::get('/gallery/{gallery}/download', function (Gallery $gallery) {
     return MediaStream::create($fileName)->addMedia($media);
 })->name('gallery.download');
 Route::get('/help', function () {
-    $helpCategories = HelpCategory::with(['helps' => fn ($q) => $q->active()->orderBy('title')->with('media'),
-    ])
-        ->whereHas('helps', fn ($q) => $q->active())
-        // Порядок категорий задаётся drag&drop в админке (HelpCategoryResource);
-        // title — вторичный ключ для категорий с одинаковым sort_order.
-        ->orderBy('sort_order')
-        ->orderBy('title')
-        ->get();
-
-    $categories = $helpCategories->mapWithKeys(fn (HelpCategory $cat) => [
-        $cat->slug => [
-            'title' => $cat->title,
-            'description' => $cat->description,
-            'items' => $cat->helps->map(fn (Help $help) => [
-                'id' => $help->id,
-                'title' => $help->title,
-                'desc' => $help->desc,
-                'includes' => collect($help->includes ?? [])
-                    ->map(fn ($inc) => is_array($inc) ? ($inc['item'] ?? '') : (string) $inc)
-                    ->filter()
-                    ->values()
-                    ->all(),
-                'name' => $help->specialist_name,
-                'phone' => $help->specialist_phone,
-                'email' => $help->specialist_email,
-                'sphere' => $help->specialist_sphere,
-                'city' => $help->specialist_city,
-                'site' => $help->specialist_site,
-                'contactType' => $help->contact_type,
-                'gallery' => $help->getMedia('gallery')->map(function ($m) {
-                    $urls = ResponsiveMedia::urls($m);
-
-                    return [
-                        'url' => $urls['src'],
-                        'webp' => $urls['webp'] ?? null,
-                        'avif' => $urls['avif'] ?? null,
-                    ];
-                })->values()->toArray(),
-            ])->values()->toArray(),
-        ],
-    ])->toArray();
+    $directory = app(HelpDirectory::class);
+    $categories = $directory->categories();
 
     // Определяем первый slug для активной категории по умолчанию
-    $defaultCategory = $helpCategories->first()?->slug ?? '';
+    $defaultCategory = $directory->defaultCategory();
 
     $settings = app(SettingsService::class);
     $beforeNote = $settings->get('help.before_note', '');

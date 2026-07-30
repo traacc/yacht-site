@@ -23,51 +23,40 @@ use Filament\Support\Icons\Heroicon;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use UnitEnum;
 
-class RegulationsPageSettings extends Page
+/**
+ * Обзорная страница подраздела «Ремонт и модернизация» раздела «Carter 30».
+ *
+ * Сами кейсы — отдельный ресурс (RepairCaseResource); здесь только вводный
+ * текст и общие чертежи с документами.
+ */
+class Carter30RepairPageSettings extends Page
 {
     use RestrictsAccessByRole;
 
     protected string $view = 'filament-panels::pages.page';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCheck;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
 
-    protected static ?string $navigationLabel = 'Регламент';
+    protected static ?string $navigationLabel = 'Carter 30: Ремонт';
 
-    protected static ?string $title = 'Управление документами регламента';
+    protected static ?string $title = 'Настройки страницы «Ремонт и модернизация»';
 
-    protected static ?int $navigationSort = 23;
+    protected static ?int $navigationSort = 28;
 
     protected static string|UnitEnum|null $navigationGroup = 'Сайт';
 
-    /**
-     * Единый массив состояния формы — стандартный паттерн Filament для Page с FileUpload.
-     *
-     * @var array<string, mixed>
-     */
     public array $data = [];
-
-    // ──────────────────────────────────────────────
-    // Lifecycle
-    // ──────────────────────────────────────────────
 
     public function mount(): void
     {
         /** @var SettingsService $settings */
         $settings = app(SettingsService::class);
 
-        $documents = $settings->get('regulations.documents', []);
-        $before_note = $settings->get('regulations.before_note', '');
-        $provisions = $settings->get('regulations.provisions', '');
-
         // Нормализуем file каждого документа — преобразуем в массив для FileUpload
-        $documents = collect((array) $documents)
+        $documents = collect((array) $settings->get('carter30.repair.documents', []))
             ->map(function (array $document): array {
                 $file = $document['file'] ?? null;
-                if (is_string($file) && $file !== '') {
-                    $document['file'] = [$file];
-                } else {
-                    $document['file'] = [];
-                }
+                $document['file'] = is_string($file) && $file !== '' ? [$file] : [];
 
                 return $document;
             })
@@ -75,15 +64,10 @@ class RegulationsPageSettings extends Page
             ->all();
 
         $this->form->fill([
+            'intro' => $settings->get('carter30.repair.intro', ''),
             'documents' => $documents,
-            'before_note' => $before_note,
-            'provisions' => $provisions,
         ]);
     }
-
-    // ──────────────────────────────────────────────
-    // Content schema (Filament 4)
-    // ──────────────────────────────────────────────
 
     public function content(Schema $schema): Schema
     {
@@ -103,57 +87,67 @@ class RegulationsPageSettings extends Page
         return $schema
             ->statePath('data')
             ->components([
-                Section::make('Документы регламента')
-                    ->description('Загрузите документы (PDF), которые будут отображаться на странице «Технический регламент яхт». Перетаскивайте записи для изменения порядка отображения.')
+                Section::make('Описание раздела')
+                    ->description('Текст с картинками в теле. Картинки добавляйте кнопкой «Прикрепить файлы»: при копировании из Word переносится только текст.')
                     ->schema([
-                        RichEditor::make('before_note')->label('Текст перед документами'),
+                        RichEditor::make('intro')
+                            ->label('Содержание')
+                            ->fileAttachmentsDisk('public')
+                            ->fileAttachmentsDirectory('carter30/repair')
+                            ->fileAttachmentsVisibility('public')
+                            ->fileAttachmentsMaxSize(5120)
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Чертежи и документы')
+                    ->description('Файлы для скачивания. Перетаскивайте записи для изменения порядка отображения.')
+                    ->schema([
                         Repeater::make('documents')
                             ->label('Документы')
                             ->addActionLabel('Добавить документ')
                             ->reorderable()
                             ->collapsible()
                             ->defaultItems(0)
+                            ->itemLabel(fn (array $state): ?string => $state['title'] ?? null)
                             ->schema([
                                 TextInput::make('title')
                                     ->label('Название документа')
-                                    ->placeholder('Введите название документа')
                                     ->required()
                                     ->maxLength(255)
                                     ->rules(['required', 'string', 'max:255']),
 
                                 TextInput::make('desc')
                                     ->label('Описание')
-                                    ->placeholder('Например: Актуальная редакция от 12 мая 2025')
+                                    ->placeholder('Например: Чертёж усиления вант-путенсов')
                                     ->nullable()
                                     ->maxLength(255)
                                     ->rules(['nullable', 'string', 'max:255']),
 
                                 FileUpload::make('file')
                                     ->label('Файл')
-                                    ->helperText('Допустимые форматы: PDF. Максимальный размер: 10 МБ.')
+                                    ->helperText('PDF, изображения или файлы чертежей. Максимальный размер: 20 МБ.')
                                     ->disk('public')
-                                    ->directory('regulations')
+                                    ->directory('carter30/repair')
                                     ->visibility('public')
-                                    ->maxSize(10240)
-                                    ->acceptedFileTypes(['application/pdf'])
+                                    ->maxSize(20480)
+                                    // Чертежи приходят не только в PDF, поэтому список
+                                    // шире, чем на странице регламента.
+                                    ->acceptedFileTypes([
+                                        'application/pdf',
+                                        'image/jpeg',
+                                        'image/png',
+                                        'image/webp',
+                                        'application/acad',
+                                        'image/vnd.dwg',
+                                        'application/dxf',
+                                        'image/vnd.dxf',
+                                    ])
                                     ->nullable()
                                     ->columnSpanFull(),
                             ]),
                     ]),
-
-                Section::make('Основные положения регламента')
-                    ->description('Нумерованный список под карточками документов. Отображается и в разделе «Ассоциация», и в разделе «Carter 30» — источник один.')
-                    ->schema([
-                        RichEditor::make('provisions')
-                            ->label('Текст положений')
-                            ->columnSpanFull(),
-                    ]),
             ]);
     }
-
-    // ──────────────────────────────────────────────
-    // Actions
-    // ──────────────────────────────────────────────
 
     protected function getFormActions(): array
     {
@@ -192,12 +186,9 @@ class RegulationsPageSettings extends Page
             ->values()
             ->all();
 
-        $before_note = $data['before_note'] ?? '';
-
-        $settings->set('regulations.before_note', $before_note, 'regulations');
-        $settings->set('regulations.provisions', $data['provisions'] ?? '', 'regulations');
-        $settings->set('regulations.documents', $documents, 'regulations');
-        $settings->forgetGroup('regulations');
+        $settings->set('carter30.repair.intro', $data['intro'] ?? '', 'carter30');
+        $settings->set('carter30.repair.documents', $documents, 'carter30');
+        $settings->forgetGroup('carter30');
 
         Notification::make()
             ->title('Настройки сохранены')

@@ -7,12 +7,17 @@ namespace App\Actions\YachtRental;
 use App\Mail\YachtRentalRequested;
 use App\Models\Yacht;
 use App\Models\YachtRentalRequest;
+use App\Services\SettingsService;
 use Illuminate\Support\Facades\Mail;
 
 class SubmitYachtRentalRequestAction
 {
+    public function __construct(
+        private readonly SettingsService $settings,
+    ) {}
+
     /**
-     * Сохраняет запрос на аренду яхты и отправляет уведомление на order@carter-pro.ru.
+     * Сохраняет запрос на аренду яхты и отправляет уведомление в отдел заказов.
      *
      * @param  array{name: string, phone: string, desired_date?: string|null, desired_date_end?: string|null, comment?: string|null, source?: string|null}  $data
      */
@@ -31,7 +36,7 @@ class SubmitYachtRentalRequestAction
 
         $rentalRequest->setRelation('yacht', $yacht);
 
-        Mail::to('order@carter-pro.ru')->send(new YachtRentalRequested($rentalRequest));
+        Mail::to($this->settings->orderEmail())->send(new YachtRentalRequested($rentalRequest));
 
         return $rentalRequest;
     }
