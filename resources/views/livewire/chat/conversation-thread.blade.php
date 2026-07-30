@@ -181,13 +181,16 @@
                     rows="2"
                     maxlength="5000"
                     placeholder="Ваше сообщение…"
-                    class="flex-1 resize-none rounded border border-gray-300 px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none focus:ring-0"
+                    {{-- min-w-0: у textarea своя ширина по cols, и без сброса
+                         min-width он не даёт себя сжать — в узком виджете
+                         кнопка «Отправить» выезжала за границу окна. --}}
+                    class="w-full min-w-0 flex-1 resize-none rounded border border-gray-300 px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none focus:ring-0"
                     @keydown.enter="if (! $event.shiftKey) { $event.preventDefault(); $wire.send() }"
                 ></textarea>
 
                 <button
                     type="submit"
-                    class="shrink-0 bg-[#2D92CE] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#0074CC] disabled:opacity-50"
+                    class="shrink-0 whitespace-nowrap bg-[#2D92CE] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#0074CC] disabled:opacity-50"
                     wire:loading.attr="disabled"
                     wire:target="send,attachments"
                 >
