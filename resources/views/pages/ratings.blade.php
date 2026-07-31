@@ -65,7 +65,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
             <div class="grid grid-cols-1 gap-4">
 
                 <div x-show="activeTab === 'team'" role="tabpanel" class="bg-brand-light rounded-xl md:p-4 md:pr-0">
-                    <h3 class="font-display  text-[#2E325C] text-3xl mb-4 a-font">Командный рейтинг</h3>
+                    <h3 class="font-display  text-[#2E325C] text-3xl mb-4 a-font">Командный рейтинг@if($ratingSeasonYear) — сезон {{ $ratingSeasonYear }}@endif</h3>
                     <div class="overflow-auto md:pb-6 md:pt-0 bg-white">
                         <table class="w-full text-sm md:text-base">
                             <thead class="sticky bg-white top-0 pt-6">
@@ -170,7 +170,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                     }"
                 >
                     <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
-                        <h3 class="font-display  text-[#2E325C]  text-3xl a-font">Личный рейтинг</h3>
+                        <h3 class="font-display  text-[#2E325C]  text-3xl a-font">Личный рейтинг@if($ratingSeasonYear) — сезон {{ $ratingSeasonYear }}@endif</h3>
                         <div class="inline-flex rounded-lg overflow-hidden border border-[#EAEAEA] bg-white">
                             <button
                                 type="button"

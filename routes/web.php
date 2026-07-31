@@ -36,6 +36,7 @@ use App\Models\PersonalRating;
 use App\Models\Regatta;
 use App\Models\RegattaEntryCrew;
 use App\Models\RepairCase;
+use App\Models\Season;
 use App\Models\Series;
 use App\Models\Team;
 use App\Models\TeamMember;
@@ -860,6 +861,14 @@ Route::get('/yachts', function () {
 Route::get('/ratings', function () {
     $calculator = app(RatingCalculator::class);
 
+    // Рейтинг показываем за один сезон — последний, по которому есть данные.
+    // Без фильтра строки разных сезонов склеиваются и участники дублируются.
+    $ratingSeason = Season::query()
+        ->where('year', '<=', now()->year)
+        ->where(fn ($q) => $q->whereHas('teamRatings')->orWhereHas('personalRatings'))
+        ->orderByDesc('year')
+        ->first();
+
     $teamBreakdownCache = [];
     $teamBreakdownFor = function ($season, $teamId) use (&$teamBreakdownCache, $calculator) {
         if (! $season || ! $teamId) {
@@ -872,6 +881,7 @@ Route::get('/ratings', function () {
     };
 
     $teamRatings = TeamRating::with(['team.activeMembers', 'team.organizer', 'team.defaultYacht', 'season'])
+        ->where('season_id', $ratingSeason?->id)
         ->ranked()
         ->get()
         ->map(function ($r) use ($teamBreakdownFor) {
@@ -912,6 +922,7 @@ Route::get('/ratings', function () {
     };
 
     $personalRatings = PersonalRating::with(['user', 'season'])
+        ->where('season_id', $ratingSeason?->id)
         ->ranked()
         ->get()
         ->map(fn ($r) => [
@@ -937,7 +948,9 @@ Route::get('/ratings', function () {
         ->values()
         ->toArray();
 
-    return view('pages.ratings', compact('teamRatings', 'personalRatings'));
+    $ratingSeasonYear = $ratingSeason?->year;
+
+    return view('pages.ratings', compact('teamRatings', 'personalRatings', 'ratingSeasonYear'));
 })->name('ratings');
 Route::get('/series/results', function () {
     $calculator = app(RatingCalculator::class);
