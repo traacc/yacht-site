@@ -5,6 +5,11 @@
     'heading' => null,
     // Предзаполнение формы: ['date_start' => …, 'quantity' => …, 'payload' => [...]].
     'preset' => [],
+    // App\Contracts\ServiceSubject — конкретный объект заявки (поход и т.п.).
+    // На сервер уходит только его id, класс модели берётся из ServiceType.
+    'subject' => null,
+    // Даты известны из объекта: поля прячем, значения передаём через preset.
+    'lockDates' => false,
 ])
 
 {{--
@@ -28,6 +33,7 @@
         'quantity' => null,
         'privacy' => false,
         'payload' => (object) [],
+        'subject_id' => $subject?->getKey(),
     ], $preset);
 @endphp
 
@@ -107,7 +113,11 @@
                     <button type="button" @click="open = false" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
                 </div>
 
-                <p class="text-brand-gray-light text-sm mb-4">{{ $type->label() }}</p>
+                <p class="text-brand-gray-light text-sm{{ $subject ? ' mb-1' : ' mb-4' }}">{{ $type->label() }}</p>
+
+                @if ($subject)
+                    <p class="text-[#2E325C] font-semibold text-sm mb-4">{{ $subject->subjectLabel() }}</p>
+                @endif
 
                 <div x-show="submitted" x-cloak
                      class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 mb-4" role="alert">
@@ -134,7 +144,9 @@
                            placeholder="Email{{ $type->requiresEmail() ? '' : ' (необязательно)' }}"
                            class="block appearance-none border border-[#C6C6C6] w-full mb-4 text-sm md:text-base p-3">
 
-                    @if ($type->usesDateRange())
+                    {{-- При lockDates даты берутся из объекта заявки (preset) и
+                         всё равно уходят на сервер — просто не спрашиваем их снова. --}}
+                    @if ($type->usesDateRange() && ! $lockDates)
                         <div class="grid grid-cols-2 gap-4 mb-4">
                             <label class="block">
                                 <span class="block text-sm text-brand-gray-light mb-1">Дата начала</span>

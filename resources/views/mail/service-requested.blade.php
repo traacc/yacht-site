@@ -4,6 +4,9 @@
 | Поле | Значение |
 |------|----------|
 | **Услуга** | {{ $serviceRequest->type->label() }} |
+@if($serviceRequest->subjectLabel())
+| **Объект** | {{ $serviceRequest->subjectLabel() }} |
+@endif
 | **Имя** | {{ $serviceRequest->name }} |
 | **Телефон** | {{ $serviceRequest->phone }} |
 @if($serviceRequest->email)

@@ -72,6 +72,13 @@ class ServiceRequestResource extends Resource
                 ->badge()
                 ->formatStateUsing(fn (ServiceRequestStatus $state): string => $state->label())
                 ->color(fn (ServiceRequestStatus $state): string => $state->color()),
+            TextEntry::make('subject_id')
+                ->label('Объект заявки')
+                ->state(fn (ServiceRequest $record): ?string => $record->subjectLabel())
+                ->url(fn (ServiceRequest $record): ?string => $record->subjectUrl())
+                ->openUrlInNewTab()
+                ->placeholder('—')
+                ->columnSpanFull(),
             TextEntry::make('name')
                 ->label('Заявитель'),
             TextEntry::make('phone')
@@ -130,6 +137,14 @@ class ServiceRequestResource extends Resource
                     ->label('Услуга')
                     ->badge()
                     ->formatStateUsing(fn (ServiceType $state): string => $state->label()),
+                TextColumn::make('subject_id')
+                    ->label('Объект')
+                    ->state(fn (ServiceRequest $record): ?string => $record->subjectLabel())
+                    ->url(fn (ServiceRequest $record): ?string => $record->subjectUrl())
+                    ->openUrlInNewTab()
+                    ->placeholder('—')
+                    ->wrap()
+                    ->toggleable(),
                 TextColumn::make('name')
                     ->label('Заявитель')
                     ->searchable(),
@@ -267,7 +282,7 @@ class ServiceRequestResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['user', 'processedBy']);
+        return parent::getEloquentQuery()->with(['user', 'processedBy', 'subject']);
     }
 
     public static function getNavigationBadge(): ?string

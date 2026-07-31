@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
+use App\Contracts\ServiceSubject;
+use App\Models\Tour;
 use App\Support\Plural;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Подраздел раздела «Услуги» (ТЗ 3-го этапа, п. 7).
@@ -14,9 +17,9 @@ use App\Support\Plural;
  * лендинга. Так же, как AdvertType описывает доски объявлений — одна модель
  * ServiceRequest на все подразделы, разница только в типе.
  *
- * Tour, ForeignRegatta и GiftCertificate заведены заранее: страниц и форм у них
- * пока нет (isPublished/acceptsRequests → false), но модель, админка и письма
- * их уже поддержат.
+ * ForeignRegatta и GiftCertificate заведены заранее: страниц и форм у них пока
+ * нет (isPublished/acceptsRequests → false), но модель, админка и письма их уже
+ * поддержат.
  */
 enum ServiceType: string
 {
@@ -81,7 +84,8 @@ enum ServiceType: string
             self::FleetRental => 'services.fleet-rental',
             self::Event => 'services.events',
             self::Training => 'services.training',
-            self::Tour, self::ForeignRegatta, self::GiftCertificate => null,
+            self::Tour => 'services.tours',
+            self::ForeignRegatta, self::GiftCertificate => null,
         };
     }
 
@@ -107,8 +111,26 @@ enum ServiceType: string
     public function acceptsRequests(): bool
     {
         return match ($this) {
-            self::FleetRental, self::Event, self::Training => true,
+            self::FleetRental, self::Event, self::Training, self::Tour => true,
             default => false,
+        };
+    }
+
+    /**
+     * Модель, к которой можно привязать заявку подраздела.
+     *
+     * Класс берётся отсюда, а не из запроса: morph-класс, пришедший из формы,
+     * позволил бы привязать заявку к произвольной модели. С сайта приходит
+     * только id — @see \App\Services\ServiceSubjectResolver.
+     *
+     * @return class-string<Model&ServiceSubject>|null
+     */
+    public function subjectModel(): ?string
+    {
+        return match ($this) {
+            self::Tour => Tour::class,
+            // Зарубежные регаты и сертификаты — следующая итерация.
+            default => null,
         };
     }
 
@@ -270,8 +292,41 @@ enum ServiceType: string
                 ],
             ],
 
+            self::Tour => [
+                // Прямо соответствует ценам похода: за место и за каюту.
+                'accommodation' => [
+                    'label' => 'Размещение',
+                    'type' => 'select',
+                    'required' => true,
+                    'options' => [
+                        'seat' => 'Место в каюте',
+                        'cabin' => 'Каюта целиком',
+                        'whole_yacht' => 'Яхта целиком',
+                    ],
+                ],
+                'experience' => [
+                    'label' => 'Опыт хождения под парусом',
+                    'type' => 'select',
+                    'options' => [
+                        'none' => 'Нет опыта',
+                        'beginner' => 'Начинающий',
+                        'crew' => 'Уверенный матрос',
+                        'skipper' => 'Есть права шкипера',
+                    ],
+                ],
+                'needs_equipment' => [
+                    'label' => 'Нужна аренда снаряжения (спальник, шторм-костюм)',
+                    'type' => 'checkbox',
+                ],
+                'departure_city' => [
+                    'label' => 'Город выезда',
+                    'type' => 'text',
+                    'placeholder' => 'Необязательно',
+                ],
+            ],
+
             // Подразделы следующей итерации: поля появятся вместе со страницами.
-            self::YachtRental, self::Tour, self::ForeignRegatta, self::GiftCertificate => [],
+            self::YachtRental, self::ForeignRegatta, self::GiftCertificate => [],
         };
     }
 

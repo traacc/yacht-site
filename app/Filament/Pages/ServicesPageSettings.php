@@ -91,6 +91,13 @@ class ServicesPageSettings extends Page
             'training_hero_image' => $this->fileState($settings->get('services.training.hero_image')),
             'training_programs' => (array) $settings->get('services.training.programs', []),
             'training_gallery' => $this->galleryState($settings->get('services.training.gallery', [])),
+
+            // Яхтенные путешествия и походы
+            'tours_intro' => $settings->get('services.tour.intro', ''),
+            'tours_hero_image' => $this->fileState($settings->get('services.tour.hero_image')),
+            'tours_included' => (array) $settings->get('services.tour.included', []),
+            'tours_note' => $settings->get('services.tour.note', ''),
+            'tours_gallery' => $this->galleryState($settings->get('services.tour.gallery', [])),
         ]);
     }
 
@@ -126,6 +133,9 @@ class ServicesPageSettings extends Page
 
                         Tabs\Tab::make('Обучение')
                             ->schema($this->trainingFields()),
+
+                        Tabs\Tab::make('Путешествия')
+                            ->schema($this->tourFields()),
                     ]),
             ]);
     }
@@ -416,6 +426,63 @@ class ServicesPageSettings extends Page
         ];
     }
 
+    /** @return list<Component> */
+    private function tourFields(): array
+    {
+        return [
+            Section::make('Описание подраздела')
+                ->description('Сами походы добавляются в разделе «Услуги: Походы» — здесь только обрамление страницы.')
+                ->schema([
+                    $this->heroImage('tours_hero_image', 'services/tours'),
+
+                    RichEditor::make('tours_intro')
+                        ->label('Вводный текст')
+                        ->fileAttachmentsDisk('public')
+                        ->fileAttachmentsDirectory('services/tours')
+                        ->fileAttachmentsVisibility('public')
+                        ->fileAttachmentsMaxSize(5120)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('Что входит в стоимость')
+                ->description('Общие для всех походов условия. Индивидуальные цены задаются у каждого похода.')
+                ->schema([
+                    Repeater::make('tours_included')
+                        ->label('Блоки')
+                        ->addActionLabel('Добавить блок')
+                        ->reorderable()
+                        ->collapsible()
+                        ->defaultItems(0)
+                        ->itemLabel(fn (array $state): ?string => $state['title'] ?? null)
+                        ->schema([
+                            TextInput::make('title')
+                                ->label('Заголовок')
+                                ->placeholder('Например: Проживание на яхте')
+                                ->required()
+                                ->maxLength(255)
+                                ->rules(['required', 'string', 'max:255']),
+                            Textarea::make('text')
+                                ->label('Текст')
+                                ->rows(2)
+                                ->maxLength(500)
+                                ->rules(['nullable', 'string', 'max:500']),
+                        ]),
+
+                    Textarea::make('tours_note')
+                        ->label('Примечание под блоками')
+                        ->placeholder('Например: авиабилеты и трансфер оплачиваются отдельно.')
+                        ->rows(2)
+                        ->maxLength(500)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('Галерея')
+                ->schema([
+                    $this->gallery('tours_gallery', 'services/tours/gallery'),
+                ]),
+        ];
+    }
+
     // ──────────────────────────────────────────────
     // Общие поля
     // ──────────────────────────────────────────────
@@ -599,6 +666,13 @@ class ServicesPageSettings extends Page
                 ['title', 'duration', 'price', 'desc'],
             ),
             'services.training.gallery' => $this->galleryValue($data['training_gallery'] ?? []),
+
+            // Яхтенные путешествия и походы
+            'services.tour.intro' => $data['tours_intro'] ?? '',
+            'services.tour.hero_image' => $this->fileValue($data['tours_hero_image'] ?? null),
+            'services.tour.included' => $this->repeaterValue($data['tours_included'] ?? [], ['title', 'text']),
+            'services.tour.note' => trim((string) ($data['tours_note'] ?? '')),
+            'services.tour.gallery' => $this->galleryValue($data['tours_gallery'] ?? []),
         ], self::GROUP);
 
         $settings->forgetGroup(self::GROUP);

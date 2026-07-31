@@ -140,7 +140,9 @@ class SubmitServiceRequestAction
         // Уведомление шлём напрямую через Filament, а не через
         // App\Notifications\UserNotification: иначе личные настройки категорий
         // получателя глушат служебное уведомление админ-панели.
+        // Объект заявки (конкретный поход) важнее дат: даты у него свои.
         $details = array_filter([
+            $serviceRequest->subjectLabel(),
             $serviceRequest->dateRangeLabel(),
             $serviceRequest->quantityLabel(),
         ]);

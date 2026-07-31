@@ -40,6 +40,7 @@ use App\Models\Series;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\TeamRating;
+use App\Models\Tour;
 use App\Models\User;
 use App\Models\Vote;
 use App\Models\Voting;
@@ -51,6 +52,7 @@ use App\Services\HelpDirectory;
 use App\Services\Payments\PaymentManager;
 use App\Services\Payments\Providers\TestPaymentProvider;
 use App\Services\RatingCalculator;
+use App\Services\ServiceSubjectResolver;
 use App\Services\SettingsService;
 use App\Services\WeatherService;
 use App\Services\YandexMapService;
@@ -430,6 +432,35 @@ Route::get('/services/training', function () use ($servicePage) {
     ]));
 })->name('services.training');
 
+Route::get('/services/tours', function () use ($servicePage) {
+    $settings = app(SettingsService::class);
+
+    return view('pages.services.tours', $servicePage(ServiceType::Tour, [
+        'upcoming' => Tour::published()->upcoming()->ordered()->with(['yacht', 'media'])->get(),
+        // Прошедшие походы остаются на витрине: они и есть подтверждение опыта.
+        'past' => Tour::published()->past()->recentFirst()->with('media')->get(),
+        'included' => (array) $settings->get('services.tour.included', []),
+        'note' => $settings->get('services.tour.note', ''),
+        'gallery' => (array) $settings->get('services.tour.gallery', []),
+    ]));
+})->name('services.tours');
+
+Route::get('/services/tours/{tour}', function (Tour $tour) {
+    abort_unless($tour->is_published, 404);
+
+    $tour->load(['yacht', 'media']);
+
+    return view('pages.services.tour-item', [
+        'tour' => $tour,
+        'type' => ServiceType::Tour,
+        'others' => Tour::published()->upcoming()->ordered()
+            ->whereKeyNot($tour->getKey())
+            ->with('media')
+            ->take(3)
+            ->get(),
+    ]);
+})->name('services.tour-item');
+
 /** Заявка на услугу: одна форма на все подразделы, поля задаёт ServiceType. */
 Route::post('/services/{type}/request', function (ServiceType $type, Request $request) {
     abort_unless($type->acceptsRequests(), 404);
@@ -452,14 +483,23 @@ Route::post('/services/{type}/request', function (ServiceType $type, Request $re
         $rules['quantity'] = ['nullable', 'integer', 'min:1', 'max:500'];
     }
 
+    if ($type->subjectModel() !== null) {
+        // Без `exists`: существование и допустимость объекта проверяет
+        // резолвер, иначе получаем два источника правды и разные коды ответа.
+        $rules['subject_id'] = ['nullable', 'uuid'];
+    }
+
     $validated = $request->validate($rules + $type->payloadRules(), attributes: [
         'privacy' => 'согласие с политикой конфиденциальности',
     ]);
+
+    $subject = app(ServiceSubjectResolver::class)->resolve($type, $validated['subject_id'] ?? null);
 
     app(SubmitServiceRequestAction::class)->handle(
         type: $type,
         data: $validated,
         user: $request->user(),
+        subject: $subject,
     );
 
     if ($request->expectsJson()) {

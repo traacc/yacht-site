@@ -8,6 +8,7 @@ use App\Models\Advert;
 use App\Models\News;
 use App\Models\Regatta;
 use App\Models\RepairCase;
+use App\Models\Tour;
 use Illuminate\Support\Carbon;
 
 class SitemapGenerator
@@ -44,6 +45,7 @@ class SitemapGenerator
         'services.fleet-rental',
         'services.events',
         'services.training',
+        'services.tours',
     ];
 
     /**
@@ -79,6 +81,18 @@ class SitemapGenerator
                 $urls[] = [
                     'loc' => route('carter30.repair-case', $case),
                     'lastmod' => $case->updated_at?->toAtomString(),
+                ];
+            });
+
+        // Походы раздела «Услуги». Прошедшие тоже включаем: их страницы живут
+        // на витрине как подтверждение опыта.
+        Tour::published()
+            ->recentFirst()
+            ->get()
+            ->each(function (Tour $tour) use (&$urls): void {
+                $urls[] = [
+                    'loc' => $tour->publicUrl(),
+                    'lastmod' => $tour->updated_at?->toAtomString(),
                 ];
             });
 

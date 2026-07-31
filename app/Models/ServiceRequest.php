@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Contracts\ServiceSubject;
 use App\Enums\ServiceRequestStatus;
 use App\Enums\ServiceType;
 use Illuminate\Database\Eloquent\Builder;
@@ -127,6 +128,26 @@ class ServiceRequest extends Model
         return $details === []
             ? $subject
             : $subject.' ('.implode(', ', $details).')';
+    }
+
+    /**
+     * Подпись объекта заявки — конкретного похода, регаты, сертификата.
+     *
+     * Шаблоны и админка спрашивают заявку, а не её subject: типы объектов
+     * будут добавляться, а вызовы останутся прежними.
+     */
+    public function subjectLabel(): ?string
+    {
+        return $this->subject instanceof ServiceSubject
+            ? $this->subject->subjectLabel()
+            : null;
+    }
+
+    public function subjectUrl(): ?string
+    {
+        return $this->subject instanceof ServiceSubject
+            ? $this->subject->subjectUrl()
+            : null;
     }
 
     public function dateRangeLabel(): ?string
