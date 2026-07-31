@@ -228,7 +228,7 @@
                         @if($gallery->regatta)
                             <p class="text-lg mb-3 opacity-90">{{ $gallery->name }}</p>
                         @endif
-                        <p class="mb-3 flex gap-3">{!! file_get_contents(public_path('images/icons/calendar.svg')) !!} {{ $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM') }} · {{ $gallery->regatta?->location ?? '' }}</p>
+                        <p class="mb-3 flex gap-3">{!! file_get_contents(public_path('images/icons/calendar.svg')) !!} {{ $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM') }}</p>
                         <p class="flex gap-3">{!! file_get_contents(public_path('images/icons/waves.svg')) !!} {{ $gallery->water_area }}</p>
                     </div>
                 </div>
