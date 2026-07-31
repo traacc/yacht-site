@@ -47,6 +47,7 @@
                         <a href="{{ route('regatta-entries') }}" class="block w-full text-left px-4 py-2 text-gray-700">Заявки</a>
                     </div>
                 </div>
+                <!--
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
                     <button @click="open = !open"
                         class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
@@ -63,6 +64,7 @@
                         <a href="{{ route('carter30.yacht-sale') }}" class="block px-4 py-2 text-gray-700">Продать яхту</a>
                     </div>
                 </div>
+                -->
                 <a href="{{ route('teams') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Команды</a>
                 <a href="{{ route('yachts') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Яхты</a>
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
@@ -242,6 +244,7 @@
                             <a href="{{ route('regatta-entries') }}" class="block w-full text-left px-4 py-2 text-sm">Заявки</a>
                         </div>
                     </div>
+                    <!--
                     <div x-data="{ open: false }" class="relative">
                         <button @click="open = !open"
                             class="flex items-center gap-1 py-2 text-sm transition-colors">
@@ -257,6 +260,7 @@
                             <a href="{{ route('carter30.yacht-sale') }}" class="block px-4 py-2 text-sm">Продать яхту</a>
                         </div>
                     </div>
+                    -->
                     <a href="{{ route('teams') }}"  class="block py-2 text-sm">Команды</a>
                     <a href="{{ route('yachts') }}"  class="block py-2 text-sm">Яхты</a>
                     <div x-data="{ open: false }" class="relative">
