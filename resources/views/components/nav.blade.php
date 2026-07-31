@@ -65,6 +65,20 @@
                     </div>
                 </div>
                 -->
+                <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
+                    <button @click="open = !open"
+                        class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
+                        Услуги
+                        <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" x-cloak x-transition
+                        class="absolute top-full left-0 mt-1 w-56 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
+                        @foreach (\App\Enums\ServiceType::published() as $service)
+                            <a href="{{ $service->url() }}" class="block px-4 py-2 text-gray-700">{{ $service->label() }}</a>
+                        @endforeach
+                        <a href="{{ route('services.index') }}" class="block px-4 py-2 text-gray-700 border-t border-gray-100">Все услуги</a>
+                    </div>
+                </div>
                 <a href="{{ route('teams') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Команды</a>
                 <a href="{{ route('yachts') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Яхты</a>
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
@@ -261,6 +275,19 @@
                         </div>
                     </div>
                     -->
+                    <div x-data="{ open: false }" class="relative">
+                        <button @click="open = !open"
+                            class="flex items-center gap-1 py-2 text-sm transition-colors">
+                            Услуги
+                            <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" x-cloak x-transition class="">
+                            @foreach (\App\Enums\ServiceType::published() as $service)
+                                <a href="{{ $service->url() }}" class="block px-4 py-2 text-sm">{{ $service->label() }}</a>
+                            @endforeach
+                            <a href="{{ route('services.index') }}" class="block px-4 py-2 text-sm">Все услуги</a>
+                        </div>
+                    </div>
                     <a href="{{ route('teams') }}"  class="block py-2 text-sm">Команды</a>
                     <a href="{{ route('yachts') }}"  class="block py-2 text-sm">Яхты</a>
                     <div x-data="{ open: false }" class="relative">

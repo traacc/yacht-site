@@ -13,6 +13,7 @@ use App\Actions\Regatta\DownloadRegattaTeamsAction;
 use App\Actions\Regatta\GenerateRegattaTeamsPdfAction;
 use App\Actions\RegattaEntry\UpdateRegattaEntryRequiredDocumentsAction;
 use App\Actions\RegattaResult\GenerateRegattaResultPdfAction;
+use App\Actions\Service\SubmitServiceRequestAction;
 use App\Actions\Team\GenerateTeamHistoryPdfAction;
 use App\Actions\Voting\CastVoteAction;
 use App\Actions\YachtRental\SubmitYachtRentalRequestAction;
@@ -23,6 +24,7 @@ use App\Enums\PaymentProviderCode;
 use App\Enums\PaymentTransactionStatus;
 use App\Enums\RegattaStatus;
 use App\Enums\RentalRequestStatus;
+use App\Enums\ServiceType;
 use App\Enums\VotingStatus;
 use App\Filament\User\Pages\Messages as UserMessagesPage;
 use App\Models\Advert;
@@ -44,6 +46,7 @@ use App\Models\Voting;
 use App\Models\Yacht;
 use App\Services\AdvertBoard;
 use App\Services\Chat\ChatAttachments;
+use App\Services\FleetAvailability;
 use App\Services\HelpDirectory;
 use App\Services\Payments\PaymentManager;
 use App\Services\Payments\Providers\TestPaymentProvider;
@@ -348,6 +351,123 @@ Route::post('/carter30/adverts/{advert}/contact', function (Advert $advert, Requ
         panel: 'user',
     ));
 })->middleware(['auth', 'throttle:10,1'])->name('carter30.advert-contact');
+
+// ──────────────────────────────────────────────
+// Раздел «Услуги» (ТЗ 3-го этапа, п. 7)
+// ──────────────────────────────────────────────
+
+/** Общие для всех лендингов данные: контент правится в ServicesPageSettings. */
+$servicePage = function (ServiceType $type, array $extra = []) {
+    $settings = app(SettingsService::class);
+    $prefix = $type->settingsPrefix();
+
+    $heroImage = $settings->get($prefix.'.hero_image');
+
+    return array_merge([
+        'type' => $type,
+        'intro' => $settings->get($prefix.'.intro', ''),
+        'heroImage' => is_string($heroImage) && $heroImage !== ''
+            ? Storage::disk('public')->url($heroImage)
+            : null,
+    ], $extra);
+};
+
+Route::get('/services', function () {
+    $settings = app(SettingsService::class);
+    $heroImage = $settings->get('services.hub.hero_image');
+
+    return view('pages.services.index', [
+        'intro' => $settings->get('services.hub.intro', ''),
+        'seoDescription' => $settings->get('services.hub.seo_description', ''),
+        'heroImage' => is_string($heroImage) && $heroImage !== ''
+            ? Storage::disk('public')->url($heroImage)
+            : null,
+        'services' => ServiceType::published(),
+    ]);
+})->name('services.index');
+
+Route::get('/services/fleet-rental', function (Request $request) use ($servicePage) {
+    $settings = app(SettingsService::class);
+
+    // Подбор считается на сервере: страница работает без JS и индексируется.
+    $summary = app(FleetAvailability::class)->summary(
+        $request->query('date_start'),
+        $request->query('date_end'),
+        $request->filled('count')
+            ? (int) $request->query('count')
+            : (int) $settings->get('services.fleet_rental.min_yachts', FleetAvailability::DEFAULT_NEEDED),
+    );
+
+    return view('pages.services.fleet-rental', $servicePage(ServiceType::FleetRental, [
+        'summary' => $summary,
+        'advantages' => (array) $settings->get('services.fleet_rental.advantages', []),
+        'note' => $settings->get('services.fleet_rental.note', ''),
+    ]));
+})->name('services.fleet-rental');
+
+Route::get('/services/events', function () use ($servicePage) {
+    $settings = app(SettingsService::class);
+
+    $showFleet = (bool) $settings->get('services.event.show_fleet', true);
+
+    return view('pages.services.events', $servicePage(ServiceType::Event, [
+        'formats' => (array) $settings->get('services.event.formats', []),
+        'venues' => (array) $settings->get('services.event.venues', []),
+        'gallery' => (array) $settings->get('services.event.gallery', []),
+        'cases' => (array) $settings->get('services.event.cases', []),
+        'fleetNote' => $settings->get('services.event.fleet_note', ''),
+        // Флот берём из каталога, чтобы не расходиться со страницей /yachts.
+        'fleet' => $showFleet ? app(FleetAvailability::class)->fleet() : collect(),
+    ]));
+})->name('services.events');
+
+Route::get('/services/training', function () use ($servicePage) {
+    $settings = app(SettingsService::class);
+
+    return view('pages.services.training', $servicePage(ServiceType::Training, [
+        'programs' => (array) $settings->get('services.training.programs', []),
+        'gallery' => (array) $settings->get('services.training.gallery', []),
+    ]));
+})->name('services.training');
+
+/** Заявка на услугу: одна форма на все подразделы, поля задаёт ServiceType. */
+Route::post('/services/{type}/request', function (ServiceType $type, Request $request) {
+    abort_unless($type->acceptsRequests(), 404);
+
+    $rules = [
+        'name' => ['required', 'string', 'max:255'],
+        'phone' => ['required', 'string', 'max:50'],
+        'email' => [$type->requiresEmail() ? 'required' : 'nullable', 'email', 'max:255'],
+        'comment' => ['nullable', 'string', 'max:2000'],
+        'privacy' => ['accepted'],
+    ];
+
+    if ($type->usesDateRange()) {
+        $required = $type->requiresDateRange() ? 'required' : 'nullable';
+        $rules['date_start'] = [$required, 'date'];
+        $rules['date_end'] = [$required, 'date', 'after_or_equal:date_start'];
+    }
+
+    if ($type->usesQuantity()) {
+        $rules['quantity'] = ['nullable', 'integer', 'min:1', 'max:500'];
+    }
+
+    $validated = $request->validate($rules + $type->payloadRules(), attributes: [
+        'privacy' => 'согласие с политикой конфиденциальности',
+    ]);
+
+    app(SubmitServiceRequestAction::class)->handle(
+        type: $type,
+        data: $validated,
+        user: $request->user(),
+    );
+
+    if ($request->expectsJson()) {
+        return response()->json(['message' => 'Заявка отправлена']);
+    }
+
+    return back()->with('service_request_sent', true);
+})->middleware('throttle:5,1')->name('services.request');
 
 Route::get('/regattas/calendar/pdf', function (Request $request) {
     $year = $request->integer('year', (int) now()->format('Y'));

@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\EditProfile;
+use App\Filament\Widgets\RequestsOverview;
 use App\Filament\Widgets\StatsOverview;
 use App\Filament\Widgets\UpcomingBirthdaysWidget;
 use App\Filament\Widgets\UpcomingRegattas;
@@ -74,6 +75,7 @@ class AdminPanelProvider extends PanelProvider
                 // FilamentInfoWidget::class,
                 UpcomingBirthdaysWidget::class,
                 StatsOverview::class,
+                RequestsOverview::class,
                 UpcomingRegattas::class,
             ])
             ->middleware([

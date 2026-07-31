@@ -40,6 +40,10 @@ class SitemapGenerator
         'carter30.technical-help',
         'carter30.marketplace',
         'carter30.yacht-sale',
+        'services.index',
+        'services.fleet-rental',
+        'services.events',
+        'services.training',
     ];
 
     /**

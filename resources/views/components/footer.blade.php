@@ -29,6 +29,10 @@
                     <li><a href="{{ route('carter30.marketplace') }}"  class="hover:text-white transition-colors">Барахолка</a></li>
                     <li><a href="{{ route('carter30.yacht-sale') }}"  class="hover:text-white transition-colors">Продать яхту</a></li>
                     -->
+                    <li><a href="{{ route('services.index') }}"  class="hover:text-white transition-colors">Услуги</a></li>
+                    <li><a href="{{ route('services.fleet-rental') }}"  class="hover:text-white transition-colors">Аренда флота</a></li>
+                    <li><a href="{{ route('services.events') }}"  class="hover:text-white transition-colors">Проведение мероприятий</a></li>
+                    <li><a href="{{ route('services.training') }}"  class="hover:text-white transition-colors">Обучение судовождению</a></li>
                     <li><a href="{{ route('teams') }}"  class="hover:text-white transition-colors">Команды</a></li>
                     <li><a href="{{ route('yachts') }}"  class="hover:text-white transition-colors">Яхты</a></li>
                     <li><a href="{{ route('ratings') }}"  class="hover:text-white transition-colors">Рейтинги</a></li>

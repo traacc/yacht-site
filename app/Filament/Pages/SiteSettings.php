@@ -70,6 +70,8 @@ class SiteSettings extends Page
             'maintenance_message' => $settings->get('home.maintenance_message', 'Сайт в процессе обновления'),
             // E-mail'ы администраторов для уведомлений
             'admin_notification_emails' => $settings->adminNotificationEmails(),
+            // Отдел заказов: заявки на услуги, аренду и ремонт
+            'order_email' => $settings->orderEmail(),
             // Автопубликация новостей в Telegram
             'telegram_autopublish' => (bool) $settings->get('home.telegram_autopublish', true),
             // Автопубликация новостей в VK
@@ -206,6 +208,20 @@ class SiteSettings extends Page
                             ->columnSpanFull(),
                     ]),
 
+                // ── Отдел заказов ─────────────────────────────
+                Section::make('Отдел заказов')
+                    ->description('Единый адрес для коммерческих запросов с сайта: заявки раздела «Услуги», запросы на аренду яхт и заявки на ремонт.')
+                    ->schema([
+                        TextInput::make('order_email')
+                            ->label('E-mail отдела заказов')
+                            ->email()
+                            ->placeholder('order@carter-pro.ru')
+                            ->helperText('Если поле пустое, письма уходят на order@carter-pro.ru.')
+                            ->maxLength(255)
+                            ->rules(['nullable', 'email', 'max:255'])
+                            ->columnSpanFull(),
+                    ]),
+
                 // ── Публикация новостей в Telegram ────────────
                 Section::make('Публикация в Telegram')
                     ->description('Если включено — новости автоматически публикуются в Telegram-канал при наступлении даты публикации. Если выключено — посты в Telegram не создаются.')
@@ -322,6 +338,7 @@ class SiteSettings extends Page
             'data.maintenance_message' => ['nullable', 'string', 'max:255'],
             'data.admin_notification_emails' => ['nullable', 'array'],
             'data.admin_notification_emails.*' => ['email'],
+            'data.order_email' => ['nullable', 'email', 'max:255'],
             'data.telegram_autopublish' => ['boolean'],
             'data.vk_autopublish' => ['boolean'],
             'data.news_notifications' => ['boolean'],
@@ -349,6 +366,10 @@ class SiteSettings extends Page
             ->all();
 
         $settings->set('home.admin_notification_emails', $adminEmails, 'home');
+
+        // Отдел заказов. Пустое значение допустимо: orderEmail() подставит дефолт.
+        $settings->set('site.order_email', trim((string) ($data['order_email'] ?? '')), 'site');
+        $settings->forgetGroup('site');
 
         // Автопубликация новостей в Telegram
         $settings->set('home.telegram_autopublish', (bool) ($data['telegram_autopublish'] ?? true), 'home');
