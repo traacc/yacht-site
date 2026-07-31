@@ -34,6 +34,7 @@
                     <li><a href="{{ route('services.events') }}"  class="hover:text-white transition-colors">Проведение мероприятий</a></li>
                     <li><a href="{{ route('services.training') }}"  class="hover:text-white transition-colors">Обучение судовождению</a></li>
                     <li><a href="{{ route('services.tours') }}"  class="hover:text-white transition-colors">Яхтенные путешествия</a></li>
+                    <li><a href="{{ route('services.foreign-regattas') }}"  class="hover:text-white transition-colors">Регаты за рубежом</a></li>
                     <li><a href="{{ route('teams') }}"  class="hover:text-white transition-colors">Команды</a></li>
                     <li><a href="{{ route('yachts') }}"  class="hover:text-white transition-colors">Яхты</a></li>
                     <li><a href="{{ route('ratings') }}"  class="hover:text-white transition-colors">Рейтинги</a></li>

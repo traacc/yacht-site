@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Service;
 
+use App\Contracts\ServiceSubject;
 use App\Enums\ServiceRequestStatus;
 use App\Enums\ServiceType;
 use App\Filament\Resources\ServiceRequests\ServiceRequestResource;
@@ -67,7 +68,7 @@ class SubmitServiceRequestAction
             'quantity' => $type->usesQuantity() && ($data['quantity'] ?? null) !== null
                 ? (int) $data['quantity']
                 : null,
-            'payload' => $this->cleanPayload($type, (array) ($data['payload'] ?? [])),
+            'payload' => $this->cleanPayload($type, (array) ($data['payload'] ?? []), $subject),
             'source' => $data['source'] ?? request()->header('Referer', 'unknown'),
         ]);
 
@@ -83,20 +84,30 @@ class SubmitServiceRequestAction
     }
 
     /**
-     * Оставляем в payload только поля, объявленные подразделом.
+     * Оставляем в payload только поля, реально показанные формой.
      *
      * Без белого списка в json попадёт произвольное содержимое запроса —
-     * данные приходят из открытой формы на публичном сайте.
+     * данные приходят из открытой формы на публичном сайте. Список берём с
+     * учётом объекта заявки: поля, которых у него нет (например, выбор яхты у
+     * регаты без свободного чартера), не должны просачиваться в payload.
      *
      * @param  array<string, mixed>  $raw
      * @return array<string, mixed>
      */
-    private function cleanPayload(ServiceType $type, array $raw): array
+    private function cleanPayload(ServiceType $type, array $raw, ?Model $subject = null): array
     {
         $payload = [];
 
-        foreach ($type->payloadFields() as $key => $field) {
+        foreach ($type->formFields($subject instanceof ServiceSubject ? $subject : null) as $key => $field) {
             if (! array_key_exists($key, $raw)) {
+                continue;
+            }
+
+            // Поле, привязанное к другому, сохраняем только при выполненном
+            // условии: выбранную и затем отменённую яхту в заявке видеть незачем.
+            $condition = $field['visible_when'] ?? null;
+
+            if ($condition !== null && ($raw[$condition[0]] ?? null) !== $condition[1]) {
                 continue;
             }
 

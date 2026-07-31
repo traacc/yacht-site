@@ -29,6 +29,7 @@ use App\Enums\VotingStatus;
 use App\Filament\User\Pages\Messages as UserMessagesPage;
 use App\Models\Advert;
 use App\Models\Faq;
+use App\Models\ForeignRegatta;
 use App\Models\Gallery;
 use App\Models\News;
 use App\Models\PaymentTransaction;
@@ -462,6 +463,37 @@ Route::get('/services/tours/{tour}', function (Tour $tour) {
     ]);
 })->name('services.tour-item');
 
+Route::get('/services/foreign-regattas', function () use ($servicePage) {
+    $settings = app(SettingsService::class);
+
+    return view('pages.services.foreign-regattas', $servicePage(ServiceType::ForeignRegatta, [
+        'upcoming' => ForeignRegatta::published()->upcoming()->ordered()
+            ->with(['charterYachts', 'media'])
+            ->get(),
+        // Прошедшие регаты остаются на витрине: они и есть подтверждение опыта.
+        'past' => ForeignRegatta::published()->past()->recentFirst()->with('media')->get(),
+        'included' => (array) $settings->get('services.foreign_regatta.included', []),
+        'note' => $settings->get('services.foreign_regatta.note', ''),
+        'gallery' => (array) $settings->get('services.foreign_regatta.gallery', []),
+    ]));
+})->name('services.foreign-regattas');
+
+Route::get('/services/foreign-regattas/{regatta}', function (ForeignRegatta $regatta) {
+    abort_unless($regatta->is_published, 404);
+
+    $regatta->load(['charterYachts', 'media']);
+
+    return view('pages.services.foreign-regatta-item', [
+        'regatta' => $regatta,
+        'type' => ServiceType::ForeignRegatta,
+        'others' => ForeignRegatta::published()->upcoming()->ordered()
+            ->whereKeyNot($regatta->getKey())
+            ->with(['charterYachts', 'media'])
+            ->take(3)
+            ->get(),
+    ]);
+})->name('services.foreign-regatta-item');
+
 /** Заявка на услугу: одна форма на все подразделы, поля задаёт ServiceType. */
 Route::post('/services/{type}/request', function (ServiceType $type, Request $request) {
     abort_unless($type->acceptsRequests(), 404);
@@ -490,11 +522,22 @@ Route::post('/services/{type}/request', function (ServiceType $type, Request $re
         $rules['subject_id'] = ['nullable', 'uuid'];
     }
 
-    $validated = $request->validate($rules + $type->payloadRules(), attributes: [
-        'privacy' => 'согласие с политикой конфиденциальности',
-    ]);
+    // Объект резолвим до валидации: от него зависят варианты части полей
+    // (у зарубежной регаты — её варианты участия и свободные яхты). Негодный
+    // id резолвер отсекает сам, 404/422 приходит раньше правил формы.
+    $subjectId = $request->input('subject_id');
+    $subject = app(ServiceSubjectResolver::class)
+        ->resolve($type, is_string($subjectId) ? $subjectId : null);
 
-    $subject = app(ServiceSubjectResolver::class)->resolve($type, $validated['subject_id'] ?? null);
+    // Подписи полей берём из подраздела: иначе пользователь видит в ошибке
+    // «payload.charter yacht» вместо «Яхта».
+    $attributes = ['privacy' => 'согласие с политикой конфиденциальности'];
+
+    foreach ($type->formFields($subject) as $key => $field) {
+        $attributes['payload.'.$key] = mb_strtolower($field['label']);
+    }
+
+    $validated = $request->validate($rules + $type->payloadRules($subject), attributes: $attributes);
 
     app(SubmitServiceRequestAction::class)->handle(
         type: $type,

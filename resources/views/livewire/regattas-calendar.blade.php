@@ -44,6 +44,11 @@
                         class="flex items-center gap-1.5 text-xs md:text-base cursor-pointer transition-opacity">
                         <span class="size-2 md:size-4 rounded-full bg-[#C6C6C6] inline-block"></span>Планируемые
                     </button>
+                    <button type="button" @click="toggleStatus('foreign')"
+                        :class="isStatusActive('foreign') ? '' : (activeStatuses.length ? 'opacity-40' : '')"
+                        class="flex items-center gap-1.5 text-xs md:text-base cursor-pointer transition-opacity">
+                        <span class="size-2 md:size-4 rounded-full bg-[#7B5FC4] inline-block"></span>За рубежом
+                    </button>
                 </div>
                 {{-- Выбор года --}}
                     @if ($showSelector)
@@ -98,7 +103,8 @@
                                                 {{ $event['status'] === 'postponed' ? 'bg-[#a19315]' : '' }}
                                                 {{ $event['status'] === 'finished' ? 'bg-[#157949]' : '' }}
                                                 {{ $event['status'] === 'closest' ? 'bg-[#C2A36B]' : '' }}
-                                                {{ $event['status'] === 'upcoming' ? 'bg-[#C6C6C6]' : '' }}">
+                                                {{ $event['status'] === 'upcoming' ? 'bg-[#C6C6C6]' : '' }}
+                                                {{ $event['status'] === 'foreign' ? 'bg-[#7B5FC4]' : '' }}">
                                             </span>
                                         </div>
                                         <div class="flex flex-col gap-1">
@@ -117,20 +123,27 @@
                                             <!--<p class="text-brand-gray-light text-sm">{{ $event['city'] }}</p>-->
                                             <x-regatta-external-id :value="$event['external_id']" class="text-xs block" />
                                             <div class="controls text-xs font-semibold flex gap-2">
-                                                @if ($event['has_documents'])
-                                                    <a href="{{ $event['documents_url'] }}"
-                                                       class="downloadsDocuments p-2 bg-white text-[#2E325C] cursor-pointer">Документы</a>
+                                                @if ($event['is_foreign'])
+                                                    {{-- У зарубежной регаты нет ни документов, ни заявки
+                                                         команды: ведём в карточку раздела «Услуги». --}}
+                                                    <a href="{{ $event['url'] }}"
+                                                       class="p-2 bg-[#7B5FC4] text-white cursor-pointer">Подробнее</a>
                                                 @else
-                                                    <button type="button" disabled
-                                                            class="downloadsDocuments p-2 bg-white text-[#2E325C] opacity-50 cursor-not-allowed">Документы</button>
-                                                @endif
-                                                @if ($event['can_join'])
-                                                    <button type="button"
-                                                            @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $event['id'] }}' })"
-                                                            class="join p-2 bg-[#2D92CE] text-white cursor-pointer">Заявка</button>
-                                                @else
-                                                    <button type="button" disabled
-                                                            class="join p-2 bg-[#2D92CE] text-white opacity-50 cursor-not-allowed">Заявка</button>
+                                                    @if ($event['has_documents'])
+                                                        <a href="{{ $event['documents_url'] }}"
+                                                           class="downloadsDocuments p-2 bg-white text-[#2E325C] cursor-pointer">Документы</a>
+                                                    @else
+                                                        <button type="button" disabled
+                                                                class="downloadsDocuments p-2 bg-white text-[#2E325C] opacity-50 cursor-not-allowed">Документы</button>
+                                                    @endif
+                                                    @if ($event['can_join'])
+                                                        <button type="button"
+                                                                @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $event['id'] }}' })"
+                                                                class="join p-2 bg-[#2D92CE] text-white cursor-pointer">Заявка</button>
+                                                    @else
+                                                        <button type="button" disabled
+                                                                class="join p-2 bg-[#2D92CE] text-white opacity-50 cursor-not-allowed">Заявка</button>
+                                                    @endif
                                                 @endif
                                             </div>
                                         </div>

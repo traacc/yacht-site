@@ -171,12 +171,21 @@
                         </label>
                     @endif
 
-                    @foreach ($type->payloadFields() as $key => $field)
+                    {{-- Поля берём с учётом объекта заявки: у зарубежной регаты
+                         варианты участия и список яхт свои. --}}
+                    @foreach ($type->formFields($subject) as $key => $field)
+                        @php
+                            // Поле показывается, только когда другое приняло нужное
+                            // значение: яхту выбирают лишь при участии «яхта целиком».
+                            $visibleWhen = $field['visible_when'] ?? null;
+                        @endphp
                         @if ($field['type'] === 'select')
-                            <label class="block mb-4">
+                            <label class="block mb-4"
+                                   @if ($visibleWhen) x-show="form.payload['{{ $visibleWhen[0] }}'] === '{{ $visibleWhen[1] }}'" x-cloak @endif>
                                 <span class="block text-sm text-brand-gray-light mb-1">{{ $field['label'] }}</span>
                                 <select x-model="form.payload['{{ $key }}']"
                                         @if ($field['required'] ?? false) required @endif
+                                        @if ($visibleWhen) :required="form.payload['{{ $visibleWhen[0] }}'] === '{{ $visibleWhen[1] }}'" @endif
                                         class="block appearance-none border border-[#C6C6C6] w-full text-sm md:text-base p-3 bg-white">
                                     <option value="">Выберите вариант</option>
                                     @foreach ($field['options'] ?? [] as $value => $optionLabel)

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Contracts\ServiceOptionProvider;
 use App\Contracts\ServiceSubject;
 use App\Enums\ServiceRequestStatus;
 use App\Enums\ServiceType;
@@ -193,8 +194,9 @@ class ServiceRequest extends Model
     {
         $payload = $this->payload ?? [];
         $labels = [];
+        $subject = $this->subject instanceof ServiceSubject ? $this->subject : null;
 
-        foreach ($this->type->payloadFields() as $key => $field) {
+        foreach ($this->type->payloadFields($subject) as $key => $field) {
             if (! array_key_exists($key, $payload)) {
                 continue;
             }
@@ -202,7 +204,13 @@ class ServiceRequest extends Model
             $value = $payload[$key];
 
             $formatted = match ($field['type']) {
-                'select' => $field['options'][$value] ?? (string) $value,
+                // Варианты объекта заявки живут в нём самом, и выбранный
+                // вариант мог из актуального списка уже уйти.
+                'select' => $field['options'][$value]
+                    ?? ($subject instanceof ServiceOptionProvider
+                        ? $subject->serviceOptionLabel($key, (string) $value)
+                        : null)
+                    ?? (string) $value,
                 'checkbox' => $value ? 'Да' : 'Нет',
                 default => trim((string) $value),
             };

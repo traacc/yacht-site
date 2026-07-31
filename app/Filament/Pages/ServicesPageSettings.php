@@ -98,6 +98,13 @@ class ServicesPageSettings extends Page
             'tours_included' => (array) $settings->get('services.tour.included', []),
             'tours_note' => $settings->get('services.tour.note', ''),
             'tours_gallery' => $this->galleryState($settings->get('services.tour.gallery', [])),
+
+            // Регаты за рубежом
+            'foreign_intro' => $settings->get('services.foreign_regatta.intro', ''),
+            'foreign_hero_image' => $this->fileState($settings->get('services.foreign_regatta.hero_image')),
+            'foreign_included' => (array) $settings->get('services.foreign_regatta.included', []),
+            'foreign_note' => $settings->get('services.foreign_regatta.note', ''),
+            'foreign_gallery' => $this->galleryState($settings->get('services.foreign_regatta.gallery', [])),
         ]);
     }
 
@@ -136,6 +143,9 @@ class ServicesPageSettings extends Page
 
                         Tabs\Tab::make('Путешествия')
                             ->schema($this->tourFields()),
+
+                        Tabs\Tab::make('Регаты за рубежом')
+                            ->schema($this->foreignRegattaFields()),
                     ]),
             ]);
     }
@@ -483,6 +493,63 @@ class ServicesPageSettings extends Page
         ];
     }
 
+    /** @return list<Component> */
+    private function foreignRegattaFields(): array
+    {
+        return [
+            Section::make('Описание подраздела')
+                ->description('Сами регаты добавляются в разделе «Услуги: Регаты за рубежом» — здесь только обрамление страницы.')
+                ->schema([
+                    $this->heroImage('foreign_hero_image', 'services/foreign-regattas'),
+
+                    RichEditor::make('foreign_intro')
+                        ->label('Вводный текст')
+                        ->fileAttachmentsDisk('public')
+                        ->fileAttachmentsDirectory('services/foreign-regattas')
+                        ->fileAttachmentsVisibility('public')
+                        ->fileAttachmentsMaxSize(5120)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('Что входит в участие')
+                ->description('Общие для всех зарубежных регат условия. Индивидуальные цены задаются у каждой регаты.')
+                ->schema([
+                    Repeater::make('foreign_included')
+                        ->label('Блоки')
+                        ->addActionLabel('Добавить блок')
+                        ->reorderable()
+                        ->collapsible()
+                        ->defaultItems(0)
+                        ->itemLabel(fn (array $state): ?string => $state['title'] ?? null)
+                        ->schema([
+                            TextInput::make('title')
+                                ->label('Заголовок')
+                                ->placeholder('Например: Чартер яхты и стартовый взнос')
+                                ->required()
+                                ->maxLength(255)
+                                ->rules(['required', 'string', 'max:255']),
+                            Textarea::make('text')
+                                ->label('Текст')
+                                ->rows(2)
+                                ->maxLength(500)
+                                ->rules(['nullable', 'string', 'max:500']),
+                        ]),
+
+                    Textarea::make('foreign_note')
+                        ->label('Примечание под блоками')
+                        ->placeholder('Например: перелёт, трансфер и судовая касса оплачиваются отдельно.')
+                        ->rows(2)
+                        ->maxLength(500)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('Галерея')
+                ->schema([
+                    $this->gallery('foreign_gallery', 'services/foreign-regattas/gallery'),
+                ]),
+        ];
+    }
+
     // ──────────────────────────────────────────────
     // Общие поля
     // ──────────────────────────────────────────────
@@ -673,6 +740,13 @@ class ServicesPageSettings extends Page
             'services.tour.included' => $this->repeaterValue($data['tours_included'] ?? [], ['title', 'text']),
             'services.tour.note' => trim((string) ($data['tours_note'] ?? '')),
             'services.tour.gallery' => $this->galleryValue($data['tours_gallery'] ?? []),
+
+            // Регаты за рубежом
+            'services.foreign_regatta.intro' => $data['foreign_intro'] ?? '',
+            'services.foreign_regatta.hero_image' => $this->fileValue($data['foreign_hero_image'] ?? null),
+            'services.foreign_regatta.included' => $this->repeaterValue($data['foreign_included'] ?? [], ['title', 'text']),
+            'services.foreign_regatta.note' => trim((string) ($data['foreign_note'] ?? '')),
+            'services.foreign_regatta.gallery' => $this->galleryValue($data['foreign_gallery'] ?? []),
         ], self::GROUP);
 
         $settings->forgetGroup(self::GROUP);

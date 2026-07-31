@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
+use App\Contracts\ServiceOptionProvider;
 use App\Contracts\ServiceSubject;
+use App\Models\ForeignRegatta;
 use App\Models\Tour;
 use App\Support\Plural;
 use Illuminate\Database\Eloquent\Model;
@@ -17,8 +19,8 @@ use Illuminate\Database\Eloquent\Model;
  * лендинга. Так же, как AdvertType описывает доски объявлений — одна модель
  * ServiceRequest на все подразделы, разница только в типе.
  *
- * ForeignRegatta и GiftCertificate заведены заранее: страниц и форм у них пока
- * нет (isPublished/acceptsRequests → false), но модель, админка и письма их уже
+ * GiftCertificate заведён заранее: страницы и формы у него пока нет
+ * (isPublished/acceptsRequests → false), но модель, админка и письма его уже
  * поддержат.
  */
 enum ServiceType: string
@@ -85,7 +87,8 @@ enum ServiceType: string
             self::Event => 'services.events',
             self::Training => 'services.training',
             self::Tour => 'services.tours',
-            self::ForeignRegatta, self::GiftCertificate => null,
+            self::ForeignRegatta => 'services.foreign-regattas',
+            self::GiftCertificate => null,
         };
     }
 
@@ -111,7 +114,7 @@ enum ServiceType: string
     public function acceptsRequests(): bool
     {
         return match ($this) {
-            self::FleetRental, self::Event, self::Training, self::Tour => true,
+            self::FleetRental, self::Event, self::Training, self::Tour, self::ForeignRegatta => true,
             default => false,
         };
     }
@@ -129,7 +132,8 @@ enum ServiceType: string
     {
         return match ($this) {
             self::Tour => Tour::class,
-            // Зарубежные регаты и сертификаты — следующая итерация.
+            self::ForeignRegatta => ForeignRegatta::class,
+            // Сертификаты — следующая итерация.
             default => null,
         };
     }
@@ -192,15 +196,63 @@ enum ServiceType: string
      *
      * Порядок ключей задаёт порядок полей в модалке, в письме и в админке.
      *
+     * Варианты части полей зависят от объекта заявки: у зарубежной регаты это
+     * предлагаемые ею варианты участия и её свободные яхты. Такие поля
+     * объявляются с пустым `options`, а заполняет их сам объект
+     * (@see \App\Contracts\ServiceOptionProvider).
+     *
+     * `visible_when` — поле показывается и требуется, только когда другое поле
+     * приняло указанное значение (яхту выбирают лишь при участии «яхта целиком»).
+     *
+     * @param  ServiceSubject|null  $subject  объект заявки, если она подаётся на него
      * @return array<string, array{
      *     label: string,
      *     type: 'text'|'textarea'|'select'|'checkbox',
      *     options?: array<string, string>,
      *     required?: bool,
      *     placeholder?: string,
+     *     visible_when?: array{0: string, 1: string},
      * }>
      */
-    public function payloadFields(): array
+    public function payloadFields(?ServiceSubject $subject = null): array
+    {
+        $fields = $this->declaredPayloadFields();
+
+        if ($subject instanceof ServiceOptionProvider) {
+            foreach ($subject->serviceOptions() as $key => $options) {
+                if (array_key_exists($key, $fields)) {
+                    $fields[$key]['options'] = $options;
+                }
+            }
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Поля, которые реально показываются в форме, — они же и валидируются.
+     *
+     * От payloadFields() отличается тем, что выбрасывает select без вариантов:
+     * на общей форме подраздела объекта нет и списка яхт взяться неоткуда, а у
+     * конкретной регаты весь чартер мог оказаться занят. В payloadFields такое
+     * поле остаётся — иначе уже поданная заявка потеряла бы подпись значения.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function formFields(?ServiceSubject $subject = null): array
+    {
+        return array_filter(
+            $this->payloadFields($subject),
+            fn (array $field): bool => $field['type'] !== 'select' || ($field['options'] ?? []) !== [],
+        );
+    }
+
+    /**
+     * Поля подраздела до подстановки вариантов объекта.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function declaredPayloadFields(): array
     {
         return match ($this) {
             self::FleetRental => [
@@ -325,22 +377,46 @@ enum ServiceType: string
                 ],
             ],
 
+            self::ForeignRegatta => [
+                // Варианты обоих полей приходят от самой регаты: она объявляет,
+                // что предлагает, и какие из её яхт ещё свободны.
+                'participation' => [
+                    'label' => 'Вариант участия',
+                    'type' => 'select',
+                    'required' => true,
+                    'options' => ParticipationOption::options(),
+                ],
+                'charter_yacht' => [
+                    'label' => 'Яхта',
+                    'type' => 'select',
+                    'options' => [],
+                    'visible_when' => ['participation', ParticipationOption::Yacht->value],
+                ],
+            ],
+
             // Подразделы следующей итерации: поля появятся вместе со страницами.
-            self::YachtRental, self::ForeignRegatta, self::GiftCertificate => [],
+            self::YachtRental, self::GiftCertificate => [],
         };
     }
 
     /**
      * Правила валидации ключей payload.* — выводятся из payloadFields().
      *
+     * @param  ServiceSubject|null  $subject  объект заявки: от него зависят варианты части полей
      * @return array<string, list<string>>
      */
-    public function payloadRules(): array
+    public function payloadRules(?ServiceSubject $subject = null): array
     {
         $rules = [];
 
-        foreach ($this->payloadFields() as $key => $field) {
-            $required = ($field['required'] ?? false) ? 'required' : 'nullable';
+        foreach ($this->formFields($subject) as $key => $field) {
+            // Поле, зависящее от другого, обязательно только вместе с ним:
+            // яхту спрашиваем лишь при участии «яхта целиком».
+            $required = match (true) {
+                isset($field['visible_when']) => 'required_if:payload.'.$field['visible_when'][0].','.$field['visible_when'][1],
+                ($field['required'] ?? false) => 'required',
+                default => 'nullable',
+            };
 
             $rules['payload.'.$key] = match ($field['type']) {
                 'select' => [$required, 'string', 'in:'.implode(',', array_keys($field['options'] ?? []))],

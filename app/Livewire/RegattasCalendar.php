@@ -2,9 +2,8 @@
 
 namespace App\Livewire;
 
-use App\Models\Regatta;
 use App\Models\Season;
-use Carbon\Carbon;
+use App\Services\SeasonCalendar;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -42,53 +41,16 @@ class RegattasCalendar extends Component
             ->toArray();
     }
 
-    /** Возвращает регаты, сгруппированные по месяцам */
+    /**
+     * Регаты сезона, сгруппированные по месяцам.
+     *
+     * Сборка событий — в App\Services\SeasonCalendar: в календарь попадают два
+     * источника, регаты ассоциации и регаты за рубежом (ТЗ 3-го этапа, п. 7).
+     */
     #[Computed]
     public function months(): array
     {
-        $monthNames = [
-            1 => 'Январь', 2 => 'Февраль', 3 => 'Март',
-            4 => 'Апрель', 5 => 'Май', 6 => 'Июнь',
-            7 => 'Июль', 8 => 'Август', 9 => 'Сентябрь',
-            10 => 'Октябрь', 11 => 'Ноябрь', 12 => 'Декабрь',
-        ];
-
-        $regattas = Regatta::query()
-            ->when($this->year, fn ($q) => $q->whereHas('season', fn ($sq) => $sq->where('year', $this->year)))
-            ->withCount(['documents' => fn ($q) => $q->whereNotNull('url')->where('url', '!=', '')])
-            ->orderBy('date_start')
-            ->get();
-
-        // Группируем. Убедитесь, что date_start кастится к Carbon в модели!
-        $grouped = $regattas->groupBy(fn (Regatta $r) => (int) Carbon::parse($r->date_start)->format('n'));
-
-        $currentMonth = (int) now()->format('n');
-
-        $months = [];
-        foreach ($monthNames as $num => $name) {
-            $months[] = [
-                'name' => $name,
-                'is_current' => $num === $currentMonth,
-                'events' => $grouped->has($num)
-                    ? $grouped->get($num)->map(fn (Regatta $r) => [
-                        'id' => $r->id,
-                        'external_id' => $r->external_id,
-                        'date' => $r->dateRange(),
-                        'title' => $r->name,
-                        'city' => $r->location,
-                        'status' => $r->regatta_status->value,
-                        'postponed_to' => $r->postponed_to_date?->isoFormat('LL'),
-                        'postponed_note' => $r->postponed_note,
-                        'url' => route('competition-details', $r),
-                        'has_documents' => $r->documents_count > 0,
-                        'documents_url' => route('regatta.documents.download', $r),
-                        'can_join' => $r->isOpenForRegistration(),
-                    ])->values()->toArray()
-                    : [],
-            ];
-        }
-
-        return $months;
+        return app(SeasonCalendar::class)->months($this->year);
     }
 
     public function render()

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Advert;
+use App\Models\ForeignRegatta;
 use App\Models\News;
 use App\Models\Regatta;
 use App\Models\RepairCase;
@@ -46,6 +47,7 @@ class SitemapGenerator
         'services.events',
         'services.training',
         'services.tours',
+        'services.foreign-regattas',
     ];
 
     /**
@@ -93,6 +95,17 @@ class SitemapGenerator
                 $urls[] = [
                     'loc' => $tour->publicUrl(),
                     'lastmod' => $tour->updated_at?->toAtomString(),
+                ];
+            });
+
+        // Регаты за рубежом — по той же причине вместе с прошедшими.
+        ForeignRegatta::published()
+            ->recentFirst()
+            ->get()
+            ->each(function (ForeignRegatta $regatta) use (&$urls): void {
+                $urls[] = [
+                    'loc' => $regatta->publicUrl(),
+                    'lastmod' => $regatta->updated_at?->toAtomString(),
                 ];
             });
 
