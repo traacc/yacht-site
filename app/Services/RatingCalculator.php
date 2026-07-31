@@ -63,8 +63,8 @@ class RatingCalculator
             foreach ($userIds as $userId) {
                 if (! isset($breakdown[$userId][$item->regatta_id])) {
                     $breakdown[$userId][$item->regatta_id] = [
-                        'name'   => $item->regatta_name,
-                        'date'   => $item->regatta_date,
+                        'name' => $item->regatta_name,
+                        'date' => $item->regatta_date,
                         'points' => 0.0,
                     ];
                 }
@@ -88,8 +88,8 @@ class RatingCalculator
         foreach ($this->scoredResultItems($season) as $item) {
             if (! isset($breakdown[$item->team_id][$item->regatta_id])) {
                 $breakdown[$item->team_id][$item->regatta_id] = [
-                    'name'   => $item->regatta_name,
-                    'date'   => $item->regatta_date,
+                    'name' => $item->regatta_name,
+                    'date' => $item->regatta_date,
                     'points' => 0.0,
                 ];
             }
@@ -136,10 +136,10 @@ class RatingCalculator
             ->unique('regatta_id')
             ->sortBy('regatta_date')
             ->map(fn ($item) => [
-                'id'          => $item->regatta_id,
+                'id' => $item->regatta_id,
                 'external_id' => $item->regatta_external_id,
-                'name'        => $item->regatta_name,
-                'date'        => $item->regatta_date ? Carbon::parse($item->regatta_date)->format('d.m.Y') : null,
+                'name' => $item->regatta_name,
+                'date' => $item->regatta_date ? Carbon::parse($item->regatta_date)->format('d.m.Y') : null,
             ])
             ->values()
             ->all();
@@ -188,11 +188,11 @@ class RatingCalculator
 
                 $raceBreakdown[$teamId][$regattaId] = $raceEvents->values()
                     ->map(fn ($event, $i) => [
-                        'number'       => $i + 1,
-                        'name'         => $event->name,
-                        'date'         => $event->event_datetime?->format('d.m.Y H:i'),
-                        'position'     => $raceResultsByEvent->get($event->id)?->position,
-                        'points'       => $raceResultsByEvent->get($event->id)?->points,
+                        'number' => $i + 1,
+                        'name' => $event->name,
+                        'date' => $event->event_datetime?->format('d.m.Y H:i'),
+                        'position' => $raceResultsByEvent->get($event->id)?->position,
+                        'points' => $raceResultsByEvent->get($event->id)?->points,
                         'penalty_code' => $raceResultsByEvent->get($event->id)?->penalty_code,
                     ])
                     ->all();
@@ -208,10 +208,10 @@ class RatingCalculator
             $teamId = $item->team_id;
             $byTeam[$teamId] ??= [
                 'team_id' => $teamId,
-                'name'    => $teamNames[$teamId] ?? '—',
-                'points'  => [],
-                'places'  => [],
-                'total'   => 0.0,
+                'name' => $teamNames[$teamId] ?? '—',
+                'points' => [],
+                'places' => [],
+                'total' => 0.0,
             ];
             $byTeam[$teamId]['points'][$item->regatta_id] = ($byTeam[$teamId]['points'][$item->regatta_id] ?? 0) + $score;
             $byTeam[$teamId]['places'][$item->regatta_id] = (int) $item->final_position;
@@ -222,30 +222,30 @@ class RatingCalculator
             ->sortByDesc('total')
             ->values()
             ->map(fn ($row, $i) => [
-                'rank'    => $i + 1,
+                'rank' => $i + 1,
                 'team_id' => $row['team_id'],
-                'name'    => $row['name'],
-                'points'  => collect($regattas)
+                'name' => $row['name'],
+                'points' => collect($regattas)
                     ->mapWithKeys(fn ($r) => [
                         $r['id'] => isset($row['points'][$r['id']]) ? round($row['points'][$r['id']], 3) : null,
                     ])
                     ->all(),
-                'places'  => collect($regattas)
+                'places' => collect($regattas)
                     ->mapWithKeys(fn ($r) => [
                         $r['id'] => $row['places'][$r['id']] ?? null,
                     ])
                     ->all(),
-                'races'   => collect($regattas)
+                'races' => collect($regattas)
                     ->mapWithKeys(fn ($r) => [
                         $r['id'] => $raceBreakdown[$row['team_id']][$r['id']] ?? [],
                     ])
                     ->all(),
-                'total'   => round($row['total'], 3),
+                'total' => round($row['total'], 3),
             ])
             ->all();
 
         return [
-            'regattas'  => $regattas,
+            'regattas' => $regattas,
             'standings' => $standings,
         ];
     }
@@ -263,8 +263,8 @@ class RatingCalculator
             fn ($regattas) => collect($regattas)
                 ->sortByDesc('date')
                 ->map(fn ($r) => [
-                    'name'   => $r['name'],
-                    'date'   => $r['date'] ? \Illuminate\Support\Carbon::parse($r['date'])->format('d.m.Y') : null,
+                    'name' => $r['name'],
+                    'date' => $r['date'] ? Carbon::parse($r['date'])->format('d.m.Y') : null,
                     'points' => round($r['points'], 3),
                 ])
                 ->values()
@@ -322,18 +322,26 @@ class RatingCalculator
             $points[$item->team_id] = ($points[$item->team_id] ?? 0) + $item->score;
         }
 
-        foreach ($this->rankByPoints($points) as $teamId => $row) {
+        $ranked = $this->rankByPoints($points);
+
+        foreach ($ranked as $teamId => $row) {
             TeamRating::updateOrCreate(
                 [
                     'season_id' => $season->id,
-                    'team_id'   => $teamId,
+                    'team_id' => $teamId,
                 ],
                 [
-                    'total_points'  => $row['total'],
+                    'total_points' => $row['total'],
                     'rank_position' => $row['rank'],
                 ]
             );
         }
+
+        // Команды, потерявшие очки (результаты или заявки удалены), иначе
+        // остались бы в таблице со старым местом и ломали нумерацию.
+        TeamRating::where('season_id', $season->id)
+            ->whereNotIn('team_id', array_keys($ranked))
+            ->delete();
     }
 
     private function recalculatePersonalRatings(Season $season, Collection $scoredItems): void
@@ -351,18 +359,26 @@ class RatingCalculator
             }
         }
 
-        foreach ($this->rankByPoints($points) as $userId => $row) {
+        $ranked = $this->rankByPoints($points);
+
+        foreach ($ranked as $userId => $row) {
             PersonalRating::updateOrCreate(
                 [
                     'season_id' => $season->id,
-                    'user_id'   => $userId,
+                    'user_id' => $userId,
                 ],
                 [
-                    'total_points'  => $row['total'],
+                    'total_points' => $row['total'],
                     'rank_position' => $row['rank'],
                 ]
             );
         }
+
+        // Участники, потерявшие очки (исключены из экипажа, результат удалён),
+        // иначе остались бы в таблице со старым местом и ломали нумерацию.
+        PersonalRating::where('season_id', $season->id)
+            ->whereNotIn('user_id', array_keys($ranked))
+            ->delete();
     }
 
     /**
@@ -379,8 +395,8 @@ class RatingCalculator
         arsort($points);
 
         $ranked = [];
-        $rank   = 0;
-        $prev   = null;
+        $rank = 0;
+        $prev = null;
         foreach ($points as $id => $total) {
             if ($prev === null || round((float) $total, 3) < round((float) $prev, 3)) {
                 $rank++;
