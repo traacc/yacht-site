@@ -48,6 +48,8 @@ class SitemapGenerator
         'services.training',
         'services.tours',
         'services.foreign-regattas',
+        // Отдельных страниц у сертификатов нет — весь каталог на витрине.
+        'services.gift-certificates',
     ];
 
     /**

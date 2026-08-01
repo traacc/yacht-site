@@ -7,6 +7,7 @@ namespace App\Enums;
 use App\Contracts\ServiceOptionProvider;
 use App\Contracts\ServiceSubject;
 use App\Models\ForeignRegatta;
+use App\Models\GiftCertificate;
 use App\Models\Tour;
 use App\Support\Plural;
 use Illuminate\Database\Eloquent\Model;
@@ -19,9 +20,8 @@ use Illuminate\Database\Eloquent\Model;
  * лендинга. Так же, как AdvertType описывает доски объявлений — одна модель
  * ServiceRequest на все подразделы, разница только в типе.
  *
- * GiftCertificate заведён заранее: страницы и формы у него пока нет
- * (isPublished/acceptsRequests → false), но модель, админка и письма его уже
- * поддержат.
+ * YachtRental — единственный подраздел без общей формы: у аренды яхт свой,
+ * ранее сделанный поток YachtRentalRequest, завязанный на календарь занятости.
  */
 enum ServiceType: string
 {
@@ -88,7 +88,7 @@ enum ServiceType: string
             self::Training => 'services.training',
             self::Tour => 'services.tours',
             self::ForeignRegatta => 'services.foreign-regattas',
-            self::GiftCertificate => null,
+            self::GiftCertificate => 'services.gift-certificates',
         };
     }
 
@@ -114,7 +114,8 @@ enum ServiceType: string
     public function acceptsRequests(): bool
     {
         return match ($this) {
-            self::FleetRental, self::Event, self::Training, self::Tour, self::ForeignRegatta => true,
+            self::FleetRental, self::Event, self::Training,
+            self::Tour, self::ForeignRegatta, self::GiftCertificate => true,
             default => false,
         };
     }
@@ -133,7 +134,7 @@ enum ServiceType: string
         return match ($this) {
             self::Tour => Tour::class,
             self::ForeignRegatta => ForeignRegatta::class,
-            // Сертификаты — следующая итерация.
+            self::GiftCertificate => GiftCertificate::class,
             default => null,
         };
     }
@@ -179,10 +180,15 @@ enum ServiceType: string
         };
     }
 
-    /** По ТЗ форма обучения обязательно собирает ФИО, телефон и email. */
+    /**
+     * По ТЗ форма обучения обязательно собирает ФИО, телефон и email.
+     *
+     * Сертификат тоже: электронный бланк отправляют на почту, без неё заказ
+     * нечем исполнить.
+     */
     public function requiresEmail(): bool
     {
-        return $this === self::Training;
+        return $this === self::Training || $this === self::GiftCertificate;
     }
 
     /** Префикс ключей SettingsService для лендинга подраздела. */
@@ -394,8 +400,39 @@ enum ServiceType: string
                 ],
             ],
 
-            // Подразделы следующей итерации: поля появятся вместе со страницами.
-            self::YachtRental, self::GiftCertificate => [],
+            self::GiftCertificate => [
+                // Варианты номинала приходят от самого сертификата: у него свои
+                // границы и шаг. У сертификата с фиксированной ценой вариантов
+                // нет — и поле само пропадает из формы (@see formFields()).
+                'nominal' => [
+                    'label' => 'Номинал сертификата',
+                    'type' => 'select',
+                    'required' => true,
+                    'options' => [],
+                ],
+                'delivery' => [
+                    'label' => 'Как передать сертификат',
+                    'type' => 'select',
+                    'required' => true,
+                    'options' => [
+                        'email' => 'Электронный — PDF на почту',
+                        'printed' => 'Печатный бланк — забрать в офисе',
+                    ],
+                ],
+                'recipient_name' => [
+                    'label' => 'Имя получателя',
+                    'type' => 'text',
+                    'placeholder' => 'Кому вручается, необязательно',
+                ],
+                'greeting' => [
+                    'label' => 'Пожелание на сертификате',
+                    'type' => 'textarea',
+                    'placeholder' => 'Необязательно',
+                ],
+            ],
+
+            // У аренды яхт свой поток заявок — общей формы у неё нет.
+            self::YachtRental => [],
         };
     }
 

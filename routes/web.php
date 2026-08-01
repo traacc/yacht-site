@@ -31,6 +31,7 @@ use App\Models\Advert;
 use App\Models\Faq;
 use App\Models\ForeignRegatta;
 use App\Models\Gallery;
+use App\Models\GiftCertificate;
 use App\Models\News;
 use App\Models\PaymentTransaction;
 use App\Models\PersonalRating;
@@ -493,6 +494,18 @@ Route::get('/services/foreign-regattas/{regatta}', function (ForeignRegatta $reg
             ->get(),
     ]);
 })->name('services.foreign-regatta-item');
+
+Route::get('/services/gift-certificates', function () use ($servicePage) {
+    $settings = app(SettingsService::class);
+
+    return view('pages.services.gift-certificates', $servicePage(ServiceType::GiftCertificate, [
+        // Отдельных страниц у сертификатов нет: каталог целиком на витрине.
+        'certificates' => GiftCertificate::published()->ordered()->with('media')->get(),
+        'steps' => (array) $settings->get('services.gift_certificate.steps', []),
+        'note' => $settings->get('services.gift_certificate.note', ''),
+        'gallery' => (array) $settings->get('services.gift_certificate.gallery', []),
+    ]));
+})->name('services.gift-certificates');
 
 /** Заявка на услугу: одна форма на все подразделы, поля задаёт ServiceType. */
 Route::post('/services/{type}/request', function (ServiceType $type, Request $request) {

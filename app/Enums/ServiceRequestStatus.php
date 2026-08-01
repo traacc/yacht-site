@@ -8,13 +8,20 @@ namespace App\Enums;
  * Состояние заявки на услугу.
  *
  * Отдельный статус, а не булев `processed_at`: подарочные сертификаты (ТЗ 3-го
- * этапа, п. 7) требуют состояний «оплачен» и «услуга оказана» — они добавятся
- * сюда кейсом, без ENUM-миграции (колонка в БД — `string(32)`).
+ * этапа, п. 7) требуют состояний «оплачен» и «услуга оказана». Колонка в БД —
+ * `string(32)`, поэтому новый кейс не требует ENUM-миграции.
+ *
+ * Два закрывающих «успешных» статуса не дублируют друг друга: «Услуга оказана»
+ * закрывает заявку, прошедшую через оплату (заказ сертификата), «Выполнена» —
+ * заявку без оплаты (подбор флота, обучение). Оплату пока отмечает менеджер
+ * вручную: эквайринг ещё не подключён (ТЗ п. 4.1).
  */
 enum ServiceRequestStatus: string
 {
     case New = 'new';
     case InProgress = 'in_progress';
+    case Paid = 'paid';
+    case Fulfilled = 'fulfilled';
     case Done = 'done';
     case Rejected = 'rejected';
 
@@ -23,6 +30,8 @@ enum ServiceRequestStatus: string
         return match ($this) {
             self::New => 'Новая',
             self::InProgress => 'В работе',
+            self::Paid => 'Оплачена',
+            self::Fulfilled => 'Услуга оказана',
             self::Done => 'Выполнена',
             self::Rejected => 'Отклонена',
         };
@@ -33,7 +42,8 @@ enum ServiceRequestStatus: string
         return match ($this) {
             self::New => 'warning',
             self::InProgress => 'info',
-            self::Done => 'success',
+            self::Paid => 'primary',
+            self::Fulfilled, self::Done => 'success',
             self::Rejected => 'danger',
         };
     }
@@ -41,7 +51,10 @@ enum ServiceRequestStatus: string
     /** Закрыта ли заявка: для таких проставлены processed_at / processed_by. */
     public function isClosed(): bool
     {
-        return $this === self::Done || $this === self::Rejected;
+        return match ($this) {
+            self::Fulfilled, self::Done, self::Rejected => true,
+            default => false,
+        };
     }
 
     /** @return array<string, string> value => label, для Select и фильтров. */

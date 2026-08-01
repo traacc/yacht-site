@@ -105,6 +105,13 @@ class ServicesPageSettings extends Page
             'foreign_included' => (array) $settings->get('services.foreign_regatta.included', []),
             'foreign_note' => $settings->get('services.foreign_regatta.note', ''),
             'foreign_gallery' => $this->galleryState($settings->get('services.foreign_regatta.gallery', [])),
+
+            // Подарочные сертификаты
+            'certificates_intro' => $settings->get('services.gift_certificate.intro', ''),
+            'certificates_hero_image' => $this->fileState($settings->get('services.gift_certificate.hero_image')),
+            'certificates_steps' => (array) $settings->get('services.gift_certificate.steps', []),
+            'certificates_note' => $settings->get('services.gift_certificate.note', ''),
+            'certificates_gallery' => $this->galleryState($settings->get('services.gift_certificate.gallery', [])),
         ]);
     }
 
@@ -146,6 +153,9 @@ class ServicesPageSettings extends Page
 
                         Tabs\Tab::make('Регаты за рубежом')
                             ->schema($this->foreignRegattaFields()),
+
+                        Tabs\Tab::make('Сертификаты')
+                            ->schema($this->giftCertificateFields()),
                     ]),
             ]);
     }
@@ -550,6 +560,63 @@ class ServicesPageSettings extends Page
         ];
     }
 
+    /** @return list<Component> */
+    private function giftCertificateFields(): array
+    {
+        return [
+            Section::make('Описание подраздела')
+                ->description('Сами сертификаты добавляются в разделе «Услуги: Подарочные сертификаты» — здесь только обрамление страницы.')
+                ->schema([
+                    $this->heroImage('certificates_hero_image', 'services/gift-certificates'),
+
+                    RichEditor::make('certificates_intro')
+                        ->label('Вводный текст')
+                        ->fileAttachmentsDisk('public')
+                        ->fileAttachmentsDirectory('services/gift-certificates')
+                        ->fileAttachmentsVisibility('public')
+                        ->fileAttachmentsMaxSize(5120)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('Как это работает')
+                ->description('Шаги от заказа до вручения сертификата — общие для всего каталога.')
+                ->schema([
+                    Repeater::make('certificates_steps')
+                        ->label('Шаги')
+                        ->addActionLabel('Добавить шаг')
+                        ->reorderable()
+                        ->collapsible()
+                        ->defaultItems(0)
+                        ->itemLabel(fn (array $state): ?string => $state['title'] ?? null)
+                        ->schema([
+                            TextInput::make('title')
+                                ->label('Заголовок')
+                                ->placeholder('Например: Выбираете сертификат и номинал')
+                                ->required()
+                                ->maxLength(255)
+                                ->rules(['required', 'string', 'max:255']),
+                            Textarea::make('text')
+                                ->label('Текст')
+                                ->rows(2)
+                                ->maxLength(500)
+                                ->rules(['nullable', 'string', 'max:500']),
+                        ]),
+
+                    Textarea::make('certificates_note')
+                        ->label('Примечание под шагами')
+                        ->placeholder('Например: дату выхода получатель согласует с нами заранее.')
+                        ->rows(2)
+                        ->maxLength(500)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('Галерея')
+                ->schema([
+                    $this->gallery('certificates_gallery', 'services/gift-certificates/gallery'),
+                ]),
+        ];
+    }
+
     // ──────────────────────────────────────────────
     // Общие поля
     // ──────────────────────────────────────────────
@@ -747,6 +814,13 @@ class ServicesPageSettings extends Page
             'services.foreign_regatta.included' => $this->repeaterValue($data['foreign_included'] ?? [], ['title', 'text']),
             'services.foreign_regatta.note' => trim((string) ($data['foreign_note'] ?? '')),
             'services.foreign_regatta.gallery' => $this->galleryValue($data['foreign_gallery'] ?? []),
+
+            // Подарочные сертификаты
+            'services.gift_certificate.intro' => $data['certificates_intro'] ?? '',
+            'services.gift_certificate.hero_image' => $this->fileValue($data['certificates_hero_image'] ?? null),
+            'services.gift_certificate.steps' => $this->repeaterValue($data['certificates_steps'] ?? [], ['title', 'text']),
+            'services.gift_certificate.note' => trim((string) ($data['certificates_note'] ?? '')),
+            'services.gift_certificate.gallery' => $this->galleryValue($data['certificates_gallery'] ?? []),
         ], self::GROUP);
 
         $settings->forgetGroup(self::GROUP);

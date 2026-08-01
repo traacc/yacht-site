@@ -217,11 +217,61 @@ class ServiceRequestResource extends Resource
                             ->send();
                     }),
 
+                Action::make('pay')
+                    ->label('Оплачена')
+                    ->icon('heroicon-o-banknotes')
+                    ->color('primary')
+                    // Оплату отмечает менеджер: эквайринг ещё не подключён (ТЗ п. 4.1).
+                    ->visible(fn (ServiceRequest $record): bool => in_array(
+                        $record->status,
+                        [ServiceRequestStatus::New, ServiceRequestStatus::InProgress],
+                        strict: true,
+                    ))
+                    ->requiresConfirmation()
+                    ->modalHeading('Отметить заявку оплаченной?')
+                    ->action(function (ServiceRequest $record): void {
+                        $record->update(['status' => ServiceRequestStatus::Paid]);
+
+                        Notification::make()
+                            ->success()
+                            ->title('Заявка отмечена оплаченной')
+                            ->send();
+                    }),
+
+                Action::make('fulfil')
+                    ->label('Услуга оказана')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    // Закрывающий статус оплаченной заявки — для неоплаченных
+                    // ту же роль играет «Выполнена».
+                    ->visible(fn (ServiceRequest $record): bool => $record->status === ServiceRequestStatus::Paid)
+                    ->schema([
+                        Textarea::make('admin_comment')
+                            ->label('Комментарий')
+                            ->placeholder('Что сделано по заявке')
+                            ->rows(3)
+                            ->maxLength(2000),
+                    ])
+                    ->action(function (ServiceRequest $record, array $data): void {
+                        $record->update([
+                            'status' => ServiceRequestStatus::Fulfilled,
+                            'admin_comment' => $data['admin_comment'] ?? $record->admin_comment,
+                            'processed_at' => now(),
+                            'processed_by' => auth()->id(),
+                        ]);
+
+                        Notification::make()
+                            ->success()
+                            ->title('Заявка закрыта: услуга оказана')
+                            ->send();
+                    }),
+
                 Action::make('complete')
                     ->label('Выполнена')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn (ServiceRequest $record): bool => ! $record->status->isClosed())
+                    ->visible(fn (ServiceRequest $record): bool => ! $record->status->isClosed()
+                        && $record->status !== ServiceRequestStatus::Paid)
                     ->schema([
                         Textarea::make('admin_comment')
                             ->label('Комментарий')

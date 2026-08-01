@@ -12,7 +12,7 @@ namespace App\Contracts;
  * (@see \App\Services\ServiceSubjectResolver). Класс модели берётся из
  * ServiceType::subjectModel(), а не из запроса.
  *
- * Сейчас реализует только Tour; следом — зарубежные регаты и сертификаты.
+ * Реализуют Tour, ForeignRegatta и GiftCertificate.
  */
 interface ServiceSubject
 {
