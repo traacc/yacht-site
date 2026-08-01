@@ -7,9 +7,11 @@ namespace App\Filament\RichEditor\CustomBlocks;
 use App\Support\VideoEmbed;
 use Closure;
 use Filament\Actions\Action;
-use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
+use Filament\Forms\Components\RichEditor\Actions\CustomBlockAction;
+use Filament\Forms\Components\RichEditor\RichEditorTool;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Support\Icons\Heroicon;
 
 /**
  * Блок «Видео» для RichEditor — плеер YouTube / VK / Rutube / Vimeo внутри текста.
@@ -20,7 +22,7 @@ use Filament\Forms\Components\TextInput;
  * Внимание: <iframe> проходит через Str::sanitizeHtml() и вырезался бы целиком —
  * элемент разрешён точечно в AppServiceProvider::register().
  */
-class VideoBlock extends RichContentCustomBlock
+class VideoBlock extends ContentBlock
 {
     public static function getId(): string
     {
@@ -30,6 +32,20 @@ class VideoBlock extends RichContentCustomBlock
     public static function getLabel(): string
     {
         return 'Видео';
+    }
+
+    /**
+     * Отдельная кнопка тулбара вместо выпадающей панели «Блоки».
+     *
+     * @see GalleryBlock::editorTool()
+     */
+    public static function editorTool(): RichEditorTool
+    {
+        return RichEditorTool::make(static::getId())
+            ->label(static::getLabel())
+            ->icon(Heroicon::OutlinedVideoCamera)
+            ->activeStyling(false)
+            ->action(action: CustomBlockAction::NAME, arguments: "{ id: '".static::getId()."', mode: 'insert' }");
     }
 
     public static function configureEditorAction(Action $action): Action

@@ -7,9 +7,11 @@ namespace App\Filament\RichEditor\CustomBlocks;
 use App\Services\ImageConverter;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
+use Filament\Forms\Components\RichEditor\Actions\CustomBlockAction;
+use Filament\Forms\Components\RichEditor\RichEditorTool;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
@@ -21,7 +23,7 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
  * санитайзер. Лайтбокс навешивается на классы .rich-gallery__link уровнем выше —
  * в компоненте <x-rich-content>.
  */
-class GalleryBlock extends RichContentCustomBlock
+class GalleryBlock extends ContentBlock
 {
     /** Каталог на диске public, куда складываются изображения блока. */
     public const DIRECTORY = 'news/inline-gallery';
@@ -44,6 +46,23 @@ class GalleryBlock extends RichContentCustomBlock
     public static function getLabel(): string
     {
         return 'Галерея';
+    }
+
+    /**
+     * Отдельная кнопка тулбара вместо выпадающей панели «Блоки».
+     *
+     * Аргументы уходят в CustomBlockAction как есть — это JS-литерал,
+     * который подставляется в $wire.mountAction('customBlock', {…}).
+     */
+    public static function editorTool(): RichEditorTool
+    {
+        return RichEditorTool::make(static::getId())
+            ->label(static::getLabel())
+            ->icon(Heroicon::OutlinedPhoto)
+            // Нода в документе называется customBlock, а не gallery: подсветка
+            // «активной» кнопки всё равно никогда не сработает, поэтому выключаем.
+            ->activeStyling(false)
+            ->action(action: CustomBlockAction::NAME, arguments: "{ id: '".static::getId()."', mode: 'insert' }");
     }
 
     public static function configureEditorAction(Action $action): Action

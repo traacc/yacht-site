@@ -74,6 +74,9 @@ class NewsResource extends Resource
                     ->fileAttachmentsVisibility('public')
                     // Список должен совпадать с App\Support\RichContent::BLOCKS.
                     ->customBlocks(RichContent::BLOCKS)
+                    // Блоки вставляются прямыми кнопками тулбара, а не панелью «Блоки».
+                    ->tools(RichContent::editorTools())
+                    ->toolbarButtons(RichContent::toolbarButtons())
                     ->columnSpanFull(),
                 FileUpload::make('cover_image_url')
                     ->label('Обложка')
