@@ -32,6 +32,7 @@ use Illuminate\Support\ServiceProvider;
 use League\Flysystem\UnableToCheckFileExistence;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Spatie\MediaLibrary\MediaCollections\FileAdder;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -45,6 +46,31 @@ class AppServiceProvider extends ServiceProvider
 
         // Синглтон ради мемоизации: via() дёргает резолвер на каждого получателя рассылки.
         $this->app->singleton(NotificationPreferences::class);
+
+        // Блок «Видео» в RichEditor отдаёт <iframe>, а санитайзер Filament
+        // (Str::sanitizeHtml → HtmlSanitizerConfig) вырезает его целиком: iframe не входит
+        // в allowSafeElements(). Разрешаем с минимальным набором атрибутов; адрес плеера
+        // строит VideoEmbed по списку известных платформ, произвольный src туда не попадёт.
+        //
+        // class/style перечислены явно: Filament раздаёт их через allowAttribute('*'),
+        // а '*' раскрывается по элементам, разрешённым на момент вызова — iframe в тот
+        // список ещё не входил.
+        $this->app->extend(
+            HtmlSanitizerConfig::class,
+            fn (HtmlSanitizerConfig $config): HtmlSanitizerConfig => $config->allowElement('iframe', [
+                'src',
+                'title',
+                'class',
+                'style',
+                'width',
+                'height',
+                'loading',
+                'allow',
+                'allowfullscreen',
+                'frameborder',
+                'referrerpolicy',
+            ]),
+        );
     }
 
     /**

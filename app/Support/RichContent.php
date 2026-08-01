@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Filament\RichEditor\CustomBlocks\GalleryBlock;
+use App\Filament\RichEditor\CustomBlocks\VideoBlock;
 use Filament\Forms\Components\RichEditor\RichContentCustomBlock;
 use Filament\Forms\Components\RichEditor\RichContentRenderer;
 
@@ -28,6 +29,7 @@ class RichContent
      */
     public const BLOCKS = [
         GalleryBlock::class,
+        VideoBlock::class,
     ];
 
     public static function render(?string $content): string
