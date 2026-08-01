@@ -14,9 +14,7 @@
                     </div>
                 @endif
 
-                <div class="text prose max-w-none space-y-4 text-lg">
-                    {!! $news->content !!}
-                </div>
+                <x-rich-content :content="$news->content" />
 
                 {{-- Галерея новости — изображения из медиа-коллекции 'gallery' --}}
                 @php

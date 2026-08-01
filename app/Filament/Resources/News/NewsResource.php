@@ -9,6 +9,7 @@ use App\Jobs\PublishNewsToVk;
 use App\Models\News;
 use App\Services\TelegramService;
 use App\Services\VkService;
+use App\Support\RichContent;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -66,6 +67,13 @@ class NewsResource extends Resource
                     ->label('Содержание')
                     ->placeholder('Введите текст новости')
                     ->required()
+                    // Диск задаём явно: FILESYSTEM_DISK=local, а картинки из текста
+                    // должны лежать там же, откуда их отдаёт публичная страница.
+                    ->fileAttachmentsDisk('public')
+                    ->fileAttachmentsDirectory('news/inline')
+                    ->fileAttachmentsVisibility('public')
+                    // Список должен совпадать с App\Support\RichContent::BLOCKS.
+                    ->customBlocks(RichContent::BLOCKS)
                     ->columnSpanFull(),
                 FileUpload::make('cover_image_url')
                     ->label('Обложка')
