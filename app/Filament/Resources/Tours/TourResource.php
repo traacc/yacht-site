@@ -79,6 +79,10 @@ class TourResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema
+            // ManageRecords открывает форму в модалке и по умолчанию даёт схеме
+            // две колонки — секции вставали бы по две в ряд. Одна колонка на
+            // верхнем уровне = каждая секция во всю ширину.
+            ->columns(1)
             ->components([
                 Section::make('Основное')
                     ->schema([
