@@ -1,25 +1,25 @@
 {{--
     Витрина доски объявлений — одна на все доски (@see App\Enums\AdvertType).
     Фильтры серверные: форма шлёт GET, параметры переживают пагинацию
-    благодаря withQueryString() в App\Services\AdvertBoard.
+    благодаря withQueryString() в App\Services\AdvertBoard. Состав фильтров
+    задаёт сама доска — лишние селекты не рендерятся.
 
-    Ожидает: $type, $adverts, $categories, $cities, $filters.
+    Ожидает: $type, $adverts, $categories, $cities, $regattas, $kindCounts, $filters.
 --}}
+@php
+    $activeKind = $filters['kind'] ?? '';
+@endphp
 <x-public-layout
-    :title="$type->pluralLabel() . ' — Carter 30'"
-    :description="$type === \App\Enums\AdvertType::Marketplace
-        ? 'Объявления о продаже яхтенного оборудования, парусов, такелажа и снаряжения от участников Ассоциации Carter 30'
-        : 'Продажа яхт класса Carter 30: объявления от владельцев с фотографиями и контактами'">
+    :title="$type->pluralLabel()"
+    :description="$type->metaDescription()">
 
 <x-breadcrumbs_page :title="$type->pluralLabel()">
 </x-breadcrumbs_page>
 
 <x-hero-section
     :title="$type->pluralLabel()"
-    :desc="$type === \App\Enums\AdvertType::Marketplace
-        ? 'Оборудование, паруса, такелаж и всё, что нужно на воде — от участников Ассоциации.'
-        : 'Яхты класса Carter 30, выставленные на продажу владельцами.'"
-    bgImage="{{ asset('images/bg/regulations.webp') }}"
+    :desc="$type->heroDescription()"
+    bgImage="{{ asset($type->heroImage()) }}"
 >
 
 </x-hero-section>
@@ -37,18 +37,42 @@
                 <button type="button"
                         @click.prevent="$dispatch('open-login-modal', { tab: 'register' })"
                         class="bg-[#2D92CE] text-white py-3 px-8 hover:bg-[#0074CC] transition-colors md:text-lg text-sm font-semibold">
-                    Разместить объявление →
+                    {{ $type->submitButtonLabel() }} →
                 </button>
             @else
                 <a href="{{ url('/user/adverts') }}"
                    class="bg-[#2D92CE] text-white py-3 px-8 hover:bg-[#0074CC] transition-colors md:text-lg text-sm font-semibold text-center">
-                    Разместить объявление →
+                    {{ $type->submitButtonLabel() }} →
                 </a>
             @endguest
         </div>
 
+        {{-- Предложения / запросы: только у досок с дуальностью --}}
+        @if ($kindCounts !== [])
+            <div class="flex flex-wrap gap-2 mb-6">
+                @php($kindTabs = ['' => 'Все'] + collect($type->kinds())->mapWithKeys(fn ($kind) => [$kind->value => $type->kindLabel($kind)])->all())
+                @foreach ($kindTabs as $value => $label)
+                    <a href="{{ request()->fullUrlWithQuery(['kind' => $value ?: null, 'page' => null]) }}"
+                       class="px-5 py-2 text-sm md:text-base font-semibold border transition-colors
+                              {{ $activeKind === $value
+                                  ? 'bg-[#2D92CE] text-white border-[#2D92CE]'
+                                  : 'bg-white text-[#2D92CE] border-[#C6C6C6] hover:border-[#2D92CE]' }}">
+                        {{ $label }}
+                        @if ($value !== '')
+                            <span class="opacity-70">({{ $kindCounts[$value] ?? 0 }})</span>
+                        @endif
+                    </a>
+                @endforeach
+            </div>
+        @endif
+
         {{-- Фильтры --}}
         <form method="GET" action="{{ url()->current() }}" class="bg-[#F8F8F8] p-4 mb-8">
+            {{-- Выбранный вид живёт в табах, но должен пережить отправку формы. --}}
+            @if ($activeKind !== '')
+                <input type="hidden" name="kind" value="{{ $activeKind }}">
+            @endif
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <input type="text" name="q" value="{{ $filters['q'] ?? '' }}"
                        placeholder="Поиск по объявлениям"
@@ -70,6 +94,35 @@
                         <option value="">Все города</option>
                         @foreach ($cities as $city)
                             <option value="{{ $city }}" @selected(($filters['city'] ?? '') === $city)>{{ $city }}</option>
+                        @endforeach
+                    </select>
+                @endif
+
+                @if ($type->usesPosition())
+                    <select name="position" class="border border-[#C6C6C6] p-3 text-sm md:text-base w-full">
+                        <option value="">Любая позиция</option>
+                        @foreach (\App\Enums\AdvertPosition::options() as $value => $label)
+                            <option value="{{ $value }}" @selected(($filters['position'] ?? '') === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                @endif
+
+                @if ($type->usesSportCategory())
+                    <select name="sport_category" class="border border-[#C6C6C6] p-3 text-sm md:text-base w-full">
+                        <option value="">Любой разряд</option>
+                        @foreach (\App\Enums\SportCategory::cases() as $case)
+                            <option value="{{ $case->value }}" @selected(($filters['sport_category'] ?? '') === $case->value)>{{ $case->getLabel() }}</option>
+                        @endforeach
+                    </select>
+                @endif
+
+                @if ($regattas->isNotEmpty())
+                    <select name="regatta" class="border border-[#C6C6C6] p-3 text-sm md:text-base w-full">
+                        <option value="">Все регаты</option>
+                        @foreach ($regattas as $regatta)
+                            <option value="{{ $regatta->id }}" @selected(($filters['regatta'] ?? '') === $regatta->id)>
+                                {{ $regatta->name }}
+                            </option>
                         @endforeach
                     </select>
                 @endif

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -228,6 +229,12 @@ class Regatta extends Model
     public function postponedToRegatta(): BelongsTo
     {
         return $this->belongsTo(self::class, 'postponed_to_regatta_id');
+    }
+
+    /** Объявления бирж, поданные на эту регату (@see Advert) */
+    public function adverts(): BelongsToMany
+    {
+        return $this->belongsToMany(Advert::class);
     }
 
     // ──────────────────────────────────────────────

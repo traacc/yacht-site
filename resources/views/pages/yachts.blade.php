@@ -80,7 +80,17 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
             this.rentalLoading = false;
         }
     }
-}" class="main">
+}"
+x-init="
+    // Deep-link из объявлений биржи «Яхты для соревнований»: отдельной публичной
+    // страницы у яхты нет, карточка живёт модалкой на этой странице.
+    // Если яхта не попала в текущую выборку каталога, просто остаёмся на списке.
+    const requestedYacht = new URLSearchParams(window.location.search).get('yacht');
+    if (requestedYacht) {
+        const yacht = yachtsData.find(item => item.id === requestedYacht);
+        if (yacht) openYachtModal(yacht);
+    }
+" class="main">
     <section class="md:py-12 py-4 reggata-list">
         <div class="container mx-auto">
             <div class="flex items-center flex-col md:flex-row justify-between mb-6">

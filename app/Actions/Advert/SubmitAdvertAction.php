@@ -30,7 +30,7 @@ class SubmitAdvertAction
 
     public function handle(Advert $advert): Advert
     {
-        $advert->loadMissing(['author', 'category', 'yacht']);
+        $advert->loadMissing(['author', 'category', 'yacht', 'regattas']);
 
         $this->mailModerators($advert);
         $this->notifyPanel($advert);

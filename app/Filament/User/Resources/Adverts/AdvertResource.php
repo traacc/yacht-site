@@ -4,16 +4,22 @@ declare(strict_types=1);
 
 namespace App\Filament\User\Resources\Adverts;
 
+use App\Enums\AdvertKind;
+use App\Enums\AdvertPosition;
+use App\Enums\AdvertPriceUnit;
 use App\Enums\AdvertStatus;
 use App\Enums\AdvertType;
+use App\Enums\SportCategory;
 use App\Filament\User\Resources\Adverts\Pages\ManageAdverts;
 use App\Models\Advert;
 use App\Models\AdvertCategory;
+use App\Models\Regatta;
 use App\Models\Yacht;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
@@ -82,6 +88,14 @@ class AdvertResource extends Resource
                         // созданного объявления его не меняем.
                         ->disabledOn('edit'),
 
+                    Select::make('kind')
+                        ->label('Вид объявления')
+                        ->options(fn (Get $get): array => static::typeFrom($get('type'))?->kindOptions() ?? [])
+                        ->required()
+                        // Живое поле: у биржи парусов от вида зависит лимит фото.
+                        ->live()
+                        ->visible(fn (Get $get): bool => (static::typeFrom($get('type'))?->kinds() ?? []) !== []),
+
                     Select::make('advert_category_id')
                         ->label('Категория')
                         ->options(fn (Get $get): array => static::categoryOptions($get('type')))
@@ -90,18 +104,37 @@ class AdvertResource extends Resource
                         ->required()
                         ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->usesCategories() ?? false),
 
+                    Select::make('position')
+                        ->label('Позиция')
+                        ->options(AdvertPosition::options())
+                        ->required()
+                        ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->usesPosition() ?? false),
+
+                    Select::make('sport_category')
+                        ->label('Спортивный разряд')
+                        ->options(SportCategory::class)
+                        ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->usesSportCategory() ?? false),
+
                     Select::make('yacht_id')
                         ->label('Яхта')
-                        ->helperText('Выберите одну из своих зарегистрированных яхт.')
-                        ->options(fn (): array => Yacht::query()
-                            ->where('user_id', auth()->id())
-                            ->orderBy('name')
-                            ->pluck('name', 'id')
-                            ->all())
+                        ->helperText(fn (Get $get): string => (static::typeFrom($get('type'))?->usesYacht() ?? false)
+                            ? 'Выберите одну из своих зарегистрированных яхт.'
+                            : 'Необязательно: яхта из реестра Ассоциации.')
+                        ->options(fn (Get $get): array => static::yachtOptions($get('type')))
                         ->searchable()
                         ->preload()
-                        ->required()
-                        ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->usesYacht() ?? false),
+                        ->required(fn (Get $get): bool => static::typeFrom($get('type'))?->usesYacht() ?? false)
+                        ->visible(function (Get $get): bool {
+                            $type = static::typeFrom($get('type'));
+
+                            return ($type?->usesYacht() ?? false) || ($type?->usesYachtReference() ?? false);
+                        }),
+
+                    TextInput::make('yacht_name')
+                        ->label('Яхта не из реестра')
+                        ->helperText('Заполните, если нужной лодки нет в списке выше.')
+                        ->maxLength(255)
+                        ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->usesYachtReference() ?? false),
 
                     TextInput::make('title')
                         ->label('Заголовок')
@@ -111,17 +144,54 @@ class AdvertResource extends Resource
                         ->columnSpanFull(),
 
                     Textarea::make('description')
-                        ->label('Описание')
+                        ->label(fn (Get $get): string => static::typeFrom($get('type'))?->descriptionLabel() ?? 'Описание')
                         ->placeholder('Опишите товар: состояние, комплектность, причину продажи')
                         ->required()
                         ->rows(6)
                         ->maxLength(5000)
+                        ->columnSpanFull(),
+
+                    Textarea::make('details')
+                        ->label(fn (Get $get): string => static::typeFrom($get('type'))?->detailsLabel() ?? 'Подробности')
+                        ->required()
+                        ->rows(4)
+                        ->maxLength(5000)
+                        ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->detailsLabel() !== null)
+                        ->columnSpanFull(),
+
+                    Select::make('regattas')
+                        ->label('Регаты')
+                        ->helperText('Соревнования, на которые вы ищете экипаж.')
+                        ->multiple()
+                        ->relationship('regattas', 'name')
+                        // Только предстоящие и идущие: искать экипаж на
+                        // завершённую или отменённую регату смысла нет.
+                        ->options(fn (): array => Regatta::activeAndClosest()
+                            ->get()
+                            ->mapWithKeys(fn (Regatta $regatta): array => [
+                                $regatta->id => $regatta->name.' • '.($regatta->date_start?->format('d.m.Y') ?? '—'),
+                            ])
+                            ->all())
+                        ->searchable()
+                        ->preload()
+                        ->required()
+                        ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->usesRegattas() ?? false)
                         ->columnSpanFull(),
                 ])
                 ->columns(2),
 
             Section::make('Цена и местонахождение')
                 ->schema([
+                    Select::make('price_unit')
+                        ->label('Единица цены')
+                        ->options(fn (Get $get): array => collect(static::typeFrom($get('type'))?->priceUnits() ?? [])
+                            ->mapWithKeys(fn (AdvertPriceUnit $unit): array => [$unit->value => $unit->label()])
+                            ->all())
+                        ->required()
+                        // Живое поле: залог показываем только при аренде.
+                        ->live()
+                        ->visible(fn (Get $get): bool => (static::typeFrom($get('type'))?->priceUnits() ?? []) !== []),
+
                     TextInput::make('price')
                         ->label('Цена, ₽')
                         ->numeric()
@@ -136,6 +206,34 @@ class AdvertResource extends Resource
                         ->label('Цена договорная')
                         ->live()
                         ->default(false),
+
+                    TextInput::make('deposit')
+                        ->label('Залог, ₽')
+                        ->helperText('Возвращается после возврата паруса.')
+                        ->numeric()
+                        ->minValue(0)
+                        ->maxValue(999999999)
+                        ->visible(function (Get $get): bool {
+                            if (! (static::typeFrom($get('type'))?->usesDeposit() ?? false)) {
+                                return false;
+                            }
+
+                            return static::priceUnitFrom($get('price_unit'))?->isRental() ?? false;
+                        }),
+
+                    DatePicker::make('date_from')
+                        ->label('Свободен с')
+                        ->native(false)
+                        ->displayFormat('d.m.Y')
+                        ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->usesDates() ?? false),
+
+                    DatePicker::make('date_to')
+                        ->label('Свободен по')
+                        ->native(false)
+                        ->displayFormat('d.m.Y')
+                        ->afterOrEqual('date_from')
+                        ->validationMessages(['after_or_equal' => 'Дата окончания не может быть раньше начала.'])
+                        ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->usesDates() ?? false),
 
                     TextInput::make('city')
                         ->label('Город')
@@ -186,7 +284,11 @@ class AdvertResource extends Resource
                         ->disk('public')
                         ->visibility('public')
                         ->maxSize(10240)
-                        ->maxFiles(fn (Get $get): int => static::typeFrom($get('type'))?->maxPhotos() ?? 10)
+                        // У парусов лимит зависит от вида: предложение 10, запрос 5.
+                        ->maxFiles(fn (Get $get): int => static::typeFrom($get('type'))
+                            ?->maxPhotos(static::kindFrom($get('kind'))) ?? 10)
+                        ->helperText(fn (Get $get): string => 'Не более '.(static::typeFrom($get('type'))
+                            ?->maxPhotos(static::kindFrom($get('kind'))) ?? 10).' фотографий.')
                         ->panelLayout('grid')
                         ->columnSpanFull(),
                 ]),
@@ -343,11 +445,60 @@ class AdvertResource extends Resource
     /** Состояние Select'а приходит строкой, а на edit — уже enum'ом. */
     private static function typeFrom(mixed $state): ?AdvertType
     {
-        if ($state instanceof AdvertType) {
+        return static::enumFrom($state, AdvertType::class);
+    }
+
+    private static function kindFrom(mixed $state): ?AdvertKind
+    {
+        return static::enumFrom($state, AdvertKind::class);
+    }
+
+    private static function priceUnitFrom(mixed $state): ?AdvertPriceUnit
+    {
+        return static::enumFrom($state, AdvertPriceUnit::class);
+    }
+
+    /**
+     * @template T of \BackedEnum
+     *
+     * @param  class-string<T>  $enum
+     * @return T|null
+     */
+    private static function enumFrom(mixed $state, string $enum)
+    {
+        if ($state instanceof $enum) {
             return $state;
         }
 
-        return is_string($state) ? AdvertType::tryFrom($state) : null;
+        return is_string($state) ? $enum::tryFrom($state) : null;
+    }
+
+    /**
+     * Список яхт для поля «Яхта».
+     *
+     * Доски «Продать яхту» и «Яхты для соревнований» требуют свою яхту, биржи
+     * шкиперов и экипажей — любую из реестра (лодка чужая, объявление лишь
+     * ссылается на неё).
+     *
+     * @return array<string, string>
+     */
+    private static function yachtOptions(mixed $type): array
+    {
+        $type = static::typeFrom($type);
+
+        if ($type === null) {
+            return [];
+        }
+
+        $query = Yacht::query()->orderBy('name');
+
+        if ($type->usesYacht()) {
+            $query->where('user_id', auth()->id());
+        } else {
+            $query->where('approval_status', 'approved');
+        }
+
+        return $query->pluck('name', 'id')->all();
     }
 
     public static function getEloquentQuery(): Builder

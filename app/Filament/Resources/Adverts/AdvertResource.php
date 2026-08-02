@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Adverts;
 
 use App\Actions\Advert\ModerateAdvertAction;
+use App\Enums\AdvertKind;
 use App\Enums\AdvertStatus;
 use App\Enums\AdvertType;
 use App\Filament\Concerns\RestrictsAccessByRole;
@@ -93,15 +94,46 @@ class AdvertResource extends Resource
             TextEntry::make('description')
                 ->label('Описание')
                 ->columnSpanFull(),
+            TextEntry::make('details')
+                ->label(fn (Advert $record): string => $record->type->detailsLabel() ?? 'Подробности')
+                ->visible(fn (Advert $record): bool => filled($record->details))
+                ->columnSpanFull(),
+            TextEntry::make('kind')
+                ->label('Вид')
+                ->badge()
+                ->state(fn (Advert $record): ?string => $record->kindLabel())
+                ->visible(fn (Advert $record): bool => $record->kind !== null),
             TextEntry::make('category.title')
                 ->label('Категория')
                 ->placeholder('—'),
-            TextEntry::make('yacht.name')
+            TextEntry::make('position')
+                ->label('Позиция')
+                ->state(fn (Advert $record): ?string => $record->position?->label())
+                ->visible(fn (Advert $record): bool => $record->position !== null),
+            TextEntry::make('sport_category')
+                ->label('Разряд')
+                ->state(fn (Advert $record): ?string => $record->sport_category?->getLabel())
+                ->visible(fn (Advert $record): bool => $record->sport_category !== null),
+            TextEntry::make('yacht_name')
                 ->label('Яхта')
+                ->state(fn (Advert $record): ?string => $record->yachtLabel())
                 ->placeholder('—'),
+            TextEntry::make('regattas.name')
+                ->label('Регаты')
+                ->badge()
+                ->visible(fn (Advert $record): bool => $record->regattas->isNotEmpty())
+                ->columnSpanFull(),
+            TextEntry::make('date_from')
+                ->label('Когда')
+                ->state(fn (Advert $record): ?string => $record->datesLabel())
+                ->visible(fn (Advert $record): bool => $record->datesLabel() !== null),
             TextEntry::make('price')
                 ->label('Цена')
                 ->state(fn (Advert $record): string => $record->priceLabel()),
+            TextEntry::make('deposit')
+                ->label('Залог')
+                ->state(fn (Advert $record): ?string => $record->depositLabel())
+                ->visible(fn (Advert $record): bool => $record->deposit !== null),
             TextEntry::make('city')
                 ->label('Город')
                 ->placeholder('—'),
@@ -182,6 +214,10 @@ class AdvertResource extends Resource
                 SelectFilter::make('type')
                     ->label('Раздел')
                     ->options(AdvertType::options()),
+
+                SelectFilter::make('kind')
+                    ->label('Вид')
+                    ->options(AdvertKind::options()),
                 SelectFilter::make('status')
                     ->label('Статус')
                     ->options(AdvertStatus::options()),
@@ -318,7 +354,7 @@ class AdvertResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['author', 'category', 'yacht', 'moderatedBy']);
+        return parent::getEloquentQuery()->with(['author', 'category', 'yacht', 'moderatedBy', 'regattas']);
     }
 
     public static function getNavigationBadge(): ?string

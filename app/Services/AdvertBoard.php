@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\AdvertKind;
+use App\Enums\AdvertPosition;
 use App\Enums\AdvertType;
+use App\Enums\SportCategory;
 use App\Models\Advert;
 use App\Models\AdvertCategory;
+use App\Models\Regatta;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -22,8 +26,14 @@ class AdvertBoard
 {
     private const PER_PAGE = 24;
 
+    /** Параметры GET, которые витрина принимает от формы фильтров. */
+    public const FILTER_KEYS = [
+        'q', 'kind', 'category', 'city', 'position', 'sport_category',
+        'regatta', 'price_from', 'price_to', 'sort',
+    ];
+
     /**
-     * @param  array<string, mixed>  $filters  q, category, city, price_from, price_to, sort
+     * @param  array<string, mixed>  $filters  @see self::FILTER_KEYS
      * @return LengthAwarePaginator<Advert>
      */
     public function paginate(AdvertType $type, array $filters = []): LengthAwarePaginator
@@ -31,12 +41,57 @@ class AdvertBoard
         $query = Advert::query()
             ->ofType($type)
             ->visible()
-            ->with(['category', 'yacht', 'media']);
+            ->with(['category', 'yacht', 'media', 'regattas']);
 
         $this->applyFilters($query, $filters);
         $this->applySort($query, (string) ($filters['sort'] ?? ''));
 
         return $query->paginate(self::PER_PAGE)->withQueryString();
+    }
+
+    /**
+     * Счётчики видов для табов «Все / Предложения / Запросы».
+     *
+     * Пустой массив у досок без дуальности — табы тогда не рендерятся.
+     *
+     * @return array<string, int> value вида => количество
+     */
+    public function kindCounts(AdvertType $type): array
+    {
+        if ($type->kinds() === []) {
+            return [];
+        }
+
+        $counts = Advert::query()
+            ->ofType($type)
+            ->visible()
+            ->selectRaw('kind, count(*) as aggregate')
+            ->groupBy('kind')
+            ->pluck('aggregate', 'kind')
+            ->all();
+
+        return collect($type->kinds())
+            ->mapWithKeys(fn (AdvertKind $kind): array => [
+                $kind->value => (int) ($counts[$kind->value] ?? 0),
+            ])
+            ->all();
+    }
+
+    /**
+     * Регаты, встречающиеся хотя бы в одном видимом объявлении доски.
+     *
+     * @return Collection<int, Regatta>
+     */
+    public function regattas(AdvertType $type): Collection
+    {
+        if (! $type->usesRegattas()) {
+            return new Collection;
+        }
+
+        return Regatta::query()
+            ->whereHas('adverts', fn (Builder $q) => $q->ofType($type)->visible())
+            ->orderByDesc('date_start')
+            ->get();
     }
 
     /**
@@ -90,9 +145,22 @@ class AdvertBoard
             });
         });
 
+        // Enum'ы прогоняем через tryFrom: в query-строку может прийти что угодно,
+        // а невалидное значение должно просто не фильтровать, а не ронять страницу.
+        $kind = AdvertKind::tryFrom((string) ($filters['kind'] ?? ''));
+        $position = AdvertPosition::tryFrom((string) ($filters['position'] ?? ''));
+        $sportCategory = SportCategory::tryFrom((string) ($filters['sport_category'] ?? ''));
+
         $query
+            ->when($kind !== null, fn (Builder $q) => $q->ofKind($kind))
+            ->when($position !== null, fn (Builder $q) => $q->where('position', $position))
+            ->when($sportCategory !== null, fn (Builder $q) => $q->where('sport_category', $sportCategory))
             ->when(filled($filters['category'] ?? null), fn (Builder $q) => $q->where('advert_category_id', $filters['category']))
             ->when(filled($filters['city'] ?? null), fn (Builder $q) => $q->where('city', $filters['city']))
+            ->when(filled($filters['regatta'] ?? null), fn (Builder $q) => $q->whereHas(
+                'regattas',
+                fn (Builder $inner) => $inner->whereKey($filters['regatta']),
+            ))
             ->when(is_numeric($filters['price_from'] ?? null), fn (Builder $q) => $q->where('price', '>=', (int) $filters['price_from']))
             ->when(is_numeric($filters['price_to'] ?? null), fn (Builder $q) => $q->where('price', '<=', (int) $filters['price_to']));
     }

@@ -11,6 +11,7 @@ use App\Models\Advert;
 use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
+use Illuminate\Support\Arr;
 
 class ManageAdverts extends ManageRecords
 {
@@ -28,8 +29,17 @@ class ManageAdverts extends ManageRecords
                     $data['user_id'] = auth()->id();
                     $data['status'] = AdvertStatus::Pending;
 
+                    // Связь «многие ко многим» в create() не передашь: своим
+                    // save-циклом Filament здесь не занимается, потому что
+                    // создание записи перехвачено этим using().
+                    $regattas = Arr::pull($data, 'regattas', []);
+
                     /** @var Advert $advert */
                     $advert = $model::create($data);
+
+                    if ($regattas !== []) {
+                        $advert->regattas()->sync($regattas);
+                    }
 
                     // Фотографии Filament прикрепит после создания записи,
                     // уведомление модераторам от них не зависит.

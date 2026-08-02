@@ -89,6 +89,31 @@
                     <h1 class="section-title a-font text-3xl md:text-4xl mt-8 mb-4">{{ $advert->title }}</h1>
 
                     <div class="prose max-w-none text-brand-gray font-medium whitespace-pre-line">{{ $advert->description }}</div>
+
+                    @if ($advert->details)
+                        <h2 class="a-font text-xl md:text-2xl text-[#2E325C] mt-8 mb-3">
+                            {{ $advert->type->detailsLabel() ?? 'Подробности' }}
+                        </h2>
+                        <div class="prose max-w-none text-brand-gray font-medium whitespace-pre-line">{{ $advert->details }}</div>
+                    @endif
+
+                    @if ($advert->regattas->isNotEmpty())
+                        <h2 class="a-font text-xl md:text-2xl text-[#2E325C] mt-8 mb-3">Регаты</h2>
+                        <ul class="space-y-2 text-brand-gray font-medium">
+                            @foreach ($advert->regattas as $regatta)
+                                <li>
+                                    <a href="{{ route('competition-details', $regatta) }}" class="text-[#2D92CE] hover:underline">
+                                        {{ $regatta->name }}
+                                    </a>
+                                    @if ($regatta->date_start)
+                                        <span class="text-brand-gray-light text-sm">
+                                            — {{ $regatta->date_start->translatedFormat('j F Y') }}
+                                        </span>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
                 </div>
 
                 {{-- Цена, контакты, связь --}}
@@ -96,23 +121,61 @@
                     <div class="bg-[#F8F8F8] p-6 sticky top-4">
                         @if ($advert->isSold())
                             <div class="bg-[#2E325C] text-white text-sm font-semibold px-3 py-2 mb-4 text-center">
-                                Объявление закрыто — товар продан
+                                Объявление закрыто автором
                             </div>
                         @endif
 
                         <div class="text-[#2E325C] text-3xl a-font mb-4">{{ $advert->priceLabel() }}</div>
 
                         <dl class="text-sm space-y-2 mb-6 text-brand-gray">
+                            @if ($advert->kindLabel())
+                                <div class="flex justify-between gap-4">
+                                    <dt class="text-brand-gray-light">Вид</dt>
+                                    <dd class="font-medium text-right">{{ $advert->kindLabel() }}</dd>
+                                </div>
+                            @endif
+                            @if ($advert->depositLabel())
+                                <div class="flex justify-between gap-4">
+                                    <dt class="text-brand-gray-light">Залог</dt>
+                                    <dd class="font-medium text-right">{{ $advert->depositLabel() }}</dd>
+                                </div>
+                            @endif
+                            @if ($advert->position)
+                                <div class="flex justify-between gap-4">
+                                    <dt class="text-brand-gray-light">Позиция</dt>
+                                    <dd class="font-medium text-right">{{ $advert->position->label() }}</dd>
+                                </div>
+                            @endif
+                            @if ($advert->sport_category)
+                                <div class="flex justify-between gap-4">
+                                    <dt class="text-brand-gray-light">Разряд</dt>
+                                    <dd class="font-medium text-right">{{ $advert->sport_category->getLabel() }}</dd>
+                                </div>
+                            @endif
                             @if ($advert->category)
                                 <div class="flex justify-between gap-4">
                                     <dt class="text-brand-gray-light">Категория</dt>
                                     <dd class="font-medium text-right">{{ $advert->category->title }}</dd>
                                 </div>
                             @endif
-                            @if ($advert->yacht)
+                            @if ($advert->yachtLabel())
                                 <div class="flex justify-between gap-4">
                                     <dt class="text-brand-gray-light">Яхта</dt>
-                                    <dd class="font-medium text-right">{{ $advert->yacht->name }}</dd>
+                                    <dd class="font-medium text-right">
+                                        @if ($advert->yachtUrl())
+                                            <a href="{{ $advert->yachtUrl() }}" class="text-[#2D92CE] hover:underline">
+                                                {{ $advert->yachtLabel() }}
+                                            </a>
+                                        @else
+                                            {{ $advert->yachtLabel() }}
+                                        @endif
+                                    </dd>
+                                </div>
+                            @endif
+                            @if ($advert->datesLabel())
+                                <div class="flex justify-between gap-4">
+                                    <dt class="text-brand-gray-light">Когда</dt>
+                                    <dd class="font-medium text-right">{{ $advert->datesLabel() }}</dd>
                                 </div>
                             @endif
                             @if ($advert->city)
@@ -156,18 +219,18 @@
                                 <button type="button"
                                         @click.prevent="$dispatch('open-login-modal')"
                                         class="w-full bg-[#2D92CE] text-white py-3 px-6 hover:bg-[#0074CC] transition-colors font-semibold">
-                                    Написать автору
+                                    {{ $advert->type->contactButtonLabel() }}
                                 </button>
                                 <p class="mt-2 text-xs text-brand-gray-light text-center">
                                     Нужен вход — переписка ведётся в личном кабинете.
                                 </p>
                             @else
                                 @if ($advert->isPublished())
-                                    <form method="POST" action="{{ route('carter30.advert-contact', $advert) }}">
+                                    <form method="POST" action="{{ route('adverts.contact', $advert) }}">
                                         @csrf
                                         <button type="submit"
                                                 class="w-full bg-[#2D92CE] text-white py-3 px-6 hover:bg-[#0074CC] transition-colors font-semibold">
-                                            Написать автору
+                                            {{ $advert->type->contactButtonLabel() }}
                                         </button>
                                     </form>
                                 @endif

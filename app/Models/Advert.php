@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\AdvertKind;
+use App\Enums\AdvertPosition;
+use App\Enums\AdvertPriceUnit;
 use App\Enums\AdvertStatus;
 use App\Enums\AdvertType;
+use App\Enums\SportCategory;
 use App\Models\Concerns\RegistersResponsiveFormats;
 use App\Models\Scopes\OwnedScope;
 use App\Support\ResponsiveMedia;
@@ -13,6 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -35,14 +40,23 @@ class Advert extends Model implements HasMedia
 
     protected $fillable = [
         'type',
+        'kind',
         'status',
         'user_id',
         'advert_category_id',
         'yacht_id',
+        'yacht_name',
         'title',
         'description',
+        'details',
+        'position',
+        'sport_category',
+        'date_from',
+        'date_to',
         'price',
         'price_negotiable',
+        'price_unit',
+        'deposit',
         'city',
         'contact_phone',
         'contact_telegram',
@@ -57,9 +71,16 @@ class Advert extends Model implements HasMedia
     {
         return [
             'type' => AdvertType::class,
+            'kind' => AdvertKind::class,
             'status' => AdvertStatus::class,
+            'position' => AdvertPosition::class,
+            'sport_category' => SportCategory::class,
             'price' => 'integer',
             'price_negotiable' => 'boolean',
+            'price_unit' => AdvertPriceUnit::class,
+            'deposit' => 'integer',
+            'date_from' => 'date',
+            'date_to' => 'date',
             'moderated_at' => 'datetime',
             'published_at' => 'datetime',
         ];
@@ -110,6 +131,12 @@ class Advert extends Model implements HasMedia
         return $this->belongsTo(User::class, 'moderated_by');
     }
 
+    /** Регаты, на которые подано объявление («Яхты для соревнований»). */
+    public function regattas(): BelongsToMany
+    {
+        return $this->belongsToMany(Regatta::class);
+    }
+
     // ──────────────────────────────────────────────
     // Scopes
     // ──────────────────────────────────────────────
@@ -117,6 +144,11 @@ class Advert extends Model implements HasMedia
     public function scopeOfType(Builder $query, AdvertType $type): Builder
     {
         return $query->where('type', $type);
+    }
+
+    public function scopeOfKind(Builder $query, AdvertKind $kind): Builder
+    {
+        return $query->where('kind', $kind);
     }
 
     public function scopePending(Builder $query): Builder
@@ -213,9 +245,62 @@ class Advert extends Model implements HasMedia
             return $this->price_negotiable ? 'Цена договорная' : 'Цена не указана';
         }
 
-        $formatted = number_format((float) $this->price, 0, ',', ' ').' ₽';
+        $formatted = self::formatMoney($this->price).($this->price_unit?->suffix() ?? '');
 
         return $this->price_negotiable ? $formatted.' (договорная)' : $formatted;
+    }
+
+    /** Залог при аренде; null — залога нет. */
+    public function depositLabel(): ?string
+    {
+        return $this->deposit === null ? null : self::formatMoney($this->deposit);
+    }
+
+    /** Подпись вида объявления под свою доску: «Продам или сдам», «Ищу парус»… */
+    public function kindLabel(): ?string
+    {
+        return $this->kind === null ? null : $this->type->kindLabel($this->kind);
+    }
+
+    /** «Когда»: период объявления. */
+    public function datesLabel(): ?string
+    {
+        if ($this->date_from === null && $this->date_to === null) {
+            return null;
+        }
+
+        if ($this->date_from === null) {
+            return 'по '.$this->date_to->translatedFormat('j F Y');
+        }
+
+        if ($this->date_to === null || $this->date_to->isSameDay($this->date_from)) {
+            return $this->date_from->translatedFormat('j F Y');
+        }
+
+        return $this->date_from->translatedFormat('j F').' — '.$this->date_to->translatedFormat('j F Y');
+    }
+
+    /** Яхта объявления: из реестра или свободным текстом. */
+    public function yachtLabel(): ?string
+    {
+        return $this->yacht?->name ?? ($this->yacht_name ?: null);
+    }
+
+    /**
+     * Ссылка на карточку яхты.
+     *
+     * Отдельной публичной страницы у яхты нет: каталог `/yachts` открывает
+     * карточку модалкой, поэтому ведём туда с параметром, который эту модалку
+     * разворачивает. У яхты «свободным текстом» ссылки нет.
+     */
+    public function yachtUrl(): ?string
+    {
+        return $this->yacht_id === null ? null : url('/yachts').'?yacht='.$this->yacht_id;
+    }
+
+    private static function formatMoney(int $amount): string
+    {
+        return number_format((float) $amount, 0, ',', ' ').' ₽';
     }
 
     /** Есть ли хоть один контакт для публикации. */

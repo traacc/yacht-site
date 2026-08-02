@@ -43,6 +43,12 @@ class SitemapGenerator
         'carter30.technical-help',
         'carter30.marketplace',
         'carter30.yacht-sale',
+        // Биржи раздела «Соревнования»; сами объявления добавляет
+        // динамический блок Advert::visible() ниже.
+        'competitions.skippers',
+        'competitions.sails',
+        'competitions.crews',
+        'competitions.yachts',
         'services.index',
         'services.yacht-rental',
         'services.fleet-rental',

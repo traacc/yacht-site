@@ -306,19 +306,21 @@ Route::post('/carter30/repair-request', function (Request $request) {
     return back()->with('repair_request_sent', true);
 })->middleware('throttle:5,1')->name('carter30.repair-request');
 
-// ── Доски объявлений (ТЗ п. 5: «Барахолка», «Продать яхту») ──────────
+// ── Доски объявлений (ТЗ п. 5: «Барахолка», «Продать яхту»; п. 8: биржи) ──────
 
 /** Витрина доски: выборка и фильтры живут в App\Services\AdvertBoard. */
 $advertBoard = function (AdvertType $type, Request $request) {
     $board = app(AdvertBoard::class);
 
-    $filters = $request->only(['q', 'category', 'city', 'price_from', 'price_to', 'sort']);
+    $filters = $request->only(AdvertBoard::FILTER_KEYS);
 
-    return view('pages.carter30.advert-board', [
+    return view('pages.adverts.board', [
         'type' => $type,
         'adverts' => $board->paginate($type, $filters),
         'categories' => $board->categories($type),
         'cities' => $board->cities($type),
+        'regattas' => $board->regattas($type),
+        'kindCounts' => $board->kindCounts($type),
         'filters' => $filters,
     ]);
 };
@@ -329,13 +331,13 @@ Route::get('/carter30/marketplace', fn (Request $request) => $advertBoard(Advert
 Route::get('/carter30/yachts-for-sale', fn (Request $request) => $advertBoard(AdvertType::YachtSale, $request))
     ->name('carter30.yacht-sale');
 
-/** Страница объявления: одна вьюха на обе доски, тип задаёт хлебные крошки. */
+/** Страница объявления: одна вьюха на все доски, тип задаёт хлебные крошки. */
 $advertItem = function (AdvertType $type, Advert $advert) {
     abort_unless($advert->type === $type && $advert->isVisible(), 404);
 
-    $advert->load(['author', 'category', 'yacht', 'media']);
+    $advert->load(['author', 'category', 'yacht', 'media', 'regattas']);
 
-    return view('pages.carter30.advert-item', compact('advert'));
+    return view('pages.adverts.item', compact('advert'));
 };
 
 Route::get('/carter30/marketplace/{advert}', fn (Advert $advert) => $advertItem(AdvertType::Marketplace, $advert))
@@ -344,8 +346,26 @@ Route::get('/carter30/marketplace/{advert}', fn (Advert $advert) => $advertItem(
 Route::get('/carter30/yachts-for-sale/{advert}', fn (Advert $advert) => $advertItem(AdvertType::YachtSale, $advert))
     ->name('carter30.yacht-sale-item');
 
-/** «Написать автору»: заводит личную переписку и ведёт в неё. */
-Route::post('/carter30/adverts/{advert}/contact', function (Advert $advert, Request $request) {
+/**
+ * Четыре биржи раздела «Соревнования» (ТЗ п. 8.2).
+ *
+ * Регистрируются циклом: у них, в отличие от досок Carter 30, путь и имя роута
+ * не расходятся. Порядок — из AdvertType::competitionBoards(), тот же, что в меню.
+ */
+foreach (AdvertType::competitionBoards() as $competitionBoard) {
+    Route::get(
+        '/competitions/'.$competitionBoard->boardPath(),
+        fn (Request $request) => $advertBoard($competitionBoard, $request),
+    )->name($competitionBoard->routeName());
+
+    Route::get(
+        '/competitions/'.$competitionBoard->boardPath().'/{advert}',
+        fn (Advert $advert) => $advertItem($competitionBoard, $advert),
+    )->name($competitionBoard->itemRouteName());
+}
+
+/** «Написать автору» / «Отправить запрос»: заводит личную переписку и ведёт в неё. */
+Route::post('/adverts/{advert}/contact', function (Advert $advert, Request $request) {
     try {
         $conversation = app(StartDirectConversationAction::class)->handle($request->user(), $advert);
     } catch (RuntimeException $e) {
@@ -356,7 +376,7 @@ Route::post('/carter30/adverts/{advert}/contact', function (Advert $advert, Requ
         parameters: ['conversation' => $conversation->getKey()],
         panel: 'user',
     ));
-})->middleware(['auth', 'throttle:10,1'])->name('carter30.advert-contact');
+})->middleware(['auth', 'throttle:10,1'])->name('adverts.contact');
 
 // ──────────────────────────────────────────────
 // Раздел «Услуги» (ТЗ 3-го этапа, п. 7)

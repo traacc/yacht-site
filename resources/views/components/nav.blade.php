@@ -35,16 +35,24 @@
                         <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="open" x-cloak x-transition
-                        class="absolute top-full left-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
+                        {{-- Шире прочих меню: названия бирж в w-52 не помещаются. --}}
+                        class="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
+                        {{-- Порядок подразделов задан ТЗ 3-го этапа, п. 8.1. --}}
                         @if(request()->routeIs('competitions'))
                         <a href="{{ route('competitions') }}" @click.prevent="open = false; $dispatch('switch-competitions-tab', { tab: 'calendar' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Календарь</a>
-                        <a href="{{ route('competitions') }}#results" @click.prevent="open = false; $dispatch('switch-competitions-tab', { tab: 'results' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Результаты</a>
                         @else
                         <a href="{{ route('competitions') }}"  class="block px-4 py-2 text-gray-700">Календарь</a>
-                        <a href="{{ route('competitions') }}#results"  class="block px-4 py-2 text-gray-700">Результаты</a>
                         @endif
                         <a href="{{ route('series-results', ['desc' => 1]) }}" class="block px-4 py-2 text-gray-700">Серии</a>
                         <a href="{{ route('regatta-entries') }}" class="block w-full text-left px-4 py-2 text-gray-700">Заявки</a>
+                        @if(request()->routeIs('competitions'))
+                        <a href="{{ route('competitions') }}#results" @click.prevent="open = false; $dispatch('switch-competitions-tab', { tab: 'results' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Результаты</a>
+                        @else
+                        <a href="{{ route('competitions') }}#results"  class="block px-4 py-2 text-gray-700">Результаты</a>
+                        @endif
+                        @foreach (\App\Enums\AdvertType::competitionBoards() as $board)
+                        <a href="{{ route($board->routeName()) }}" class="block px-4 py-2 text-gray-700">{{ $board->label() }}</a>
+                        @endforeach
                     </div>
                 </div>
                 <!--
@@ -247,15 +255,22 @@
                             <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="open" x-cloak x-transition class="">
+                            {{-- Порядок подразделов задан ТЗ 3-го этапа, п. 8.1. --}}
                             @if(request()->routeIs('competitions'))
                             <a href="{{ route('competitions') }}" @click.prevent="mobileOpen = false; $dispatch('switch-competitions-tab', { tab: 'calendar' })" class="block px-4 py-2 text-sm">Календарь</a>
-                            <a href="{{ route('competitions') }}#results" @click.prevent="mobileOpen = false; $dispatch('switch-competitions-tab', { tab: 'results' })" class="block px-4 py-2 text-sm">Результаты</a>
                             @else
                             <a href="{{ route('competitions') }}"  class="block px-4 py-2 text-sm">Календарь</a>
-                            <a href="{{ route('competitions') }}#results"  class="block px-4 py-2 text-sm">Результаты</a>
                             @endif
                             <a href="{{ route('series-results', ['desc' => 1]) }}" class="block px-4 py-2 text-sm">Серии</a>
                             <a href="{{ route('regatta-entries') }}" class="block w-full text-left px-4 py-2 text-sm">Заявки</a>
+                            @if(request()->routeIs('competitions'))
+                            <a href="{{ route('competitions') }}#results" @click.prevent="mobileOpen = false; $dispatch('switch-competitions-tab', { tab: 'results' })" class="block px-4 py-2 text-sm">Результаты</a>
+                            @else
+                            <a href="{{ route('competitions') }}#results"  class="block px-4 py-2 text-sm">Результаты</a>
+                            @endif
+                            @foreach (\App\Enums\AdvertType::competitionBoards() as $board)
+                            <a href="{{ route($board->routeName()) }}" class="block px-4 py-2 text-sm">{{ $board->label() }}</a>
+                            @endforeach
                         </div>
                     </div>
                     <!--

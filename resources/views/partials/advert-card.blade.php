@@ -17,6 +17,12 @@
                 Продано
             </span>
         @endif
+
+        @if ($advert->kindLabel())
+            <span class="absolute top-2 right-2 bg-[#2D92CE] text-white text-xs font-semibold px-3 py-1">
+                {{ $advert->kindLabel() }}
+            </span>
+        @endif
     </div>
 
     <div class="p-4">
@@ -27,8 +33,18 @@
         </h3>
 
         <div class="text-brand-gray-light text-xs space-y-1">
+            @if ($advert->position || $advert->sport_category)
+                <div>
+                    {{ $advert->position?->label() }}
+                    @if ($advert->position && $advert->sport_category) · @endif
+                    {{ $advert->sport_category?->getLabel() }}
+                </div>
+            @endif
             @if ($advert->category)
                 <div>{{ $advert->category->title }}</div>
+            @endif
+            @if ($advert->datesLabel())
+                <div>{{ $advert->datesLabel() }}</div>
             @endif
             @if ($advert->city)
                 <div>{{ $advert->city }}</div>
