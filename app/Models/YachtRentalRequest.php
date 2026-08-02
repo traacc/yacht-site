@@ -18,9 +18,11 @@ class YachtRentalRequest extends Model
         'yacht_id',
         'name',
         'phone',
+        'email',
         'desired_date',
         'desired_date_end',
         'comment',
+        'agreement_accepted_at',
         'status',
         'source',
         'user_id',
@@ -29,10 +31,25 @@ class YachtRentalRequest extends Model
     protected function casts(): array
     {
         return [
-            'desired_date'     => 'date',
+            'desired_date' => 'date',
             'desired_date_end' => 'date',
-            'status'           => RentalRequestStatus::class,
+            'agreement_accepted_at' => 'datetime',
+            'status' => RentalRequestStatus::class,
         ];
+    }
+
+    /** Сколько суток забронировано: один и тот же день — это один день. */
+    public function days(): int
+    {
+        if ($this->desired_date === null) {
+            return 0;
+        }
+
+        $end = $this->desired_date_end ?? $this->desired_date;
+
+        return $end->lt($this->desired_date)
+            ? 1
+            : (int) $this->desired_date->diffInDays($end) + 1;
     }
 
     public function isPending(): bool

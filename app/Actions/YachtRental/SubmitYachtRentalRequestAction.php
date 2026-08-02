@@ -19,7 +19,10 @@ class SubmitYachtRentalRequestAction
     /**
      * Сохраняет запрос на аренду яхты и отправляет уведомление в отдел заказов.
      *
-     * @param  array{name: string, phone: string, desired_date?: string|null, desired_date_end?: string|null, comment?: string|null, source?: string|null}  $data
+     * Согласие с условиями аренды фиксируется временем, а не флагом: важно,
+     * когда именно его дали. Валидация чекбокса — на стороне маршрута.
+     *
+     * @param  array{name: string, phone: string, email?: string|null, desired_date?: string|null, desired_date_end?: string|null, comment?: string|null, agreement?: bool|null, source?: string|null}  $data
      */
     public function handle(Yacht $yacht, array $data, ?string $userId = null): YachtRentalRequest
     {
@@ -27,9 +30,11 @@ class SubmitYachtRentalRequestAction
             'yacht_id' => $yacht->id,
             'name' => $data['name'],
             'phone' => $data['phone'],
+            'email' => $data['email'] ?? null,
             'desired_date' => $data['desired_date'] ?? null,
             'desired_date_end' => $data['desired_date_end'] ?? null,
             'comment' => $data['comment'] ?? null,
+            'agreement_accepted_at' => filter_var($data['agreement'] ?? false, FILTER_VALIDATE_BOOLEAN) ? now() : null,
             'source' => $data['source'] ?? request()->header('Referer', 'unknown'),
             'user_id' => $userId,
         ]);

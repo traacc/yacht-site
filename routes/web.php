@@ -58,6 +58,7 @@ use App\Services\RatingCalculator;
 use App\Services\ServiceSubjectResolver;
 use App\Services\SettingsService;
 use App\Services\WeatherService;
+use App\Services\YachtBooking;
 use App\Services\YandexMapService;
 use App\Support\ResponsiveMedia;
 use Carbon\CarbonPeriod;
@@ -390,6 +391,59 @@ Route::get('/services', function () {
         'services' => ServiceType::published(),
     ]);
 })->name('services.index');
+
+/**
+ * Витрина бронирования яхт (ТЗ 3-го этапа, п. 7).
+ *
+ * Поиск, фильтры и пагинация серверные: ссылку с выбранными датами можно
+ * переслать, страница работает без JS и индексируется. Каталог /yachts
+ * остаётся реестром флота — здесь только те яхты, что сдаются в аренду.
+ */
+Route::get('/services/yacht-rental', function (Request $request) use ($servicePage) {
+    $settings = app(SettingsService::class);
+    $booking = app(YachtBooking::class);
+
+    $filters = $request->only([
+        'date_start', 'date_end', 'q', 'region', 'yacht_class', 'purpose', 'price_from', 'price_to', 'sort',
+    ]);
+
+    return view('pages.services.yacht-rental', $servicePage(ServiceType::YachtRental, [
+        'search' => $booking->search($filters),
+        'filters' => $filters,
+        'regions' => $booking->regions(),
+        'classes' => $booking->classes(),
+        'purposes' => $booking->purposes(),
+        'steps' => (array) $settings->get('services.yacht_rental.steps', []),
+        'note' => $settings->get('services.yacht_rental.note', ''),
+    ]));
+})->name('services.yacht-rental');
+
+/** Карточка бронирования: календарь занятости, расчёт периода и заявка. */
+Route::get('/services/yacht-rental/{yacht}', function (Yacht $yacht, Request $request) {
+    abort_unless($yacht->for_rent && $yacht->isApproved(), 404);
+
+    $yacht->load(['media', 'rentals', 'optionValues.option', 'user']);
+
+    $booking = app(YachtBooking::class);
+
+    // Даты приходят из ссылки с витрины: пока пользователь листал каталог,
+    // яхту могли забронировать — поэтому доступность проверяется заново.
+    [$from, $to] = $booking->parseRange($request->query('date_start'), $request->query('date_end'));
+
+    return view('pages.services.yacht-rental-item', [
+        'type' => ServiceType::YachtRental,
+        'yacht' => $yacht,
+        'calendar' => $booking->calendar($yacht),
+        'quote' => $booking->quote($yacht, $from, $to),
+        'from' => $from,
+        'to' => $to,
+        'available' => $from !== null && $to !== null ? $booking->isAvailable($yacht, $from, $to) : null,
+        'terms' => app(SettingsService::class)->get('services.yacht_rental.terms', ''),
+        'others' => $booking->search([])['yachts']->getCollection()
+            ->reject(fn (Yacht $other): bool => $other->is($yacht))
+            ->take(3),
+    ]);
+})->name('services.yacht-rental-item');
 
 Route::get('/services/fleet-rental', function (Request $request) use ($servicePage) {
     $settings = app(SettingsService::class);
@@ -1156,17 +1210,37 @@ Route::post('/feedback', function (Request $request) {
     return back()->with('feedback_sent', true);
 })->name('feedback.submit');
 
-// Запрос на аренду яхты (модальное окно на странице каталога яхт)
+// Запрос на аренду яхты: модалка в каталоге /yachts и форма бронирования
+// на витрине /services/yacht-rental.
 Route::post('/yachts/{yacht}/rental-request', function (Request $request, Yacht $yacht) {
     abort_unless($yacht->for_rent, 404);
 
     $validated = $request->validate([
         'name' => ['required', 'string', 'max:255'],
         'phone' => ['required', 'string', 'max:20'],
+        'email' => ['nullable', 'email', 'max:255'],
         'desired_date' => ['nullable', 'date'],
         'desired_date_end' => ['nullable', 'date', 'after_or_equal:desired_date'],
         'comment' => ['nullable', 'string', 'max:2000'],
-    ]);
+        // Условия аренды по ТЗ принимаются галочкой; время согласия
+        // сохраняется в заявке.
+        'agreement' => ['accepted'],
+    ], attributes: ['agreement' => 'согласие с условиями аренды']);
+
+    // Даты могли быть заняты, пока заполняли форму: подтверждать бронь на уже
+    // занятый период нечестно по отношению и к клиенту, и к владельцу.
+    if (! empty($validated['desired_date'])) {
+        [$from, $to] = app(YachtBooking::class)->parseRange(
+            $validated['desired_date'],
+            $validated['desired_date_end'] ?? null,
+        );
+
+        if ($from !== null && $to !== null && ! app(YachtBooking::class)->isAvailable($yacht, $from, $to)) {
+            throw ValidationException::withMessages([
+                'desired_date' => 'Эти даты уже заняты. Выберите другой период.',
+            ]);
+        }
+    }
 
     app(SubmitYachtRentalRequestAction::class)->handle(
         $yacht,

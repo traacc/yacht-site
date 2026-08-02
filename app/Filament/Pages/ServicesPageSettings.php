@@ -69,6 +69,13 @@ class ServicesPageSettings extends Page
             'hub_hero_image' => $this->fileState($settings->get('services.hub.hero_image')),
             'hub_seo_description' => $settings->get('services.hub.seo_description', ''),
 
+            // Аренда яхт (витрина бронирования)
+            'rental_intro' => $settings->get('services.yacht_rental.intro', ''),
+            'rental_hero_image' => $this->fileState($settings->get('services.yacht_rental.hero_image')),
+            'rental_steps' => (array) $settings->get('services.yacht_rental.steps', []),
+            'rental_note' => $settings->get('services.yacht_rental.note', ''),
+            'rental_terms' => $settings->get('services.yacht_rental.terms', ''),
+
             // Аренда флота
             'fleet_intro' => $settings->get('services.fleet_rental.intro', ''),
             'fleet_hero_image' => $this->fileState($settings->get('services.fleet_rental.hero_image')),
@@ -139,6 +146,9 @@ class ServicesPageSettings extends Page
                         Tabs\Tab::make('Общее')
                             ->schema($this->hubFields()),
 
+                        Tabs\Tab::make('Аренда яхт')
+                            ->schema($this->yachtRentalFields()),
+
                         Tabs\Tab::make('Аренда флота')
                             ->schema($this->fleetFields()),
 
@@ -186,6 +196,70 @@ class ServicesPageSettings extends Page
                         ->helperText('Показывается в результатах поиска и при отправке ссылки в мессенджер.')
                         ->rows(2)
                         ->maxLength(300)
+                        ->columnSpanFull(),
+                ]),
+        ];
+    }
+
+    /** @return list<Component> */
+    private function yachtRentalFields(): array
+    {
+        return [
+            Section::make('Описание подраздела')
+                ->description('Сами яхты и их цены ведут владельцы в своих карточках — здесь только обрамление витрины бронирования.')
+                ->schema([
+                    $this->heroImage('rental_hero_image', 'services/yacht-rental'),
+
+                    RichEditor::make('rental_intro')
+                        ->label('Вводный текст')
+                        ->fileAttachmentsDisk('public')
+                        ->fileAttachmentsDirectory('services/yacht-rental')
+                        ->fileAttachmentsVisibility('public')
+                        ->fileAttachmentsMaxSize(5120)
+                        ->columnSpanFull(),
+
+                    Textarea::make('rental_note')
+                        ->label('Примечание под списком яхт')
+                        ->placeholder('Например: стоимость ориентировочная, итог подтверждает менеджер.')
+                        ->rows(2)
+                        ->maxLength(500)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('Как забронировать')
+                ->description('Шаги от выбора дат до выхода в море — блок под списком яхт.')
+                ->schema([
+                    Repeater::make('rental_steps')
+                        ->label('Шаги')
+                        ->addActionLabel('Добавить шаг')
+                        ->reorderable()
+                        ->collapsible()
+                        ->defaultItems(0)
+                        ->itemLabel(fn (array $state): ?string => $state['title'] ?? null)
+                        ->schema([
+                            TextInput::make('title')
+                                ->label('Заголовок')
+                                ->placeholder('Например: Выбираете даты и яхту')
+                                ->required()
+                                ->maxLength(255)
+                                ->rules(['required', 'string', 'max:255']),
+                            Textarea::make('text')
+                                ->label('Текст')
+                                ->rows(2)
+                                ->maxLength(500)
+                                ->rules(['nullable', 'string', 'max:500']),
+                        ]),
+                ]),
+
+            Section::make('Условия аренды')
+                ->description('Текст, который арендатор принимает галочкой при бронировании. Показывается на странице яхты.')
+                ->schema([
+                    RichEditor::make('rental_terms')
+                        ->label('Условия аренды')
+                        ->fileAttachmentsDisk('public')
+                        ->fileAttachmentsDirectory('services/yacht-rental')
+                        ->fileAttachmentsVisibility('public')
+                        ->fileAttachmentsMaxSize(5120)
                         ->columnSpanFull(),
                 ]),
         ];
@@ -771,6 +845,13 @@ class ServicesPageSettings extends Page
             'services.hub.intro' => $data['hub_intro'] ?? '',
             'services.hub.hero_image' => $this->fileValue($data['hub_hero_image'] ?? null),
             'services.hub.seo_description' => trim((string) ($data['hub_seo_description'] ?? '')),
+
+            // Аренда яхт
+            'services.yacht_rental.intro' => $data['rental_intro'] ?? '',
+            'services.yacht_rental.hero_image' => $this->fileValue($data['rental_hero_image'] ?? null),
+            'services.yacht_rental.steps' => $this->repeaterValue($data['rental_steps'] ?? [], ['title', 'text']),
+            'services.yacht_rental.note' => trim((string) ($data['rental_note'] ?? '')),
+            'services.yacht_rental.terms' => $data['rental_terms'] ?? '',
 
             // Аренда флота
             'services.fleet_rental.intro' => $data['fleet_intro'] ?? '',

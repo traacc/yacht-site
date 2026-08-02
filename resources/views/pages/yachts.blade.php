@@ -26,7 +26,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
             return a.name.localeCompare(b.name, 'ru');
         });
     },
-    rentalForm: { name: '', phone: '', desired_date: '', desired_date_end: '', comment: '' },
+    rentalForm: { name: '', phone: '', desired_date: '', desired_date_end: '', comment: '', agreement: false },
     rentalLoading: false,
     rentalSubmitted: false,
     rentalError: '',
@@ -35,7 +35,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
         this.yacht_modal_open = true;
     },
     openRentalModal(date = null, dateEnd = null) {
-        this.rentalForm = { name: '', phone: '', desired_date: date || '', desired_date_end: dateEnd || date || '', comment: '' };
+        this.rentalForm = { name: '', phone: '', desired_date: date || '', desired_date_end: dateEnd || date || '', comment: '', agreement: false };
         this.rentalSubmitted = false;
         this.rentalError = '';
         this.yacht_modal_open = false;
@@ -73,7 +73,7 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                 throw new Error(data.message || 'Произошла ошибка при отправке.');
             }
             this.rentalSubmitted = true;
-            this.rentalForm = { name: '', phone: '', desired_date: '', desired_date_end: '', comment: '' };
+            this.rentalForm = { name: '', phone: '', desired_date: '', desired_date_end: '', comment: '', agreement: false };
         } catch (err) {
             this.rentalError = err.message || 'Произошла ошибка при отправке. Попробуйте позже.';
         } finally {
@@ -698,14 +698,14 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                             </tbody>
                         </table>
                     </div>
-                    <!--
+                    {{-- Бронирование живёт на витрине «Услуги → Аренда яхт»:
+                         там календарь свободных дат и расчёт периода. --}}
                     <div class="flex justify-end mt-6">
-                        <button type="button" @click="openRentalModal()"
-                                class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-3 px-6 font-semibold transition-colors">
-                            Запросить аренду →
-                        </button>
+                        <a :href="'{{ url('services/yacht-rental') }}/' + selectedYacht.id"
+                           class="bg-[#2D92CE] text-white hover:bg-[#0074CC] py-3 px-6 font-semibold transition-colors">
+                            Забронировать →
+                        </a>
                     </div>
-                    -->
                 </div>
             </div>
             </template>
@@ -804,6 +804,19 @@ bgImage="{{ asset('images/bg/yachts.webp') }}"
                         <span class="text-brand-gray">Итого (профкоманды)</span>
                         <span class="text-xl md:text-2xl font-bold text-[#2E325C]" x-text="rentalTotal(selectedYacht.rentals[0]?.price_pro_raw)"></span>
                     </div>
+                </div>
+
+                {{-- Условия аренды принимаются галочкой (ТЗ 3-го этапа, п. 7);
+                     время согласия сохраняется в заявке. --}}
+                <div class="privacy flex gap-4 mb-6">
+                    <label class="custom-checkbox">
+                        <input type="checkbox" x-model="rentalForm.agreement" required/>
+                        <span class="checkbox-box shrink-0"></span>
+                        <div class="text-sm text-brand-gray-light">
+                            Я принимаю условия аренды и
+                            <a class="underline" href="/files/Политика_обработки_персональных_данных_1.pdf">политику обработки персональных данных</a>
+                        </div>
+                    </label>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

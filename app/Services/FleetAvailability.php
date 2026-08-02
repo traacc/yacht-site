@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Enums\RentalRequestStatus;
 use App\Models\Yacht;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -43,27 +42,10 @@ final class FleetAvailability
      */
     public function availableYachts(CarbonImmutable $from, CarbonImmutable $to): Collection
     {
-        $fromDate = $from->toDateString();
-        $toDate = $to->toDateString();
-
+        // Условия «свободна на диапазон» лежат в скоупе модели: ими же
+        // пользуется витрина бронирования (@see YachtBooking).
         return $this->baseQuery()
-            // Владелец объявил аренду на период, полностью покрывающий запрос.
-            ->whereHas('rentals', fn (Builder $query) => $query
-                ->whereDate('date_start', '<=', $fromDate)
-                ->whereDate('date_end', '>=', $toDate))
-            // Нет одобренной брони, пересекающейся с диапазоном. Заявка без
-            // desired_date_end — бронь на один день.
-            ->whereDoesntHave('rentalRequests', fn (Builder $query) => $query
-                ->where('status', RentalRequestStatus::Approved->value)
-                ->whereNotNull('desired_date')
-                ->whereDate('desired_date', '<=', $toDate)
-                ->where(fn (Builder $inner) => $inner
-                    ->whereDate('desired_date_end', '>=', $fromDate)
-                    ->orWhere(fn (Builder $single) => $single
-                        ->whereNull('desired_date_end')
-                        ->whereDate('desired_date', '>=', $fromDate))))
-            // Регаты живут отдельно от аренды, поэтому проверяются дополнительно.
-            ->freeDuring($fromDate, $toDate)
+            ->availableForRent($from->toDateString(), $to->toDateString())
             ->get();
     }
 

@@ -10,6 +10,7 @@ use App\Models\News;
 use App\Models\Regatta;
 use App\Models\RepairCase;
 use App\Models\Tour;
+use App\Models\Yacht;
 use Illuminate\Support\Carbon;
 
 class SitemapGenerator
@@ -43,6 +44,7 @@ class SitemapGenerator
         'carter30.marketplace',
         'carter30.yacht-sale',
         'services.index',
+        'services.yacht-rental',
         'services.fleet-rental',
         'services.events',
         'services.training',
@@ -108,6 +110,19 @@ class SitemapGenerator
                 $urls[] = [
                     'loc' => $regatta->publicUrl(),
                     'lastmod' => $regatta->updated_at?->toAtomString(),
+                ];
+            });
+
+        // Карточки бронирования: только яхты, реально сдающиеся в аренду.
+        Yacht::query()
+            ->where('for_rent', true)
+            ->where('approval_status', 'approved')
+            ->orderBy('name')
+            ->get()
+            ->each(function (Yacht $yacht) use (&$urls): void {
+                $urls[] = [
+                    'loc' => route('services.yacht-rental-item', $yacht),
+                    'lastmod' => $yacht->updated_at?->toAtomString(),
                 ];
             });
 

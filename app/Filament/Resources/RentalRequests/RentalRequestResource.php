@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\RentalRequests;
 
 use App\Enums\RentalRequestStatus;
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\RentalRequests\Pages\ManageRentalRequests;
 use App\Models\YachtRentalRequest;
 use BackedEnum;
@@ -20,7 +21,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class RentalRequestResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected static ?string $model = YachtRentalRequest::class;
 
@@ -64,6 +65,12 @@ class RentalRequestResource extends Resource
                     ->label('Телефон')
                     ->copyable()
                     ->copyMessage('Телефон скопирован'),
+                TextColumn::make('email')
+                    ->label('Email')
+                    ->placeholder('—')
+                    ->copyable()
+                    ->copyMessage('Email скопирован')
+                    ->toggleable(),
                 TextColumn::make('desired_date')
                     ->label('Дата (с)')
                     ->date('d.m.Y')
@@ -80,6 +87,13 @@ class RentalRequestResource extends Resource
                     ->wrap()
                     ->limit(80)
                     ->tooltip(fn (YachtRentalRequest $record): ?string => $record->comment),
+                // Отметка о принятии условий аренды: по ТЗ галочка обязательна,
+                // но у заявок, поданных до её появления, времени согласия нет.
+                TextColumn::make('agreement_accepted_at')
+                    ->label('Условия приняты')
+                    ->dateTime('d.m.Y H:i')
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('status')
                     ->label('Статус')
                     ->badge()

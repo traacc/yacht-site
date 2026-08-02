@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\RentalRequestStatus;
 use App\Models\Concerns\RegistersResponsiveFormats;
 use App\Models\Scopes\OwnedScope;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -75,6 +77,37 @@ class Yacht extends Model implements HasMedia
                         ->where('date_end', '>=', $dateStart);
                 });
         });
+    }
+
+    /**
+     * Яхты, которые можно арендовать на весь диапазон дат.
+     *
+     * Три условия сразу: владелец объявил аренду на период, полностью
+     * покрывающий запрос; нет одобренной брони, пересекающейся с диапазоном
+     * (заявка без desired_date_end — бронь на один день); яхта не занята
+     * регатой. Скоуп общий для витрины бронирования и подбора флота, иначе
+     * страницы разошлись бы в ответе «свободна / занята».
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeAvailableForRent(Builder $query, string $dateStart, string $dateEnd): Builder
+    {
+        return $query
+            ->whereHas('rentals', fn (Builder $rentals) => $rentals
+                ->whereDate('date_start', '<=', $dateStart)
+                ->whereDate('date_end', '>=', $dateEnd))
+            ->whereDoesntHave('rentalRequests', fn (Builder $requests) => $requests
+                ->where('status', RentalRequestStatus::Approved->value)
+                ->whereNotNull('desired_date')
+                ->whereDate('desired_date', '<=', $dateEnd)
+                ->where(fn (Builder $inner) => $inner
+                    ->whereDate('desired_date_end', '>=', $dateStart)
+                    ->orWhere(fn (Builder $single) => $single
+                        ->whereNull('desired_date_end')
+                        ->whereDate('desired_date', '>=', $dateStart))))
+            // Регаты живут отдельно от аренды, поэтому проверяются дополнительно.
+            ->freeDuring($dateStart, $dateEnd);
     }
 
     public function pruningScope(): Builder

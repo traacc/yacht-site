@@ -50,7 +50,7 @@ enum ServiceType: string
     public function shortDescription(): string
     {
         return match ($this) {
-            self::YachtRental => 'Аренда яхты на день или на несколько дней: календарь занятости, цены и запрос владельцу.',
+            self::YachtRental => 'Аренда яхты на день или на несколько дней: поиск по датам, цены и бронирование онлайн.',
             self::FleetRental => 'Подбор нескольких яхт на нужный диапазон дат — для корпоративной регаты, тренировки или съёмок.',
             self::Event => 'Организация мероприятия на воде: флот, площадки и программа под ваш формат.',
             self::Training => 'Обучение судовождению с нуля и подготовка к экзаменам на права IYT и ГИМС.',
@@ -76,13 +76,13 @@ enum ServiceType: string
     /**
      * Имя маршрута публичной страницы; null — подраздел ещё не реализован.
      *
-     * У аренды яхт своя, ранее сделанная страница — каталог /yachts с
-     * календарём занятости; в разделе «Услуги» на неё ведёт ссылка.
+     * У аренды яхт своя витрина бронирования с поиском по датам; каталог
+     * /yachts остаётся реестром флота ассоциации.
      */
     public function routeName(): ?string
     {
         return match ($this) {
-            self::YachtRental => 'yachts',
+            self::YachtRental => 'services.yacht-rental',
             self::FleetRental => 'services.fleet-rental',
             self::Event => 'services.events',
             self::Training => 'services.training',
