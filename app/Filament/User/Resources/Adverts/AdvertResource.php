@@ -75,7 +75,7 @@ class AdvertResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->components([
+        return $schema->columns(1)->components([
             Section::make('Объявление')
                 ->schema([
                     Select::make('type')
