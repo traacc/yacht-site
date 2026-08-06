@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Advert;
 use App\Models\ForeignRegatta;
 use App\Models\News;
+use App\Models\PressMention;
 use App\Models\Regatta;
 use App\Models\RepairCase;
 use App\Models\Tour;
@@ -37,6 +38,7 @@ class SitemapGenerator
         'gallery',
         'help',
         'news',
+        'press',
         'carter30.history',
         'carter30.regulations',
         'carter30.repair',
@@ -82,6 +84,19 @@ class SitemapGenerator
                 $urls[] = [
                     'loc' => route('news-details', $news),
                     'lastmod' => $news->updated_at?->toAtomString(),
+                ];
+            });
+
+        // «Пресса о нас»: только публикации с перепечаткой текста — у остальных
+        // своей страницы нет, карточка ведёт на сайт издания.
+        PressMention::published()
+            ->recentFirst()
+            ->get()
+            ->filter(fn (PressMention $mention): bool => $mention->hasContent())
+            ->each(function (PressMention $mention) use (&$urls): void {
+                $urls[] = [
+                    'loc' => $mention->publicUrl(),
+                    'lastmod' => $mention->updated_at?->toAtomString(),
                 ];
             });
 

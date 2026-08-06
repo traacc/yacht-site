@@ -35,6 +35,7 @@ use App\Models\GiftCertificate;
 use App\Models\News;
 use App\Models\PaymentTransaction;
 use App\Models\PersonalRating;
+use App\Models\PressMention;
 use App\Models\Regatta;
 use App\Models\RegattaEntryCrew;
 use App\Models\RepairCase;
@@ -77,6 +78,13 @@ Route::get('/', function () {
         ->limit(3)
         ->get();
 
+    // «Пресса о нас»: публикации сторонних изданий (ТЗ 3-го этапа, п. 9)
+    $pressMentions = PressMention::published()
+        ->with('media')
+        ->recentFirst()
+        ->limit(3)
+        ->get();
+
     // Получаем фото для галереи с учётом настроек (рандом / сортировка / количество)
     $galleryPhotos = app(SettingsService::class)->getGalleryPhotos();
 
@@ -102,7 +110,7 @@ Route::get('/', function () {
         ->orderByUpcomingBirthday()
         ->get();
 
-    return view('pages.home', compact('latestNews', 'galleryPhotos', 'faq', 'birthdays', 'sponsors'));
+    return view('pages.home', compact('latestNews', 'pressMentions', 'galleryPhotos', 'faq', 'birthdays', 'sponsors'));
 })->name('home');
 Route::get('/association/charter', function () {
     $documents = app(SettingsService::class)->documentLinks('charter.documents');
@@ -1209,6 +1217,33 @@ Route::get('/news/{news}', function (News $news) {
 
     return view('pages.news-details', compact('news', 'otherNews'));
 })->name('news-details');
+
+// «Пресса о нас» — публикации сторонних изданий (ТЗ 3-го этапа, п. 9).
+Route::get('/press', function () {
+    $mentions = PressMention::published()
+        ->with('media')
+        ->recentFirst()
+        ->paginate(12);
+
+    return view('pages.press', compact('mentions'));
+})->name('press');
+
+Route::get('/press/{pressMention}', function (PressMention $pressMention) {
+    // Страница есть только у публикаций с перепечаткой текста: без него
+    // показывать нечего, карточка в списке ведёт сразу на сайт издания.
+    abort_unless($pressMention->is_published && $pressMention->hasContent(), 404);
+
+    $pressMention->load('media');
+
+    $otherMentions = PressMention::published()
+        ->with('media')
+        ->where('id', '!=', $pressMention->id)
+        ->recentFirst()
+        ->limit(3)
+        ->get();
+
+    return view('pages.press-details', compact('pressMention', 'otherMentions'));
+})->name('press-details');
 
 Route::post('/feedback', function (Request $request) {
     $validated = $request->validate([

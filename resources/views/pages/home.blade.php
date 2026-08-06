@@ -123,6 +123,26 @@
     </div>
 </section>
 
+{{-- ===== ПРЕССА О НАС ===== --}}
+@if($pressMentions->isNotEmpty())
+<section class="py-12 bg-white">
+    <div class="container mx-auto">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="section-title a-font">Пресса о нас</h2>
+            <a href="{{ route('press') }}" class="text-[#2E325C] text-lg font-semibold hover:underline hidden md:block">Все публикации →</a>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6">
+            @foreach($pressMentions as $mention)
+                <x-press-card :mention="$mention" />
+            @endforeach
+        </div>
+
+        <a href="{{ route('press') }}" class="text-[#2E325C] text-center block mt-8 text-sm font-semibold hover:underline md:hidden">Все публикации →</a>
+    </div>
+</section>
+@endif
+
 
 
 {{-- ===== ПРОМО-БЛОКИ: КОМАНДЫ И ЯХТЫ ===== --}}
