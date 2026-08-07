@@ -8,15 +8,18 @@ use App\Enums\ChatNotificationAudience;
 use App\Enums\ConversationStatus;
 use App\Enums\ConversationType;
 use App\Enums\MessageAuthorRole;
+use App\Mail\SupportMessageReceived;
 use App\Models\ChatMessage;
 use App\Models\Conversation;
 use App\Models\User;
 use App\Notifications\ChatMessageReceivedNotification;
 use App\Services\Chat\ChatAttachmentProcessor;
 use App\Services\Chat\ChatRecipients;
+use App\Services\SettingsService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -30,6 +33,9 @@ use RuntimeException;
  * оживлённая переписка обернулась бы письмом и сообщением в Telegram на
  * каждую реплику. Дополнительного состояния для этого не нужно — признак
  * считается по отметкам прочтения до вставки сообщения.
+ *
+ * Обращение в поддержку дополнительно уходит письмом на общие адреса
+ * администрации из настроек сайта (@see SettingsService::adminNotificationEmails()).
  */
 class SendChatMessageAction
 {
@@ -50,6 +56,7 @@ class SendChatMessageAction
     public function __construct(
         private readonly ChatRecipients $recipients,
         private readonly ChatAttachmentProcessor $attachmentProcessor,
+        private readonly SettingsService $settings,
     ) {}
 
     /**
@@ -87,6 +94,7 @@ class SendChatMessageAction
 
         // Считаем до вставки: своё же сообщение иначе попадёт в «непрочитанные».
         $recipients = $this->resolveRecipients($conversation, $author, $role);
+        $mailAdmins = $this->shouldMailAdmins($conversation, $role);
 
         $excerpt = $this->excerpt($body, count($prepared));
 
@@ -109,6 +117,10 @@ class SendChatMessageAction
 
         $this->attachFiles($message, $prepared);
 
+        if ($mailAdmins) {
+            $this->mailAdmins($message);
+        }
+
         if ($recipients->isNotEmpty()) {
             $audience = $this->audienceFor($conversation, $role);
 
@@ -128,6 +140,46 @@ class SendChatMessageAction
         }
 
         return $message;
+    }
+
+    /**
+     * Нужно ли слать письмо на общие адреса администрации.
+     *
+     * Только обращения в поддержку и только от клиента: личная переписка двух
+     * пользователей администрации не адресована. Порог тот же, что и у
+     * уведомлений операторам, — пока предыдущее сообщение не прочитано,
+     * повторных писем не шлём, иначе живой диалог обернётся пачкой писем.
+     *
+     * Считается ДО вставки сообщения: после неё оно само числится непрочитанным.
+     */
+    private function shouldMailAdmins(Conversation $conversation, MessageAuthorRole $role): bool
+    {
+        return $conversation->type !== ConversationType::Direct
+            && $role === MessageAuthorRole::Client
+            && ! $conversation->isUnansweredBySupport();
+    }
+
+    /**
+     * Письмо на общий адрес администрации из настроек сайта.
+     *
+     * Не зависит от того, есть ли вообще операторы с доступом к чату и какие
+     * каналы уведомлений они себе включили: адрес «почты info» задаётся в
+     * настройках сайта, и обращение обязано дойти по нему в любом случае.
+     * Сбой отправки не роняет сообщение — оно уже сохранено и видно в чате.
+     */
+    private function mailAdmins(ChatMessage $message): void
+    {
+        $emails = $this->settings->adminNotificationEmails();
+
+        if ($emails === []) {
+            return;
+        }
+
+        try {
+            Mail::to($emails)->send(new SupportMessageReceived($message));
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     /**
