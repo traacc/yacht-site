@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Contracts\AiNewsProvider;
 use App\Models\News;
 use App\Models\PaymentRegistry;
 use App\Models\RegattaEntry;
@@ -19,6 +20,7 @@ use App\Observers\RegattaResultItemObserver;
 use App\Observers\TeamMemberObserver;
 use App\Observers\UserQuestionObserver;
 use App\Policies\TeamPolicy;
+use App\Services\Ai\OpenAiNewsProvider;
 use App\Services\ImageConverter;
 use App\Services\Notifications\NotificationPreferences;
 use App\Services\PaymentRegistryLogger;
@@ -41,6 +43,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(AiNewsProvider::class, OpenAiNewsProvider::class);
+
         // Синглтон обязателен: withoutAutoLog() глушит запись через состояние экземпляра.
         $this->app->singleton(PaymentRegistryLogger::class);
 

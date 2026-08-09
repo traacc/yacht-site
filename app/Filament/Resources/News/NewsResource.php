@@ -104,6 +104,23 @@ class NewsResource extends Resource
                     ->default(now())
                     ->required(),
 
+                TextInput::make('source_name')
+                    ->label('Источник')
+                    ->maxLength(255)
+                    ->required(fn (?News $record): bool => $record?->type === 'external')
+                    ->visible(fn (?News $record): bool => $record?->type === 'external'),
+
+                TextInput::make('external_url')
+                    ->label('Ссылка на оригинал')
+                    ->url()
+                    ->maxLength(2048)
+                    ->required(fn (?News $record): bool => $record?->type === 'external')
+                    ->visible(fn (?News $record): bool => $record?->type === 'external'),
+
+                DateTimePicker::make('source_published_at')
+                    ->label('Дата публикации источника')
+                    ->visible(fn (?News $record): bool => $record?->type === 'external'),
+
                 SpatieMediaLibraryFileUpload::make('gallery')
                     ->label('Галерея')
                     ->collection('gallery')
@@ -126,6 +143,13 @@ class NewsResource extends Resource
                 TextColumn::make('title')
                     ->label('Заголовок')
                     ->searchable(),
+                TextColumn::make('type')
+                    ->label('Тип')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => $state === 'external'
+                        ? 'Парусный мир'
+                        : 'Ассоциация')
+                    ->color(fn (string $state): string => $state === 'external' ? 'info' : 'gray'),
                 TextColumn::make('published_at')
                     ->label('Дата публикации')
                     ->dateTime()->dateTime('d.m.Y')
@@ -145,6 +169,7 @@ class NewsResource extends Resource
                     ->label('В Telegram')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('info')
+                    ->visible(fn (News $record): bool => $record->type === 'manual')
                     ->requiresConfirmation()
                     ->modalHeading('Опубликовать в Telegram')
                     ->modalDescription(fn (News $record): string => $record->published_to_tg
@@ -184,6 +209,7 @@ class NewsResource extends Resource
                     ->label('В VK')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('info')
+                    ->visible(fn (News $record): bool => $record->type === 'manual')
                     ->requiresConfirmation()
                     ->modalHeading('Опубликовать в VK')
                     ->modalDescription(fn (News $record): string => $record->published_to_vk

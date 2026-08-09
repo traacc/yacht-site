@@ -11,5 +11,6 @@ Artisan::command('inspire', function () {
 Schedule::command('regattas:update-statuses')->everyMinute();
 Schedule::command('news:publish-to-telegram')->everyMinute()->withoutOverlapping();
 Schedule::command('news:publish-to-vk')->everyMinute()->withoutOverlapping();
+Schedule::command('news:discover-sailing')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('payments:reconcile')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('model:prune')->daily();

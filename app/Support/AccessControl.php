@@ -7,6 +7,7 @@ namespace App\Support;
 use App\Enums\SystemRole;
 use App\Filament\Concerns\ScopesToOwnedRegattas;
 use App\Filament\Pages\AccessControlSettings;
+use App\Filament\Pages\AiNewsSettings;
 use App\Filament\Pages\EditProfile;
 use App\Filament\Pages\YachtDocumentSettings;
 use App\Filament\Resources\ArchivedRegattaEntries\ArchivedRegattaEntryResource;
@@ -138,6 +139,9 @@ final class AccessControl
             AccessControlSettings::class,
             EditProfile::class,
             Dashboard::class,
+            // Содержит конфигурацию AI-провайдера и имеет собственное
+            // ограничение «только администратор».
+            AiNewsSettings::class,
             // Имеет собственное ограничение «только администратор».
             YachtDocumentSettings::class,
             // Финансовый контур: собственное ограничение «администратор + бухгалтер».

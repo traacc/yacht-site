@@ -115,6 +115,7 @@
                     <div x-show="open" x-cloak x-transition
                         class="absolute top-full left-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
                         <a href="{{ route('news') }}"  class="block px-4 py-2 text-gray-700">Новости ассоциации</a>
+                        <a href="{{ route('world-news') }}" class="block px-4 py-2 text-gray-700">Новости парусного мира</a>
                         <a href="{{ route('press') }}"  class="block px-4 py-2 text-gray-700">Пресса о нас</a>
                     </div>
                 </div>
@@ -338,6 +339,7 @@
                         </button>
                         <div x-show="open" x-cloak x-transition class="">
                             <a href="{{ route('news') }}"  class="block px-4 py-2 text-sm">Новости ассоциации</a>
+                            <a href="{{ route('world-news') }}" class="block px-4 py-2 text-sm">Новости парусного мира</a>
                             <a href="{{ route('press') }}"  class="block px-4 py-2 text-sm">Пресса о нас</a>
                         </div>
                     </div>

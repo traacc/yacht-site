@@ -22,6 +22,7 @@ class PublishScheduledNewsToVk extends Command
         }
 
         $news = News::query()
+            ->manual()
             ->published()
             ->where('published_to_vk', false)
             ->get();

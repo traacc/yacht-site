@@ -73,8 +73,20 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\Support\MediaStream;
 
 Route::get('/', function () {
-    $latestNews = News::published()
+    $latestNews = News::manual()
+        ->published()
         ->orderBy('published_at', 'desc')
+        ->limit(3)
+        ->get();
+
+    $worldNews = News::external()
+        ->published()
+        ->whereNotNull('source_name')
+        ->where('source_name', '!=', '')
+        ->whereNotNull('external_url')
+        ->where('external_url', '!=', '')
+        ->orderByDesc('source_published_at')
+        ->orderByDesc('published_at')
         ->limit(3)
         ->get();
 
@@ -110,7 +122,7 @@ Route::get('/', function () {
         ->orderByUpcomingBirthday()
         ->get();
 
-    return view('pages.home', compact('latestNews', 'pressMentions', 'galleryPhotos', 'faq', 'birthdays', 'sponsors'));
+    return view('pages.home', compact('latestNews', 'worldNews', 'pressMentions', 'galleryPhotos', 'faq', 'birthdays', 'sponsors'));
 })->name('home');
 Route::get('/association/charter', function () {
     $documents = app(SettingsService::class)->documentLinks('charter.documents');
@@ -1196,7 +1208,8 @@ Route::get('/help', function () {
     return view('pages.help', compact('categories', 'defaultCategory', 'beforeNote', 'siteGuide', 'faq'));
 })->name('help');
 Route::get('/news', function () {
-    $news = News::published()
+    $news = News::manual()
+        ->published()
         ->with('author')
         ->latest('published_at')
         ->paginate(12);
@@ -1205,11 +1218,12 @@ Route::get('/news', function () {
 })->name('news');
 
 Route::get('/news/{news}', function (News $news) {
-    abort_unless($news->isPublished(), 404);
+    abort_unless($news->type === 'manual' && $news->isPublished(), 404);
 
     $news->load(['author', 'media']);
 
-    $otherNews = News::published()
+    $otherNews = News::manual()
+        ->published()
         ->where('id', '!=', $news->id)
         ->latest('published_at')
         ->limit(3)
@@ -1217,6 +1231,46 @@ Route::get('/news/{news}', function (News $news) {
 
     return view('pages.news-details', compact('news', 'otherNews'));
 })->name('news-details');
+
+Route::get('/sailing-news', function () {
+    $worldNews = News::external()
+        ->published()
+        ->whereNotNull('source_name')
+        ->where('source_name', '!=', '')
+        ->whereNotNull('external_url')
+        ->where('external_url', '!=', '')
+        ->orderByDesc('source_published_at')
+        ->orderByDesc('published_at')
+        ->paginate(12);
+
+    return view('pages.world-news', compact('worldNews'));
+})->name('world-news');
+
+Route::get('/sailing-news/{news}', function (News $news) {
+    abort_unless(
+        $news->type === 'external'
+        && $news->isPublished()
+        && filled($news->source_name)
+        && filled($news->external_url),
+        404,
+    );
+
+    $news->load('media');
+
+    $otherNews = News::external()
+        ->published()
+        ->whereNotNull('source_name')
+        ->where('source_name', '!=', '')
+        ->whereNotNull('external_url')
+        ->where('external_url', '!=', '')
+        ->where('id', '!=', $news->id)
+        ->orderByDesc('source_published_at')
+        ->orderByDesc('published_at')
+        ->limit(3)
+        ->get();
+
+    return view('pages.world-news-details', compact('news', 'otherNews'));
+})->name('world-news-details');
 
 // «Пресса о нас» — публикации сторонних изданий (ТЗ 3-го этапа, п. 9).
 Route::get('/press', function () {

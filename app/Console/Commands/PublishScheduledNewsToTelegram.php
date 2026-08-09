@@ -22,6 +22,7 @@ class PublishScheduledNewsToTelegram extends Command
         }
 
         $news = News::query()
+            ->manual()
             ->published()
             ->where('published_to_tg', false)
             ->get();

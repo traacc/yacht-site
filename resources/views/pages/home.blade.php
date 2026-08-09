@@ -123,6 +123,26 @@
     </div>
 </section>
 
+{{-- ===== НОВОСТИ ПАРУСНОГО МИРА ===== --}}
+<section class="py-12 bg-white">
+    <div class="container mx-auto">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="section-title a-font">Новости парусного мира</h2>
+            <a href="{{ route('world-news') }}" class="text-[#2E325C] text-lg font-semibold hover:underline hidden md:block">Все новости →</a>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6">
+            @forelse ($worldNews as $newsItem)
+                <x-world-news-card :news="$newsItem" />
+            @empty
+                <p class="col-span-3 text-center text-brand-gray py-6">Публикаций пока нет</p>
+            @endforelse
+        </div>
+
+        <a href="{{ route('world-news') }}" class="text-[#2E325C] text-center block mt-8 text-sm font-semibold hover:underline md:hidden">Все новости →</a>
+    </div>
+</section>
+
 {{-- ===== ПРЕССА О НАС ===== --}}
 @if($pressMentions->isNotEmpty())
 <section class="py-12 bg-white">

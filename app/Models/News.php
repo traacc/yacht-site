@@ -27,6 +27,8 @@ class News extends Model implements HasMedia
         'title',
         'content',
         'external_url',
+        'source_name',
+        'source_published_at',
         'cover_image_url',
         'cover_object_position',
         'published_to_tg',
@@ -38,6 +40,12 @@ class News extends Model implements HasMedia
     protected static function booted(): void
     {
         static::creating(function (News $news) {
+            // Значение по умолчанию БД не попадает обратно в экземпляр Eloquent
+            // до refresh(), а observer должен видеть тип сразу после создания.
+            if ($news->type === null) {
+                $news->type = 'manual';
+            }
+
             if ($news->published_at === null) {
                 $news->published_at = now();
             }
@@ -50,6 +58,7 @@ class News extends Model implements HasMedia
             'published_to_tg' => 'boolean',
             'published_to_vk' => 'boolean',
             'notified_users' => 'boolean',
+            'source_published_at' => 'datetime',
             'published_at' => 'datetime',
         ];
     }

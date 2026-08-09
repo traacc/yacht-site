@@ -81,4 +81,13 @@ return [
         // Прокси для VK API (если требуется): socks5://... или http://...
         'proxy' => env('VK_PROXY'),
     ],
+
+    'openai' => [
+        // Ключ хранится только в окружении, в таблицу settings не попадает.
+        'api_key' => env('OPENAI_API_KEY'),
+        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+        'news_model' => env('OPENAI_NEWS_MODEL', 'gpt-5-mini'),
+        'news_timeout' => (int) env('OPENAI_NEWS_TIMEOUT', 120),
+        'news_max_output_tokens' => (int) env('OPENAI_NEWS_MAX_OUTPUT_TOKENS', 12000),
+    ],
 ];

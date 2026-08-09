@@ -24,7 +24,10 @@ class NewsObserver
      */
     public function saved(News $news): void
     {
-        if (! $news->isPublished()) {
+        // Автоматические внешние материалы живут только в разделе «Новости
+        // парусного мира». Массовая рассылка и соцсети остаются контуром
+        // редакционных новостей ассоциации.
+        if ($news->type !== 'manual' || ! $news->isPublished()) {
             return;
         }
 

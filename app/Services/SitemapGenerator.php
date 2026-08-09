@@ -38,6 +38,7 @@ class SitemapGenerator
         'gallery',
         'help',
         'news',
+        'world-news',
         'press',
         'carter30.history',
         'carter30.regulations',
@@ -77,12 +78,30 @@ class SitemapGenerator
         }
 
         // Опубликованные новости
-        News::published()
+        News::manual()
+            ->published()
             ->orderByDesc('published_at')
             ->get()
             ->each(function (News $news) use (&$urls): void {
                 $urls[] = [
                     'loc' => route('news-details', $news),
+                    'lastmod' => $news->updated_at?->toAtomString(),
+                ];
+            });
+
+        // Обзоры новостей парусного мира с обязательной ссылкой на источник.
+        News::external()
+            ->published()
+            ->whereNotNull('source_name')
+            ->where('source_name', '!=', '')
+            ->whereNotNull('external_url')
+            ->where('external_url', '!=', '')
+            ->orderByDesc('source_published_at')
+            ->orderByDesc('published_at')
+            ->get()
+            ->each(function (News $news) use (&$urls): void {
+                $urls[] = [
+                    'loc' => route('world-news-details', $news),
                     'lastmod' => $news->updated_at?->toAtomString(),
                 ];
             });
