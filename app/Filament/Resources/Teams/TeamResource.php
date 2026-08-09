@@ -38,6 +38,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Collection;
+use UnitEnum;
 
 class TeamResource extends Resource
 {
@@ -58,6 +59,8 @@ class TeamResource extends Resource
     }
 
     protected static ?int $navigationSort = 6;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Команды и участники';
 
     public static function form(Schema $schema): Schema
     {

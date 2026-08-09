@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Series;
 
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\Series\Pages\ManageSeries;
 use App\Models\Series;
 use BackedEnum;
@@ -22,16 +23,19 @@ use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
 
 class SeriesResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected static ?string $model = Series::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?int $navigationSort = 2;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Регаты';
 
     public static function getModelLabel(): string
     {

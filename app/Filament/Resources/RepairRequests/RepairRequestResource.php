@@ -17,6 +17,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
 
 /**
  * Заявки по кнопке «Хотите такой ремонт?» (раздел «Carter 30»).
@@ -34,6 +35,8 @@ class RepairRequestResource extends Resource
     protected static ?string $navigationLabel = 'Заявки на ремонт';
 
     protected static ?int $navigationSort = 10;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Яхты';
 
     public static function getModelLabel(): string
     {

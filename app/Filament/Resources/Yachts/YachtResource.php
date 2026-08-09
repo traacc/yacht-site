@@ -43,6 +43,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
+use UnitEnum;
 
 class YachtResource extends Resource
 {
@@ -63,6 +64,8 @@ class YachtResource extends Resource
     }
 
     protected static ?int $navigationSort = 7;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Яхты';
 
     public static function form(Schema $schema): Schema
     {

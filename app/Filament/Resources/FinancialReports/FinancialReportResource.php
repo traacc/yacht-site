@@ -19,6 +19,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class FinancialReportResource extends Resource
 {
@@ -29,6 +30,8 @@ class FinancialReportResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentChartBar;
 
     protected static ?int $navigationSort = 21;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Финансы';
 
     public static function getModelLabel(): string
     {

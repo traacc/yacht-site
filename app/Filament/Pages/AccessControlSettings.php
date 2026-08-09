@@ -27,7 +27,7 @@ use UnitEnum;
  * или отключить доступ к каждому ресурсу/странице. Администратор всегда имеет
  * полный доступ и в матрице не отображается.
  *
- * @see \App\Support\AccessControl
+ * @see AccessControl
  */
 class AccessControlSettings extends Page
 {
@@ -41,7 +41,7 @@ class AccessControlSettings extends Page
 
     protected static ?int $navigationSort = 90;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Сайт';
+    protected static string|UnitEnum|null $navigationGroup = 'Администрирование';
 
     /** @var array<string, array<string, bool>> */
     public array $data = [];
@@ -93,7 +93,7 @@ class AccessControlSettings extends Page
 
             foreach ($grouped as $groupName => $items) {
                 $toggles = array_map(
-                    fn (array $item) => Toggle::make($role->value . '.' . $item['key'])
+                    fn (array $item) => Toggle::make($role->value.'.'.$item['key'])
                         ->label($item['label'])
                         ->default(true)
                         ->inline(false),
@@ -106,7 +106,7 @@ class AccessControlSettings extends Page
             }
 
             $sections[] = Section::make($role->getLabel())
-                ->description('Разделы, доступные роли «' . $role->getLabel() . '».')
+                ->description('Разделы, доступные роли «'.$role->getLabel().'».')
                 ->schema($groupSchemas)
                 ->collapsible();
         }

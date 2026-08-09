@@ -25,6 +25,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
 
 /**
  * Заявки раздела «Услуги» (ТЗ 3-го этапа, п. 7).
@@ -44,6 +45,8 @@ class ServiceRequestResource extends Resource
     protected static ?string $navigationLabel = 'Заявки на услуги';
 
     protected static ?int $navigationSort = 11;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Услуги';
 
     public static function getModelLabel(): string
     {

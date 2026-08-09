@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\YachtOwnershipTransfers;
 
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\YachtOwnershipTransfers\Pages\ManageYachtOwnershipTransfers;
 use App\Models\Document;
 use App\Models\YachtOwnershipTransfer;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -19,10 +21,11 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
 
 class YachtOwnershipTransferResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected static ?string $model = YachtOwnershipTransfer::class;
 
@@ -31,6 +34,8 @@ class YachtOwnershipTransferResource extends Resource
     protected static ?string $navigationLabel = 'Передача яхт';
 
     protected static ?int $navigationSort = 8;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Яхты';
 
     public static function getModelLabel(): string
     {
@@ -126,8 +131,7 @@ class YachtOwnershipTransferResource extends Resource
             ->recordActions([
                 ViewAction::make()
                     ->label('Просмотр')
-                    ->modalHeading(fn (YachtOwnershipTransfer $record): string =>
-                        "Передача яхты «{$record->yacht?->name}» → {$record->requester?->name}"
+                    ->modalHeading(fn (YachtOwnershipTransfer $record): string => "Передача яхты «{$record->yacht?->name}» → {$record->requester?->name}"
                     )
                     ->extraModalFooterActions([
                         Action::make('approveFromView')
@@ -156,8 +160,7 @@ class YachtOwnershipTransferResource extends Resource
                     ->color('success')
                     ->requiresConfirmation()
                     ->modalHeading('Одобрить передачу яхты?')
-                    ->modalDescription(fn (YachtOwnershipTransfer $record): string =>
-                        "Яхта «{$record->yacht?->name}» будет передана пользователю «{$record->requester?->name}»."
+                    ->modalDescription(fn (YachtOwnershipTransfer $record): string => "Яхта «{$record->yacht?->name}» будет передана пользователю «{$record->requester?->name}»."
                     )
                     ->modalSubmitActionLabel('Одобрить')
                     ->action(function (YachtOwnershipTransfer $record): void {
@@ -186,7 +189,7 @@ class YachtOwnershipTransferResource extends Resource
     }
 
     /**
-     * @return array<int, \Filament\Forms\Components\Field>
+     * @return array<int, Field>
      */
     protected static function rejectForm(): array
     {

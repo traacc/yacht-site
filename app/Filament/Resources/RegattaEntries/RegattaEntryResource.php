@@ -40,6 +40,7 @@ use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
 
 class RegattaEntryResource extends Resource
 {
@@ -51,6 +52,8 @@ class RegattaEntryResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'results';
 
     protected static ?int $navigationSort = 3;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Регаты';
 
     public static function getModelLabel(): string
     {

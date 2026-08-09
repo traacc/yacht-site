@@ -52,6 +52,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use UnitEnum;
 
 class RegattaResultResource extends Resource
 {
@@ -63,6 +64,8 @@ class RegattaResultResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'cup';
 
     protected static ?int $navigationSort = 2;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Регаты';
 
     public static function getModelLabel(): string
     {

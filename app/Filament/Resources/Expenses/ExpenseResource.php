@@ -19,6 +19,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class ExpenseResource extends Resource
 {
@@ -29,6 +30,8 @@ class ExpenseResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptPercent;
 
     protected static ?int $navigationSort = 22;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Финансы';
 
     public static function getModelLabel(): string
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\UserQuestions\Pages\ManageUserQuestions;
 use App\Models\Faq;
 use App\Models\UserQuestion;
@@ -27,7 +28,7 @@ use UnitEnum;
 
 class UserQuestionResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected static ?string $model = UserQuestion::class;
 
@@ -37,7 +38,7 @@ class UserQuestionResource extends Resource
 
     protected static ?int $navigationSort = 16;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Сайт';
+    protected static string|UnitEnum|null $navigationGroup = 'Обращения';
 
     public static function getModelLabel(): string
     {

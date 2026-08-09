@@ -39,7 +39,7 @@ class Carter30HistoryPageSettings extends Page
 
     protected static ?int $navigationSort = 27;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Сайт';
+    protected static string|UnitEnum|null $navigationGroup = 'Яхты';
 
     public array $data = [];
 

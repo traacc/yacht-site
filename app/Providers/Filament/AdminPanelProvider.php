@@ -11,6 +11,7 @@ use App\Http\Middleware\FilamentAuthenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
@@ -48,6 +49,18 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
+            ->navigationGroups([
+                NavigationGroup::make('Регаты'),
+                NavigationGroup::make('Рейтинги'),
+                NavigationGroup::make('Команды и участники'),
+                NavigationGroup::make('Яхты'),
+                NavigationGroup::make('Услуги'),
+                NavigationGroup::make('Финансы'),
+                NavigationGroup::make('Объявления'),
+                NavigationGroup::make('Обращения'),
+                NavigationGroup::make('Сайт'),
+                NavigationGroup::make('Администрирование'),
+            ])
             /*->navigationItems([
                 NavigationItem::make('Профиль')
                     ->url(fn (): string => \App\Filament\Pages\EditProfile::getUrl(), shouldOpenInNewTab: false)

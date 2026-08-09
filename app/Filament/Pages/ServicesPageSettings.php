@@ -51,7 +51,7 @@ class ServicesPageSettings extends Page
 
     protected static ?int $navigationSort = 31;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Сайт';
+    protected static string|UnitEnum|null $navigationGroup = 'Услуги';
 
     /** Группа настроек: один forgetGroup() сбрасывает кэш всего раздела. */
     private const GROUP = 'services';

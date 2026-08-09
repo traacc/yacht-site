@@ -50,7 +50,7 @@ class BroadcastNotification extends Page
 
     protected static ?int $navigationSort = 91;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Сайт';
+    protected static string|UnitEnum|null $navigationGroup = 'Обращения';
 
     /** @var array<string, mixed> */
     public array $data = [];

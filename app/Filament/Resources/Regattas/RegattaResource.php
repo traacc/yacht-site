@@ -56,6 +56,7 @@ use Kpebedko22\FilamentYandexMap\Enums\YandexMapMode;
 use Kpebedko22\FilamentYandexMap\Forms\Components\YandexMap;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Str;
+use UnitEnum;
 
 class RegattaResource extends Resource
 {
@@ -73,6 +74,8 @@ class RegattaResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'regatta';
 
     protected static ?int $navigationSort = 1;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Регаты';
 
     public static function getModelLabel(): string
     {

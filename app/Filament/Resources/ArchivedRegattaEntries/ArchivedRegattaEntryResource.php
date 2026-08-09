@@ -32,6 +32,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
 
 class ArchivedRegattaEntryResource extends Resource
 {
@@ -45,6 +46,8 @@ class ArchivedRegattaEntryResource extends Resource
     protected static ?string $navigationLabel = 'Архивные заявки';
 
     protected static ?int $navigationSort = 5;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Регаты';
 
     public static function getModelLabel(): string
     {
@@ -166,74 +169,74 @@ class ArchivedRegattaEntryResource extends Resource
                             default => '—',
                         })
                     ->schema([
-                            Select::make('team_member_id')
-                                ->label('Участник')
-                                ->options(function (Get $get, ?RegattaEntry $record): array {
-                                    $regattaId = $get('../../regatta_id');
+                        Select::make('team_member_id')
+                            ->label('Участник')
+                            ->options(function (Get $get, ?RegattaEntry $record): array {
+                                $regattaId = $get('../../regatta_id');
 
-                                    if (! $regattaId) {
-                                        return [];
-                                    }
+                                if (! $regattaId) {
+                                    return [];
+                                }
 
-                                    // Участники, уже записанные в экипажи других заявок на эту регату
-                                    $takenIds = RegattaEntryCrew::query()
-                                        ->whereHas('regattaEntry', function (Builder $query) use ($regattaId, $record): void {
-                                            $query->where('regatta_id', $regattaId);
+                                // Участники, уже записанные в экипажи других заявок на эту регату
+                                $takenIds = RegattaEntryCrew::query()
+                                    ->whereHas('regattaEntry', function (Builder $query) use ($regattaId, $record): void {
+                                        $query->where('regatta_id', $regattaId);
 
-                                            if ($record) {
-                                                $query->whereKeyNot($record->getKey());
-                                            }
-                                        })
-                                        ->pluck('team_member_id');
+                                        if ($record) {
+                                            $query->whereKeyNot($record->getKey());
+                                        }
+                                    })
+                                    ->pluck('team_member_id');
 
-                                    return TeamMember::query()
-                                        ->where('status', 'active')
-                                        ->whereNotIn('id', $takenIds)
-                                        ->with('user')
-                                        ->get()
-                                        ->mapWithKeys(fn (TeamMember $member): array => [
-                                            $member->id => $member->user?->name ?? 'Неизвестный',
-                                        ])
-                                        ->sort(fn (string $a, string $b): int => strnatcasecmp($a, $b))
-                                        ->all();
-                                })
-                                ->required()
-                                ->live()
-                                ->searchable()
-                                ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                                ->afterStateUpdated(function (?string $state, Set $set, Get $get): void {
-                                    if (! $state) {
-                                        $set('member_name', '');
+                                return TeamMember::query()
+                                    ->where('status', 'active')
+                                    ->whereNotIn('id', $takenIds)
+                                    ->with('user')
+                                    ->get()
+                                    ->mapWithKeys(fn (TeamMember $member): array => [
+                                        $member->id => $member->user?->name ?? 'Неизвестный',
+                                    ])
+                                    ->sort(fn (string $a, string $b): int => strnatcasecmp($a, $b))
+                                    ->all();
+                            })
+                            ->required()
+                            ->live()
+                            ->searchable()
+                            ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                            ->afterStateUpdated(function (?string $state, Set $set, Get $get): void {
+                                if (! $state) {
+                                    $set('member_name', '');
 
-                                        return;
-                                    }
+                                    return;
+                                }
 
-                                    $teamId = $get('../../../team_id');
-                                    if (! $teamId) {
-                                        return;
-                                    }
+                                $teamId = $get('../../../team_id');
+                                if (! $teamId) {
+                                    return;
+                                }
 
-                                    $team = Team::find($teamId);
-                                    $member = $team?->members()
-                                        ->wherePivot('status', 'active')
-                                        ->wherePivot('id', $state)
-                                        ->first();
+                                $team = Team::find($teamId);
+                                $member = $team?->members()
+                                    ->wherePivot('status', 'active')
+                                    ->wherePivot('id', $state)
+                                    ->first();
 
-                                    $set('member_name', $member?->name ?? '');
-                                }),
-                            Hidden::make('member_name'),
-                            Hidden::make('is_captain')
-                                ->default(false),
-                            Select::make('role')
-                                ->label('Роль')
-                                ->options([
-                                    'main' => 'Основной',
-                                    'reserve' => 'Запасной',
-                                    'captain' => 'Рулевой',
-                                    // 'not_participating' => 'Не участвует',
-                                ])
-                                ->required(),
-                        ])->columns(2)->inset()->addActionLabel('Добавить члена экипажа'),
+                                $set('member_name', $member?->name ?? '');
+                            }),
+                        Hidden::make('member_name'),
+                        Hidden::make('is_captain')
+                            ->default(false),
+                        Select::make('role')
+                            ->label('Роль')
+                            ->options([
+                                'main' => 'Основной',
+                                'reserve' => 'Запасной',
+                                'captain' => 'Рулевой',
+                                // 'not_participating' => 'Не участвует',
+                            ])
+                            ->required(),
+                    ])->columns(2)->inset()->addActionLabel('Добавить члена экипажа'),
 
                 // ── Документы заявки ──────────────────
                 Repeater::make('required_documents')

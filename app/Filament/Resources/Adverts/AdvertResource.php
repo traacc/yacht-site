@@ -53,7 +53,7 @@ class AdvertResource extends Resource
 
     protected static ?int $navigationSort = 30;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Сайт';
+    protected static string|UnitEnum|null $navigationGroup = 'Объявления';
 
     public static function getModelLabel(): string
     {

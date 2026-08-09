@@ -43,7 +43,7 @@ class Carter30RepairPageSettings extends Page
 
     protected static ?int $navigationSort = 28;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Сайт';
+    protected static string|UnitEnum|null $navigationGroup = 'Яхты';
 
     public array $data = [];
 

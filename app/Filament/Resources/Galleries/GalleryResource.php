@@ -17,20 +17,20 @@ use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
 // ★ ЗАМЕНЕНО: FileUpload → SpatieMediaLibraryFileUpload
 // Было: use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
-// ★ ДОБАВЛЕНО: SpatieMediaLibraryImageColumn для отображения обложки в таблице
 use Filament\Schemas\Schema;
+// ★ ДОБАВЛЕНО: SpatieMediaLibraryImageColumn для отображения обложки в таблице
 use Filament\Support\Icons\Heroicon;
-// ↓↓↓ УДАЛЕНО: ImageColumn — заменён на SpatieMediaLibraryImageColumn
 use Filament\Tables\Columns\IconColumn;
+// ↓↓↓ УДАЛЕНО: ImageColumn — заменён на SpatieMediaLibraryImageColumn
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -44,6 +44,7 @@ use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\Support\MediaStream;
+use UnitEnum;
 
 class GalleryResource extends Resource
 {
@@ -54,6 +55,8 @@ class GalleryResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'gallery';
 
     protected static ?int $navigationSort = 8;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Сайт';
 
     public static function getModelLabel(): string
     {

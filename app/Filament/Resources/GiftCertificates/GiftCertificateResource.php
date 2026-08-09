@@ -51,7 +51,7 @@ class GiftCertificateResource extends Resource
 
     protected static ?int $navigationSort = 32;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Сайт';
+    protected static string|\UnitEnum|null $navigationGroup = 'Услуги';
 
     /** Форматы, которые принимает загрузчик обложки (HEIC нормализуется в JPEG на лету). */
     private const IMAGE_MIMES = [

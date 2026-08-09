@@ -58,7 +58,7 @@ class ForeignRegattaResource extends Resource
 
     protected static ?int $navigationSort = 31;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Сайт';
+    protected static string|\UnitEnum|null $navigationGroup = 'Услуги';
 
     /** Форматы, которые принимает загрузчик фотографий (HEIC нормализуется в JPEG на лету). */
     private const IMAGE_MIMES = [

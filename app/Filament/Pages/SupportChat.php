@@ -37,7 +37,7 @@ class SupportChat extends Page
 
     protected static ?int $navigationSort = 92;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Сайт';
+    protected static string|UnitEnum|null $navigationGroup = 'Обращения';
 
     /** Выбранное обращение. */
     public ?string $selectedId = null;

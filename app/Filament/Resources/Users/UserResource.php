@@ -48,6 +48,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use UnitEnum;
 
 class UserResource extends Resource
 {
@@ -68,6 +69,8 @@ class UserResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'user';
 
     protected static ?int $navigationSort = 5;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Команды и участники';
 
     public static function form(Schema $schema): Schema
     {

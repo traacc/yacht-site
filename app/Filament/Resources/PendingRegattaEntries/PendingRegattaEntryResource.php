@@ -28,6 +28,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use UnitEnum;
 
 class PendingRegattaEntryResource extends Resource
 {
@@ -41,6 +42,8 @@ class PendingRegattaEntryResource extends Resource
     protected static ?string $navigationLabel = 'Одобрение заявок';
 
     protected static ?int $navigationSort = 4;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Регаты';
 
     public static function getModelLabel(): string
     {

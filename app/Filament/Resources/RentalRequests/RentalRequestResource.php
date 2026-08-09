@@ -18,6 +18,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
 
 class RentalRequestResource extends Resource
 {
@@ -30,6 +31,8 @@ class RentalRequestResource extends Resource
     protected static ?string $navigationLabel = 'Заявки на аренду';
 
     protected static ?int $navigationSort = 9;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Яхты';
 
     public static function getModelLabel(): string
     {

@@ -40,7 +40,7 @@ class PaymentSettings extends Page
 
     protected static ?int $navigationSort = 12;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Сайт';
+    protected static string|UnitEnum|null $navigationGroup = 'Финансы';
 
     /** @var array<string, mixed> */
     public array $data = [];

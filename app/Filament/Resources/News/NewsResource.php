@@ -34,6 +34,7 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use UnitEnum;
 
 class NewsResource extends Resource
 {
@@ -44,6 +45,8 @@ class NewsResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'news';
 
     protected static ?int $navigationSort = 8;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Сайт';
 
     public static function getModelLabel(): string
     {
