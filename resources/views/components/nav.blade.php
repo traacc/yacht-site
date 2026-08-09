@@ -55,11 +55,10 @@
                         @endforeach
                     </div>
                 </div>
-                <!--
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
                     <button @click="open = !open"
                         class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
-                        Carter 30
+                        Carter&nbsp;30
                         <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="open" x-cloak x-transition
@@ -72,7 +71,6 @@
                         <a href="{{ route('carter30.yacht-sale') }}" class="block px-4 py-2 text-gray-700">Продать яхту</a>
                     </div>
                 </div>
-                -->
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
                     <button @click="open = !open"
                         class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
@@ -284,11 +282,10 @@
                             @endforeach
                         </div>
                     </div>
-                    <!--
                     <div x-data="{ open: false }" class="relative">
                         <button @click="open = !open"
                             class="flex items-center gap-1 py-2 text-sm transition-colors">
-                            Carter 30
+                            Carter&nbsp;30
                             <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="open" x-cloak x-transition class="">
@@ -300,7 +297,6 @@
                             <a href="{{ route('carter30.yacht-sale') }}" class="block px-4 py-2 text-sm">Продать яхту</a>
                         </div>
                     </div>
-                    -->
                     <div x-data="{ open: false }" class="relative">
                         <button @click="open = !open"
                             class="flex items-center gap-1 py-2 text-sm transition-colors">
