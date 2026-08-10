@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
+use App\Enums\SportCategory;
 use App\Models\Team;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
@@ -42,24 +43,24 @@ class TeamCardModal extends Component
         }
 
         $this->team = [
-            'name'        => $team->name,
-            'photo'       => $team->picture ? Storage::url($team->picture) : null,
+            'name' => $team->name,
+            'photo' => $team->picture ? Storage::url($team->picture) : null,
             'description' => $team->description ?? '',
-            'status'      => $team->is_archived ? 'Неактивная' : 'Активная',
-            'captain'     => $team->organizer?->name,
-            'captain_id'  => $team->organizer?->id,
-            'rating'      => $team->teamRatings
+            'status' => $team->is_archived ? 'Неактивная' : 'Активная',
+            'captain' => $team->organizer?->name,
+            'captain_id' => $team->organizer?->id,
+            'rating' => $team->teamRatings
                 ->sortByDesc(fn ($r) => $r->season?->year ?? 0)
                 ->first()?->rank_position ?? '—',
-            'regattas'    => $team->regattaEntries
+            'regattas' => $team->regattaEntries
                 ->filter(fn ($e) => $e->regatta?->date_start?->isPast())
                 ->count(),
-            'members'     => $team->activeMembers->map(fn ($m) => [
-                'id'       => $m->id,
-                'name'     => $m->name,
-                'avatar'   => $m->photo_url ? Storage::url($m->photo_url) : null,
+            'members' => $team->activeMembers->map(fn ($m) => [
+                'id' => $m->id,
+                'name' => $m->name,
+                'avatar' => $m->photo_url ? Storage::url($m->photo_url) : null,
                 'birthday' => $m->birth_date?->format('d.m.Y') ?? '—',
-                'category' => $m->sport_category?->getLabel() ?? '—',
+                'category' => SportCategory::labelOrNone($m->sport_category),
             ])->values()->toArray(),
         ];
 

@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Enums\RegattaStatus;
+use App\Enums\SportCategory;
 use App\Filament\Resources\RegattaResults\RegattaResultResource;
 use App\Models\RegattaEntry;
 use App\Models\RegattaResult;
@@ -132,7 +133,7 @@ class RegattaEntryResultObserver
                     'id' => $user?->id,
                     'name' => $user?->name ?? '',
                     'birthday' => $user?->birth_date?->format('d.m.Y') ?? '—',
-                    'rank' => $user?->sport_category?->getLabel() ?? '—',
+                    'rank' => SportCategory::labelOrNone($user?->sport_category),
                     'avatar' => $user?->photo_url ? asset('storage/'.$user->photo_url) : null,
                     'role' => $c->role,
                 ];

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Regatta;
 
+use App\Enums\SportCategory;
 use App\Models\Regatta;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -69,7 +70,7 @@ final class DownloadRegattaTeamsAction
                         $entry->team?->organizer?->name ?? '—',
                         $member->name ?? '—',
                         $member->birth_date?->format('d.m.Y') ?? '',
-                        $member->sport_category?->getLabel() ?? '',
+                        SportCategory::labelOrNone($member->sport_category),
                     ], null, 'A'.$row);
                     $row++;
                 }

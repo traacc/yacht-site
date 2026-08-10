@@ -216,7 +216,7 @@
                                             <span class="font-medium text-[#2E325C]" x-text="member.name"></span>
                                         </div>
                                         <div class="text-right text-sm text-gray-500">
-                                            <div x-show="member.category && member.category !== '—'" x-text="member.category"></div>
+                                            <div x-text="member.category"></div>
                                             <div x-show="member.birthday && member.birthday !== '—'" x-text="member.birthday"></div>
                                         </div>
                                     </div>

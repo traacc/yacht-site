@@ -414,7 +414,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                             <span class="font-medium text-[#2E325C]" :class="member.id ? 'group-hover:underline' : ''" x-text="member.name"></span>
                                         </div>
                                         <div class="text-right text-sm text-gray-500">
-                                            <div x-show="member.category && member.category !== '—'" x-text="member.category"></div>
+                                            <div x-text="member.category"></div>
                                             <div x-show="member.birthday && member.birthday !== '—'" x-text="member.birthday"></div>
                                         </div>
                                     </div>
@@ -491,7 +491,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                 <div class="text-xs text-gray-500 mb-1">Очки</div>
                                 <div class="font-bold text-[#2E325C] text-lg" x-text="participantModalData.total_points"></div>
                             </div>
-                            <div class="bg-brand-light rounded-xl px-4 py-3" x-show="participantModalData.category && participantModalData.category !== '—'">
+                            <div class="bg-brand-light rounded-xl px-4 py-3">
                                 <div class="text-xs text-gray-500 mb-1 flex items-center gap-1">
                                     Разряд
                                     <x-info-tooltip text="б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта." />

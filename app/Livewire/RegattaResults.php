@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Enums\PenaltyCode;
+use App\Enums\SportCategory;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use App\Models\Team;
@@ -169,7 +170,14 @@ class RegattaResults extends Component
         $this->activeTeamModal = [
             'team_id' => $teamId,
             'team_name' => $teamName,
-            'members' => $members,
+            // Снимки состава, замороженные до перехода на «б/р», хранят прочерк.
+            'members' => array_map(function (array $member): array {
+                $member['rank'] = ($member['rank'] ?? '') === '—' || ($member['rank'] ?? '') === ''
+                    ? SportCategory::No->getLabel()
+                    : $member['rank'];
+
+                return $member;
+            }, $members),
         ];
     }
 
@@ -231,7 +239,7 @@ class RegattaResults extends Component
                 'id' => $c->teamMember->user->id ?? null,
                 'name' => $c->teamMember->user->name ?? '',
                 'birthday' => $c->teamMember->user->birth_date?->format('d.m.Y') ?? '—',
-                'rank' => $c->teamMember->user->sport_category?->getLabel() ?? '—',
+                'rank' => SportCategory::labelOrNone($c->teamMember->user->sport_category),
                 'avatar' => $c->teamMember->user->photo_url ? asset('storage/'.$c->teamMember->user->photo_url) : null,
                 'role' => $c->role,
             ])->toArray();

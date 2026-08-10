@@ -179,7 +179,7 @@
                     </td>
                     <td class="member-name">Рулевой: <strong>{{ $captainUser?->short_name ?? '—' }}</strong></td>
                     <td>{{ $captainUser?->birth_date?->format('d.m.Y') ?? '—' }}</td>
-                    <td class="center">{{ $captainUser?->sport_category?->getLabel() ?? '—' }}</td>
+                    <td class="center">{{ \App\Enums\SportCategory::labelOrNone($captainUser?->sport_category) }}</td>
                 </tr>
                 @forelse($members as $crewMember)
                     @php($user = $crewMember->teamMember?->user)
@@ -188,7 +188,7 @@
                         <td></td>
                         <td class="member-name">{{ $user?->short_name ?? '—' }}</td>
                         <td>{{ $user?->birth_date?->format('d.m.Y') ?? '—' }}</td>
-                        <td class="center">{{ $user?->sport_category?->getLabel() ?? '—' }}</td>
+                        <td class="center">{{ \App\Enums\SportCategory::labelOrNone($user?->sport_category) }}</td>
                     </tr>
                 @empty
                     <tr class="member-row">

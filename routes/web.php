@@ -25,6 +25,7 @@ use App\Enums\PaymentTransactionStatus;
 use App\Enums\RegattaStatus;
 use App\Enums\RentalRequestStatus;
 use App\Enums\ServiceType;
+use App\Enums\SportCategory;
 use App\Enums\VotingStatus;
 use App\Filament\User\Pages\Messages as UserMessagesPage;
 use App\Models\Advert;
@@ -782,7 +783,7 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
             ->map(fn ($crewMember) => [
                 'name' => $crewMember->teamMember?->user?->short_name ?? '',
                 'birthday' => $crewMember->teamMember?->user?->birth_date?->format('d.m.Y') ?? '',
-                'rank' => $crewMember->teamMember?->user?->sport_category?->getLabel() ?? '',
+                'rank' => SportCategory::labelOrNone($crewMember->teamMember?->user?->sport_category),
                 'is_captain' => $crewMember->role === 'captain',
             ])->values()->toArray(),
     ])->values()->toArray();
@@ -1054,7 +1055,7 @@ Route::get('/ratings', function () {
                         'id' => $m->id,
                         'name' => $m->name,
                         'birthday' => $m->birth_date?->format('d.m.Y') ?? '—',
-                        'category' => $m->sport_category?->getLabel() ?? '—',
+                        'category' => SportCategory::labelOrNone($m->sport_category),
                         'avatar' => $m->photo_url ? asset('storage/'.$m->photo_url) : null,
                     ])->values()->toArray() ?? [],
             ];
@@ -1081,7 +1082,7 @@ Route::get('/ratings', function () {
             'rank' => $r->rank_position,
             'total_points' => (float) $r->total_points,
             'birthday' => $r->user?->birth_date?->format('d.m.Y') ?? '—',
-            'category' => $r->user?->sport_category?->getLabel() ?? '—',
+            'category' => SportCategory::labelOrNone($r->user?->sport_category),
             'avatar' => $r->user?->photo_url ? asset('storage/'.$r->user->photo_url) : null,
             'regattas' => $breakdownFor($r->season, $r->user_id),
         ])
@@ -1120,7 +1121,7 @@ Route::get('/series/results', function () {
                 ->map(fn ($m) => [
                     'name' => $m->name,
                     'birthday' => $m->birth_date?->format('d.m.Y') ?? '—',
-                    'category' => $m->sport_category?->getLabel() ?? '—',
+                    'category' => SportCategory::labelOrNone($m->sport_category),
                     'avatar' => $m->photo_url ? asset('storage/'.$m->photo_url) : null,
                 ])->values()->toArray() ?? [],
         ]]);

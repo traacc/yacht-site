@@ -2,6 +2,7 @@
 
 namespace App\Actions\RegattaResult;
 
+use App\Enums\SportCategory;
 use App\Models\RegattaEntry;
 use App\Models\RegattaResult;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -76,7 +77,7 @@ final class GenerateRegattaResultPdfAction
                         return [
                             'name' => $user->name,
                             'birth' => $user->birth_date?->format('d.m.Y'),
-                            'category' => $user->sport_category?->getLabel(),
+                            'category' => SportCategory::labelOrNone($user->sport_category),
                         ];
                     })
                     ->filter()
@@ -86,7 +87,10 @@ final class GenerateRegattaResultPdfAction
                     ->map(fn ($m) => [
                         'name' => $m['name'] ?? '',
                         'birth' => ($m['birthday'] ?? null) === '—' ? null : ($m['birthday'] ?? null),
-                        'category' => ($m['rank'] ?? null) === '—' ? null : ($m['rank'] ?? null),
+                        // Снимки, замороженные до перехода на «б/р», хранят прочерк.
+                        'category' => filled($m['rank'] ?? null) && $m['rank'] !== '—'
+                            ? $m['rank']
+                            : SportCategory::No->getLabel(),
                     ])
                     ->filter(fn ($m) => filled($m['name']))
                     ->values();

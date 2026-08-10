@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
+use App\Enums\SportCategory;
 use App\Models\Team;
 use App\Support\ResponsiveMedia;
 use Illuminate\Support\Facades\Storage;
@@ -81,7 +82,7 @@ class TeamsList extends Component
                 'name' => $m->name,
                 'avatar' => $m->photo_url ? Storage::url($m->photo_url) : null,
                 'birthday' => $m->birth_date?->format('d.m.Y') ?? '',
-                'category' => $m->sport_category?->getLabel() ?? '',
+                'category' => SportCategory::labelOrNone($m->sport_category),
             ])->values()->toArray(),
             'years' => $team->regattaEntries
                 ->filter(fn ($e) => $e->regatta?->isFinished())

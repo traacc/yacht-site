@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
+use App\Enums\SportCategory;
 use App\Models\RegattaEntry;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -31,7 +32,7 @@ class EntryCrewModal extends Component
 
     private const ROLE_LABELS = [
         'captain' => 'Капитан',
-        'main'    => 'Основной состав',
+        'main' => 'Основной состав',
         'reserve' => 'Запасной',
     ];
 
@@ -50,11 +51,11 @@ class EntryCrewModal extends Component
                 $user = $member->teamMember?->user;
 
                 return [
-                    'id'     => $user?->id,
-                    'name'   => $user?->short_name ?? $user?->name ?? '—',
+                    'id' => $user?->id,
+                    'name' => $user?->short_name ?? $user?->name ?? '—',
                     'avatar' => $user?->photo_url ? asset('storage/'.$user->photo_url) : null,
-                    'role'   => self::ROLE_LABELS[$member->role] ?? $member->role,
-                    'rank'   => $user?->sport_category?->getLabel() ?? '—',
+                    'role' => self::ROLE_LABELS[$member->role] ?? $member->role,
+                    'rank' => SportCategory::labelOrNone($user?->sport_category),
                 ];
             })
             ->values()
@@ -62,7 +63,7 @@ class EntryCrewModal extends Component
 
         $this->entry = [
             'yacht' => $entry->yacht?->name ?? '—',
-            'crew'  => $crew,
+            'crew' => $crew,
         ];
 
         $this->isOpen = true;

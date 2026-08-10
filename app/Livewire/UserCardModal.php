@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
+use App\Enums\SportCategory;
 use App\Enums\TeamMemberRole;
 use App\Models\PersonalRating;
 use App\Models\RegattaEntry;
@@ -37,15 +38,15 @@ class UserCardModal extends Component
         }
 
         $this->user = [
-            'name'        => $user->name,
-            'avatar'      => $user->photo_url ? asset('storage/'.$user->photo_url) : null,
-            'number'      => $user->formatted_external_id,
-            'birthday'    => $user->birth_date?->format('d.m.Y') ?? '—',
-            'rank'        => $user->sport_category?->getLabel() ?? '—',
-            'about'       => $user->about,
-            'team'        => $this->resolveMainTeam($user),
-            'regattas'    => $this->resolveParticipationCount($user),
-            'rating'      => $this->resolveRating($user),
+            'name' => $user->name,
+            'avatar' => $user->photo_url ? asset('storage/'.$user->photo_url) : null,
+            'number' => $user->formatted_external_id,
+            'birthday' => $user->birth_date?->format('d.m.Y') ?? '—',
+            'rank' => SportCategory::labelOrNone($user->sport_category),
+            'about' => $user->about,
+            'team' => $this->resolveMainTeam($user),
+            'regattas' => $this->resolveParticipationCount($user),
+            'rating' => $this->resolveRating($user),
         ];
 
         $this->isOpen = true;
@@ -71,7 +72,7 @@ class UserCardModal extends Component
         $rolePriority = [
             TeamMemberRole::Organizer->value => 0,
             TeamMemberRole::TeamAdmin->value => 1,
-            TeamMemberRole::Member->value    => 2,
+            TeamMemberRole::Member->value => 2,
         ];
 
         $membership = $user->teamMemberships()
@@ -128,8 +129,8 @@ class UserCardModal extends Component
 
         return [
             'position' => $rating->rank_position,
-            'points'   => (float) $rating->total_points,
-            'season'   => $rating->season?->year,
+            'points' => (float) $rating->total_points,
+            'season' => $rating->season?->year,
         ];
     }
 

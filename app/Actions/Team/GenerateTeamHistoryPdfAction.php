@@ -2,6 +2,7 @@
 
 namespace App\Actions\Team;
 
+use App\Enums\SportCategory;
 use App\Models\Team;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
@@ -30,7 +31,7 @@ final class GenerateTeamHistoryPdfAction
         $members = $team->activeMembers->map(fn ($member) => [
             'name' => $member->name ?? '—',
             'birthday' => $member->birth_date?->format('d.m.Y') ?? '—',
-            'category' => $member->sport_category?->getLabel() ?? '—',
+            'category' => SportCategory::labelOrNone($member->sport_category),
             'role' => $member->pivot?->role === 'captain' ? 'Рулевой' : 'Участник',
         ])->values();
 
