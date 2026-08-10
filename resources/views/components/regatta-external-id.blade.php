@@ -1,11 +1,11 @@
 {{--
-    ID регаты для судейской программы. Виден только админу-разработчику,
+    ID регаты для судейской программы. Виден админу и админу-разработчику,
     по клику копируется в буфер обмена (с фолбэком для http-контекста,
     где Clipboard API недоступен).
 --}}
 @props(['value' => null])
 
-@if (auth()->user()?->isDeveloperAdmin())
+@if (auth()->user()?->isAdmin() || auth()->user()?->isDeveloperAdmin())
     @if ($value === null)
         <span {{ $attributes->merge(['class' => 'text-brand-gray-light']) }}>ID: —</span>
     @else
