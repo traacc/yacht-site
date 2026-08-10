@@ -50,17 +50,20 @@ class UserPanelProvider extends PanelProvider
                     ->isActiveWhen(fn () => request()->routeIs('filament.user.auth.profile')),
 
             ])
+            // Шапка — как в админке: общий сайтовый компонент вместо топбара Filament
+            // (сам топбар скрыт в теме панели).
             ->renderHook(
-                name: PanelsRenderHook::TOPBAR_BEFORE,
-                hook: fn () => view('filament.user-header')
+                name: PanelsRenderHook::BODY_START,
+                hook: fn () => view('components.nav')
             )
             ->renderHook(
                 name: PanelsRenderHook::TOPBAR_AFTER,
                 hook: fn () => view('filament.user.email-verification-banner-wrapper')
             )
+            // Футер — общий сайтовый компонент, тот же, что на публичных страницах.
             ->renderHook(
                 name: PanelsRenderHook::BODY_END,
-                hook: fn () => view('filament.user-footer')
+                hook: fn () => view('components.footer')
             )
             ->viteTheme('resources/css/filament/user/theme.css')
             ->discoverWidgets(in: app_path('Filament/User/Widgets'), for: 'App\Filament\User\Widgets')
