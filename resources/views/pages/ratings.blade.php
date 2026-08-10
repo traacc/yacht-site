@@ -390,7 +390,10 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                             </div>
                         </div>
 
-                        <h3 class="font-semibold text-[#2E325C] mb-3">Состав команды</h3>
+                        <h3 class="font-semibold text-[#2E325C] mb-3">
+                            Состав команды
+                            <x-info-tooltip text="Рядом с участником — спортивный разряд: б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта." />
+                        </h3>
                         <template x-if="teamModalData.members && teamModalData.members.length > 0">
                             <div class="divide-y divide-[#EAEAEA]">
                                 <template x-for="(member, idx) in teamModalData.members" :key="idx">
@@ -489,7 +492,10 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                 <div class="font-bold text-[#2E325C] text-lg" x-text="participantModalData.total_points"></div>
                             </div>
                             <div class="bg-brand-light rounded-xl px-4 py-3" x-show="participantModalData.category && participantModalData.category !== '—'">
-                                <div class="text-xs text-gray-500 mb-1">Разряд</div>
+                                <div class="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                                    Разряд
+                                    <x-info-tooltip text="б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта." />
+                                </div>
                                 <div class="font-semibold text-[#2E325C]" x-text="participantModalData.category"></div>
                             </div>
                         </div>

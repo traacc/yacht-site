@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\PenaltyCode;
 use App\Models\PersonalRating;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
@@ -187,14 +188,23 @@ class RatingCalculator
                 $raceResultsByEvent = $entry->raceResults->keyBy('event_id');
 
                 $raceBreakdown[$teamId][$regattaId] = $raceEvents->values()
-                    ->map(fn ($event, $i) => [
-                        'number' => $i + 1,
-                        'name' => $event->name,
-                        'date' => $event->event_datetime?->format('d.m.Y H:i'),
-                        'position' => $raceResultsByEvent->get($event->id)?->position,
-                        'points' => $raceResultsByEvent->get($event->id)?->points,
-                        'penalty_code' => $raceResultsByEvent->get($event->id)?->penalty_code,
-                    ])
+                    ->map(function ($event, $i) use ($raceResultsByEvent) {
+                        $result = $raceResultsByEvent->get($event->id);
+
+                        return [
+                            'number' => $i + 1,
+                            'name' => $event->name,
+                            'date' => $event->event_datetime?->format('d.m.Y H:i'),
+                            'position' => $result?->position,
+                            'points' => $result?->points,
+                            'penalty_code' => $result?->penalty_code,
+                            // Расшифровка кода (DNF/DNS/OCS…) для публичной страницы —
+                            // сырой код без неё непонятен обычному пользователю.
+                            'penalty_label' => $result?->penalty_code
+                                ? PenaltyCode::from($result->penalty_code)->label()
+                                : null,
+                        ];
+                    })
                     ->all();
             }
         }

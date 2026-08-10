@@ -365,7 +365,7 @@
                                                 <div class="text-xs text-gray-500" x-show="race.date" x-text="race.date"></div>
                                             </div>
                                             <div class="text-right flex-shrink-0">
-                                                <div class="font-bold text-[#2E325C]" x-text="race.penalty_code ? race.penalty_code : (race.position !== null ? race.position : '—')"></div>
+                                                <div class="font-bold text-[#2E325C]" x-text="race.penalty_label ? race.penalty_label : (race.position !== null ? race.position : '—')"></div>
                                                 <div class="text-xs text-gray-500" x-show="race.points !== null" x-text="race.points + ' очк.'"></div>
                                             </div>
                                         </div>

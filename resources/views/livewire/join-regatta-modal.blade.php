@@ -436,7 +436,10 @@
                                     @enderror
                                 </div>
                                 <div>
-                                    <label for="guestSportCategory" class="block text-xs text-gray-500 mb-1">Спортивный разряд <span class="text-red-500">*</span></label>
+                                    <label for="guestSportCategory" class="flex items-center gap-1 text-xs text-gray-500 mb-1">
+                                        Спортивный разряд <span class="text-red-500">*</span>
+                                        <x-info-tooltip text="б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта." />
+                                    </label>
                                     <select id="guestSportCategory" wire:model="guestSportCategory"
                                             class="block w-full border bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none @error('guestSportCategory') border-red-300 @else border-gray-200 @enderror">
                                         <option value="">Не указан</option>
@@ -564,7 +567,10 @@
                                                         @enderror
                                                     </div>
                                                     <div>
-                                                        <label class="block text-xs text-gray-500 mb-1">Спортивный разряд <span class="text-red-500">*</span></label>
+                                                        <label class="flex items-center gap-1 text-xs text-gray-500 mb-1">
+                                                            Спортивный разряд <span class="text-red-500">*</span>
+                                                            <x-info-tooltip text="б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта." />
+                                                        </label>
                                                         <select wire:model="guestMembers.{{ $i }}.newSportCategory"
                                                                 class="w-full border border-gray-200 bg-white rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
                                                             <option value="">Не указан</option>

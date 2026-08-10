@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Enums\PenaltyCode;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use App\Models\Team;
@@ -322,7 +323,9 @@ class RegattaResults extends Component
                 }
 
                 if ($rr && $rr->penalty_code) {
-                    $pos = mb_strtoupper($rr->penalty_code);
+                    // Расшифровка кода (DNF/DNS/OCS…) — сырой код без неё непонятен
+                    // обычному пользователю.
+                    $pos = PenaltyCode::from($rr->penalty_code)->label();
                 } else {
                     $pos = $rr && $rr->position !== null ? (string) $rr->position : '—';
                 }

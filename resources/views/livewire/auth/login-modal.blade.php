@@ -202,6 +202,10 @@
                     </div>
 
                     <div>
+                        <label class="flex items-center gap-1 text-xs text-brand-gray-light mb-1">
+                            Спортивный разряд
+                            <x-info-tooltip text="б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта." />
+                        </label>
                         <select id="sports_category" wire:model="sports_category" require placeholder="Спортивный разряд"
                             class="mt-1 block w-full border-0 border-b border-[#EAEAEA] shadow-xs focus:border-indigo-500 focus:ring-indigo-500 text-xs md:text-base @error('sports_category') border-red-300 @enderror">
                             <option value="" disabled selected>Спортивный разряд</option>

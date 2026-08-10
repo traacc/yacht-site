@@ -190,7 +190,10 @@
                             <tr class="md:text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
                                 <th class="pt-2 pb-2 text-center font-medium a-font">Участник</th>
                                 <th class="pt-2 pb-2 text-center font-medium a-font">Дата рождения</th>
-                                <th class="pt-2 pb-2 text-center font-medium a-font">Разряд</th>
+                                <th class="pt-2 pb-2 text-center font-medium a-font">
+                                    Разряд
+                                    <x-info-tooltip text="б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта." />
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="divide-y text-center font-medium text-sm md:text-base">

@@ -52,7 +52,10 @@
                             <dd class="font-medium text-brand-dark">{{ $user['birthday'] }}</dd>
                         </div>
                         <div>
-                            <dt class="text-brand-gray-light">Разряд</dt>
+                            <dt class="text-brand-gray-light">
+                                Разряд
+                                <x-info-tooltip text="б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта." />
+                            </dt>
                             <dd class="font-medium text-brand-dark">{{ $user['rank'] }}</dd>
                         </div>
                         <div>

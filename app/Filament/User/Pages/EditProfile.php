@@ -199,6 +199,7 @@ class EditProfile extends BaseEditProfile
                     ->maxLength(255),
                 Select::make('sport_category')
                     ->label('Спортивный разряд')
+                    ->hintIcon('heroicon-o-question-mark-circle', 'б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта.')
                     ->options(SportCategory::class),
 
                 Textarea::make('about')

@@ -112,6 +112,7 @@ class AdvertResource extends Resource
 
                     Select::make('sport_category')
                         ->label('Спортивный разряд')
+                        ->hintIcon('heroicon-o-question-mark-circle', 'б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта.')
                         ->options(SportCategory::class)
                         ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->usesSportCategory() ?? false),
 

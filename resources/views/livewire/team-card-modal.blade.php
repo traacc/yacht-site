@@ -84,7 +84,10 @@
                                         <tr class="text-left text-brand-gray-light border-b border-brand-border">
                                             <th class="py-1.5 font-medium">Участник</th>
                                             <th class="py-1.5 font-medium">Дата рождения</th>
-                                            <th class="py-1.5 font-medium">Разряд</th>
+                                            <th class="py-1.5 font-medium">
+                                                Разряд
+                                                <x-info-tooltip text="б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта." />
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-brand-border">

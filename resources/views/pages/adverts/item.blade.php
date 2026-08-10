@@ -148,7 +148,10 @@
                             @endif
                             @if ($advert->sport_category)
                                 <div class="flex justify-between gap-4">
-                                    <dt class="text-brand-gray-light">Разряд</dt>
+                                    <dt class="text-brand-gray-light">
+                                        Разряд
+                                        <x-info-tooltip text="б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта." />
+                                    </dt>
                                     <dd class="font-medium text-right">{{ $advert->sport_category->getLabel() }}</dd>
                                 </div>
                             @endif

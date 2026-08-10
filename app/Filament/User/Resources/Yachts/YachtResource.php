@@ -169,7 +169,8 @@ class YachtResource extends Resource
                     ])
                     ->disabled(fn (callable $get) => filled($get('selected_yacht_id'))),
                     */
-                TextInput::make('gims_number')->label('Номер ГИМС')->placeholder('Введите номер ГИМС'),
+                TextInput::make('gims_number')->label('Номер ГИМС')->placeholder('Введите номер ГИМС')
+                    ->hintIcon('heroicon-o-question-mark-circle', 'Номер яхты в реестре Государственной инспекции по маломерным судам (ГИМС).'),
                 TextInput::make('vfps_number')
                     ->required()
                     ->rules([
@@ -182,6 +183,7 @@ class YachtResource extends Resource
                     ->validationMessages([
                         'unique' => 'Яхта с таким номером ВФПС уже существует в системе.',
                     ])->label('Номер паруса')->placeholder('Введите номер паруса (ВФПС)')
+                    ->hintIcon('heroicon-o-question-mark-circle', 'ВФПС — Всероссийская федерация парусного спорта. Номер из её реестра становится уникальным ID яхты в системе Ассоциации.')
                     ->disabled(fn (callable $get) => filled($get('selected_yacht_id'))),
                 TextInput::make('class')->label('Класс')->placeholder('Введите класс яхты')->default('Carter30'),
 

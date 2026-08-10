@@ -109,7 +109,10 @@ x-init="
                     <thead class="text-sm lg:text-2xl">
                         <tr>
                             <th class="py-2 a-font text-center">Название</th>
-                            <th class="py-2 a-font text-center">Парус №</th>
+                            <th class="py-2 a-font text-center">
+                                Парус №
+                                <x-info-tooltip text="Регистрационный номер яхты в реестре Всероссийской федерации парусного спорта (ВФПС) — уникальный ID яхты в системе Ассоциации." />
+                            </th>
                             <th class="py-2 a-font text-center">Капитан</th>
                             <!--
                             <th class="py-2 a-font text-center text-2xl">Балл ORC</th>
@@ -222,7 +225,10 @@ x-init="
                     <div class="flex md:gap-24 flex-col md:flex-row">
                         <table>
                             <tr>
-                                <td class="font-semibold py-2 w-64">Парус №</td>
+                                <td class="font-semibold py-2 w-64">
+                                    Парус №
+                                    <x-info-tooltip text="Регистрационный номер яхты в реестре Всероссийской федерации парусного спорта (ВФПС) — уникальный ID яхты в системе Ассоциации." />
+                                </td>
                                 <td x-text="selectedYacht.vfps_number"></td>
                             </tr>
                             <tr>
@@ -240,7 +246,10 @@ x-init="
                         </table>
                         <table>
                             <tr>
-                                <td class="font-semibold py-2 w-64">Номер ГИМС:</td>
+                                <td class="font-semibold py-2 w-64">
+                                    Номер ГИМС:
+                                    <x-info-tooltip text="Номер яхты в реестре Государственной инспекции по маломерным судам (ГИМС)." />
+                                </td>
                                 <td x-text="selectedYacht.gims_number"></td>
                             </tr>
                             <tr>
