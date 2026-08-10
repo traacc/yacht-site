@@ -81,7 +81,7 @@ class AdvertResource extends Resource
                     Select::make('type')
                         ->label('Раздел')
                         ->options(AdvertType::options())
-                        ->default(AdvertType::Marketplace->value)
+                        ->default(fn ($livewire): string => static::defaultType($livewire))
                         ->required()
                         ->live()
                         // Тип определяет, какие поля показывать, поэтому у уже
@@ -425,6 +425,22 @@ class AdvertResource extends Resource
                             ->title('Объявление удалено'),
                     ),
             ]);
+    }
+
+    /**
+     * Раздел, с которым открывается форма создания.
+     *
+     * С витрины доски приходят по ссылке «Разместить объявление» — она несёт
+     * свою доску в `?type=…` (@see ManageAdverts::$presetType). Прямой заход
+     * в ЛК по-прежнему начинается с барахолки.
+     */
+    private static function defaultType(mixed $livewire): string
+    {
+        $preset = $livewire instanceof ManageAdverts
+            ? static::typeFrom($livewire->presetType)
+            : null;
+
+        return ($preset ?? AdvertType::Marketplace)->value;
     }
 
     /** @return array<string, string> */

@@ -12,10 +12,22 @@ use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
 use Illuminate\Support\Arr;
+use Livewire\Attributes\Url;
 
 class ManageAdverts extends ManageRecords
 {
     protected static string $resource = AdvertResource::class;
+
+    /**
+     * Доска, с которой пришли по кнопке «Разместить объявление».
+     *
+     * Витрина шлёт `?action=create&type=…`: модалку по `action` открывает сам
+     * Filament, а раздел в ней подставляет форма (@see AdvertResource). Свойство
+     * публичное и потому переживает livewire-запрос, которым монтируется
+     * действие, — в нём query-строки исходной страницы уже нет.
+     */
+    #[Url(as: 'type')]
+    public ?string $presetType = null;
 
     protected function getHeaderActions(): array
     {

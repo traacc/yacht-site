@@ -40,7 +40,9 @@
                     {{ $type->submitButtonLabel() }} →
                 </button>
             @else
-                <a href="{{ url('/user/adverts') }}"
+                {{-- action=create — штатный параметр Filament: открывает модалку
+                     «Новое объявление» сразу, type подставляет в неё эту доску. --}}
+                <a href="{{ url('/user/adverts').'?'.http_build_query(['action' => 'create', 'type' => $type->value]) }}"
                    class="bg-[#2D92CE] text-white py-3 px-8 hover:bg-[#0074CC] transition-colors md:text-lg text-sm font-semibold text-center">
                     {{ $type->submitButtonLabel() }} →
                 </a>
