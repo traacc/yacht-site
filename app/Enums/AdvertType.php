@@ -121,7 +121,7 @@ enum AdvertType: string
     public function kindLabel(AdvertKind $kind): string
     {
         return match ($this) {
-            self::Skippers => $kind === AdvertKind::Offer ? 'Предлагаю услуги' : 'Ищу в экипаж',
+            self::Skippers => $kind === AdvertKind::Offer ? 'Предлагаю услуги' : 'Хочу в экипаж',
             self::Sails => $kind === AdvertKind::Offer ? 'Продам или сдам' : 'Ищу парус',
             default => $kind->label(),
         };
