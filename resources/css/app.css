@@ -180,6 +180,11 @@
   .container {
     @apply px-2 2xl:px-5 max-w-(--breakpoint-2xl) mx-auto;
   }
+
+  /* Иконки соцсетей в шапке приходят инлайн-SVG с собственными размерами. */
+  .nav-social a svg {
+    width: 32px;
+  }
   @font-face {
     font-family: 'TTLakesCondensed-DemiBold';
     src: url('../fonts/TTLakesCondensed-DemiBold.woff2') format('woff2');

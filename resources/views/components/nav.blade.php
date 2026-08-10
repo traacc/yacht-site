@@ -7,8 +7,11 @@
                 {!! \App\Support\Svg::inline('images/logo.svg') !!}
             </a>
 
-            {{-- Десктоп-меню --}}
-            <div class="hidden lg:flex items-center gap-1">
+            {{-- Десктоп-меню.
+                 Шесть разделов верхнего уровня вместо десяти: в 1536-контейнер вместе с логотипом
+                 и правым блоком помещается только ~700px навигации. Разделы с длинными списками
+                 раскрываются мега-меню в две колонки. --}}
+            <div class="hidden xl:flex items-center gap-1">
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
                     <button @click="open = !open"
                         class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
@@ -16,16 +19,33 @@
                         <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="open" x-cloak x-transition
-                        class="absolute top-full right-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
-                        <a href="{{ route('charter') }}"  class="block px-4 py-2 text-gray-700">Об Ассоциации</a>
-                        <a href="{{ route('management') }}"  class="block px-4 py-2 text-gray-700">Руководство Ассоциации</a>
-                        <a href="{{ route('trustees') }}"  class="block px-4 py-2 text-gray-700">Попечительский совет</a>
-                        <a href="{{ route('policy') }}"  class="block px-4 py-2 text-gray-700">Политика Ассоциации</a>
-                        <a href="{{ route('rules') }}"  class="block px-4 py-2 text-gray-700">Правила вступления</a>
-                        <a href="{{ route('regulations') }}"  class="block px-4 py-2 text-gray-700">Технический регламент яхт</a>
-                        <a href="{{ route('decisions') }}"  class="block px-4 py-2 text-gray-700">Решения общего собрания</a></li>
-                        <a href="{{ route('votings') }}"  class="block px-4 py-2 text-gray-700">Голосования</a></li>
-                        <button type="button" @click="open = false; isQuestionModalOpen = true" class="block w-full text-left px-4 py-2 text-gray-700 cursor-pointer">Задать вопрос</button>
+                        class="absolute top-full left-0 mt-1 w-152 grid grid-cols-2 gap-x-2 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-50">
+                        <div>
+                            <p class="px-4 pb-1 text-xs uppercase tracking-wide text-gray-400">Об ассоциации</p>
+                            <a href="{{ route('charter') }}"  class="block px-4 py-2 text-gray-700">Об Ассоциации</a>
+                            <a href="{{ route('management') }}"  class="block px-4 py-2 text-gray-700">Руководство Ассоциации</a>
+                            <a href="{{ route('trustees') }}"  class="block px-4 py-2 text-gray-700">Попечительский совет</a>
+                            <a href="{{ route('policy') }}"  class="block px-4 py-2 text-gray-700">Политика Ассоциации</a>
+                            <p class="px-4 pt-3 pb-1 text-xs uppercase tracking-wide text-gray-400">Документы</p>
+                            <a href="{{ route('rules') }}"  class="block px-4 py-2 text-gray-700">Правила вступления</a>
+                            <a href="{{ route('regulations') }}"  class="block px-4 py-2 text-gray-700">Технический регламент яхт</a>
+                            <a href="{{ route('decisions') }}"  class="block px-4 py-2 text-gray-700">Решения общего собрания</a>
+                            <a href="{{ route('votings') }}"  class="block px-4 py-2 text-gray-700">Голосования</a>
+                        </div>
+                        <div>
+                            <p class="px-4 pb-1 text-xs uppercase tracking-wide text-gray-400">Помощь</p>
+                            @if(request()->routeIs('help'))
+                            <a href="{{ route('help') }}" @click.prevent="open = false; $dispatch('switch-help-tab', { tab: 'guide' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Помощь по сайту</a>
+                            <a href="{{ route('help') }}#users" @click.prevent="open = false; $dispatch('switch-help-tab', { tab: 'users' })" class="block px-4 py-2 text-gray-700 cursor-pointer">F.A.Q.</a>
+                            <a href="{{ route('help') }}#owners" @click.prevent="open = false; $dispatch('switch-help-tab', { tab: 'owners' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Для владельцев яхт</a>
+                            @else
+                            <a href="{{ route('help') }}"  class="block px-4 py-2 text-gray-700">Помощь по сайту</a>
+                            <a href="{{ route('help') }}#users"  class="block px-4 py-2 text-gray-700">F.A.Q.</a>
+                            <a href="{{ route('help') }}#owners"  class="block px-4 py-2 text-gray-700">Для владельцев яхт</a>
+                            @endif
+                            <p class="px-4 pt-3 pb-1 text-xs uppercase tracking-wide text-gray-400">Связь</p>
+                            <button type="button" @click="open = false; isQuestionModalOpen = true" class="block w-full text-left px-4 py-2 text-gray-700 cursor-pointer">Задать вопрос</button>
+                        </div>
                     </div>
                 </div>
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
@@ -36,23 +56,37 @@
                     </button>
                     <div x-show="open" x-cloak x-transition
                         {{-- Шире прочих меню: названия бирж в w-52 не помещаются. --}}
-                        class="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
-                        {{-- Порядок подразделов задан ТЗ 3-го этапа, п. 8.1. --}}
-                        @if(request()->routeIs('competitions'))
-                        <a href="{{ route('competitions') }}" @click.prevent="open = false; $dispatch('switch-competitions-tab', { tab: 'calendar' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Календарь</a>
-                        @else
-                        <a href="{{ route('competitions') }}"  class="block px-4 py-2 text-gray-700">Календарь</a>
-                        @endif
-                        <a href="{{ route('series-results', ['desc' => 1]) }}" class="block px-4 py-2 text-gray-700">Серии</a>
-                        <a href="{{ route('regatta-entries') }}" class="block w-full text-left px-4 py-2 text-gray-700">Заявки</a>
-                        @if(request()->routeIs('competitions'))
-                        <a href="{{ route('competitions') }}#results" @click.prevent="open = false; $dispatch('switch-competitions-tab', { tab: 'results' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Результаты</a>
-                        @else
-                        <a href="{{ route('competitions') }}#results"  class="block px-4 py-2 text-gray-700">Результаты</a>
-                        @endif
-                        @foreach (\App\Enums\AdvertType::competitionBoards() as $board)
-                        <a href="{{ route($board->routeName()) }}" class="block px-4 py-2 text-gray-700">{{ $board->label() }}</a>
-                        @endforeach
+                        class="absolute top-full left-0 mt-1 w-136 grid grid-cols-2 gap-x-2 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-50">
+                        <div>
+                            {{-- Порядок подразделов задан ТЗ 3-го этапа, п. 8.1. --}}
+                            <p class="px-4 pb-1 text-xs uppercase tracking-wide text-gray-400">Соревнования</p>
+                            @if(request()->routeIs('competitions'))
+                            <a href="{{ route('competitions') }}" @click.prevent="open = false; $dispatch('switch-competitions-tab', { tab: 'calendar' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Календарь</a>
+                            @else
+                            <a href="{{ route('competitions') }}"  class="block px-4 py-2 text-gray-700">Календарь</a>
+                            @endif
+                            <a href="{{ route('series-results', ['desc' => 1]) }}" class="block px-4 py-2 text-gray-700">Серии</a>
+                            <a href="{{ route('regatta-entries') }}" class="block w-full text-left px-4 py-2 text-gray-700">Заявки</a>
+                            @if(request()->routeIs('competitions'))
+                            <a href="{{ route('competitions') }}#results" @click.prevent="open = false; $dispatch('switch-competitions-tab', { tab: 'results' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Результаты</a>
+                            @else
+                            <a href="{{ route('competitions') }}#results"  class="block px-4 py-2 text-gray-700">Результаты</a>
+                            @endif
+                            <p class="px-4 pt-3 pb-1 text-xs uppercase tracking-wide text-gray-400">Рейтинги</p>
+                            @if(request()->routeIs('ratings'))
+                            <a href="{{ route('ratings') }}" @click.prevent="open = false; $dispatch('switch-ratings-tab', { tab: 'team' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Командный</a>
+                            <a href="{{ route('ratings') }}#personal" @click.prevent="open = false; $dispatch('switch-ratings-tab', { tab: 'personal' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Личный</a>
+                            @else
+                            <a href="{{ route('ratings') }}"  class="block px-4 py-2 text-gray-700">Командный</a>
+                            <a href="{{ route('ratings') }}#personal"  class="block px-4 py-2 text-gray-700">Личный</a>
+                            @endif
+                        </div>
+                        <div>
+                            <p class="px-4 pb-1 text-xs uppercase tracking-wide text-gray-400">Биржи</p>
+                            @foreach (\App\Enums\AdvertType::competitionBoards() as $board)
+                            <a href="{{ route($board->routeName()) }}" class="block px-4 py-2 text-gray-700">{{ $board->label() }}</a>
+                            @endforeach
+                        </div>
                     </div>
                 </div>
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
@@ -85,27 +119,18 @@
                         <a href="{{ route('services.index') }}" class="block px-4 py-2 text-gray-700 border-t border-gray-100">Все услуги</a>
                     </div>
                 </div>
-                <a href="{{ route('teams') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Команды</a>
-                <a href="{{ route('yachts') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Яхты</a>
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
                     <button @click="open = !open"
                         class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
-                        Рейтинги
+                        Флот
                         <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="open" x-cloak x-transition
                         class="absolute top-full left-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
-                        @if(request()->routeIs('ratings'))
-                        <a href="{{ route('ratings') }}" @click.prevent="open = false; $dispatch('switch-ratings-tab', { tab: 'team' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Командный</a>
-                        <a href="{{ route('ratings') }}#personal" @click.prevent="open = false; $dispatch('switch-ratings-tab', { tab: 'personal' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Личный</a>
-                        @else
-                        <a href="{{ route('ratings') }}"  class="block px-4 py-2 text-gray-700">Командный</a>
-                        <a href="{{ route('ratings') }}#personal"  class="block px-4 py-2 text-gray-700">Личный</a>
-                        @endif
-                        <a href="{{ route('series-results') }}" class="block px-4 py-2 text-gray-700">Серии</a>
+                        <a href="{{ route('teams') }}" class="block px-4 py-2 text-gray-700">Команды</a>
+                        <a href="{{ route('yachts') }}" class="block px-4 py-2 text-gray-700">Яхты</a>
                     </div>
                 </div>
-                <a href="{{ route('gallery') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Галерея</a>
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
                     <button @click="open = !open"
                         class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
@@ -113,41 +138,18 @@
                         <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="open" x-cloak x-transition
-                        class="absolute top-full left-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
+                        class="absolute top-full right-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
                         <a href="{{ route('news') }}"  class="block px-4 py-2 text-gray-700">Новости ассоциации</a>
                         <a href="{{ route('world-news') }}" class="block px-4 py-2 text-gray-700">Новости парусного мира</a>
                         <a href="{{ route('press') }}"  class="block px-4 py-2 text-gray-700">Пресса о нас</a>
-                    </div>
-                </div>
-                <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
-                    <button @click="open = !open"
-                        class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
-                        Помощь
-                        <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </button>
-                    <div x-show="open" x-cloak x-transition
-                        class="absolute top-full left-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
-                        @if(request()->routeIs('help'))
-                        <a href="{{ route('help') }}" @click.prevent="open = false; $dispatch('switch-help-tab', { tab: 'guide' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Помощь по сайту</a>
-                        <a href="{{ route('help') }}#users" @click.prevent="open = false; $dispatch('switch-help-tab', { tab: 'users' })" class="block px-4 py-2 text-gray-700 cursor-pointer">F.A.Q.</a>
-                        <a href="{{ route('help') }}#owners" @click.prevent="open = false; $dispatch('switch-help-tab', { tab: 'owners' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Для владельцев яхт</a>
-                        @else
-                        <a href="{{ route('help') }}"  class="block px-4 py-2 text-gray-700">Помощь по сайту</a>
-                        <a href="{{ route('help') }}#users"  class="block px-4 py-2 text-gray-700">F.A.Q.</a>
-                        <a href="{{ route('help') }}#owners"  class="block px-4 py-2 text-gray-700">Для владельцев яхт</a>
-                        @endif
+                        <a href="{{ route('gallery') }}" class="block px-4 py-2 text-gray-700 border-t border-gray-100">Галерея</a>
                     </div>
                 </div>
             </div>
 
             {{-- Действия --}}
-                    <style>
-                        .nav-social a svg {
-                            width: 32px;
-                        }
-                    </style>
-            <div class="hidden nav-social lg:flex items-center gap-2">
-                <div class="hidden nav-social lg:flex items-center gap-2">
+            <div class="hidden nav-social xl:flex items-center gap-2">
+                <div class="flex items-center gap-2">
                     <a href="https://t.me/a_carterpro" class="text-[#2D92CE]" target="_blank">
                         {!! \App\Support\Svg::inline('images/social_icons/tl.svg') !!}
                     </a>
@@ -203,7 +205,7 @@
             </div>
 
             {{-- Мобильное меню --}}
-            <button @click="mobileOpen = !mobileOpen" class="lg:hidden p-2 text-gray-300">
+            <button @click="mobileOpen = !mobileOpen" class="xl:hidden p-2 text-gray-300">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path x-show="!mobileOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                     <path x-show="mobileOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -221,7 +223,7 @@
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
         
-        class="lg:hidden fixed inset-0 bg-black/50 z-40 w-screen "
+        class="xl:hidden fixed inset-0 bg-black/50 z-40 w-screen "
     >
         <div
         x-transition:enter="transition transform ease-out duration-300"
@@ -230,7 +232,7 @@
         x-transition:leave="transition transform ease-in duration-200"
         x-transition:leave-start="translate-y-80 opacity-100"
         x-transition:leave-end="translate-y-120 opacity-0"
-        x-transition class="lg:hidden bg-[#2E325C] py-2 px-4 space-y-1  min-w-[220px] h-screen text-white fixed right-0 "
+        x-transition class="xl:hidden bg-[#2E325C] py-2 px-4 space-y-1  min-w-[220px] h-screen text-white fixed right-0 "
         @click.outside="mobileOpen=false"
         >
             <div class="flex justify-between items-center mt-4 mb-4">
@@ -247,14 +249,26 @@
                         </button>
                         <div x-show="open" x-cloak x-transition
                             class="">
+                            <p class="px-4 pt-1 pb-1 text-xs uppercase tracking-wide text-white/50">Об ассоциации</p>
                             <a href="{{ route('charter') }}"  class="block px-4 py-2 text-sm">Об Ассоциации</a>
                             <a href="{{ route('management') }}"  class="block px-4 py-2 text-sm">Руководство Ассоциации</a>
                             <a href="{{ route('trustees') }}"  class="block px-4 py-2 text-sm">Попечительский совет</a>
                             <a href="{{ route('policy') }}"  class="block px-4 py-2 text-sm">Политика Ассоциации</a>
+                            <p class="px-4 pt-3 pb-1 text-xs uppercase tracking-wide text-white/50">Документы</p>
                             <a href="{{ route('rules') }}"  class="block px-4 py-2 text-sm">Правила вступления</a>
                             <a href="{{ route('regulations') }}"  class="block px-4 py-2 text-sm">Технический регламент яхт</a>
-                            <a href="{{ route('decisions') }}"  class="block px-4 py-2 text-sm">Решения общего собрания</a></li>
-                            <a href="{{ route('votings') }}"  class="block px-4 py-2 text-sm">Голосования</a></li>
+                            <a href="{{ route('decisions') }}"  class="block px-4 py-2 text-sm">Решения общего собрания</a>
+                            <a href="{{ route('votings') }}"  class="block px-4 py-2 text-sm">Голосования</a>
+                            <p class="px-4 pt-3 pb-1 text-xs uppercase tracking-wide text-white/50">Помощь</p>
+                            @if(request()->routeIs('help'))
+                            <a href="{{ route('help') }}" @click.prevent="mobileOpen = false; $dispatch('switch-help-tab', { tab: 'guide' })" class="block px-4 py-2 text-sm">Помощь по сайту</a>
+                            <a href="{{ route('help') }}#users" @click.prevent="mobileOpen = false; $dispatch('switch-help-tab', { tab: 'users' })" class="block px-4 py-2 text-sm">F.A.Q.</a>
+                            <a href="{{ route('help') }}#owners" @click.prevent="mobileOpen = false; $dispatch('switch-help-tab', { tab: 'owners' })" class="block px-4 py-2 text-sm">Для владельцев яхт</a>
+                            @else
+                            <a href="{{ route('help') }}"  class="block px-4 py-2 text-sm">Помощь по сайту</a>
+                            <a href="{{ route('help') }}#users"  class="block px-4 py-2 text-sm">F.A.Q.</a>
+                            <a href="{{ route('help') }}#owners"  class="block px-4 py-2 text-sm">Для владельцев яхт</a>
+                            @endif
                             <button type="button" @click="mobileOpen = false; isQuestionModalOpen = true" class="block w-full text-left px-4 py-2 text-sm cursor-pointer">Задать вопрос</button>
                         </div>
                     </div>
@@ -278,6 +292,15 @@
                             @else
                             <a href="{{ route('competitions') }}#results"  class="block px-4 py-2 text-sm">Результаты</a>
                             @endif
+                            <p class="px-4 pt-3 pb-1 text-xs uppercase tracking-wide text-white/50">Рейтинги</p>
+                            @if(request()->routeIs('ratings'))
+                            <a href="{{ route('ratings') }}" @click.prevent="mobileOpen = false; $dispatch('switch-ratings-tab', { tab: 'team' })" class="block px-4 py-2 text-sm">Командный</a>
+                            <a href="{{ route('ratings') }}#personal" @click.prevent="mobileOpen = false; $dispatch('switch-ratings-tab', { tab: 'personal' })" class="block px-4 py-2 text-sm">Личный</a>
+                            @else
+                            <a href="{{ route('ratings') }}"  class="block px-4 py-2 text-sm">Командный</a>
+                            <a href="{{ route('ratings') }}#personal"  class="block px-4 py-2 text-sm">Личный</a>
+                            @endif
+                            <p class="px-4 pt-3 pb-1 text-xs uppercase tracking-wide text-white/50">Биржи</p>
                             @foreach (\App\Enums\AdvertType::competitionBoards() as $board)
                             <a href="{{ route($board->routeName()) }}" class="block px-4 py-2 text-sm">{{ $board->label() }}</a>
                             @endforeach
@@ -311,26 +334,17 @@
                             <a href="{{ route('services.index') }}" class="block px-4 py-2 text-sm">Все услуги</a>
                         </div>
                     </div>
-                    <a href="{{ route('teams') }}"  class="block py-2 text-sm">Команды</a>
-                    <a href="{{ route('yachts') }}"  class="block py-2 text-sm">Яхты</a>
                     <div x-data="{ open: false }" class="relative">
                         <button @click="open = !open"
                             class="flex items-center gap-1 py-2 text-sm transition-colors">
-                            Рейтинги
+                            Флот
                             <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="open" x-cloak x-transition class="">
-                            @if(request()->routeIs('ratings'))
-                            <a href="{{ route('ratings') }}" @click.prevent="mobileOpen = false; $dispatch('switch-ratings-tab', { tab: 'team' })" class="block px-4 py-2 text-sm">Командный</a>
-                            <a href="{{ route('ratings') }}#personal" @click.prevent="mobileOpen = false; $dispatch('switch-ratings-tab', { tab: 'personal' })" class="block px-4 py-2 text-sm">Личный</a>
-                            @else
-                            <a href="{{ route('ratings') }}"  class="block px-4 py-2 text-sm">Командный</a>
-                            <a href="{{ route('ratings') }}#personal"  class="block px-4 py-2 text-sm">Личный</a>
-                            @endif
-                            <a href="{{ route('series-results') }}" class="block px-4 py-2 text-sm">Серии</a>
+                            <a href="{{ route('teams') }}" class="block px-4 py-2 text-sm">Команды</a>
+                            <a href="{{ route('yachts') }}" class="block px-4 py-2 text-sm">Яхты</a>
                         </div>
                     </div>
-                    <a href="{{ route('gallery') }}"  class="block py-2 text-sm">Галерея</a>
                     <div x-data="{ open: false }" class="relative">
                         <button @click="open = !open"
                             class="flex items-center gap-1 py-2 text-sm transition-colors">
@@ -341,24 +355,7 @@
                             <a href="{{ route('news') }}"  class="block px-4 py-2 text-sm">Новости ассоциации</a>
                             <a href="{{ route('world-news') }}" class="block px-4 py-2 text-sm">Новости парусного мира</a>
                             <a href="{{ route('press') }}"  class="block px-4 py-2 text-sm">Пресса о нас</a>
-                        </div>
-                    </div>
-                    <div x-data="{ open: false }" class="relative">
-                        <button @click="open = !open"
-                            class="flex items-center gap-1 py-2 text-sm transition-colors">
-                            Помощь
-                            <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </button>
-                        <div x-show="open" x-cloak x-transition class="">
-                            @if(request()->routeIs('help'))
-                            <a href="{{ route('help') }}" @click.prevent="mobileOpen = false; $dispatch('switch-help-tab', { tab: 'guide' })" class="block px-4 py-2 text-sm">Помощь по сайту</a>
-                            <a href="{{ route('help') }}#users" @click.prevent="mobileOpen = false; $dispatch('switch-help-tab', { tab: 'users' })" class="block px-4 py-2 text-sm">F.A.Q.</a>
-                            <a href="{{ route('help') }}#owners" @click.prevent="mobileOpen = false; $dispatch('switch-help-tab', { tab: 'owners' })" class="block px-4 py-2 text-sm">Для владельцев яхт</a>
-                            @else
-                            <a href="{{ route('help') }}"  class="block px-4 py-2 text-sm">Помощь по сайту</a>
-                            <a href="{{ route('help') }}#users"  class="block px-4 py-2 text-sm">F.A.Q.</a>
-                            <a href="{{ route('help') }}#owners"  class="block px-4 py-2 text-sm">Для владельцев яхт</a>
-                            @endif
+                            <a href="{{ route('gallery') }}" class="block px-4 py-2 text-sm">Галерея</a>
                         </div>
                     </div>
                 </div>
