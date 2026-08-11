@@ -38,12 +38,24 @@ class RgdParticipantsExporter
      * Заявки регаты для экспорта. Яхта под OwnedScope (user_id IS NULL скрыт),
      * поэтому грузим её без глобальных scope вручную.
      *
+     * Экипаж сортируется явно (капитан → основной состав → запасные, далее по
+     * порядку добавления): без ORDER BY порядок строк отдаёт MySQL по выбранному
+     * индексу, и капитан оказывается не первым в списке. Судейская программа
+     * считает первого члена экипажа рулевым, поэтому порядок здесь значим — и
+     * для .rgd, и для JSON-API (см. ParticipantResource).
+     *
      * @return Collection<int, RegattaEntry>
      */
     public function loadParticipants(Regatta $regatta): Collection
     {
         return $regatta->entries()
-            ->with(['team', 'crew.teamMember.user'])
+            ->with([
+                'team',
+                'crew' => fn ($query) => $query
+                    ->orderByRaw("FIELD(role, 'captain', 'main', 'reserve')")
+                    ->orderBy('id'),
+                'crew.teamMember.user',
+            ])
             ->get()
             ->each(fn (RegattaEntry $e) => $e->setRelation(
                 'yacht',
