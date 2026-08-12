@@ -399,11 +399,16 @@ function gallerySlider() {
                         :href="s.url || null"
                         :target="s.url ? '_blank' : null"
                         :rel="s.url ? 'noopener noreferrer' : null"
-                        class="shrink-0 bg-[#E2E2E2] h-20 flex items-center justify-center p-3 hover:shadow-md transition-shadow"
+                        class="shrink-0 bg-[#E2E2E2] h-28 flex flex-col items-center justify-center gap-1.5 p-3 hover:shadow-md transition-shadow"
                         :class="s.url ? 'cursor-pointer' : 'pointer-events-none'"
                         :style="`width: ${cardWidth}px`"
                     >
-                        <img :src="s.logo" :alt="s.name || ''" class="max-h-full max-w-full object-contain">
+                        <img :src="s.logo" :alt="s.name || ''" class="flex-1 min-h-0 max-w-full object-contain">
+                        <span
+                            x-show="s.name"
+                            x-text="s.name"
+                            class="w-full text-center text-xs sm:text-sm leading-tight text-slate-700 truncate"
+                        ></span>
                     </a>
                 </template>
             </div>
