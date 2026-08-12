@@ -112,6 +112,7 @@ Route::get('/', function () {
             'logo' => Storage::disk('public')->url($s['logo']),
             'name' => $s['name'] ?? null,
             'url' => $s['url'] ?? null,
+            'description' => $s['description'] ?? null,
         ])
         ->values();
 

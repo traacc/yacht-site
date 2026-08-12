@@ -395,12 +395,12 @@ function gallerySlider() {
                 :style="`gap: ${gap}px; transform: translateX(-${offset}px); transition: ${dragging ? 'none' : 'transform 0.4s cubic-bezier(0.4,0,0.2,1)'}; will-change: transform;`"
             >
                 <template x-for="(s, idx) in sponsors" :key="idx">
-                    <a
-                        :href="s.url || null"
-                        :target="s.url ? '_blank' : null"
-                        :rel="s.url ? 'noopener noreferrer' : null"
-                        class="shrink-0 bg-[#E2E2E2] h-28 flex flex-col items-center justify-center gap-1.5 p-3 hover:shadow-md transition-shadow"
-                        :class="s.url ? 'cursor-pointer' : 'pointer-events-none'"
+                    <button
+                        type="button"
+                        @click="openSponsor(s)"
+                        :disabled="! hasDetails(s)"
+                        class="shrink-0 bg-[#E2E2E2] h-28 flex flex-col items-center justify-center gap-1.5 p-3 hover:shadow-md transition-shadow text-left"
+                        :class="hasDetails(s) ? 'cursor-pointer' : 'cursor-default'"
                         :style="`width: ${cardWidth}px`"
                     >
                         <img :src="s.logo" :alt="s.name || ''" class="flex-1 min-h-0 max-w-full object-contain">
@@ -409,7 +409,7 @@ function gallerySlider() {
                             x-text="s.name"
                             class="w-full text-center text-xs sm:text-sm leading-tight text-slate-700 truncate"
                         ></span>
-                    </a>
+                    </button>
                 </template>
             </div>
         </div>
@@ -424,6 +424,55 @@ function gallerySlider() {
                     :aria-label="`Слайд ${idx + 1}`">
                 </button>
             </template>
+        </div>
+    </div>
+
+    {{-- Модальное окно с описанием партнёра --}}
+    <div
+        x-show="modalOpen"
+        x-cloak
+        x-transition.opacity
+        @keydown.escape.window="closeSponsor()"
+        x-trap.noscroll="modalOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+    >
+        <div
+            @click.outside="closeSponsor()"
+            class="relative bg-white w-full max-w-lg max-h-[85vh] overflow-y-auto p-6 md:p-8 shadow-xl"
+            role="dialog"
+            aria-modal="true"
+        >
+            <button
+                type="button"
+                @click="closeSponsor()"
+                class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer"
+                aria-label="Закрыть"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+
+            <div class="flex items-center justify-center bg-[#E2E2E2] h-24 p-3 mb-5">
+                <img :src="active.logo" :alt="active.name || ''" class="max-h-full max-w-full object-contain">
+            </div>
+
+            <h3 x-show="active.name" x-text="active.name" class="text-xl md:text-2xl a-font text-[#2E325C] mb-3"></h3>
+
+            <p
+                x-show="active.description"
+                x-text="active.description"
+                class="text-sm md:text-base leading-relaxed text-brand-gray whitespace-pre-line"
+            ></p>
+
+            <a
+                x-show="active.url"
+                :href="active.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 mt-6 bg-[#2D92CE] hover:bg-[#0074CC] text-white text-sm px-5 py-2.5 transition-colors"
+            >
+                Перейти на сайт
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </a>
         </div>
     </div>
 </section>
@@ -449,6 +498,11 @@ function sponsorsSlider() {
         touchStartX: 0,
         touchDeltaX: 0,
         dragging: false,
+        swiped: false,
+
+        // Модалка с описанием партнёра
+        modalOpen: false,
+        active: {},
 
         get maxIndex() {
             return Math.max(0, this.sponsors.length - Math.floor(this.visible));
@@ -484,17 +538,33 @@ function sponsorsSlider() {
             this.current = Math.min(Math.max(0, idx), this.maxIndex);
         },
 
+        // Модалка: открываем, только если есть что показать
+        hasDetails(s) {
+            return !! (s && (s.description || s.url));
+        },
+        openSponsor(s) {
+            // после свайпа браузер шлёт click по карточке — модалку не открываем
+            if (this.swiped || ! this.hasDetails(s)) return;
+            this.active = s;
+            this.modalOpen = true;
+        },
+        closeSponsor() {
+            this.modalOpen = false;
+        },
+
         // Touch-свайп
         touchStart(e) {
             this.touchStartX = e.touches[0].clientX;
             this.touchDeltaX = 0;
             this.dragging = true;
+            this.swiped = false;
         },
         touchMove(e) {
             this.touchDeltaX = e.touches[0].clientX - this.touchStartX;
         },
         touchEnd() {
             this.dragging = false;
+            this.swiped = Math.abs(this.touchDeltaX) > 10;
             const threshold = this.cardWidth * 0.25;
             if (this.touchDeltaX < -threshold) this.next();
             else if (this.touchDeltaX > threshold) this.prev();

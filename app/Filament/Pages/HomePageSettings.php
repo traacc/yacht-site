@@ -315,6 +315,15 @@ class HomePageSettings extends Page
                                         ->maxLength(2048)
                                         ->rules(['nullable', 'url', 'max:2048']),
                                 ]),
+
+                                Textarea::make('description')
+                                    ->label('Описание')
+                                    ->helperText('Показывается в модальном окне при клике на логотип партнёра.')
+                                    ->placeholder('Чем занимается партнёр и как связан с ассоциацией')
+                                    ->rows(4)
+                                    ->maxLength(5000)
+                                    ->rules(['nullable', 'string', 'max:5000'])
+                                    ->columnSpanFull(),
                             ]),
                     ]),
 
@@ -593,6 +602,7 @@ class HomePageSettings extends Page
                     'logo' => $logo,
                     'name' => trim((string) ($item['name'] ?? '')) ?: null,
                     'url' => trim((string) ($item['url'] ?? '')) ?: null,
+                    'description' => trim((string) ($item['description'] ?? '')) ?: null,
                 ];
             })
             ->filter(fn (array $item) => ! empty($item['logo']))
