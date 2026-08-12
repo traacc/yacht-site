@@ -11,6 +11,7 @@ use App\Enums\PaymentPurpose;
 use App\Enums\PaymentStatus;
 use App\Enums\RegattaStatus;
 use App\Enums\SystemRole;
+use App\Filament\Concerns\ResolvesCrewMembers;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
@@ -42,6 +43,8 @@ use Illuminate\Validation\ValidationException;
 
 class RegattaEntryResource extends Resource
 {
+    use ResolvesCrewMembers;
+
     protected static ?string $model = RegattaEntry::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'cup';
@@ -179,37 +182,22 @@ class RegattaEntryResource extends Resource
                     ->schema([
                         Select::make('team_member_id')
                             ->label('Участник')
-                            ->options(function (Get $get): array {
-                                $teamId = $get('../../team_id');
-
-                                if (! $teamId) {
-                                    return [];
-                                }
-
-                                return TeamMember::query()
-                                    ->where('team_id', $teamId)
-                                    ->where('status', 'active')
-                                    ->with('user')
-                                    ->get()
-                                    ->mapWithKeys(fn (TeamMember $member): array => [
-                                        $member->id => $member->user?->name ?? 'Неизвестный',
-                                    ])
-                                    ->sort(fn (string $a, string $b): int => strnatcasecmp($a, $b))
-                                    ->all();
-                            })
+                            ->options(fn (Get $get): array => static::crewMemberOptions(
+                                teamId: $get('../../team_id'),
+                            ))
+                            // Участника не из команды тоже можно найти поиском — как в
+                            // публичной форме заявки: членство создастся при сохранении.
+                            ->getSearchResultsUsing(fn (string $search, Get $get): array => static::crewMemberSearchResults(
+                                search: $search,
+                                teamId: $get('../../team_id'),
+                            ))
+                            ->getOptionLabelUsing(fn (?string $value): ?string => static::crewMemberOptionLabel($value))
                             ->required()
                             ->live()
                             ->searchable()
                             ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                             ->afterStateUpdated(function (?string $state, Set $set): void {
-                                if (! $state) {
-                                    $set('member_name', '');
-
-                                    return;
-                                }
-
-                                $member = TeamMember::with('user')->find($state);
-                                $set('member_name', $member?->user?->name ?? '');
+                                $set('member_name', static::crewMemberName($state));
                             }),
                         Hidden::make('member_name'),
                         Hidden::make('is_captain')
@@ -559,29 +547,5 @@ class RegattaEntryResource extends Resource
                 'role' => $crew->role,
             ])
             ->all();
-    }
-
-    /**
-     * Синхронизирует экипаж после сохранения формы.
-     *
-     * @param  array<int, array{team_member_id: string, role: string}>  $crew
-     */
-    public static function syncCrew(RegattaEntry $record, array $crew): void
-    {
-        // Удаляем записи, которых нет в новом наборе
-        $incomingIds = collect($crew)->pluck('team_member_id')->filter()->toArray();
-
-        $record->crew()->whereNotIn('team_member_id', $incomingIds)->delete();
-
-        foreach ($crew as $item) {
-            if (empty($item['team_member_id'])) {
-                continue;
-            }
-
-            $record->crew()->updateOrCreate(
-                ['team_member_id' => $item['team_member_id']],
-                ['role' => $item['role'] ?? 'main'],
-            );
-        }
     }
 }

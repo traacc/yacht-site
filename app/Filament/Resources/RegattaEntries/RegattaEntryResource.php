@@ -8,6 +8,7 @@ use App\Actions\Document\SyncDocumentFilesAction;
 use App\Enums\RegattaEntrySource;
 use App\Enums\RegattaStatus;
 use App\Enums\TeamMemberRole;
+use App\Filament\Concerns\ResolvesCrewMembers;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Concerns\ScopesToOwnedRegattas;
 use App\Filament\Resources\RegattaEntries\Pages\ManageRegattaEntries;
@@ -44,6 +45,7 @@ use UnitEnum;
 
 class RegattaEntryResource extends Resource
 {
+    use ResolvesCrewMembers;
     use RestrictsAccessByRole;
     use ScopesToOwnedRegattas;
 
@@ -202,48 +204,22 @@ class RegattaEntryResource extends Resource
                     ->schema([
                         Select::make('team_member_id')
                             ->label('Участник')
-                            ->options(function (Get $get, ?RegattaEntry $record): array {
-                                $regattaId = $get('../../regatta_id');
-
-                                if (! $regattaId) {
-                                    return [];
-                                }
-
-                                // Участники, уже записанные в экипажи других заявок на эту регату
-                                $takenIds = RegattaEntryCrew::query()
-                                    ->whereHas('regattaEntry', function (Builder $query) use ($regattaId, $record): void {
-                                        $query->where('regatta_id', $regattaId);
-
-                                        if ($record) {
-                                            $query->whereKeyNot($record->getKey());
-                                        }
-                                    })
-                                    ->pluck('team_member_id');
-
-                                return TeamMember::query()
-                                    ->where('status', 'active')
-                                    ->whereNotIn('id', $takenIds)
-                                    ->with('user')
-                                    ->get()
-                                    ->mapWithKeys(fn (TeamMember $member): array => [
-                                        $member->id => $member->user?->name ?? 'Неизвестный',
-                                    ])
-                                    ->sort(fn (string $a, string $b): int => strnatcasecmp($a, $b))
-                                    ->all();
-                            })
+                            ->options(fn (Get $get, ?RegattaEntry $record): array => static::crewMemberOptions(
+                                regattaId: $get('../../regatta_id'),
+                                record: $record,
+                            ))
+                            ->getSearchResultsUsing(fn (string $search, Get $get, ?RegattaEntry $record): array => static::crewMemberSearchResults(
+                                search: $search,
+                                regattaId: $get('../../regatta_id'),
+                                record: $record,
+                            ))
+                            ->getOptionLabelUsing(fn (?string $value): ?string => static::crewMemberOptionLabel($value))
                             ->required()
                             ->live()
                             ->searchable()
                             ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                             ->afterStateUpdated(function (?string $state, Set $set): void {
-                                if (! $state) {
-                                    $set('member_name', '');
-
-                                    return;
-                                }
-
-                                $member = TeamMember::with('user')->find($state);
-                                $set('member_name', $member?->user?->name ?? '');
+                                $set('member_name', static::crewMemberName($state));
                             }),
                         Hidden::make('member_name'),
                         Hidden::make('is_captain')
@@ -628,29 +604,6 @@ class RegattaEntryResource extends Resource
         */
         // return $existing->concat($newMembers)->all();
         return $existing->all();
-    }
-
-    /**
-     * Синхронизирует экипаж после сохранения формы.
-     *
-     * @param  array<int, array{team_member_id: string, role: string}>  $crew
-     */
-    public static function syncCrew(RegattaEntry $record, array $crew): void
-    {
-        $incomingIds = collect($crew)->pluck('team_member_id')->filter()->toArray();
-
-        $record->crew()->whereNotIn('team_member_id', $incomingIds)->delete();
-
-        foreach ($crew as $item) {
-            if (empty($item['team_member_id'])) {
-                continue;
-            }
-
-            $record->crew()->updateOrCreate(
-                ['team_member_id' => $item['team_member_id']],
-                ['role' => $item['role'] ?? 'main'],
-            );
-        }
     }
 
     /**
