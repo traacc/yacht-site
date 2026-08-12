@@ -60,6 +60,16 @@ return [
         'bot_username' => env('TELEGRAM_BOT_USERNAME'),
         // Секрет webhook: Telegram вернёт его в X-Telegram-Bot-Api-Secret-Token.
         'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
+        // Быстрые повторы внутри одного HTTP-запроса, когда соединение с
+        // api.telegram.org не установилось (прокси моргнул, таймаут, 5xx).
+        'retry_times' => (int) env('TELEGRAM_RETRY_TIMES', 3),
+        'retry_delay' => (int) env('TELEGRAM_RETRY_DELAY', 2000), // мс
+        // Повторы публикации новости на уровне очереди: сколько раз джоба
+        // PublishNewsToTelegram вернётся в очередь, если Telegram недоступен.
+        'publish_tries' => (int) env('TELEGRAM_PUBLISH_TRIES', 5),
+        // Пауза перед каждым следующим заходом, сек. Последнее значение
+        // используется для всех оставшихся попыток.
+        'publish_backoff' => [60, 300, 900, 1800],
     ],
 
     'vk' => [

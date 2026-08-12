@@ -65,25 +65,26 @@ class TelegramService
     /**
      * Публикует новость в Telegram-канал/группу.
      * Если есть обложка — отправляет фото с подписью, иначе текстовое сообщение.
+     *
+     * Возвращает результат целиком, а не bool: вызывающей стороне нужно
+     * отличать временный сбой связи (повторяем) от отказа API (не повторяем).
      */
-    public function publishNews(News $news): bool
+    public function publishNews(News $news): TelegramSendResult
     {
         if (! $this->isConfigured()) {
             Log::warning('Telegram is not configured, skipping news publication', [
                 'news_id' => $news->id,
             ]);
 
-            return false;
+            return new TelegramSendResult(ok: false, description: 'Telegram не настроен (нет токена и/или chat_id).');
         }
 
         $coverPath = $this->coverPath($news);
         $context = ['news_id' => $news->id];
 
-        $result = $coverPath !== null
+        return $coverPath !== null
             ? $this->sendPhoto((string) $this->chat(), $coverPath, $this->caption($news, self::CAPTION_LIMIT), $context)
             : $this->sendMessage((string) $this->chat(), $this->caption($news, self::MESSAGE_LIMIT), $context);
-
-        return $result->ok;
     }
 
     /**
@@ -143,12 +144,22 @@ class TelegramService
 
     /**
      * Базовый запрос с таймаутами, ретраями и прокси (если задан).
+     *
+     * Повторяем только то, что имеет шанс пройти со второй попытки:
+     * обрыв соединения и 5xx/429 на стороне Telegram. Ошибки вида
+     * «chat not found» повторять бессмысленно.
      */
     private function baseRequest(?int $timeoutSeconds = null): PendingRequest
     {
         $request = Http::connectTimeout(self::CONNECT_TIMEOUT_SECONDS)
             ->timeout($timeoutSeconds ?? self::TIMEOUT_SECONDS)
-            ->retry(2, 1000, throw: false);
+            ->retry(
+                max(1, (int) config('services.telegram.retry_times', 3)),
+                max(0, (int) config('services.telegram.retry_delay', 2000)),
+                static fn (\Throwable $e): bool => $e instanceof ConnectionException
+                    || ($e instanceof RequestException && ($e->response->serverError() || $e->response->status() === 429)),
+                throw: false,
+            );
 
         if (! empty($this->proxy())) {
             $request->withOptions(['proxy' => $this->proxy()]);
@@ -190,10 +201,13 @@ class TelegramService
                 'body' => $response->body(),
             ]);
 
+            $retryAfter = $response->json('parameters.retry_after');
+
             return new TelegramSendResult(
                 ok: false,
                 status: $response->status(),
                 description: (string) $response->json('description', $response->body()),
+                retryAfter: is_numeric($retryAfter) ? (int) $retryAfter : null,
             );
         } catch (ConnectionException|RequestException $e) {
             Log::warning('Telegram API connection failed', [
@@ -202,7 +216,13 @@ class TelegramService
                 'error' => $e->getMessage(),
             ]);
 
-            return new TelegramSendResult(ok: false, description: $e->getMessage());
+            // Соединение так и не установилось после ретраев внутри запроса —
+            // помечаем ошибку как временную, чтобы очередь повторила позже.
+            return new TelegramSendResult(
+                ok: false,
+                description: $e->getMessage(),
+                connectionFailed: $e instanceof ConnectionException,
+            );
         }
     }
 
