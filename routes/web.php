@@ -57,6 +57,7 @@ use App\Services\HelpDirectory;
 use App\Services\Payments\PaymentManager;
 use App\Services\Payments\Providers\TestPaymentProvider;
 use App\Services\RatingCalculator;
+use App\Services\SeriesStageResultsService;
 use App\Services\ServiceSubjectResolver;
 use App\Services\SettingsService;
 use App\Services\WeatherService;
@@ -1103,6 +1104,14 @@ Route::get('/ratings', function () {
 
     return view('pages.ratings', compact('teamRatings', 'personalRatings', 'ratingSeasonYear'));
 })->name('ratings');
+// Подраздел «Серии» раздела «Соревнования»: описание каждой серии и результаты
+// по её этапам. Рейтинговая таблица серий живёт отдельно — в «Рейтингах»
+// (маршрут `series-results` ниже).
+Route::get('/series', function (SeriesStageResultsService $seriesStages) {
+    $series = $seriesStages->overview();
+
+    return view('pages.series', compact('series'));
+})->name('series');
 Route::get('/series/results', function () {
     $calculator = app(RatingCalculator::class);
 

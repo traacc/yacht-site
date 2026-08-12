@@ -65,7 +65,7 @@
                             @else
                             <a href="{{ route('competitions') }}"  class="block px-4 py-2 text-gray-700">Календарь</a>
                             @endif
-                            <a href="{{ route('series-results', ['desc' => 1]) }}" class="block px-4 py-2 text-gray-700">Серии</a>
+                            <a href="{{ route('series') }}" class="block px-4 py-2 text-gray-700">Серии</a>
                             <a href="{{ route('regatta-entries') }}" class="block w-full text-left px-4 py-2 text-gray-700">Заявки</a>
                             @if(request()->routeIs('competitions'))
                             <a href="{{ route('competitions') }}#results" @click.prevent="open = false; $dispatch('switch-competitions-tab', { tab: 'results' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Результаты</a>
@@ -285,7 +285,7 @@
                             @else
                             <a href="{{ route('competitions') }}"  class="block px-4 py-2 text-sm">Календарь</a>
                             @endif
-                            <a href="{{ route('series-results', ['desc' => 1]) }}" class="block px-4 py-2 text-sm">Серии</a>
+                            <a href="{{ route('series') }}" class="block px-4 py-2 text-sm">Серии</a>
                             <a href="{{ route('regatta-entries') }}" class="block w-full text-left px-4 py-2 text-sm">Заявки</a>
                             @if(request()->routeIs('competitions'))
                             <a href="{{ route('competitions') }}#results" @click.prevent="mobileOpen = false; $dispatch('switch-competitions-tab', { tab: 'results' })" class="block px-4 py-2 text-sm">Результаты</a>

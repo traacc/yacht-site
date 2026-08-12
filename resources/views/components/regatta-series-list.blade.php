@@ -22,7 +22,12 @@
 
 @if($series->isNotEmpty())
     <section class="mb-12">
-        <h2 class="section-title a-font mb-6">Серии регат</h2>
+        <div class="flex flex-wrap items-baseline justify-between gap-3 mb-6">
+            <h2 class="section-title a-font">Серии регат</h2>
+            <a href="{{ route('series') }}" class="text-brand-blue font-semibold hover:underline whitespace-nowrap">
+                Результаты по этапам →
+            </a>
+        </div>
 
         <div class="grid gap-6 md:grid-cols-2">
             @foreach($series as $serie)

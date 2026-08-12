@@ -20,9 +20,13 @@
             @if($series->season)
                 <span class="text-brand-dark text-lg font-semibold">Сезон {{ $series->season->year }}</span>
             @endif
+            <a href="{{ route('series') }}"
+               class="text-brand-blue font-semibold hover:underline whitespace-nowrap">
+                Результаты по этапам →
+            </a>
             <a href="{{ route('series-results') }}"
                class="text-brand-blue font-semibold hover:underline whitespace-nowrap">
-                Результаты серий →
+                Рейтинг серий →
             </a>
         </div>
     </div>
