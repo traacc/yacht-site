@@ -127,6 +127,23 @@
                     </div>
                 </div>
             </template>
+            <template x-if="activeItem?.documents?.length">
+                <div class="documents mb-6">
+                    <h5 class="a-font text-lg md:text-3xl mb-6">Файлы</h5>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <template x-for="(doc, idx) in activeItem.documents" :key="idx">
+                            <a :href="doc.url" target="_blank" rel="noopener noreferrer" download
+                               class="bg-[#F8F8F8] flex gap-4 items-center p-4 hover:shadow-md transition-shadow">
+                                <img class="max-w-12" src="{{ asset('images/icons/pdf.png') }}" alt="">
+                                <span>
+                                    <span class="block text-[#2E325C] font-semibold" x-text="doc.name"></span>
+                                    <span class="block text-sm text-brand-gray" x-text="[doc.ext, doc.size].filter(Boolean).join(' · ')"></span>
+                                </span>
+                            </a>
+                        </template>
+                    </div>
+                </div>
+            </template>
             <div class="bg-[#F8F8F8] p-3 md:p-4">
                 <h4 class="font-semibold text-lg mb-4">Информация о специалисте</h4>
                 <p class="font-semibold text-lg mb-4" x-text="activeItem?.name"></p>

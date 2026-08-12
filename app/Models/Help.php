@@ -50,6 +50,12 @@ class Help extends Model implements HasMedia
     {
         $this->addMediaCollection('gallery')
             ->useDisk('public');
+
+        // Документы специалиста (прайс, сертификаты, инструкции): не только
+        // изображения, поэтому конверсии Spatie сгенерирует лишь для тех
+        // файлов, которые сможет открыть.
+        $this->addMediaCollection('documents')
+            ->useDisk('public');
     }
 
     public function registerMediaConversions(?Media $media = null): void

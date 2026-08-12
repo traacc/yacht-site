@@ -194,6 +194,31 @@ class HelpResource extends Resource
                     ->disk('public')
                     ->visibility('public')
                     ->columnSpanFull(),
+
+                SpatieMediaLibraryFileUpload::make('documents')
+                    ->label('Файлы (документы)')
+                    ->helperText('PDF, Word, Excel, изображения или архив. До 20 МБ на файл.')
+                    ->collection('documents')
+                    ->multiple()
+                    ->reorderable()
+                    ->openable()
+                    ->downloadable()
+                    ->disk('public')
+                    ->visibility('public')
+                    ->maxSize(20480)
+                    ->acceptedFileTypes([
+                        'application/pdf',
+                        'application/msword',
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'application/vnd.ms-excel',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        'text/plain',
+                        'application/zip',
+                        'image/jpeg',
+                        'image/png',
+                        'image/webp',
+                    ])
+                    ->columnSpanFull(),
             ]);
     }
 

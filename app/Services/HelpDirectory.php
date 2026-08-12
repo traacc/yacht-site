@@ -8,6 +8,7 @@ use App\Models\Help;
 use App\Models\HelpCategory;
 use App\Support\ResponsiveMedia;
 use Illuminate\Support\Collection;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Справочник специалистов технической помощи.
@@ -91,6 +92,12 @@ class HelpDirectory
                     'avif' => $urls['avif'] ?? null,
                 ];
             })->values()->toArray(),
+            'documents' => $help->getMedia('documents')->map(fn (Media $media) => [
+                'url' => $media->getUrl(),
+                'name' => $media->name ?: $media->file_name,
+                'ext' => strtoupper(pathinfo($media->file_name, PATHINFO_EXTENSION)),
+                'size' => $media->human_readable_size,
+            ])->values()->toArray(),
         ];
     }
 }
