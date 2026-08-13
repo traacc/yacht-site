@@ -393,8 +393,6 @@ function gallerySlider() {
             <div
                 class="flex"
                 :style="`gap: ${gap}px; transform: translateX(-${offset}px); transition: ${dragging ? 'none' : 'transform 0.4s cubic-bezier(0.4,0,0.2,1)'}; will-change: transform;`"
-                {{-- партнёров меньше, чем помещается в кадр, — центрируем ряд --}}
-                :class="sponsors.length < visible ? 'justify-center' : ''"
             >
                 <template x-for="(s, idx) in sponsors" :key="idx">
                     <button
