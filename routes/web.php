@@ -64,6 +64,7 @@ use App\Services\WeatherService;
 use App\Services\YachtBooking;
 use App\Services\YandexMapService;
 use App\Support\ResponsiveMedia;
+use App\Support\RichContent;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -112,7 +113,9 @@ Route::get('/', function () {
             'logo' => Storage::disk('public')->url($s['logo']),
             'name' => $s['name'] ?? null,
             'url' => $s['url'] ?? null,
-            'description' => $s['description'] ?? null,
+            // RichEditor-описание рендерим на сервере: вывод уже прошёл санитайзер,
+            // в модалке его остаётся вставить через x-html.
+            'description' => RichContent::render($s['description'] ?? null) ?: null,
         ])
         ->values();
 

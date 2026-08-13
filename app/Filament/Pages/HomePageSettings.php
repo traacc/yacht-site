@@ -12,6 +12,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -298,13 +299,17 @@ class HomePageSettings extends Page
                                         ->rules(['nullable', 'url', 'max:2048']),
                                 ]),
 
-                                Textarea::make('description')
+                                RichEditor::make('description')
                                     ->label('Описание')
                                     ->helperText('Показывается в модальном окне при клике на логотип партнёра.')
                                     ->placeholder('Чем занимается партнёр и как связан с ассоциацией')
-                                    ->rows(4)
-                                    ->maxLength(5000)
-                                    ->rules(['nullable', 'string', 'max:5000'])
+                                    // Модалка узкая: заголовков/таблиц/блоков здесь не нужно.
+                                    ->toolbarButtons([
+                                        ['bold', 'italic', 'underline', 'strike', 'link'],
+                                        ['bulletList', 'orderedList', 'blockquote'],
+                                        ['undo', 'redo'],
+                                    ])
+                                    ->nullable()
                                     ->columnSpanFull(),
                             ]),
                     ]),
@@ -417,11 +422,16 @@ class HomePageSettings extends Page
                     $logo = app(ImageConverter::class)->normalizeHeicToWebp($logo, 'public');
                 }
 
+                // Пустой RichEditor отдаёт «<p></p>» — такой HTML считаем отсутствующим описанием.
+                $description = trim((string) ($item['description'] ?? ''));
+                $hasContent = filled(trim(strip_tags($description)))
+                    || str_contains($description, '<img');
+
                 return [
                     'logo' => $logo,
                     'name' => trim((string) ($item['name'] ?? '')) ?: null,
                     'url' => trim((string) ($item['url'] ?? '')) ?: null,
-                    'description' => trim((string) ($item['description'] ?? '')) ?: null,
+                    'description' => $hasContent ? $description : null,
                 ];
             })
             ->filter(fn (array $item) => ! empty($item['logo']))

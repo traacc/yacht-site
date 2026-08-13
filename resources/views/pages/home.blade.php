@@ -457,11 +457,11 @@ function gallerySlider() {
 
             <h3 x-show="active.name" x-text="active.name" class="text-xl md:text-2xl a-font text-[#2E325C] mb-3"></h3>
 
-            <p
+            <div
                 x-show="active.description"
-                x-text="active.description"
-                class="text-sm md:text-base leading-relaxed text-brand-gray whitespace-pre-line"
-            ></p>
+                x-html="active.description"
+                class="text prose max-w-none text-sm md:text-base leading-relaxed text-brand-gray"
+            ></div>
 
             <a
                 x-show="active.url"
