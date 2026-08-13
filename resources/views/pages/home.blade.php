@@ -399,11 +399,12 @@ function gallerySlider() {
                         type="button"
                         @click="openSponsor(s)"
                         :disabled="! hasDetails(s)"
-                        class="shrink-0 h-32 flex flex-col items-center justify-center gap-2 p-3 hover:shadow-md transition-shadow text-left"
+                        class="shrink-0 h-48 flex flex-col items-center justify-center gap-2 p-2 hover:shadow-md transition-shadow text-left"
                         :class="hasDetails(s) ? 'cursor-pointer' : 'cursor-default'"
                         :style="`width: ${cardWidth}px`"
                     >
-                        <img :src="s.logo" :alt="s.name || ''" class="flex-1 min-h-0 max-w-full object-contain">
+                        {{-- w-full: логотип занимает всю ширину карточки, object-contain сохраняет пропорции --}}
+                        <img :src="s.logo" :alt="s.name || ''" class="flex-1 min-h-0 w-full object-contain">
                         <span
                             x-show="s.name"
                             x-text="s.name"
