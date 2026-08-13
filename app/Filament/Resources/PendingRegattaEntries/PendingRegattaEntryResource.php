@@ -92,6 +92,10 @@ class PendingRegattaEntryResource extends Resource
             TextEntry::make('participation_kind')
                 ->label('Участие')
                 ->badge(),
+            TextEntry::make('seats')
+                ->label('Куплено мест')
+                // Индивидуальная заявка берёт места и на спутников — счёт по ним.
+                ->visible(fn (RegattaEntry $record): bool => $record->isIndividual()),
             TextEntry::make('applicant_name')
                 ->label('Заявитель')
                 ->state(fn (RegattaEntry $record): string => $record->participantName()),
@@ -215,7 +219,7 @@ class PendingRegattaEntryResource extends Resource
                     ->state(fn (RegattaEntry $record): string => $record->participantName())
                     ->description(fn (RegattaEntry $record): ?string => $record->team
                         ? null
-                        : trim($record->participation_kind->getLabel()
+                        : trim($record->participationSummary()
                             .($record->applicantContacts() ? ' · '.$record->applicantContacts() : '')))
                     ->searchable(),
                 TextColumn::make('captain')

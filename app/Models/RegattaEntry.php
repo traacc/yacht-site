@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ParticipationKind;
 use App\Enums\RegattaEntrySource;
 use App\Enums\TeamMemberRole;
+use App\Support\Plural;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,6 +23,7 @@ class RegattaEntry extends Model
         'team_id',
         'yacht_id',
         'participation_kind',
+        'seats',
         'user_id',
         'status',
         'source',
@@ -47,6 +49,7 @@ class RegattaEntry extends Model
             'fee_paid' => 'boolean',
             'source' => RegattaEntrySource::class,
             'participation_kind' => ParticipationKind::class,
+            'seats' => 'integer',
             'open_for_join' => 'boolean',
         ];
     }
@@ -133,6 +136,20 @@ class RegattaEntry extends Model
         return $this->applicant?->name
             ?? $this->captainCrew()?->displayName()
             ?? '—';
+    }
+
+    /**
+     * Краткое описание способа участия для списков: «Индивидуально · 3 места».
+     */
+    public function participationSummary(): string
+    {
+        $summary = $this->participation_kind->getLabel();
+
+        if ($this->isIndividual() && $this->seats > 1) {
+            $summary .= ' · '.$this->seats.' '.Plural::form($this->seats, 'место', 'места', 'мест');
+        }
+
+        return $summary;
     }
 
     /** Контакты заявителя: у гостя аккаунта нет, связь только по ним. */

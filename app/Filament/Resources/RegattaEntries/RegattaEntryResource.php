@@ -330,7 +330,7 @@ class RegattaEntryResource extends Resource
                     ->state(fn (RegattaEntry $record): string => $record->participantName())
                     ->description(fn (RegattaEntry $record): ?string => $record->team
                         ? null
-                        : trim($record->participation_kind->getLabel()
+                        : trim($record->participationSummary()
                             .($record->applicantContacts() ? ' · '.$record->applicantContacts() : '')))
                     ->searchable(query: fn (Builder $query, string $search): Builder => $query
                         ->where(fn (Builder $q) => $q

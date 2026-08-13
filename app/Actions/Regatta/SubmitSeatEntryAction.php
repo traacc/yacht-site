@@ -12,6 +12,7 @@ use App\Mail\RegattaEntrySubmitted;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use App\Models\User;
+use App\Models\Yacht;
 use App\Services\SettingsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -34,6 +35,8 @@ final class SubmitSeatEntryAction
     /**
      * @param  array{name: string, email: string, phone?: ?string}  $applicant  Контакты заявителя (он же рулевой экипажа).
      * @param  list<array{name: string, email?: ?string, phone?: ?string}>  $crew  Остальные участники — только для заявки экипажем.
+     * @param  int  $seats  Сколько мест берёт индивидуальная заявка (для экипажа считается по людям).
+     * @param  ?Yacht  $yacht  Выбранная свободная лодка, если человек указал её сам.
      *
      * @throws ValidationException
      */
@@ -43,6 +46,8 @@ final class SubmitSeatEntryAction
         array $applicant,
         array $crew = [],
         ?User $actor = null,
+        int $seats = 1,
+        ?Yacht $yacht = null,
     ): RegattaEntry {
         if (! $regatta->isOpenForRegistration()) {
             throw ValidationException::withMessages([
@@ -62,13 +67,15 @@ final class SubmitSeatEntryAction
             ? []
             : array_values(array_filter($crew, fn (array $member): bool => filled($member['name'] ?? null)));
 
-        // Заявитель всегда в экипаже — он рулевой, поэтому +1 к числу мест.
-        $peopleCount = count($members) + 1;
+        // Индивидуально человек берёт места и на спутников, чьи имена ещё не
+        // известны, — платных мест столько, сколько он выбрал. У экипажа мест
+        // ровно по людям: заявитель (рулевой) плюс перечисленные участники.
+        $seats = $kind === ParticipationKind::Individual ? max($seats, 1) : count($members) + 1;
         $limit = $regatta->maxCrewSize();
 
-        if ($limit !== null && $peopleCount > $limit) {
+        if ($limit !== null && $seats > $limit) {
             throw ValidationException::withMessages([
-                'crew' => "В экипаже не может быть больше {$limit} чел.",
+                $kind === ParticipationKind::Individual ? 'seats' : 'crew' => "На одной лодке не больше {$limit} мест.",
             ]);
         }
 
@@ -78,12 +85,15 @@ final class SubmitSeatEntryAction
             ]);
         }
 
-        $entry = DB::transaction(function () use ($regatta, $kind, $applicant, $members, $actor, $peopleCount): RegattaEntry {
+        $entry = DB::transaction(function () use ($regatta, $kind, $applicant, $members, $actor, $seats, $yacht): RegattaEntry {
             $entry = RegattaEntry::create([
                 'regatta_id' => $regatta->id,
                 'team_id' => null,
-                'yacht_id' => null,
+                // Лодку обычно назначает ассоциация, но человек мог выбрать
+                // конкретную свободную — тогда админ подтверждает уже её.
+                'yacht_id' => $yacht?->id,
                 'participation_kind' => $kind,
+                'seats' => $seats,
                 'user_id' => $actor?->id,
                 // Через администратора: он подтверждает оплату и сажает людей на лодки.
                 'status' => 'pending',
@@ -110,14 +120,14 @@ final class SubmitSeatEntryAction
                 ]);
             }
 
-            $amount = $regatta->entryPrice($kind, $peopleCount);
+            $amount = $regatta->entryPrice($kind, $seats);
 
             // Цены может не быть (организатор их не задал) — тогда счёт выставит
             // администратор вручную, заявка от этого не блокируется.
             if ($amount !== null) {
                 $entry->paymentRegistries()->create([
                     'name' => $kind === ParticipationKind::Individual
-                        ? "Место в регате — {$regatta->name}"
+                        ? "Мест в регате ({$seats}) — {$regatta->name}"
                         : "Лодка в регате — {$regatta->name}",
                     'amount' => $amount,
                     'purpose' => PaymentPurpose::EntryFee,

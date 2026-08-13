@@ -25,6 +25,20 @@
 
 
 <livewire:home-closest-regatta />
+
+{{-- Мастер участия: подбирает регату, лодку или места и доводит до заявки.
+     Кнопка «Заявка →» в блоке выше ведёт сразу в ближайшую регату, а здесь
+     человек выбирает, как именно он хочет участвовать. --}}
+<div class="container mx-auto pt-8 md:pt-12 text-center" x-data>
+    <button type="button" @click="$dispatch('open-participation-wizard')"
+            class="inline-block bg-brand-blue text-white text-xl md:text-3xl font-semibold px-10 md:px-16 py-3 md:py-4 hover:opacity-90 transition-opacity cursor-pointer uppercase a-font">
+        Хочу участвовать
+    </button>
+    <p class="text-brand-gray-light text-sm md:text-base mt-3">
+        Подберём регату, лодку или место в экипаже
+    </p>
+</div>
+
 <livewire:home-regatta-timer />
 
 {{-- ===== КАЛЕНДАРЬ РЕГАТ ===== --}}

@@ -100,6 +100,7 @@
 <livewire:entry-crew-modal />
 <livewire:crew-join-modal />
 <livewire:seat-entry-modal />
+<livewire:participation-wizard />
 <livewire:cookie-consent />
 <livewire:chat.support-chat-widget />
 
