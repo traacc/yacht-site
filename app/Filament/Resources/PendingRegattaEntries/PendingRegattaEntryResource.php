@@ -58,6 +58,8 @@ class PendingRegattaEntryResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return static::scopeToOwnedRegattas(parent::getEloquentQuery())
+            // Заявитель собирается из команды, автора и экипажа — иначе N+1 в списке.
+            ->with(['team', 'applicant', 'crew.user', 'crew.teamMember.user'])
             ->where('status', 'pending')
             ->whereHas('regatta', fn (Builder $q) => $q->whereIn(
                 'regatta_status',
@@ -90,6 +92,14 @@ class PendingRegattaEntryResource extends Resource
             TextEntry::make('participation_kind')
                 ->label('Участие')
                 ->badge(),
+            TextEntry::make('applicant_name')
+                ->label('Заявитель')
+                ->state(fn (RegattaEntry $record): string => $record->participantName()),
+            TextEntry::make('applicant_contacts')
+                ->label('Контакты заявителя')
+                ->state(fn (RegattaEntry $record): ?string => $record->applicantContacts())
+                ->placeholder('—')
+                ->copyable(),
             TextEntry::make('yacht.name')
                 ->label('Яхта')
                 ->placeholder('Назначает ассоциация'),
@@ -199,17 +209,18 @@ class PendingRegattaEntryResource extends Resource
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('team.name')
-                    ->label('Команда')
-                    // У сборных и индивидуальных заявок команды нет — показываем способ участия.
-                    ->state(fn (RegattaEntry $record): string => $record->team?->name
-                        ?? $record->participation_kind->getLabel())
+                    ->label('Заявитель')
+                    // У сборных и индивидуальных заявок команды нет — показываем,
+                    // кто подал заявку и как с ним связаться.
+                    ->state(fn (RegattaEntry $record): string => $record->participantName())
+                    ->description(fn (RegattaEntry $record): ?string => $record->team
+                        ? null
+                        : trim($record->participation_kind->getLabel()
+                            .($record->applicantContacts() ? ' · '.$record->applicantContacts() : '')))
                     ->searchable(),
                 TextColumn::make('captain')
                     ->label('Рулевой')
-                    ->state(fn (RegattaEntry $record): string => $record->crew()
-                        ->where('role', 'captain')
-                        ->first()?->displayName() ?? '—'
-                    ),
+                    ->state(fn (RegattaEntry $record): string => $record->captainCrew()?->displayName() ?? '—'),
                 TextColumn::make('crew_count')
                     ->label('Экипаж')
                     ->state(fn (RegattaEntry $record): string => (string) $record->crew()
@@ -242,7 +253,7 @@ class PendingRegattaEntryResource extends Resource
             ->recordActions([
                 ViewAction::make()
                     ->label('Просмотр')
-                    ->modalHeading(fn (RegattaEntry $record): string => "Заявка: {$record->team?->name} — {$record->regatta?->name}"
+                    ->modalHeading(fn (RegattaEntry $record): string => "Заявка: {$record->participantName()} — {$record->regatta?->name}"
                     )
                     ->extraModalFooterActions([
                         Action::make('approveFromView')

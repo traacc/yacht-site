@@ -117,6 +117,48 @@ class RegattaEntry extends Model
     // Helpers
     // ──────────────────────────────────────────────
 
+    /**
+     * Кем подана заявка — для списков и заголовков.
+     *
+     * У командной заявки это название команды. У индивидуальной и сборной
+     * команды нет, и без этого имени строка выглядит пустой: заявитель хранится
+     * автором заявки (`user_id`) либо строкой экипажа с ролью captain.
+     */
+    public function participantName(): string
+    {
+        if ($this->team?->name) {
+            return $this->team->name;
+        }
+
+        return $this->applicant?->name
+            ?? $this->captainCrew()?->displayName()
+            ?? '—';
+    }
+
+    /** Контакты заявителя: у гостя аккаунта нет, связь только по ним. */
+    public function applicantContacts(): ?string
+    {
+        $crew = $this->captainCrew();
+
+        $contacts = array_filter([
+            $this->applicant?->email ?? $crew?->email,
+            $this->applicant?->phone ?? $crew?->phone,
+        ]);
+
+        return $contacts !== [] ? implode(' · ', $contacts) : null;
+    }
+
+    /**
+     * Строка экипажа с ролью рулевого — она же заявитель у сборных экипажей.
+     *
+     * Берём из загруженной связи: экипаж уже отсортирован капитаном вперёд,
+     * и в списках заявок он подгружается пачкой (без N+1).
+     */
+    public function captainCrew(): ?RegattaEntryCrew
+    {
+        return $this->crew->firstWhere('role', 'captain');
+    }
+
     /** Заявка одного человека (регулярные и выездные регаты), без команды. */
     public function isIndividual(): bool
     {

@@ -6,7 +6,15 @@
 | Поле | Значение |
 |------|----------|
 | **Регата** | {{ $entry->regatta->name }} |
-| **Команда** | {{ $entry->team?->name ?? '—' }} |
+| **Заявитель** | {{ $entry->participantName() }} |
+@if (! $entry->team)
+{{-- Индивидуальные и сборные заявки идут без команды: связываться приходится по контактам заявителя. --}}
+| **Участие** | {{ $entry->participation_kind->getLabel() }} |
+| **Контакты** | {{ $entry->applicantContacts() ?? '—' }} |
+| **Человек в заявке** | {{ $entry->crew->count() }} |
+@else
+| **Команда** | {{ $entry->team->name }} |
+@endif
 | **Яхта** | {{ $entry->yacht?->name ?? '—' }} |
 | **Дата подачи** | {{ optional($entry->submitted_at)->format('d.m.Y H:i') ?? $entry->created_at->format('d.m.Y H:i') }} |
 

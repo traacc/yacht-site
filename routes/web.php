@@ -714,8 +714,10 @@ Route::get('/regattas/entries', function () {
             'entries.team.organizer',
             'entries.yacht',
             'entries.crew.teamMember.user',
-            // Сборные экипажи: участник привязан к пользователю без team_member.
+            // Сборные экипажи: участник привязан к пользователю без team_member,
+            // а заявку без команды опознают по её автору.
             'entries.crew.user',
+            'entries.applicant',
             'season',
         ])
         ->orderBy('date_start', 'asc')
@@ -728,6 +730,9 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
         'approvedEntries.team.organizer',
         'approvedEntries.team.activeMembers',
         'approvedEntries.crew.teamMember.user',
+        // Сборные экипажи: участник и автор заявки без команды.
+        'approvedEntries.crew.user',
+        'approvedEntries.applicant',
         'approvedEntries.yacht',
         'results.items.team.organizer',
         'results.items.team.activeMembers',
@@ -782,17 +787,23 @@ Route::get('/regattas/{regatta}', function (Regatta $regatta) {
     }
 
     // Данные для Alpine.js модального окна состава команд
+    // Участник сборного экипажа приходит без team_member: имя берётся из строки
+    // экипажа, а дата рождения и разряд есть только у зарегистрированных.
     $entriesJson = $entries->map(fn ($entry) => [
-        'team_name' => $entry->team?->name ?? '',
+        'team_name' => $entry->participantName(),
         'crew' => $entry->crew
             ->sortBy(fn ($crewMember) => ($crewMember->role === 'captain' ? '0' : '1')
-                .mb_strtolower((string) ($crewMember->teamMember?->user?->name ?? '')))
-            ->map(fn ($crewMember) => [
-                'name' => $crewMember->teamMember?->user?->short_name ?? '',
-                'birthday' => $crewMember->teamMember?->user?->birth_date?->format('d.m.Y') ?? '',
-                'rank' => SportCategory::labelOrNone($crewMember->teamMember?->user?->sport_category),
-                'is_captain' => $crewMember->role === 'captain',
-            ])->values()->toArray(),
+                .mb_strtolower($crewMember->displayName()))
+            ->map(function ($crewMember) {
+                $user = $crewMember->teamMember?->user ?? $crewMember->user;
+
+                return [
+                    'name' => $user?->short_name ?? $crewMember->displayName(),
+                    'birthday' => $user?->birth_date?->format('d.m.Y') ?? '',
+                    'rank' => SportCategory::labelOrNone($user?->sport_category),
+                    'is_captain' => $crewMember->role === 'captain',
+                ];
+            })->values()->toArray(),
     ])->values()->toArray();
 
     // Расписание: мероприятия регаты + гонки, сгруппированные по дням

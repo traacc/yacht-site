@@ -39,7 +39,7 @@ class EntryCrewModal extends Component
     #[On('open-entry-crew')]
     public function open(string $entryId): void
     {
-        $entry = RegattaEntry::with(['yacht', 'crew.teamMember.user'])->find($entryId);
+        $entry = RegattaEntry::with(['yacht', 'crew.teamMember.user', 'crew.user'])->find($entryId);
 
         if (! $entry instanceof RegattaEntry) {
             return;
@@ -48,11 +48,13 @@ class EntryCrewModal extends Component
         $crew = $entry->crew
             ->sortBy(fn ($member) => self::ROLE_ORDER[$member->role] ?? 99)
             ->map(function ($member) {
-                $user = $member->teamMember?->user;
+                // Сборный экипаж: человек привязан к аккаунту напрямую или
+                // заявлен контактами — карточка открывается только для аккаунта.
+                $user = $member->teamMember?->user ?? $member->user;
 
                 return [
                     'id' => $user?->id,
-                    'name' => $user?->short_name ?? $user?->name ?? '—',
+                    'name' => $user?->short_name ?? $member->displayName(),
                     'avatar' => $user?->photo_url ? asset('storage/'.$user->photo_url) : null,
                     'role' => self::ROLE_LABELS[$member->role] ?? $member->role,
                     'rank' => SportCategory::labelOrNone($user?->sport_category),

@@ -14,7 +14,7 @@ final class GenerateRegattaTeamsPdfAction
     public function execute(Regatta $regatta): Response
     {
         $entries = $regatta->approvedEntries()
-            ->with(['team.organizer', 'crew.teamMember.user', 'yacht'])
+            ->with(['team.organizer', 'crew.teamMember.user', 'crew.user', 'yacht'])
             ->get()
             ->sortBy(fn ($entry) => $entry->team?->name, SORT_NATURAL | SORT_FLAG_CASE)
             ->values();

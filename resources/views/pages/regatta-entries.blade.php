@@ -94,6 +94,11 @@
                                                     title="Экипаж яхты">
                                                 {{ $entry->yacht->name }}
                                             </button>
+                                        @elseif($entry->team === null)
+                                            {{-- Лодку на регулярных и выездных регатах назначает ассоциация:
+                                                 до этого момента заявку опознают по заявителю. --}}
+                                            <span class="text-brand-dark">{{ $entry->participantName() }}</span>
+                                            <span class="block text-xs text-brand-gray-light">{{ $entry->participation_kind->getLabel() }}</span>
                                         @else
                                             {{ $entry->yacht?->name ?? '—' }}
                                         @endif

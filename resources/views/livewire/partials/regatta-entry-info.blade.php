@@ -62,7 +62,7 @@
                 <ul class="space-y-1">
                     @foreach ($crewMembers as $member)
                         <li class="flex items-center justify-between gap-3 text-sm">
-                            <span class="font-medium text-[#2E325C]">{{ $member->teamMember?->user?->name ?? '—' }}</span>
+                            <span class="font-medium text-[#2E325C]">{{ $member->displayName() }}</span>
                             <span class="text-gray-400">{{ $crewRoleLabels[$member->role] ?? $member->role }}</span>
                         </li>
                     @endforeach

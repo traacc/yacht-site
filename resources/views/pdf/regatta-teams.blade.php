@@ -169,24 +169,25 @@
             @foreach($entries as $index => $entry)
                 @php($crew = $entry->crew ?? collect())
                 @php($captain = $crew->firstWhere('role', 'captain'))
-                @php($captainUser = $captain?->teamMember?->user)
-                @php($members = $crew->reject(fn ($c) => $c->role === 'captain')->sortBy(fn ($c) => $c->teamMember?->user?->name, SORT_NATURAL | SORT_FLAG_CASE)->values())
+                @php($captainUser = $captain?->teamMember?->user ?? $captain?->user)
+                {{-- Сортируем по отображаемому имени: у сборного экипажа участник без team_member --}}
+                @php($members = $crew->reject(fn ($c) => $c->role === 'captain')->sortBy(fn ($c) => $c->displayName(), SORT_NATURAL | SORT_FLAG_CASE)->values())
                 <tr class="team-row">
                     <td class="center team-num">{{ $index + 1 }}</td>
                     <td>
                         <span class="team-name">{{ $entry->team?->name ?? '—' }}</span><br>
                         <span class="muted">{{ $entry->yacht?->name ?? '—' }}</span>
                     </td>
-                    <td class="member-name">Рулевой: <strong>{{ $captainUser?->short_name ?? '—' }}</strong></td>
+                    <td class="member-name">Рулевой: <strong>{{ $captainUser?->short_name ?? $captain?->displayName() ?? '—' }}</strong></td>
                     <td>{{ $captainUser?->birth_date?->format('d.m.Y') ?? '—' }}</td>
                     <td class="center">{{ \App\Enums\SportCategory::labelOrNone($captainUser?->sport_category) }}</td>
                 </tr>
                 @forelse($members as $crewMember)
-                    @php($user = $crewMember->teamMember?->user)
+                    @php($user = $crewMember->teamMember?->user ?? $crewMember->user)
                     <tr class="member-row">
                         <td></td>
                         <td></td>
-                        <td class="member-name">{{ $user?->short_name ?? '—' }}</td>
+                        <td class="member-name">{{ $user?->short_name ?? $crewMember->displayName() }}</td>
                         <td>{{ $user?->birth_date?->format('d.m.Y') ?? '—' }}</td>
                         <td class="center">{{ \App\Enums\SportCategory::labelOrNone($user?->sport_category) }}</td>
                     </tr>

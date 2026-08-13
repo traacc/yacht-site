@@ -27,6 +27,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
@@ -70,6 +71,9 @@ class RegattaEntryResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return static::scopeToOwnedRegattas(parent::getEloquentQuery())
+            // Заявитель собирается из команды, автора и экипажа — грузим пачкой,
+            // иначе колонки «Заявитель» и «Рулевой» дают N+1.
+            ->with(['team', 'applicant', 'crew.user', 'crew.teamMember.user'])
             ->whereHas('regatta', fn (Builder $q) => $q->whereIn(
                 'regatta_status',
                 [
@@ -202,6 +206,13 @@ class RegattaEntryResource extends Resource
                         default             => '—',
                     })*/
                     ->schema([
+                        Hidden::make('id'),
+                        // Участник сборного экипажа: команды за ним нет, выбирать
+                        // из членств нечего — показываем имя из строки экипажа.
+                        Placeholder::make('crew_member_name')
+                            ->label('Участник')
+                            ->content(fn (Get $get): string => (string) ($get('member_name') ?: '—'))
+                            ->visible(fn (Get $get): bool => static::isCrewGuestRow($get)),
                         Select::make('team_member_id')
                             ->label('Участник')
                             ->options(fn (Get $get, ?RegattaEntry $record): array => static::crewMemberOptions(
@@ -214,7 +225,8 @@ class RegattaEntryResource extends Resource
                                 record: $record,
                             ))
                             ->getOptionLabelUsing(fn (?string $value): ?string => static::crewMemberOptionLabel($value))
-                            ->required()
+                            ->visible(fn (Get $get): bool => ! static::isCrewGuestRow($get))
+                            ->required(fn (Get $get): bool => ! static::isCrewGuestRow($get))
                             ->live()
                             ->searchable()
                             ->disableOptionsWhenSelectedInSiblingRepeaterItems()
@@ -312,8 +324,19 @@ class RegattaEntryResource extends Resource
                 : null)
             ->columns([
                 TextColumn::make('team.name')
-                    ->label('Команда')
-                    ->searchable()
+                    ->label('Заявитель')
+                    // У индивидуальных и сборных заявок команды нет — показываем,
+                    // кто подал заявку и как с ним связаться, иначе строка пустая.
+                    ->state(fn (RegattaEntry $record): string => $record->participantName())
+                    ->description(fn (RegattaEntry $record): ?string => $record->team
+                        ? null
+                        : trim($record->participation_kind->getLabel()
+                            .($record->applicantContacts() ? ' · '.$record->applicantContacts() : '')))
+                    ->searchable(query: fn (Builder $query, string $search): Builder => $query
+                        ->where(fn (Builder $q) => $q
+                            ->whereHas('team', fn (Builder $t) => $t->where('name', 'like', "%{$search}%"))
+                            ->orWhereHas('applicant', fn (Builder $u) => $u->where('name', 'like', "%{$search}%"))
+                            ->orWhereHas('crew', fn (Builder $c) => $c->where('full_name', 'like', "%{$search}%"))))
                     ->sortable(),
                 TextColumn::make('regatta.name')
                     ->label('Регата')
@@ -321,15 +344,14 @@ class RegattaEntryResource extends Resource
                     ->sortable(),
                 TextColumn::make('captain')
                     ->label('Рулевой')
-                    ->state(fn (RegattaEntry $record): string => $record->crew()
-                        ->where('role', 'captain')
-                        ->first()?->teamMember?->user?->name ?? '—'
-                    )
+                    ->state(fn (RegattaEntry $record): string => $record->captainCrew()?->displayName() ?? '—')
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query->whereHas('crew', function (Builder $q) use ($search): void {
                             $q->where('role', 'captain')
-                                ->whereHas('teamMember.user', function (Builder $q) use ($search): void {
-                                    $q->where('name', 'like', "%{$search}%");
+                                ->where(function (Builder $q) use ($search): void {
+                                    $q->where('full_name', 'like', "%{$search}%")
+                                        ->orWhereHas('user', fn (Builder $u) => $u->where('name', 'like', "%{$search}%"))
+                                        ->orWhereHas('teamMember.user', fn (Builder $u) => $u->where('name', 'like', "%{$search}%"));
                                 });
                         });
                     })
@@ -577,14 +599,9 @@ class RegattaEntryResource extends Resource
         $organizerId = $team?->organizer_id;
 
         $existing = $record->crew()
-            ->with('teamMember.user')
+            ->with(['teamMember.user', 'user'])
             ->get()
-            ->map(fn (RegattaEntryCrew $crew): array => [
-                'team_member_id' => $crew->team_member_id,
-                'member_name' => $crew->teamMember?->user?->name ?? 'Неизвестный',
-                'is_captain' => $crew->role === 'captain',
-                'role' => $crew->role,
-            ]);
+            ->map(fn (RegattaEntryCrew $crew): array => static::crewRowData($crew));
 
         $existingMemberIds = $existing->pluck('team_member_id')->all();
 

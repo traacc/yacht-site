@@ -242,8 +242,8 @@
                                 <tr class="hover:bg-gray-50 transition-colors border-b border-brand-border">
                                     <td class="py-3">{{ $index + 1 }}</td>
                                     <td class="py-3">{{ $entry->yacht?->name ?? '—' }}</td>
-                                    <td class="py-3 hidden md:table-cell">{{ $entry->team?->name ?? '—' }}</td>
-                                    <td class="py-3 hidden md:table-cell">{{ $entry->crew->firstWhere('role', 'captain')?->teamMember?->user?->short_name ?? '—' }}</td>
+                                    <td class="py-3 hidden md:table-cell">{{ $entry->participantName() }}</td>
+                                    <td class="py-3 hidden md:table-cell">{{ $entry->captainCrew()?->displayName() ?? '—' }}</td>
                                     <td class="py-3">
                                         <a @click="team_modal_open = true; activeTeamIndex = {{ $index }}"
                                            href="#"

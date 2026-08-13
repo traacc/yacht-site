@@ -23,6 +23,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
@@ -170,6 +171,12 @@ class ArchivedRegattaEntryResource extends Resource
                             default => '—',
                         })
                     ->schema([
+                        Hidden::make('id'),
+                        // Сборный экипаж: участник заявлен без команды, выбирать не из чего.
+                        Placeholder::make('crew_member_name')
+                            ->label('Участник')
+                            ->content(fn (Get $get): string => (string) ($get('member_name') ?: '—'))
+                            ->visible(fn (Get $get): bool => static::isCrewGuestRow($get)),
                         Select::make('team_member_id')
                             ->label('Участник')
                             ->options(fn (Get $get, ?RegattaEntry $record): array => static::crewMemberOptions(
@@ -182,7 +189,8 @@ class ArchivedRegattaEntryResource extends Resource
                                 record: $record,
                             ))
                             ->getOptionLabelUsing(fn (?string $value): ?string => static::crewMemberOptionLabel($value))
-                            ->required()
+                            ->visible(fn (Get $get): bool => ! static::isCrewGuestRow($get))
+                            ->required(fn (Get $get): bool => ! static::isCrewGuestRow($get))
                             ->live()
                             ->searchable()
                             ->disableOptionsWhenSelectedInSiblingRepeaterItems()
@@ -275,7 +283,12 @@ class ArchivedRegattaEntryResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('team.name')
-                    ->label('Команда')
+                    ->label('Заявитель')
+                    // Индивидуальные и сборные заявки идут без команды.
+                    ->state(fn (RegattaEntry $record): string => $record->participantName())
+                    ->description(fn (RegattaEntry $record): ?string => $record->team
+                        ? null
+                        : $record->participation_kind->getLabel())
                     ->searchable(),
                 TextColumn::make('regatta.name')
                     ->label('Регата')
@@ -286,15 +299,14 @@ class ArchivedRegattaEntryResource extends Resource
                     ->sortable()->toggleable(),
                 TextColumn::make('captain')
                     ->label('Рулевой')
-                    ->state(fn (RegattaEntry $record): string => $record->crew()
-                        ->where('role', 'captain')
-                        ->first()?->teamMember?->user?->name ?? '—'
-                    )
+                    ->state(fn (RegattaEntry $record): string => $record->captainCrew()?->displayName() ?? '—')
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query->whereHas('crew', function (Builder $q) use ($search): void {
                             $q->where('role', 'captain')
-                                ->whereHas('teamMember.user', function (Builder $q) use ($search): void {
-                                    $q->where('name', 'like', "%{$search}%");
+                                ->where(function (Builder $q) use ($search): void {
+                                    $q->where('full_name', 'like', "%{$search}%")
+                                        ->orWhereHas('user', fn (Builder $u) => $u->where('name', 'like', "%{$search}%"))
+                                        ->orWhereHas('teamMember.user', fn (Builder $u) => $u->where('name', 'like', "%{$search}%"));
                                 });
                         });
                     })->toggleable(),
@@ -432,14 +444,9 @@ class ArchivedRegattaEntryResource extends Resource
         $organizerId = $team?->organizer_id;
 
         $existing = $record->crew()
-            ->with('teamMember.user')
+            ->with(['teamMember.user', 'user'])
             ->get()
-            ->map(fn (RegattaEntryCrew $crew): array => [
-                'team_member_id' => $crew->team_member_id,
-                'member_name' => $crew->teamMember?->user?->name ?? 'Неизвестный',
-                'is_captain' => $crew->role === 'captain',
-                'role' => $crew->role,
-            ]);
+            ->map(fn (RegattaEntryCrew $crew): array => static::crewRowData($crew));
 
         $existingMemberIds = $existing->pluck('team_member_id')->all();
         /*

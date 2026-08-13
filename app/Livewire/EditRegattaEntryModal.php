@@ -17,6 +17,7 @@ use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
 /**
@@ -85,7 +86,7 @@ class EditRegattaEntryModal extends Component
     // Документы
     // ──────────────────────────────────────────────
 
-    /** @var array<string, \Livewire\TemporaryUploadedFile[]> новые загрузки по doc_type */
+    /** @var array<string, TemporaryUploadedFile[]> новые загрузки по doc_type */
     public array $documentFiles = [];
 
     /** @var array<string, array<int, array{url: string, name: string}>> существующие файлы по doc_type */
@@ -172,14 +173,16 @@ class EditRegattaEntryModal extends Component
         // Экипаж
         $this->crew = $entry->crew
             ->map(fn ($c): array => [
-                'ref'            => (string) Str::uuid(),
+                'ref' => (string) Str::uuid(),
                 'team_member_id' => (string) $c->team_member_id,
-                'user_id'        => $c->teamMember?->user_id ? (string) $c->teamMember->user_id : null,
-                'registered'     => true,
-                'name'           => $c->teamMember?->user?->name ?? 'Неизвестный',
-                'birth_date'     => null,
+                // Сборный экипаж приходит без team_member — пользователь и имя
+                // берутся прямо со строки экипажа.
+                'user_id' => $c->resolvedUserId() ? (string) $c->resolvedUserId() : null,
+                'registered' => true,
+                'name' => $c->displayName(),
+                'birth_date' => null,
                 'sport_category' => null,
-                'role'           => $c->role,
+                'role' => $c->role,
             ])
             ->values()
             ->all();
@@ -211,12 +214,12 @@ class EditRegattaEntryModal extends Component
         $this->freeYachts = Yacht::query()
             ->where(function ($q) use ($entry) {
                 $q->whereDoesntHave('regattaEntries', fn ($q) => $q->where('regatta_id', $entry->regatta_id))
-                  ->orWhere('id', $entry->yacht_id);
+                    ->orWhere('id', $entry->yacht_id);
             })
             ->orderBy('name')
             ->get()
             ->map(fn (Yacht $y): array => [
-                'id'   => (string) $y->id,
+                'id' => (string) $y->id,
                 'name' => $y->name,
                 'vfps' => $y->vfps_number,
             ])
@@ -258,9 +261,9 @@ class EditRegattaEntryModal extends Component
         $excludeIds = array_values(array_filter(array_column($this->crew, 'user_id')));
 
         $this->searchResults = User::where(function ($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('email', 'like', "%{$query}%");
-            })
+            $q->where('name', 'like', "%{$query}%")
+                ->orWhere('email', 'like', "%{$query}%");
+        })
             ->when($excludeIds !== [], fn ($q) => $q->whereNotIn('id', $excludeIds))
             ->limit(10)
             ->get(['id', 'name', 'email'])
@@ -272,7 +275,7 @@ class EditRegattaEntryModal extends Component
         if (count($this->crew) >= self::MAX_MEMBERS) {
             $this->searchQuery = '';
             $this->searchResults = [];
-            $this->addError('crew', 'Можно добавить не более ' . self::MAX_MEMBERS . ' участников.');
+            $this->addError('crew', 'Можно добавить не более '.self::MAX_MEMBERS.' участников.');
 
             return;
         }
@@ -290,14 +293,14 @@ class EditRegattaEntryModal extends Component
         }
 
         $this->crew[] = [
-            'ref'            => (string) Str::uuid(),
+            'ref' => (string) Str::uuid(),
             'team_member_id' => null,
-            'user_id'        => (string) $user->id,
-            'registered'     => true,
-            'name'           => $user->name,
-            'birth_date'     => null,
+            'user_id' => (string) $user->id,
+            'registered' => true,
+            'name' => $user->name,
+            'birth_date' => null,
             'sport_category' => null,
-            'role'           => 'main',
+            'role' => 'main',
         ];
 
         $this->searchQuery = '';
@@ -307,13 +310,13 @@ class EditRegattaEntryModal extends Component
     public function addUnregisteredMember(): void
     {
         if (count($this->crew) >= self::MAX_MEMBERS) {
-            $this->addError('crew', 'Можно добавить не более ' . self::MAX_MEMBERS . ' участников.');
+            $this->addError('crew', 'Можно добавить не более '.self::MAX_MEMBERS.' участников.');
 
             return;
         }
 
         $rules = [
-            'newMemberName'      => ['required', 'string', 'max:255'],
+            'newMemberName' => ['required', 'string', 'max:255'],
             'newMemberBirthDate' => ['required', 'date', 'before:today'],
         ];
 
@@ -322,8 +325,8 @@ class EditRegattaEntryModal extends Component
         }
 
         $this->validate($rules, [], [
-            'newMemberName'          => 'ФИО',
-            'newMemberBirthDate'     => 'дата рождения',
+            'newMemberName' => 'ФИО',
+            'newMemberBirthDate' => 'дата рождения',
             'newMemberSportCategory' => 'разряд',
         ]);
 
@@ -340,14 +343,14 @@ class EditRegattaEntryModal extends Component
         }
 
         $this->crew[] = [
-            'ref'            => (string) Str::uuid(),
+            'ref' => (string) Str::uuid(),
             'team_member_id' => null,
-            'user_id'        => null,
-            'registered'     => false,
-            'name'           => $name,
-            'birth_date'     => $this->newMemberBirthDate,
+            'user_id' => null,
+            'registered' => false,
+            'name' => $name,
+            'birth_date' => $this->newMemberBirthDate,
             'sport_category' => $this->newMemberSportCategory ?: null,
-            'role'           => 'main',
+            'role' => 'main',
         ];
 
         $this->reset(['newMemberName', 'newMemberBirthDate', 'newMemberSportCategory']);
@@ -408,7 +411,7 @@ class EditRegattaEntryModal extends Component
         }
 
         $rules = [
-            'crew'        => ['array', 'min:1', 'max:' . self::MAX_MEMBERS],
+            'crew' => ['array', 'min:1', 'max:'.self::MAX_MEMBERS],
             'crew.*.role' => ['required', Rule::in(['main', 'reserve', 'captain'])],
         ];
 
@@ -420,16 +423,16 @@ class EditRegattaEntryModal extends Component
         }
 
         foreach ($this->requiredDocuments() as $doc) {
-            $key = 'documentFiles.' . $doc['doc_type'];
+            $key = 'documentFiles.'.$doc['doc_type'];
             $rules[$key] = ['nullable', 'array'];
-            $rules[$key . '.*'] = ['file', 'mimes:pdf,doc,docx,jpg,jpeg,png,webp', 'max:20480'];
+            $rules[$key.'.*'] = ['file', 'mimes:pdf,doc,docx,jpg,jpeg,png,webp', 'max:20480'];
         }
 
         $this->validate($rules, [
-            'crew.min'  => 'В экипаже должен быть хотя бы один участник.',
-            'crew.max'  => 'Можно добавить не более ' . self::MAX_MEMBERS . ' участников.',
+            'crew.min' => 'В экипаже должен быть хотя бы один участник.',
+            'crew.max' => 'Можно добавить не более '.self::MAX_MEMBERS.' участников.',
         ], [
-            'yachtId'      => 'яхта',
+            'yachtId' => 'яхта',
             'newYachtName' => 'название яхты',
             'newYachtVfps' => 'номер паруса',
         ]);
@@ -449,9 +452,9 @@ class EditRegattaEntryModal extends Component
                 // 1. Яхта
                 if ($this->yachtMode === 'create') {
                     $yacht = Yacht::create([
-                        'name'            => $this->newYachtName,
-                        'vfps_number'     => $this->newYachtVfps ?: null,
-                        'user_id'         => $team->organizer_id,
+                        'name' => $this->newYachtName,
+                        'vfps_number' => $this->newYachtVfps ?: null,
+                        'user_id' => $team->organizer_id,
                         'approval_status' => 'pending',
                     ]);
                     $entry->update(['yacht_id' => $yacht->id]);
@@ -469,12 +472,12 @@ class EditRegattaEntryModal extends Component
                         // Незарегистрированный — создаём пользователя
                         if (! ($m['registered'] ?? false) && ! $m['user_id']) {
                             $user = User::create([
-                                'name'            => $m['name'],
-                                'birth_date'      => $m['birth_date'],
-                                'sport_category'  => $m['sport_category'],
-                                'email'           => $this->generateUniqueEmail(),
-                                'phone'           => $this->generateUniquePhone(),
-                                'password'        => Str::password(16),
+                                'name' => $m['name'],
+                                'birth_date' => $m['birth_date'],
+                                'sport_category' => $m['sport_category'],
+                                'email' => $this->generateUniqueEmail(),
+                                'phone' => $this->generateUniquePhone(),
+                                'password' => Str::password(16),
                                 'creation_source' => CreationSource::QuickRequest,
                             ]);
                             $userId = (string) $user->id;
@@ -487,10 +490,10 @@ class EditRegattaEntryModal extends Component
                         $member = TeamMember::firstOrCreate(
                             ['team_id' => $team->id, 'user_id' => $userId],
                             [
-                                'role'         => TeamMemberRole::Member->value,
-                                'status'       => 'active',
+                                'role' => TeamMemberRole::Member->value,
+                                'status' => 'active',
                                 'is_permanent' => $isPermanent,
-                                'joined_at'    => now(),
+                                'joined_at' => now(),
                             ],
                         );
                         $teamMemberId = (string) $member->id;
@@ -536,8 +539,8 @@ class EditRegattaEntryModal extends Component
 
                     $documentsData[] = [
                         'doc_type' => $docType,
-                        'title'    => $doc['title'],
-                        'files'    => $files,
+                        'title' => $doc['title'],
+                        'files' => $files,
                     ];
                 }
 
@@ -559,7 +562,7 @@ class EditRegattaEntryModal extends Component
     private function generateUniqueEmail(): string
     {
         do {
-            $email = 'noemail_' . Str::lower(Str::random(24)) . '@noemail.local';
+            $email = 'noemail_'.Str::lower(Str::random(24)).'@noemail.local';
         } while (User::where('email', $email)->exists());
 
         return $email;
@@ -568,7 +571,7 @@ class EditRegattaEntryModal extends Component
     private function generateUniquePhone(): string
     {
         do {
-            $phone = '+7' . str_pad((string) random_int(0, 9999999999), 10, '0', STR_PAD_LEFT);
+            $phone = '+7'.str_pad((string) random_int(0, 9999999999), 10, '0', STR_PAD_LEFT);
         } while (User::where('phone', $phone)->exists());
 
         return $phone;

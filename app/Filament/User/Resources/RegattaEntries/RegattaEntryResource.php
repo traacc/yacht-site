@@ -27,6 +27,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
@@ -180,6 +181,12 @@ class RegattaEntryResource extends Resource
                             default => '—',
                         })
                     ->schema([
+                        Hidden::make('id'),
+                        // Сборный экипаж: участник заявлен без команды, выбирать не из чего.
+                        Placeholder::make('crew_member_name')
+                            ->label('Участник')
+                            ->content(fn (Get $get): string => (string) ($get('member_name') ?: '—'))
+                            ->visible(fn (Get $get): bool => static::isCrewGuestRow($get)),
                         Select::make('team_member_id')
                             ->label('Участник')
                             ->options(fn (Get $get): array => static::crewMemberOptions(
@@ -192,7 +199,8 @@ class RegattaEntryResource extends Resource
                                 teamId: $get('../../team_id'),
                             ))
                             ->getOptionLabelUsing(fn (?string $value): ?string => static::crewMemberOptionLabel($value))
-                            ->required()
+                            ->visible(fn (Get $get): bool => ! static::isCrewGuestRow($get))
+                            ->required(fn (Get $get): bool => ! static::isCrewGuestRow($get))
                             ->live()
                             ->searchable()
                             ->disableOptionsWhenSelectedInSiblingRepeaterItems()
@@ -276,9 +284,16 @@ class RegattaEntryResource extends Resource
             ->columns([
                 TextColumn::make('regatta.name')->label('Регата')
                     ->searchable(),
-                TextColumn::make('team.name')->label('Команда')
+                TextColumn::make('team.name')->label('Заявитель')
+                    // Индивидуальная заявка идёт без команды — показываем, кто её подал.
+                    ->state(fn (RegattaEntry $record): string => $record->participantName())
+                    ->description(fn (RegattaEntry $record): ?string => $record->team
+                        ? null
+                        : $record->participation_kind->getLabel())
                     ->searchable(),
                 TextColumn::make('yacht.name')->label('Яхта')
+                    // На регулярных регатах лодку назначает ассоциация уже после одобрения.
+                    ->placeholder('—')
                     ->searchable(),
                 TextColumn::make('status')
                     ->badge()->label('Статус')->formatStateUsing(fn (string $state): string => match ($state) {
@@ -538,14 +553,9 @@ class RegattaEntryResource extends Resource
     public static function loadCrew(RegattaEntry $record): array
     {
         return $record->crew()
-            ->with('teamMember.user')
+            ->with(['teamMember.user', 'user'])
             ->get()
-            ->map(fn (RegattaEntryCrew $crew): array => [
-                'team_member_id' => $crew->team_member_id,
-                'member_name' => $crew->teamMember?->user?->name ?? 'Неизвестный',
-                'is_captain' => $crew->role === 'captain',
-                'role' => $crew->role,
-            ])
+            ->map(fn (RegattaEntryCrew $crew): array => static::crewRowData($crew))
             ->all();
     }
 }

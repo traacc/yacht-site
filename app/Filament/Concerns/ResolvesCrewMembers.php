@@ -9,6 +9,7 @@ use App\Models\RegattaEntry;
 use App\Models\RegattaEntryCrew;
 use App\Models\TeamMember;
 use App\Models\User;
+use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -67,32 +68,84 @@ trait ResolvesCrewMembers
     /**
      * Синхронизирует экипаж заявки с данными репитера.
      *
-     * @param  array<int, array{team_member_id?: ?string, role?: ?string}>  $crew
+     * Сопоставление идёт по id строки экипажа, а не по членству в команде:
+     * у участников сборного экипажа (индивидуальные и «местовые» заявки,
+     * принятые отклики «Хочу в этот экипаж») `team_member_id` пуст, и по нему
+     * такие строки не только не сохранялись бы, но и вычищались при первом же
+     * сохранении заявки из админки.
+     *
+     * @param  array<int, array{id?: ?int, team_member_id?: ?string, full_name?: ?string, role?: ?string}>  $crew
      */
     public static function syncCrew(RegattaEntry $record, array $crew): void
     {
-        // Значения вида `user:<uuid>` превращаются здесь в реальные членства.
-        $roles = [];
+        $keptIds = [];
 
         foreach ($crew as $item) {
+            $role = $item['role'] ?? 'main';
+
+            // Значения вида `user:<uuid>` превращаются здесь в реальные членства.
             $memberId = static::resolveCrewTeamMemberId($record, $item['team_member_id'] ?? null);
 
-            if ($memberId === null) {
+            if ($memberId !== null) {
+                $keptIds[] = $record->crew()->updateOrCreate(
+                    ['team_member_id' => $memberId],
+                    ['role' => $role],
+                )->getKey();
+
                 continue;
             }
 
-            $roles[$memberId] = $item['role'] ?? 'main';
+            // Участник без членства: правим существующую строку, новую здесь не
+            // создаём — человека со стороны добавляет действие по отклику.
+            $row = filled($item['id'] ?? null)
+                ? $record->crew()->whereKey($item['id'])->first()
+                : null;
+
+            if ($row === null) {
+                continue;
+            }
+
+            $row->update([
+                'role' => $role,
+                'full_name' => $item['full_name'] ?? $row->full_name,
+            ]);
+
+            $keptIds[] = $row->getKey();
         }
 
-        // Удаляем записи, которых нет в новом наборе
-        $record->crew()->whereNotIn('team_member_id', array_keys($roles))->delete();
+        // Удаляем строки, которых нет в новом наборе (пустой набор — весь экипаж).
+        $record->crew()->whereNotIn('id', $keptIds)->delete();
+    }
 
-        foreach ($roles as $memberId => $role) {
-            $record->crew()->updateOrCreate(
-                ['team_member_id' => $memberId],
-                ['role' => $role],
-            );
-        }
+    /**
+     * Строка репитера описывает участника без членства в команде.
+     *
+     * Такие строки приходят из сборных экипажей и принятых откликов «Хочу в
+     * этот экипаж»: выбирать в селекте нечего, имя показывается как есть.
+     * Только что добавленная строка (без `id`) таковой не считается — в ней
+     * админ как раз выбирает участника из команд.
+     */
+    public static function isCrewGuestRow(Get $get): bool
+    {
+        return filled($get('id')) && blank($get('team_member_id'));
+    }
+
+    /**
+     * Строка экипажа в формате репитера формы.
+     *
+     * @return array{id: int, team_member_id: ?string, member_name: string, full_name: ?string, is_captain: bool, role: string}
+     */
+    public static function crewRowData(RegattaEntryCrew $crew): array
+    {
+        return [
+            'id' => $crew->getKey(),
+            'team_member_id' => $crew->team_member_id,
+            // displayName() покрывает и участников команды, и сборный экипаж.
+            'member_name' => $crew->displayName(),
+            'full_name' => $crew->full_name,
+            'is_captain' => $crew->role === 'captain',
+            'role' => $crew->role,
+        ];
     }
 
     /**
