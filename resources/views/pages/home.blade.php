@@ -401,7 +401,7 @@ function gallerySlider() {
                         :disabled="! hasDetails(s)"
                         class="shrink-0 h-64 flex flex-col items-center gap-2 p-2 hover:shadow-md transition-shadow text-left"
                         :class="hasDetails(s) ? 'cursor-pointer' : 'cursor-default'"
-                        
+                        :style="`width: ${cardWidth}px`"
                     >
                         {{-- w-full: логотип занимает всю ширину карточки, object-contain сохраняет пропорции --}}
                         <img :src="s.logo" :alt="s.name || ''" class="flex-1 min-h-0 w-full object-contain">
