@@ -39,7 +39,7 @@ enum ServiceType: string
             self::YachtRental => 'Аренда яхт',
             self::FleetRental => 'Аренда флота',
             self::Event => 'Проведение мероприятий',
-            self::Training => 'Обучение судовождению',
+            self::Training => 'Обучение',
             self::Tour => 'Яхтенные путешествия и походы',
             self::ForeignRegatta => 'Регаты за рубежом',
             self::GiftCertificate => 'Подарочные сертификаты',

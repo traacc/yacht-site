@@ -1,11 +1,11 @@
 <x-public-layout
-    title="Обучение судовождению — Yacht Association"
-    description="Обучение судовождению с нуля, повышение квалификации и подготовка к экзаменам на права IYT и ГИМС.">
+    title="Обучение — Yacht Association"
+    description="Обучение с нуля, повышение квалификации и подготовка к экзаменам на права IYT и ГИМС.">
 
-    <x-breadcrumbs_page title="Обучение судовождению"></x-breadcrumbs_page>
+    <x-breadcrumbs_page title="Обучение"></x-breadcrumbs_page>
 
     <x-hero-section
-        title="Обучение судовождению"
+        title="Обучение"
         desc="С нуля, повышение квалификации и подготовка к экзаменам IYT и ГИМС"
         bgImage="{{ $heroImage ?? asset('images/bg/charter.webp') }}"></x-hero-section>
 
