@@ -452,7 +452,7 @@ function gallerySlider() {
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
 
-            <div class="flex items-center justify-center h-24 p-3 mb-5">
+            <div class="flex items-center justify-center h-42 p-3 mb-5">
                 <img :src="active.logo" :alt="active.name || ''" class="max-h-full max-w-full object-contain">
             </div>
 
