@@ -393,6 +393,8 @@ function gallerySlider() {
             <div
                 class="flex"
                 :style="`gap: ${gap}px; transform: translateX(-${offset}px); transition: ${dragging ? 'none' : 'transform 0.4s cubic-bezier(0.4,0,0.2,1)'}; will-change: transform;`"
+                {{-- партнёров меньше, чем помещается в кадр, — центрируем ряд --}}
+                :class="sponsors.length < visible ? 'justify-center' : ''"
             >
                 <template x-for="(s, idx) in sponsors" :key="idx">
                     <button
@@ -523,9 +525,10 @@ function sponsorsSlider() {
 
             const w = window.innerWidth;
             const bp = this.breakpoints.find(b => w <= b.maxWidth);
-            // Больше четырёх карточек в кадре не показываем ни при какой ширине,
-            // и не растягиваем трек, если партнёров меньше.
-            this.visible = Math.min(4, bp ? bp.visible : 4, Math.max(1, this.sponsors.length));
+            // Больше четырёх карточек в кадре не показываем ни при какой ширине.
+            // Число партнёров здесь намеренно не учитывается: ширина карточки всегда
+            // считается на полный кадр, иначе двое партнёров растянулись бы на пол-экрана.
+            this.visible = Math.min(4, bp ? bp.visible : 4);
 
             this.cardWidth = (track.clientWidth - this.gap * (this.visible - 1)) / this.visible;
 
