@@ -25,6 +25,11 @@ use Illuminate\Support\Facades\DB;
  *   3. Личный рейтинг — те же очки регаты начисляем каждому участнику
  *      экипажа команды (captain / main / reserve) и суммируем по участникам.
  *   4. Проставляем rank_position по убыванию total_points.
+ *
+ * Регата любого типа идёт в зачёт по своему `level_coefficient`; регата вне
+ * зачёта — это коэффициент 0, при котором формула даёт всем ноль очков.
+ * У сборных и индивидуальных экипажей регулярных и выездных регат команды нет,
+ * поэтому личные очки начисляются по составу заявки (@see crewMaps()).
  */
 class RatingCalculator
 {
@@ -54,12 +59,12 @@ class RatingCalculator
     public function personalRegattaBreakdown(Season $season): array
     {
         $scoredItems = $this->scoredResultItems($season);
-        $crewByRegattaTeam = $this->crewByRegattaTeam($season);
+        $crewMaps = $this->crewMaps($season);
 
         // [user_id][regatta_id] => ['name' => ..., 'date' => ..., 'points' => ...]
         $breakdown = [];
         foreach ($scoredItems as $item) {
-            $userIds = $crewByRegattaTeam[$item->regatta_id][$item->team_id] ?? [];
+            $userIds = $this->crewUserIdsFor($crewMaps, $item);
 
             foreach ($userIds as $userId) {
                 if (! isset($breakdown[$userId][$item->regatta_id])) {
@@ -296,7 +301,9 @@ class RatingCalculator
      *
      * Строки удалённых команд (team_id обнулён, см. миграцию
      * add_snapshot_to_regatta_result_items) участвуют в подсчёте размера флота,
-     * но из выборки исключаются: начислять очки уже некому.
+     * но из выборки исключаются: начислять очки уже некому. Строка без команды,
+     * но со ссылкой на заявку — другое дело: это сборный или индивидуальный
+     * экипаж, и личные очки его участникам начисляются.
      */
     private function scoredResultItems(Season $season): Collection
     {
@@ -307,6 +314,7 @@ class RatingCalculator
             ->where('regattas.season_id', $season->id)
             ->get([
                 'regatta_result_items.team_id',
+                'regatta_result_items.regatta_entry_id',
                 'regatta_result_items.regatta_result_id',
                 'regatta_result_items.final_position',
                 'regattas.id as regatta_id',
@@ -323,7 +331,8 @@ class RatingCalculator
             ->map->count();
 
         return $items
-            ->filter(fn ($item) => is_numeric($item->final_position) && $item->team_id !== null)
+            ->filter(fn ($item) => is_numeric($item->final_position)
+                && ($item->team_id !== null || $item->regatta_entry_id !== null))
             ->map(function ($item) use ($participantsByResult) {
                 $participants = $participantsByResult[$item->regatta_result_id] ?? 0;
 
@@ -339,6 +348,12 @@ class RatingCalculator
     {
         $points = [];
         foreach ($scoredItems as $item) {
+            // Сборные и индивидуальные экипажи идут только в личный рейтинг:
+            // команды, которой начислять очки, у них нет.
+            if ($item->team_id === null) {
+                continue;
+            }
+
             $points[$item->team_id] = ($points[$item->team_id] ?? 0) + $item->score;
         }
 
@@ -366,13 +381,12 @@ class RatingCalculator
 
     private function recalculatePersonalRatings(Season $season, Collection $scoredItems): void
     {
-        // Состав экипажей сезона: regatta_id → team_id → [user_id => user_id]
-        $crewByRegattaTeam = $this->crewByRegattaTeam($season);
+        $crewMaps = $this->crewMaps($season);
 
         // Очки команды за регату начисляем каждому участнику её экипажа.
         $points = [];
         foreach ($scoredItems as $item) {
-            $userIds = $crewByRegattaTeam[$item->regatta_id][$item->team_id] ?? [];
+            $userIds = $this->crewUserIdsFor($crewMaps, $item);
 
             foreach ($userIds as $userId) {
                 $points[$userId] = ($points[$userId] ?? 0) + $item->score;
@@ -430,27 +444,68 @@ class RatingCalculator
     }
 
     /**
-     * Карта экипажей сезона: [regatta_id][team_id] => [user_id => user_id].
-     * Объединяет несколько заявок одной команды на регату, исключает дубли.
+     * Состав экипажей сезона в двух разрезах.
+     *
+     * `byTeam` — исторический путь: заявка команды, участники приходят из
+     * `team_members`. `byEntry` — сборные и индивидуальные экипажи регулярных
+     * и выездных регат: команды нет, человек привязан к строке экипажа напрямую.
+     *
+     * `byTeam` объединяет несколько заявок одной команды на регату и исключает
+     * дубли участников.
+     *
+     * @return array{
+     *     byTeam: array<string, array<string, array<string, string>>>,
+     *     byEntry: array<string, array<string, string>>
+     * }
      */
-    private function crewByRegattaTeam(Season $season): array
+    private function crewMaps(Season $season): array
     {
         $entries = RegattaEntry::query()
             ->whereHas('regatta', fn ($q) => $q->where('season_id', $season->id))
             ->with('crew.teamMember:id,user_id')
             ->get(['id', 'regatta_id', 'team_id']);
 
-        $map = [];
+        $byTeam = [];
+        $byEntry = [];
+
         foreach ($entries as $entry) {
             foreach ($entry->crew as $crewMember) {
-                $userId = $crewMember->teamMember?->user_id;
+                $userId = $crewMember->resolvedUserId();
 
-                if ($userId !== null) {
-                    $map[$entry->regatta_id][$entry->team_id][$userId] = $userId;
+                if ($userId === null) {
+                    continue;
+                }
+
+                $byEntry[$entry->id][$userId] = $userId;
+
+                if ($entry->team_id !== null) {
+                    $byTeam[$entry->regatta_id][$entry->team_id][$userId] = $userId;
                 }
             }
         }
 
-        return $map;
+        return ['byTeam' => $byTeam, 'byEntry' => $byEntry];
+    }
+
+    /**
+     * Участники, которым идут очки строки протокола.
+     *
+     * Прямая ссылка на заявку точнее команды: она есть и у сборных экипажей,
+     * и у заявок, где на одну команду в регате пришлось несколько лодок.
+     *
+     * @param  array{byTeam: array<string, array<string, array<string, string>>>, byEntry: array<string, array<string, string>>}  $maps
+     * @return array<string, string>
+     */
+    private function crewUserIdsFor(array $maps, object $item): array
+    {
+        if ($item->regatta_entry_id !== null && isset($maps['byEntry'][$item->regatta_entry_id])) {
+            return $maps['byEntry'][$item->regatta_entry_id];
+        }
+
+        if ($item->team_id === null) {
+            return [];
+        }
+
+        return $maps['byTeam'][$item->regatta_id][$item->team_id] ?? [];
     }
 }

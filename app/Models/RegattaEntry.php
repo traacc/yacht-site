@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\ParticipationKind;
 use App\Enums\RegattaEntrySource;
+use App\Enums\TeamMemberRole;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,12 +21,17 @@ class RegattaEntry extends Model
         'regatta_id',
         'team_id',
         'yacht_id',
+        'participation_kind',
+        'user_id',
         'status',
         'source',
         'documents_complete',
         'fee_paid',
         'submitted_at',
         'entry_password',
+        'open_for_join',
+        'join_conditions',
+        'join_contact_email',
     ];
 
     protected $hidden = [
@@ -39,6 +46,8 @@ class RegattaEntry extends Model
             'documents_complete' => 'boolean',
             'fee_paid' => 'boolean',
             'source' => RegattaEntrySource::class,
+            'participation_kind' => ParticipationKind::class,
+            'open_for_join' => 'boolean',
         ];
     }
 
@@ -59,6 +68,23 @@ class RegattaEntry extends Model
     public function yacht(): BelongsTo
     {
         return $this->belongsTo(Yacht::class);
+    }
+
+    /**
+     * Автор заявки: получатель уведомлений в ЛК.
+     *
+     * Nullable — у заявок, заведённых админом или импортом, автора нет;
+     * для таких заявок адресатом остаётся капитан команды.
+     */
+    public function applicant(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /** Отклики «Хочу в этот экипаж», свежие сверху. */
+    public function crewJoinRequests(): HasMany
+    {
+        return $this->hasMany(CrewJoinRequest::class)->latest();
     }
 
     /** Экипаж заявки: участники команды с ролями (captain / main / reserve), капитан всегда первым */
@@ -90,6 +116,46 @@ class RegattaEntry extends Model
     // ──────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────
+
+    /** Заявка одного человека (регулярные и выездные регаты), без команды. */
+    public function isIndividual(): bool
+    {
+        return $this->participation_kind === ParticipationKind::Individual;
+    }
+
+    /**
+     * Открыт ли экипаж для добора людей со стороны.
+     *
+     * Кнопка «Хочу в этот экипаж» показывается только у действующих заявок
+     * на регату, куда ещё можно заявиться.
+     */
+    public function isOpenForJoin(): bool
+    {
+        return $this->open_for_join
+            && in_array($this->status, ['pending', 'approved'], true)
+            && (bool) $this->regatta?->isOpenForRegistration();
+    }
+
+    /**
+     * Кому уходит уведомление о заявке в ЛК: автору заявки, а у заявок без
+     * автора (админ, импорт) — организатору команды.
+     */
+    public function notifiableUser(): ?User
+    {
+        if ($this->applicant) {
+            return $this->applicant;
+        }
+
+        return $this->team?->activeMembers()
+            ->wherePivot('role', TeamMemberRole::Organizer->value)
+            ->first();
+    }
+
+    /** Почта, указанная экипажем для откликов; иначе — почта автора заявки. */
+    public function joinNotificationEmail(): ?string
+    {
+        return $this->join_contact_email ?: $this->notifiableUser()?->email;
+    }
 
     /** Поданы ли не все обязательные документы (заявка помечена для проверки) */
     public function hasMissingDocuments(): bool

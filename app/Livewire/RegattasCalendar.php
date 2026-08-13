@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Enums\RegattaType;
 use App\Models\Season;
 use App\Services\SeasonCalendar;
 use Livewire\Attributes\Computed;
@@ -53,12 +54,40 @@ class RegattasCalendar extends Component
         return app(SeasonCalendar::class)->months($this->year);
     }
 
+    /**
+     * Легенда календаря — типы соревнований плюс зарубежные регаты.
+     *
+     * Цвет в календаре означает тип регаты, поэтому легенда собирается из
+     * RegattaType, а не перечисляется в шаблоне: добавится тип — появится
+     * и пункт легенды, и фильтр.
+     *
+     * @return list<array{type: string, label: string, background_class: string}>
+     */
+    #[Computed]
+    public function legend(): array
+    {
+        $items = array_map(fn (RegattaType $type): array => [
+            'type' => $type->value,
+            'label' => $type->getLabel(),
+            'background_class' => $type->backgroundClass(),
+        ], RegattaType::cases());
+
+        $items[] = [
+            'type' => SeasonCalendar::FOREIGN_TYPE,
+            'label' => 'За рубежом',
+            'background_class' => 'bg-[#7B5FC4]',
+        ];
+
+        return $items;
+    }
+
     public function render()
     {
         // В Livewire v3 к Computed-свойствам в render обращаются как к динамическим свойствам:
         return view('livewire.regattas-calendar', [
             'years' => $this->years,   // вызывает метод years()
             'months' => $this->months, // вызывает метод months()
+            'legend' => $this->legend,
         ]);
     }
 }

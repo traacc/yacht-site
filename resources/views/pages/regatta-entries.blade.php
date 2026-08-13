@@ -79,6 +79,7 @@
                                 <th class="pb-2 text-center font-medium a-font hidden md:table-cell">Рулевой</th>
                                 <th class="pb-2 text-center font-medium a-font hidden md:table-cell">Состав</th>
                                 <th class="pb-2 text-center font-medium a-font">Статус</th>
+                                <th class="pb-2 text-center font-medium a-font"></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y text-center font-medium">
@@ -98,20 +99,21 @@
                                         @endif
                                     </td>
                                     <!--<td class="py-3 hidden md:table-cell">{{ $entry->team?->name ?? '—' }}</td>-->
-                                    <td class="py-3 hidden md:table-cell">{{ $entry->crew->firstWhere('role', 'captain')?->teamMember?->user?->short_name ?? '—' }}</td>
+                                    <td class="py-3 hidden md:table-cell">{{ $entry->crew->firstWhere('role', 'captain')?->displayName() ?? '—' }}</td>
                                     <td class="py-3 hidden md:table-cell">
                                         @if($entry->crew->count())
                                             <div class="flex items-center justify-center -space-x-2">
                                                 @foreach($entry->crew as $crewMember)
-                                                    @php $user = $crewMember->teamMember?->user; @endphp
+                                                    {{-- Сборный экипаж: участник привязан к пользователю напрямую либо описан контактами --}}
+                                                    @php $user = $crewMember->teamMember?->user ?? $crewMember->user; @endphp
                                                     <{{ $user ? 'button' : 'div' }}
                                                          @if($user) type="button" onclick="Livewire.dispatch('open-user-card', { userId: '{{ $user->id }}' })" @endif
                                                          class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-[#2E325C] text-white text-[10px] font-bold flex-shrink-0 ring-2 {{ $crewMember->role === 'captain' ? 'ring-[#2D92CE]' : 'ring-white' }} {{ $user ? 'cursor-pointer hover:ring-[#2D92CE] transition-all' : '' }}"
-                                                         title="{{ $user?->short_name ?? $user?->name }}">
+                                                         title="{{ $user?->short_name ?? $crewMember->displayName() }}">
                                                         @if($user?->photo_url)
                                                             <img src="{{ asset('storage/'.$user->photo_url) }}" alt="{{ $user?->short_name }}" class="w-full h-full object-cover">
                                                         @else
-                                                            <span>{{ $initials($user?->name) }}</span>
+                                                            <span>{{ $initials($user?->name ?? $crewMember->full_name) }}</span>
                                                         @endif
                                                     </{{ $user ? 'button' : 'div' }}>
                                                 @endforeach
@@ -124,6 +126,16 @@
                                         <span class="inline-block rounded-full px-3 py-1 text-sm font-medium {{ $statusClasses[$entry->status] ?? 'bg-gray-100 text-gray-600' }}">
                                             {{ $statusLabels[$entry->status] ?? $entry->status }}
                                         </span>
+                                    </td>
+                                    {{-- Добор людей со стороны: экипаж включает его сам при подаче заявки --}}
+                                    <td class="py-3">
+                                        @if($entry->isOpenForJoin())
+                                            <button type="button"
+                                                    onclick="Livewire.dispatch('open-crew-join', { entryId: '{{ $entry->id }}' })"
+                                                    class="bg-brand-blue text-white py-1.5 px-4 text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap">
+                                                Хочу в этот экипаж
+                                            </button>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach

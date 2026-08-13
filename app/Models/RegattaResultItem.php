@@ -15,6 +15,9 @@ class RegattaResultItem extends Model
     protected $fillable = [
         'regatta_result_id',
         'team_id',
+        // Заявка нужна сборным и индивидуальным экипажам: у них нет команды,
+        // и личный рейтинг начисляется по составу заявки.
+        'regatta_entry_id',
         'yacht_id',
         // Денормализованный снапшот участника: сохраняется на случай удаления
         // команды/яхты и её заявки, чтобы итоговая строка результата уцелела.
@@ -55,6 +58,11 @@ class RegattaResultItem extends Model
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
+    }
+
+    public function regattaEntry(): BelongsTo
+    {
+        return $this->belongsTo(RegattaEntry::class);
     }
 
     public function yacht(): BelongsTo

@@ -69,12 +69,13 @@ graph TB
 
 **Соревнования**
 - `seasons` — год, даты; `series` — группа регат внутри сезона.
-- `regattas` — season_id, series_id, name, `level_coefficient`, date/time start/end, location + coordinates, water_area, описания, regulations, races_count, entry_fee_required/amount, `entry_required_documents` (json), `regatta_status` (upcoming/closest/active/finished/cancelled/postponed), postponed_to_date/note/regatta_id; soft deletes.
+- `regattas` — season_id, series_id, `type` (club/regular/travel, см. ниже), name, `level_coefficient`, date/time start/end, location + coordinates, water_area, описания, regulations, races_count, entry_fee_required/amount, `entry_required_documents` (json), `regatta_status` (upcoming/closest/active/finished/cancelled/postponed), postponed_to_date/note/regatta_id; для регулярных — seat_price/boat_price/race_hours_per_day, для выездных — crew_size_limit; soft deletes.
 - `regatta_events` — **гонки** регаты (event_datetime); `regatta_schedule_events` — программа/расписание регаты.
-- `regatta_entries` — заявки: regatta_id, team_id, yacht_id, `status` (pending/approved/rejected/withdrawn), source, documents_complete, fee_paid, entry_password.
-- `regatta_entry_crew` — экипаж заявки: regatta_entry_id, team_member_id, role (в т.ч. captain).
+- `regatta_entries` — заявки: regatta_id, team_id (**nullable** — у индивидуальных и сборных заявок команды нет), yacht_id, `participation_kind` (crew/individual), user_id (автор заявки — адресат уведомлений), `status` (pending/approved/rejected/withdrawn), source, documents_complete, fee_paid, entry_password, open_for_join + join_conditions/join_contact_email (добор людей в экипаж).
+- `regatta_entry_crew` — экипаж заявки: regatta_entry_id, team_member_id (**nullable**), user_id/full_name/email/phone (участник сборного экипажа без команды), role (в т.ч. captain).
+- `crew_join_requests` — отклики «Хочу в этот экипаж»: regatta_entry_id, user_id (nullable — гость), контакты, message, status (pending/accepted/declined), resolved_at/resolved_by.
 - `race_results` — результат гонки: event_id→regatta_events, regatta_entry_id, position/points (string — допускают DNF/DNS и пр.), penalty_code.
-- `regatta_results` — итоговый протокол регаты (result_type, source, is_published, pdf_path) и `regatta_result_items` — строки протокола со **снапшотами** (team_name, yacht_name, sail_number, captain_name, crew_snapshot, race_breakdown) + override-флаги для ручной правки total_points/final_position, not_participate.
+- `regatta_results` — итоговый протокол регаты (result_type, source, is_published, pdf_path) и `regatta_result_items` — строки протокола со **снапшотами** (team_name, yacht_name, sail_number, captain_name, crew_snapshot, race_breakdown) + `regatta_entry_id` (nullable — прямая связь с заявкой, по ней начисляется личный рейтинг экипажам без команды) + override-флаги для ручной правки total_points/final_position, not_participate.
 - `team_ratings` / `personal_ratings` — рейтинг сезона по командам/участникам (total_points, rank_position).
 - `sequences` — счётчики (генерация номеров).
 
@@ -207,35 +208,47 @@ REST API для судейской программы «КАРТЕР 30». Middl
 
 ## 7. Ключевые бизнес-процессы
 
-### 7.1. Заявка на регату
-`JoinRegattaModal` (Livewire) → `SubmitRegattaEntryAction`: создаёт `RegattaEntry` + `RegattaEntryCrew`, письма (`RegattaEntrySubmitted`, `SendRegattaEntryPassword` — пароль для редактирования заявки без входа). Заявка попадает в Pending-ресурс админки; статусы — `EntryStatus`. Обязательные документы заявки — `UpdateRegattaEntryRequiredDocumentsAction`, оплата — `PaymentRegistry` (morph payable) + `RegattaEntryFeeObserver`.
+### 7.1. Типы соревнований
+`App\Enums\RegattaType` (`regattas.type`) — один тип на регату, определяет способ заявки и цвет регаты в календарях:
+- **Клубная** (`club`, дефолт) — заявляются экипажи со своей яхтой. Экипаж может открыть добор людей со стороны (`open_for_join`), тогда в списке заявок появляется кнопка «Хочу в этот экипаж».
+- **Регулярная** (`regular`) — ассоциация выставляет лодки и продаёт места: `seat_price`, `boat_price`, `race_days_count` + `race_hours_per_day`; экипаж до 6 человек либо индивидуальная заявка.
+- **Выездная** (`travel`) — вне московского региона; размер экипажа задаётся `crew_size_limit` (зависит от флота регаты).
 
-### 7.2. Результаты и рейтинги
+Рейтинг от типа не зависит: любая регата идёт в зачёт по своему `level_coefficient`, а «вне зачёта» — это коэффициент 0. Цвет типа (`RegattaType::backgroundClass()`) используется в графическом календаре (фон плашки), текстовом списке (бейдж) и фильтрах; статус (предстоящая/состоявшаяся) вынесен в фильтры, прошедшие регаты в списке гасятся цветом шрифта.
+
+### 7.2. Заявка на регату
+**Клубные:** `JoinRegattaModal` (Livewire) → `SubmitRegattaEntryAction`: создаёт `RegattaEntry` + `RegattaEntryCrew`, письма (`RegattaEntrySubmitted`, `SendRegattaEntryPassword` — пароль для редактирования заявки без входа). Обязательные документы заявки — `UpdateRegattaEntryRequiredDocumentsAction`, оплата — `PaymentRegistry` (morph payable) + `RegattaEntryFeeObserver`.
+
+**Регулярные и выездные:** `SeatEntryModal` → `SubmitSeatEntryAction`: заявка экипажем или индивидуально, без команды и яхты (их назначает ассоциация), сумма считается по `seat_price` × число человек либо `boat_price`. Такие заявки создаются со статусом `pending` — они обязательно проходят через администратора (ресурс «Одобрение заявок»); об исходе автор узнаёт из `RegattaEntryModerationObserver` → `RegattaEntryModeratedNotification`.
+
+**Добор в экипаж:** `CrewJoinModal` → `SubmitCrewJoinRequestAction` создаёт `CrewJoinRequest` и рассылает уведомления (письмо на почту экипажа и в info@, уведомления в ЛК автору заявки и администраторам). Решение — `ResolveCrewJoinRequestAction` (ресурс «Заявки в экипажи»): принятый кандидат добавляется строкой в `regatta_entry_crew`, не меняя состав команды.
+
+### 7.3. Результаты и рейтинги
 Импорт протокола: `ImportRegattaResultItemsAction` (Excel), `ImportRgdResultItemsAction` + `Services/Rgd/RgdParser` (формат RGD, также команда `regattas:import-rgd`) или по API от судейской программы (`POST /api/regattas/{regatta}/results` + `ApplyRegattaResultsAction`). Очки считает `RaceScorer` (позиции/штрафы — строки: DNF, DNS и т.п.), рейтинги сезона — `RatingCalculator` (+ команда `ratings:recalculate` и действие пересчёта в ресурсах рейтингов админки) с учётом `level_coefficient`; места — dense ranking по `rank_position`. Строки протокола хранят снапшоты состава и разбивку по гонкам; ручные правки — override-флаги. Публикация протокола — `is_published`, PDF — `GenerateRegattaResultPdfAction`. Пересчёты триггерятся обсерверами (`RegattaEntryResultObserver`, `RegattaResultItemObserver`).
 
-### 7.3. Публикация новостей в соцсети
+### 7.4. Публикация новостей в соцсети
 Новость с `published_at` в будущем публикуется отложенно: планировщик ежеминутно запускает `news:publish-to-telegram` / `news:publish-to-vk` → jobs `PublishNewsToTelegram` / `PublishNewsToVk` → `TelegramService` / `VkService` (поддерживают прокси); флаги `published_to_tg/vk`. `NewsObserver` — сопутствующая логика при сохранении.
 
-### 7.4. Аренда яхт
+### 7.5. Аренда яхт
 Яхта с `for_rent=true` показывается в каталоге аренды с опциями (`yacht_options`) и занятыми датами (`yacht_rentals`, календарь в админке — `Forms/Components/RentalCalendar`). Публичная заявка → `SubmitYachtRentalRequestAction` → `YachtRentalRequest` (+ письмо `YachtRentalRequested`); одобрение в админке бронирует даты.
 
-### 7.5. Передача владения яхтой
+### 7.6. Передача владения яхтой
 Пользователь в ЛК подаёт `YachtOwnershipTransfer` (яхты без владельца ищутся по `vfps_number` через `withoutGlobalScopes()`); админ одобряет — яхта перепривязывается к новому владельцу.
 
-### 7.6. Статусы регат
+### 7.7. Статусы регат
 Команда `regattas:update-statuses` (ежеминутно) переводит регаты по датам: upcoming → closest → active → finished; поддерживаются cancelled/postponed (с переносом на дату или другую регату).
 
-### 7.7. Онлайн-оплата (эквайринг)
+### 7.8. Онлайн-оплата (эквайринг)
 **Верификация e-mail — обязательное условие оплаты** (см. 7.8).
 
 Провайдер-агностичный движок в `app/Services/Payments`: контракт `PaymentGateway` (создание платежа, статус, верификация вебхука, cancel/refund; DTO с заделом под чеки 54-ФЗ), резолв активного провайдера — `PaymentManager` по настройкам группы `payments` (страница «Онлайн-оплата» в админке). Попытки оплаты — `PaymentTransaction` (N транзакций на запись `PaymentRegistry`); `StartOnlinePaymentAction` создаёт транзакцию и редиректит на `confirmation_url`, результат идемпотентно применяет `ApplyPaymentResultAction` (атомарный захват статуса; реестр → `Paid`/`Online` обычным `update()`, чтобы сработал `PaymentRegistryObserver` → `fee_paid`; письмо `PaymentSucceeded`). Вебхук — `POST /api/payments/webhook/{provider}` (без CSRF/MaintenanceMode), возврат плательщика — `payments.return`, сверка зависших — `payments:reconcile` (каждые 15 мин). Реальный банк не подключён: реализован `TestPaymentProvider` (внутренний симулятор по подписанной ссылке, работает в local/staging или по явному флагу). Первая точка использования — стартовый взнос заявки (кнопки в ЛК и в `JoinRegattaModal`).
 
-### 7.8. Верификация e-mail
+### 7.9. Верификация e-mail
 `User` реализует `MustVerifyEmail`; письмо — брендированное `VerifyEmailMail` через переопределённый `sendEmailVerificationNotification()` (подписанная ссылка формата Laravel, срок — `config('auth.verification.expire')`, сутки). Единая точка отправки — `SendEmailVerificationLinkAction` (троттлинг 3 письма / 10 мин на пару «e-mail + IP», отказ для технических адресов `@noemail.local`); её вызывают регистрация (`LoginModal::register`), гостевая быстрая заявка, смена e-mail в профиле ЛК (`EditProfile` сбрасывает `email_verified_at`) и все кнопки «отправить ещё раз». Подтверждение — стандартный `VerifyEmailController`; `markEmailAsVerified()` переопределён на `saveQuietly()`, иначе хук `saving` (проверка дублей ФИО) блокирует подтверждение.
 
 **Гейт**: онлайн-оплата доступна только с подтверждённым e-mail — проверка в `StartOnlinePaymentAction` (до переиспользования транзакции). UI: в ЛК и на экране поданной заявки вместо «Оплатить» показывается «Подтвердите e-mail», в панели ЛК — баннер (`EmailVerificationBanner`, renderHook `TOPBAR_AFTER`). В админке — колонка/фильтр статуса и действия «Письмо для подтверждения» / «Подтвердить вручную» (для офлайн-оплат, только админ).
 
-### 7.9. Реестр платежей: подтверждение и журнал изменений
+### 7.10. Реестр платежей: подтверждение и журнал изменений
 Записи `payment_registries` ведут учёт приходов. Помимо статуса оплаты есть **отметка бухгалтера** о фактическом поступлении средств (`confirmed_at`/`confirmed_by`, ставится только через `ConfirmPaymentRegistryAction` — поля не в `$fillable`), колонка «последний изменивший» (`updated_by`; null → «Система» для вебхука и консоли) и `SoftDeletes`. Форма расчёта (наличные/безнал) не хранится отдельно, а выводится из `payment_method` через `PaymentSettlement` — есть колонка, фильтр и итоговая сумма по выборке.
 
 **Журнал изменений** — таблица `payment_registry_logs` (событие `PaymentRegistryLogEvent`, JSON `changed_fields` с raw-значениями и подписями, снапшоты названия/суммы платежа и ФИО актора, IP). Пишет `PaymentRegistryLogger` (синглтон; `withoutAutoLog()` глушит авто-запись, когда Action пишет семантическое событие) через `PaymentRegistryLogObserver`. Тихие изменения (`updateQuietly`/`saveQuietly`, Query Builder) событий модели не порождают — в таких местах вызывается `PaymentRegistryLogger::updatedQuietly($registry, $before)` со снимком старых значений (см. `RegattaEntryFeeObserver`). Просмотр — read-only раздел «Журнал изменений» (фильтры по событию, пользователю, платежу и периоду) + модалка «История» на записи реестра; выгрузка — `PaymentRegistryLogExport` (.xlsx от отфильтрованной выборки).

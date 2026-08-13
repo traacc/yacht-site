@@ -24,6 +24,15 @@ final class SeasonCalendar
     /** Статус-маркер зарубежных регат: отдельный цвет и пункт легенды. */
     public const FOREIGN_STATUS = 'foreign';
 
+    /**
+     * Маркер типа для зарубежных регат.
+     *
+     * Цвет в календаре теперь означает тип соревнования, а зарубежные регаты
+     * контентные и в RegattaType не входят — поэтому у них собственный маркер,
+     * сохраняющий их прежний фиолетовый цвет и пункт легенды.
+     */
+    public const FOREIGN_TYPE = 'foreign';
+
     private const MONTH_NAMES = [
         1 => 'Январь', 2 => 'Февраль', 3 => 'Март',
         4 => 'Апрель', 5 => 'Май', 6 => 'Июнь',
@@ -77,6 +86,11 @@ final class SeasonCalendar
                 'title' => $regatta->name,
                 'city' => $regatta->location,
                 'status' => $regatta->regatta_status->value,
+                'type' => $regatta->type->value,
+                'type_label' => $regatta->type->getLabel(),
+                'background_class' => $regatta->type->backgroundClass(),
+                // Прошедшие регаты в текстовом календаре гасим цветом шрифта.
+                'is_past' => $regatta->isFinished(),
                 'postponed_to' => $regatta->postponed_to_date?->isoFormat('LL'),
                 'postponed_note' => $regatta->postponed_note,
                 'url' => route('competition-details', $regatta),
@@ -111,6 +125,12 @@ final class SeasonCalendar
                 'title' => $regatta->title,
                 'city' => $regatta->placeLabel(),
                 'status' => self::FOREIGN_STATUS,
+                'type' => self::FOREIGN_TYPE,
+                'type_label' => 'За рубежом',
+                'background_class' => 'bg-[#7B5FC4]',
+                'is_past' => $regatta->date_end
+                    ? $regatta->date_end->isPast()
+                    : $regatta->date_start->isPast(),
                 'postponed_to' => null,
                 'postponed_note' => null,
                 'url' => $regatta->publicUrl(),

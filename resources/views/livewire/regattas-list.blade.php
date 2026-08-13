@@ -8,6 +8,16 @@
                 <button wire:click="setFilter('upcoming')" class="reggata-list__filter-btn p-4 cursor-pointer text-center {{ $filter === 'upcoming' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Планируемые</button>
                 <button wire:click="setFilter('finished')" class="reggata-list__filter-btn p-4 cursor-pointer text-center {{ $filter === 'finished' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]' }}">Состоявшиеся</button>
             </div>
+            {{-- Тип соревнования: цвет кнопки совпадает с цветом регаты в календаре --}}
+            <div class="reggata-list__types flex gap-2 flex-wrap font-medium mt-4 md:mt-0">
+                @foreach ($types as $regattaType)
+                    <button wire:click="setType('{{ $regattaType->value }}')"
+                            class="px-3 py-2 text-sm cursor-pointer transition-opacity flex items-center gap-2 {{ $type === $regattaType->value ? 'text-white '.$regattaType->backgroundClass() : 'bg-[#F8F8F8] text-[#2E325C]' }}">
+                        <span class="size-2 rounded-full inline-block {{ $type === $regattaType->value ? 'bg-white' : $regattaType->backgroundClass() }}"></span>
+                        {{ $regattaType->getLabel() }}
+                    </button>
+                @endforeach
+            </div>
             <div class="flex items-center gap-4">
                 {{-- Выбор года (сезона) --}}
                 
@@ -40,6 +50,10 @@
                         </span>
                     </div>
                     @endif
+                    {{-- Тип соревнования — цветная полоса под изображением --}}
+                    <div class="absolute bottom-0 right-0 {{ $regatta->type->backgroundClass() }} px-4 py-2">
+                        <span class="text-white font-bold text-sm uppercase">{{ $regatta->type->getLabel() }}</span>
+                    </div>
                     @if ($regatta->regatta_status === \App\Enums\RegattaStatus::Closest)
                     <div class="absolute top-0 right-0 bg-[#FDE4E3] px-4 py-2 text-[10px] text-sm">
                         <span class="text-[#F24842] font-bold text-sm uppercase">БЛИЖАЙШАЯ РЕГАТА</span>
@@ -107,6 +121,7 @@
                     <tr>
                         <th class="py-2 a-font text-center text-lg md:text-2xl">Дата</th>
                         <th class="py-2 a-font text-center text-lg md:text-2xl">Регата</th>
+                        <th class="py-2 a-font text-center text-2xl hidden md:table-cell">Тип</th>
                         <th class="py-2 a-font text-center text-2xl hidden md:table-cell">Серия</th>
                         <th class="py-2 a-font text-center text-2xl hidden md:table-cell">Акватория</th>
                         <th class="py-2 a-font text-center text-2xl hidden md:table-cell">Коэфф.</th>
@@ -125,16 +140,23 @@
                         \App\Enums\RegattaStatus::Postponed => ['bg-[#FFF3E0] text-[#E67E22]', 'Перенесена'],
                         default => null,
                     })
-                    <tr class="border-t">
+                    {{-- Прошедшие регаты гасим цветом шрифта, а не убираем из списка --}}
+                    <tr class="border-t {{ $regatta->isFinished() ? 'text-brand-gray-light' : '' }}">
                         <td class="py-2 text-center">@if ($regatta->regatta_status != \App\Enums\RegattaStatus::Postponed) {{ $regatta->dateRange() }} @endif</td>
-                        <td class="py-2 text-center text-brand-navy">
+                        <td class="py-2 text-center {{ $regatta->isFinished() ? '' : 'text-brand-navy' }}">
                             {{ $regatta->name }}
                             <x-regatta-external-id :value="$regatta->external_id" class="text-[10px] block" />
+                            <div class="md:hidden mt-1">
+                                <span class="{{ $regatta->type->backgroundClass() }} text-white px-3 py-1 inline-block font-semibold text-sm">{{ $regatta->type->getLabel() }}</span>
+                            </div>
                             @if ($statusBadge)
                             <div class="md:hidden mt-1">
                                 <span class="{{ $statusBadge[0] }} px-3 py-1 inline-block font-semibold text-sm">{{ $statusBadge[1] }}</span>
                             </div>
                             @endif
+                        </td>
+                        <td class="py-2 text-center hidden md:table-cell">
+                            <span class="{{ $regatta->type->backgroundClass() }} text-white px-3 py-1 inline-block font-semibold text-sm">{{ $regatta->type->getLabel() }}</span>
                         </td>
                         <td class="py-2 text-center hidden md:table-cell">
                             @if ($regatta->series)
@@ -157,7 +179,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="py-8 text-center text-brand-gray-light">Регаты не найдены для выбранного года.</td>
+                        <td colspan="8" class="py-8 text-center text-brand-gray-light">Регаты не найдены для выбранного года.</td>
                     </tr>
                     @endforelse
                 </tbody>

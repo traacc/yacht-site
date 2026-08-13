@@ -7,6 +7,7 @@ namespace App\Filament\Resources\Regattas;
 use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\Regatta\ReplicateRegattaAction;
 use App\Enums\RegattaStatus;
+use App\Enums\RegattaType;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Concerns\ScopesToOwnedRegattas;
 use App\Filament\Resources\Regattas\Pages\ManageRegattas;
@@ -107,6 +108,14 @@ class RegattaResource extends Resource
                     ->label('Название')
                     ->placeholder('Введите название регаты')
                     ->required(),
+                Select::make('type')
+                    ->label('Тип соревнования')
+                    ->options(RegattaType::options())
+                    ->default(RegattaType::Club->value)
+                    ->required()
+                    ->live()
+                    ->helperText('Тип задаёт способ подачи заявок и цвет регаты в календаре.')
+                    ->columnSpanFull(),
                 TextInput::make('external_id')
                     ->label('ID (внешний)')
                     ->helperText('Номер регаты для судейской программы. Генерируется автоматически.')
@@ -365,6 +374,48 @@ class RegattaResource extends Resource
                             ->suffix('₽')
                             ->visible(fn (Get $get): bool => (bool) $get('entry_fee_required'))
                             ->required(fn (Get $get): bool => (bool) $get('entry_fee_required')),
+                    ]),
+
+                // ── Регулярная регата: продажа мест ───────
+                Section::make('Места на лодках ассоциации')
+                    ->description('Ассоциация выставляет лодки и продаёт места на них. Продолжительность в гоночных днях задаётся выше.')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->visible(fn (Get $get): bool => $get('type') === RegattaType::Regular->value)
+                    ->schema([
+                        TextInput::make('seat_price')
+                            ->label('Стоимость места')
+                            ->numeric()
+                            ->minValue(0)
+                            ->step(0.01)
+                            ->suffix('₽'),
+                        TextInput::make('boat_price')
+                            ->label('Стоимость лодки целиком')
+                            ->numeric()
+                            ->minValue(0)
+                            ->step(0.01)
+                            ->suffix('₽'),
+                        TextInput::make('race_hours_per_day')
+                            ->label('Часов в течение гоночного дня')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(24)
+                            ->step(0.5),
+                    ]),
+
+                // ── Выездная регата: размер экипажа ───────
+                Section::make('Экипаж выездной регаты')
+                    ->description('Количество человек в экипаже зависит от характеристик лодок, участвующих в регате.')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->visible(fn (Get $get): bool => $get('type') === RegattaType::Travel->value)
+                    ->schema([
+                        TextInput::make('crew_size_limit')
+                            ->label('Человек в экипаже')
+                            ->numeric()
+                            ->minValue(1)
+                            ->maxValue(30)
+                            ->helperText('Больше этого числа участников в заявку не примут. Пусто — без ограничения.'),
                     ]),
 
                 Hidden::make('regatta_status')
@@ -672,6 +723,9 @@ class RegattaResource extends Resource
                 TextColumn::make('name')
                     ->label('Регата')
                     ->searchable()->sortable(),
+                TextColumn::make('type')
+                    ->label('Тип')
+                    ->badge()->sortable()->toggleable(),
                 TextColumn::make('season.year')
                     ->label('Сезон')
                     ->searchable()->sortable()->toggleable(),
@@ -714,6 +768,9 @@ class RegattaResource extends Resource
                                 ->whereDate('date_end', '>=', $date),
                         );
                     }),
+                SelectFilter::make('type')
+                    ->label('Тип соревнования')
+                    ->options(RegattaType::options()),
                 SelectFilter::make('regatta_status')
                     ->label('Статус')
                     ->options([

@@ -65,6 +65,18 @@ class JoinRegattaModal extends Component
     /** Письмо для подтверждения e-mail отправлено повторно (экран успеха) */
     public bool $verificationEmailSent = false;
 
+    /**
+     * Экипаж готов взять людей со стороны (клубные регаты).
+     * При включении на странице заявок появляется кнопка «Хочу в этот экипаж».
+     */
+    public bool $openForJoin = false;
+
+    /** Условия, на которых экипаж берёт людей */
+    public string $joinConditions = '';
+
+    /** Почта, на которую уходят отклики желающих */
+    public string $joinContactEmail = '';
+
     /** Специальный пароль заявки — для редактирования на странице регаты без входа */
     public string $entryPassword = '';
 
@@ -205,6 +217,7 @@ class JoinRegattaModal extends Component
             'regattaId', 'yachtId', 'documentFiles', 'submitted', 'submittedEntryId',
             'verificationEmailSent', 'leftCrew',
             'feePaid', 'entryPassword', 'entryPasswordConfirmation', 'freeYachts',
+            'openForJoin', 'joinConditions', 'joinContactEmail',
             'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'guestBirthDate', 'guestSportCategory',
             'captainMode', 'captainUserId', 'captainName', 'captainSearchQuery', 'captainSearchResults',
             'teamMode', 'teamId', 'teamSelectedName', 'teamName', 'teamSearchQuery', 'teamSearchResults',
@@ -838,7 +851,13 @@ class JoinRegattaModal extends Component
             'regattaId' => ['required', 'string', 'exists:regattas,id'],
             'entryPassword' => ['required', 'string', 'min:4', 'max:255'],
             'entryPasswordConfirmation' => ['required', 'string', 'same:entryPassword'],
+            'joinConditions' => ['nullable', 'string', 'max:2000'],
         ];
+
+        // Почта для откликов обязательна: без неё экипаж не узнает о желающих.
+        if ($this->openForJoin) {
+            $rules['joinContactEmail'] = ['required', 'email', 'max:255'];
+        }
 
         if ($selectsTeam) {
             $rules['teamId'] = ['required', 'string', 'uuid', 'exists:teams,id'];
@@ -1079,7 +1098,20 @@ class JoinRegattaModal extends Component
                 }
 
                 // 6. Подаём заявку от имени организатора команды (проверка прав на подачу)
-                $entry = $action->handle($regatta, $team, $yacht, $submitActor, $crew, $this->entryPassword, $this->feePaid);
+                $entry = $action->handle(
+                    $regatta,
+                    $team,
+                    $yacht,
+                    $submitActor,
+                    $crew,
+                    $this->entryPassword,
+                    $this->feePaid,
+                    [
+                        'open_for_join' => $this->openForJoin,
+                        'join_conditions' => $this->joinConditions ?: null,
+                        'join_contact_email' => $this->joinContactEmail ?: null,
+                    ],
+                );
 
                 return [$entry, $captain];
             });

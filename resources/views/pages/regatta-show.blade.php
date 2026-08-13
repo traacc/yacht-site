@@ -109,7 +109,8 @@
                             Регата отменена
                         </button>
                     @else
-                        <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"
+                        {{-- Клубные заявляются экипажем со своей яхтой, регулярные и выездные — местами --}}
+                        <button @click="$dispatch('{{ $regatta->type === \App\Enums\RegattaType::Club ? 'open-join-regatta-modal' : 'open-seat-entry' }}', { regattaId: '{{ $regatta->id }}' })"
                                 class="mt-6 bg-brand-blue text-white py-2 px-6 hover:bg-brand-blue transition-colors text-lg font-semibold cursor-pointer">
                             Подать заявку →
                         </button>

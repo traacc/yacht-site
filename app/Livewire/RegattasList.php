@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Enums\RegattaType;
 use App\Models\Regatta;
 use App\Models\Season;
 use Livewire\Component;
@@ -11,11 +12,14 @@ class RegattasList extends Component
 {
     use WithPagination;
 
-    protected $queryString = ['view', 'search', 'filter', 'year'];
+    protected $queryString = ['view', 'search', 'filter', 'year', 'type'];
 
     public string $search = '';
 
     public string $filter = 'all';
+
+    /** Тип соревнования: club / regular / travel; null — все типы. */
+    public ?string $type = null;
 
     public string $sortField = 'date_start';
 
@@ -51,6 +55,13 @@ class RegattasList extends Component
     public function setFilter(string $filter): void
     {
         $this->filter = $filter;
+        $this->resetPage();
+    }
+
+    /** Фильтр по типу соревнования; повторный клик по активному типу его снимает. */
+    public function setType(?string $type): void
+    {
+        $this->type = $this->type === $type ? null : $type;
         $this->resetPage();
     }
 
@@ -94,12 +105,14 @@ class RegattasList extends Component
             ->when($this->filter === 'upcoming', fn ($q) => $q->where('regatta_status', 'upcoming'))
             ->when($this->filter === 'closest', fn ($q) => $q->where('regatta_status', 'closest'))
             ->when($this->filter === 'finished', fn ($q) => $q->where('regatta_status', 'finished'))
+            ->ofType($this->type)
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 
         return view('livewire.regattas-list', [
             'regattas' => $regattas,
             'years' => $this->years,
+            'types' => RegattaType::cases(),
         ]);
     }
 }

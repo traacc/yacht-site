@@ -27,28 +27,29 @@
                     </svg>
                     Скачать календарь
                 </a>
-                {{-- Легенда (кликабельная — фильтрует регаты по статусу) --}}
-                <div class="flex items-center gap-4 text-[#2E325C]">
-                    <button type="button" @click="toggleStatus('finished')"
-                        :class="isStatusActive('finished') ? '' : (activeStatuses.length ? 'opacity-40' : '')"
-                        class="flex items-center gap-1.5 text-xs md:text-base cursor-pointer transition-opacity">
-                        <span class="size-2 md:size-4 rounded-full bg-[#157949] inline-block"></span>Состоявшиеся
-                    </button>
-                    <button type="button" @click="toggleStatus('closest')"
-                        :class="isStatusActive('closest') ? '' : (activeStatuses.length ? 'opacity-40' : '')"
-                        class="flex items-center gap-1.5 text-xs md:text-base cursor-pointer transition-opacity">
-                        <span class="size-2 md:size-4 rounded-full bg-[#C2A36B] inline-block"></span>Ближайшие
-                    </button>
-                    <button type="button" @click="toggleStatus('upcoming')"
-                        :class="isStatusActive('upcoming') ? '' : (activeStatuses.length ? 'opacity-40' : '')"
-                        class="flex items-center gap-1.5 text-xs md:text-base cursor-pointer transition-opacity">
-                        <span class="size-2 md:size-4 rounded-full bg-[#C6C6C6] inline-block"></span>Планируемые
-                    </button>
-                    <button type="button" @click="toggleStatus('foreign')"
-                        :class="isStatusActive('foreign') ? '' : (activeStatuses.length ? 'opacity-40' : '')"
-                        class="flex items-center gap-1.5 text-xs md:text-base cursor-pointer transition-opacity">
-                        <span class="size-2 md:size-4 rounded-full bg-[#7B5FC4] inline-block"></span>За рубежом
-                    </button>
+                {{-- Легенда типов соревнований (кликабельная — фильтрует календарь по типу).
+                     Цвет в календаре означает именно тип, а состоявшиеся/предстоящие
+                     вынесены в отдельный фильтр справа. --}}
+                <div class="flex items-center gap-4 text-[#2E325C] flex-wrap">
+                    @foreach ($legend as $item)
+                        <button type="button" @click="toggleType('{{ $item['type'] }}')"
+                            :class="isTypeActive('{{ $item['type'] }}') ? '' : (activeTypes.length ? 'opacity-40' : '')"
+                            class="flex items-center gap-1.5 text-xs md:text-base cursor-pointer transition-opacity">
+                            <span class="size-2 md:size-4 rounded-full {{ $item['background_class'] }} inline-block"></span>{{ $item['label'] }}
+                        </button>
+                    @endforeach
+                </div>
+                {{-- Фильтр по времени проведения --}}
+                <div class="flex items-center border border-[#EAEAEA] shrink-0">
+                    <button type="button" @click="period = 'all'"
+                        :class="period === 'all' ? 'bg-[#2D92CE] text-white' : 'bg-white text-[#2E325C]'"
+                        class="px-3 py-1.5 text-xs md:text-sm cursor-pointer transition-colors">Все</button>
+                    <button type="button" @click="period = 'upcoming'"
+                        :class="period === 'upcoming' ? 'bg-[#2D92CE] text-white' : 'bg-white text-[#2E325C]'"
+                        class="px-3 py-1.5 text-xs md:text-sm cursor-pointer transition-colors">Предстоящие</button>
+                    <button type="button" @click="period = 'past'"
+                        :class="period === 'past' ? 'bg-[#2D92CE] text-white' : 'bg-white text-[#2E325C]'"
+                        class="px-3 py-1.5 text-xs md:text-sm cursor-pointer transition-colors">Состоявшиеся</button>
                 </div>
                 {{-- Выбор года --}}
                     @if ($showSelector)
@@ -95,16 +96,16 @@
                             </h3>
                             <div class="space-y-3">
                                 @foreach ($month['events'] as $event)
-                                    <div x-show="isEventVisible('{{ $event['status'] }}')"
-                                        class="flex gap-2 py-4 border-b border-b-[#EAEAEA] last:border-b-0">
+                                    {{-- Фон плашки = тип соревнования; отменённые и перенесённые
+                                         по-прежнему помечаются собственным цветом и бейджем. --}}
+                                    <div x-show="isEventVisible('{{ $event['type'] }}', {{ $event['is_past'] ? 'true' : 'false' }})"
+                                        class="flex gap-2 py-4 border-b border-b-[#EAEAEA] last:border-b-0 {{ $event['is_past'] ? 'opacity-60' : '' }}">
                                         <div>
                                             <span class="size-4 rounded-full block mt-0.5
-                                                {{ $event['status'] === 'cancelled' ? 'bg-[#a12f15]' : '' }}
-                                                {{ $event['status'] === 'postponed' ? 'bg-[#a19315]' : '' }}
-                                                {{ $event['status'] === 'finished' ? 'bg-[#157949]' : '' }}
-                                                {{ $event['status'] === 'closest' ? 'bg-[#C2A36B]' : '' }}
-                                                {{ $event['status'] === 'upcoming' ? 'bg-[#C6C6C6]' : '' }}
-                                                {{ $event['status'] === 'foreign' ? 'bg-[#7B5FC4]' : '' }}">
+                                                @if ($event['status'] === 'cancelled') bg-[#a12f15]
+                                                @elseif ($event['status'] === 'postponed') bg-[#a19315]
+                                                @else {{ $event['background_class'] }} @endif"
+                                                title="{{ $event['type_label'] }}">
                                             </span>
                                         </div>
                                         <div class="flex flex-col gap-1">
@@ -137,8 +138,9 @@
                                                                 class="downloadsDocuments p-2 bg-white text-[#2E325C] opacity-50 cursor-not-allowed">Документы</button>
                                                     @endif
                                                     @if ($event['can_join'])
+                                                        {{-- Клубные заявляются экипажем с яхтой, остальные — местами на лодках ассоциации --}}
                                                         <button type="button"
-                                                                @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $event['id'] }}' })"
+                                                                @click="$dispatch('{{ $event['type'] === \App\Enums\RegattaType::Club->value ? 'open-join-regatta-modal' : 'open-seat-entry' }}', { regattaId: '{{ $event['id'] }}' })"
                                                                 class="join p-2 bg-[#2D92CE] text-white cursor-pointer">Заявка</button>
                                                     @else
                                                         <button type="button" disabled
@@ -153,7 +155,10 @@
                                 @if (empty($month['events']))
                                     <div class="text-[#C6C6C6] text-sm py-4 text-center">Нет регат</div>
                                 @else
-                                    <div x-show="!monthHasVisible({{ json_encode(array_column($month['events'], 'status')) }})"
+                                    <div x-show="!monthHasVisible({{ json_encode(array_map(
+                                             fn (array $event): array => ['type' => $event['type'], 'is_past' => $event['is_past']],
+                                             $month['events'],
+                                         )) }})"
                                          class="text-[#C6C6C6] text-sm py-4 text-center">Нет регат по фильтру</div>
                                 @endif
                             </div>
@@ -199,29 +204,39 @@ function regattaCalendar() {
         dragStartX: 0,
         dragStartOffset: 0,
 
-        // --- Фильтр по статусу (легенда) ---
-        activeStatuses: [],
+        // --- Фильтр по типу соревнования (легенда) ---
+        activeTypes: [],
 
-        toggleStatus(status) {
-            const idx = this.activeStatuses.indexOf(status);
+        // --- Фильтр по времени: all | upcoming | past ---
+        period: 'all',
+
+        toggleType(type) {
+            const idx = this.activeTypes.indexOf(type);
             if (idx === -1) {
-                this.activeStatuses.push(status);
+                this.activeTypes.push(type);
             } else {
-                this.activeStatuses.splice(idx, 1);
+                this.activeTypes.splice(idx, 1);
             }
         },
 
-        isStatusActive(status) {
-            return this.activeStatuses.includes(status);
+        isTypeActive(type) {
+            return this.activeTypes.includes(type);
         },
 
-        isEventVisible(status) {
-            return this.activeStatuses.length === 0 || this.activeStatuses.includes(status);
+        matchesPeriod(isPast) {
+            if (this.period === 'upcoming') return !isPast;
+            if (this.period === 'past') return isPast;
+            return true;
         },
 
-        monthHasVisible(statuses) {
-            if (this.activeStatuses.length === 0) return true;
-            return statuses.some(s => this.activeStatuses.includes(s));
+        isEventVisible(type, isPast) {
+            const typeOk = this.activeTypes.length === 0 || this.activeTypes.includes(type);
+
+            return typeOk && this.matchesPeriod(isPast);
+        },
+
+        monthHasVisible(events) {
+            return events.some(e => this.isEventVisible(e.type, e.is_past));
         },
 
         get maxOffset() {

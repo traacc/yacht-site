@@ -157,6 +157,9 @@ class ApplyRegattaResultsAction
 
                 $item?->update([
                     'not_participate' => false,
+                    // Досвязываем строки, созданные до появления ссылки на заявку:
+                    // без неё сборный экипаж останется без личного зачёта.
+                    'regatta_entry_id' => $item->regatta_entry_id ?? $entry->id,
                     'total_points' => $crew['total_points'],
                     'final_position' => $crew['final_position'],
                     'total_points_overridden' => true,
@@ -167,6 +170,7 @@ class ApplyRegattaResultsAction
                     RegattaResultItem::create([
                         'regatta_result_id' => $result->id,
                         'team_id' => $entry->team_id,
+                        'regatta_entry_id' => $entry->id,
                         'yacht_id' => $yacht->id,
                         'not_participate' => false,
                         'total_points' => $crew['total_points'],

@@ -197,7 +197,7 @@
         </div>
     </div>
     @endif
-    <button @click="$dispatch('open-join-regatta-modal', { regattaId: '{{ $regatta->id }}' })"
+    <button @click="$dispatch('{{ $regatta->type === \App\Enums\RegattaType::Club ? 'open-join-regatta-modal' : 'open-seat-entry' }}', { regattaId: '{{ $regatta->id }}' })"
             class="pointer-events-auto relative z-20 max-w-3xs 3xl:max-w-xs mx-auto mt-8 md:mt-16 block w-full text-center bg-brand-blue text-2xl md:text-4xl 3xl:text-5xl text-white font-semibold py-2.5 3xl:py-4 transition-colors cursor-pointer">
         Заявка →
     </button>

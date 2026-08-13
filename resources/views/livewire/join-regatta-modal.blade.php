@@ -724,6 +724,45 @@
                     @enderror
                 </div>
 
+                {{-- Добор людей со стороны: кнопка «Хочу в этот экипаж» в списке заявок --}}
+                <div class="border-t border-gray-200 pt-4">
+                    <label class="flex items-start gap-2 cursor-pointer">
+                        <input type="checkbox" wire:model.live="openForJoin"
+                               class="mt-1 border-gray-300 text-[#2D92CE] focus:ring-[#2D92CE]">
+                        <span>
+                            <span class="block text-sm font-medium text-[#2E325C]">Готовы взять людей в экипаж</span>
+                            <span class="block text-xs text-gray-500 mt-1">
+                                В списке заявок у вашего экипажа появится кнопка «Хочу в этот экипаж».
+                            </span>
+                        </span>
+                    </label>
+
+                    @if ($openForJoin)
+                        <div class="mt-3 space-y-3">
+                            <div>
+                                <label for="joinConditions" class="block text-sm font-medium text-[#2E325C]">Условия участия</label>
+                                <textarea id="joinConditions" wire:model="joinConditions" rows="3"
+                                          placeholder="Опыт, взнос, роль в экипаже — что важно знать кандидату"
+                                          class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm"></textarea>
+                                @error('joinConditions')
+                                    <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div>
+                                <label for="joinContactEmail" class="block text-sm font-medium text-[#2E325C]">
+                                    E-mail для откликов <span class="text-red-500">*</span>
+                                </label>
+                                <input type="email" id="joinContactEmail" wire:model="joinContactEmail"
+                                       placeholder="crew@example.com"
+                                       class="mt-1 block w-full border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm">
+                                @error('joinContactEmail')
+                                    <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+                    @endif
+                </div>
+
                 <div class="mt-5 sm:mt-6">
                     <button type="submit"
                             wire:loading.attr="disabled"

@@ -714,6 +714,8 @@ Route::get('/regattas/entries', function () {
             'entries.team.organizer',
             'entries.yacht',
             'entries.crew.teamMember.user',
+            // Сборные экипажи: участник привязан к пользователю без team_member.
+            'entries.crew.user',
             'season',
         ])
         ->orderBy('date_start', 'asc')

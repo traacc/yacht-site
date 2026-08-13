@@ -98,6 +98,8 @@
 <livewire:user-card-modal />
 <livewire:team-card-modal />
 <livewire:entry-crew-modal />
+<livewire:crew-join-modal />
+<livewire:seat-entry-modal />
 <livewire:cookie-consent />
 <livewire:chat.support-chat-widget />
 

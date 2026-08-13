@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\ParticipationKind;
 use App\Enums\RegattaStatus;
+use App\Enums\RegattaType;
 use App\Filament\Resources\RegattaResults\RegattaResultResource;
 use App\Models\Concerns\NormalizesHeicImageColumns;
 use Carbon\Carbon;
@@ -28,6 +30,7 @@ class Regatta extends Model
     protected $fillable = [
         'season_id',
         'series_id',
+        'type',
         'name',
         'level_coefficient',
         'date_start',
@@ -49,6 +52,10 @@ class Regatta extends Model
         'prizes',
         'entry_fee_required',
         'entry_fee_amount',
+        'seat_price',
+        'boat_price',
+        'race_hours_per_day',
+        'crew_size_limit',
         'external_id',
         'regatta_status',
         'postponed_to_date',
@@ -60,6 +67,7 @@ class Regatta extends Model
     protected function casts(): array
     {
         return [
+            'type' => RegattaType::class,
             'coordinates' => 'array',
             'level_coefficient' => 'decimal:2',
             'date_start' => 'date',
@@ -76,6 +84,10 @@ class Regatta extends Model
             'entry_required_documents' => 'array',
             'entry_fee_required' => 'boolean',
             'entry_fee_amount' => 'decimal:2',
+            'seat_price' => 'decimal:2',
+            'boat_price' => 'decimal:2',
+            'race_hours_per_day' => 'decimal:1',
+            'crew_size_limit' => 'integer',
         ];
     }
 
@@ -259,6 +271,19 @@ class Regatta extends Model
         return $query->where($query->qualifyColumn('user_id'), $user->id);
     }
 
+    /** Фильтр по типу соревнования: клубные / регулярные / выездные. */
+    public function scopeOfType(Builder $query, RegattaType|string|null $type): Builder
+    {
+        if ($type === null) {
+            return $query;
+        }
+
+        return $query->where(
+            $query->qualifyColumn('type'),
+            $type instanceof RegattaType ? $type->value : $type,
+        );
+    }
+
     public function scopeUpcoming($query)
     {
         $today = now()->format('Y-m-d');
@@ -342,6 +367,52 @@ class Regatta extends Model
                 $r->id => $r->name.' • '.($r->date_start?->format('d.m.Y') ?? '—'),
             ])
             ->all();
+    }
+
+    /**
+     * Предельный размер экипажа в заявке.
+     *
+     * Регулярные регаты ограничены шестью местами на лодке ассоциации,
+     * выездные — характеристиками флота (поле заполняет организатор),
+     * клубные не ограничены (NULL).
+     */
+    public function maxCrewSize(): ?int
+    {
+        return $this->type === RegattaType::Travel
+            ? $this->crew_size_limit
+            : $this->type->crewSizeLimit();
+    }
+
+    /** Можно ли заявиться одному, без экипажа. */
+    public function allowsIndividualEntry(): bool
+    {
+        return $this->type->allowsIndividualEntry();
+    }
+
+    /** Проходят ли заявки на эту регату проверку администратором. */
+    public function requiresEntryModeration(): bool
+    {
+        return $this->type->requiresModeration();
+    }
+
+    /**
+     * Стоимость заявки: лодка целиком для экипажа, место × число человек
+     * для индивидуальной. Возвращает NULL, если цены у регаты не заданы —
+     * тогда сумму выставляет администратор вручную.
+     */
+    public function entryPrice(ParticipationKind $kind, int $peopleCount = 1): ?float
+    {
+        $price = $kind === ParticipationKind::Individual
+            ? $this->seat_price
+            : $this->boat_price;
+
+        if ($price === null) {
+            return null;
+        }
+
+        return $kind === ParticipationKind::Individual
+            ? (float) $price * max($peopleCount, 1)
+            : (float) $price;
     }
 
     public function isUpcoming(): bool

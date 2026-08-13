@@ -8,6 +8,7 @@ use App\Filament\Resources\RegattaResults\RegattaResultResource;
 use App\Models\RegattaEntry;
 use App\Models\RegattaResult;
 use App\Models\RegattaResultItem;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Реагирует на удаление заявки команды на регату.
@@ -65,6 +66,29 @@ class RegattaEntryResultObserver
         }
     }
 
+    /**
+     * Сужает выборку строк протокола до строк удаляемой заявки.
+     *
+     * У командной заявки признак — команда (плюс яхта, если она известна).
+     * У сборной и индивидуальной команды нет, и фильтр по `team_id` превратился
+     * бы в `IS NULL`, зацепив чужие строки: и другие индивидуальные заявки,
+     * и уже «замороженные» строки удалённых команд. Поэтому такие заявки
+     * ищутся по прямой ссылке `regatta_entry_id`.
+     */
+    private function scopeToEntry(Builder $query, RegattaEntry $entry): Builder
+    {
+        if ($entry->team_id === null) {
+            return $query->where('regatta_entry_id', $entry->id);
+        }
+
+        return $query
+            ->where('team_id', $entry->team_id)
+            ->when(
+                filled($entry->yacht_id),
+                fn (Builder $q): Builder => $q->where('yacht_id', $entry->yacht_id),
+            );
+    }
+
     /** Считается ли регата архивной (итоги историчны и не пересчитываются). */
     private function isArchived(RegattaEntry $entry): bool
     {
@@ -82,7 +106,7 @@ class RegattaEntryResultObserver
             ->where('regatta_id', $entry->regatta_id)
             ->pluck('id');
 
-        $entry->loadMissing('crew.teamMember.user', 'raceResults', 'regatta.races');
+        $entry->loadMissing('crew.teamMember.user', 'crew.user', 'raceResults', 'regatta.races');
 
         $crewSnapshot = $this->buildCrewSnapshot($entry);
         $raceBreakdown = $this->buildRaceBreakdown($entry);
@@ -91,11 +115,7 @@ class RegattaEntryResultObserver
 
         RegattaResultItem::query()
             ->whereIn('regatta_result_id', $resultIds)
-            ->where('team_id', $entry->team_id)
-            ->when(
-                filled($entry->yacht_id),
-                fn ($q) => $q->where('yacht_id', $entry->yacht_id),
-            )
+            ->tap(fn ($q) => $this->scopeToEntry($q, $entry))
             ->get()
             ->each(function (RegattaResultItem $item) use ($captainName, $crewSnapshot, $raceBreakdown): void {
                 $item->forceFill([
@@ -127,11 +147,13 @@ class RegattaEntryResultObserver
     {
         $crew = $entry->crew
             ->map(function ($c): array {
-                $user = $c->teamMember?->user;
+                // Участник сборного экипажа приходит без team_member — он привязан
+                // к пользователю напрямую либо описан контактами (гость).
+                $user = $c->teamMember?->user ?? $c->user;
 
                 return [
                     'id' => $user?->id,
-                    'name' => $user?->name ?? '',
+                    'name' => $user?->name ?? $c->full_name ?? '',
                     'birthday' => $user?->birth_date?->format('d.m.Y') ?? '—',
                     'rank' => SportCategory::labelOrNone($user?->sport_category),
                     'avatar' => $user?->photo_url ? asset('storage/'.$user->photo_url) : null,
@@ -210,14 +232,10 @@ class RegattaEntryResultObserver
             ->where('regatta_id', $entry->regatta_id)
             ->get();
 
-        // Убираем строки выбывшей команды из всех результатов регаты.
+        // Убираем строки выбывшего участника из всех результатов регаты.
         RegattaResultItem::query()
             ->whereIn('regatta_result_id', $results->modelKeys())
-            ->where('team_id', $entry->team_id)
-            ->when(
-                filled($entry->yacht_id),
-                fn ($q) => $q->where('yacht_id', $entry->yacht_id),
-            )
+            ->tap(fn ($q) => $this->scopeToEntry($q, $entry))
             ->delete();
 
         $results->each(function (RegattaResult $result): void {

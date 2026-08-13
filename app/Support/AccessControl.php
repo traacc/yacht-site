@@ -11,6 +11,7 @@ use App\Filament\Pages\AiNewsSettings;
 use App\Filament\Pages\EditProfile;
 use App\Filament\Pages\YachtDocumentSettings;
 use App\Filament\Resources\ArchivedRegattaEntries\ArchivedRegattaEntryResource;
+use App\Filament\Resources\CrewJoinRequests\CrewJoinRequestResource;
 use App\Filament\Resources\Galleries\GalleryResource;
 use App\Filament\Resources\News\NewsResource;
 use App\Filament\Resources\PaymentRegistries\PaymentRegistryResource;
@@ -81,6 +82,7 @@ final class AccessControl
             RegattaResource::class,
             RegattaEntryResource::class,
             PendingRegattaEntryResource::class,
+            CrewJoinRequestResource::class,
             ArchivedRegattaEntryResource::class,
             RegattaResultResource::class,
             RaceResultResource::class,

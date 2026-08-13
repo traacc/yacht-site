@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\PenaltyCode;
 use App\Models\RaceResult;
-use App\Models\RegattaEntry;
 use App\Models\RegattaEvents;
 use App\Models\RegattaResult;
 use App\Models\RegattaResultItem;
@@ -26,8 +25,7 @@ class RaceScorer
     /**
      * Сохранить финиш гонки.
      *
-     * @param RegattaEvents $race
-     * @param array $finishes  [['entry_id' => uuid, 'position' => int, 'penalty_code' => string|null], ...]
+     * @param  array  $finishes  [['entry_id' => uuid, 'position' => int, 'penalty_code' => string|null], ...]
      */
     public function recordFinishes(RegattaEvents $race, array $finishes): void
     {
@@ -42,12 +40,12 @@ class RaceScorer
 
                 RaceResult::updateOrCreate(
                     [
-                        'event_id'         => $race->id,
+                        'event_id' => $race->id,
                         'regatta_entry_id' => $finish['entry_id'],
                     ],
                     [
-                        'position'     => $penaltyCode ? null : $finish['position'],
-                        'points'       => $points,
+                        'position' => $penaltyCode ? null : $finish['position'],
+                        'points' => $points,
                         'penalty_code' => $penaltyCode,
                     ]
                 );
@@ -65,16 +63,19 @@ class RaceScorer
     {
         $regatta = $race->regatta;
 
+        // Группируем по заявке, а не по команде: у сборных и индивидуальных
+        // экипажей команды нет, и все они слились бы в одну строку с team_id NULL.
         $sums = RaceResult::query()
             ->join('regatta_events', 'regatta_events.id', '=', 'race_results.event_id')
             ->join('regatta_entries', 'regatta_entries.id', '=', 'race_results.regatta_entry_id')
             ->where('regatta_events.regatta_id', $regatta->id)
             ->selectRaw('
+                regatta_entries.id AS entry_id,
                 regatta_entries.team_id,
                 regatta_entries.yacht_id,
                 SUM(race_results.points) AS total_points
             ')
-            ->groupBy('regatta_entries.team_id', 'regatta_entries.yacht_id')
+            ->groupBy('regatta_entries.id', 'regatta_entries.team_id', 'regatta_entries.yacht_id')
             ->orderBy('total_points')
             ->get();
 
@@ -86,14 +87,18 @@ class RaceScorer
 
         $position = 1;
         foreach ($sums as $row) {
+            // Командные строки ищем по команде, как и раньше: у строк, созданных
+            // до появления ссылки на заявку, `regatta_entry_id` пуст.
+            $key = $row->team_id !== null
+                ? ['regatta_result_id' => $result->id, 'team_id' => $row->team_id]
+                : ['regatta_result_id' => $result->id, 'regatta_entry_id' => $row->entry_id];
+
             RegattaResultItem::updateOrCreate(
+                $key,
                 [
-                    'regatta_result_id' => $result->id,
-                    'team_id'           => $row->team_id,
-                ],
-                [
-                    'yacht_id'       => $row->yacht_id,
-                    'total_points'   => $row->total_points,
+                    'regatta_entry_id' => $row->entry_id,
+                    'yacht_id' => $row->yacht_id,
+                    'total_points' => $row->total_points,
                     'final_position' => $position++,
                 ]
             );

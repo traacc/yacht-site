@@ -85,10 +85,14 @@ class PendingRegattaEntryResource extends Resource
             TextEntry::make('regatta.name')
                 ->label('Регата'),
             TextEntry::make('team.name')
-                ->label('Команда'),
+                ->label('Команда')
+                ->placeholder('—'),
+            TextEntry::make('participation_kind')
+                ->label('Участие')
+                ->badge(),
             TextEntry::make('yacht.name')
                 ->label('Яхта')
-                ->placeholder('—'),
+                ->placeholder('Назначает ассоциация'),
             TextEntry::make('source')
                 ->label('Источник')
                 ->badge()
@@ -100,8 +104,11 @@ class PendingRegattaEntryResource extends Resource
             RepeatableEntry::make('crew')
                 ->label('Экипаж')
                 ->schema([
-                    TextEntry::make('teamMember.user.name')
-                        ->label('Участник'),
+                    TextEntry::make('name')
+                        ->label('Участник')
+                        // Сборный экипаж приходит без team_member: имя берётся из
+                        // аккаунта участника либо из введённых контактов.
+                        ->state(fn ($record): string => $record->displayName()),
                     TextEntry::make('role')
                         ->label('Роль')
                         ->formatStateUsing(fn (string $state): string => match ($state) {
@@ -193,12 +200,15 @@ class PendingRegattaEntryResource extends Resource
                     ->sortable(),
                 TextColumn::make('team.name')
                     ->label('Команда')
+                    // У сборных и индивидуальных заявок команды нет — показываем способ участия.
+                    ->state(fn (RegattaEntry $record): string => $record->team?->name
+                        ?? $record->participation_kind->getLabel())
                     ->searchable(),
                 TextColumn::make('captain')
                     ->label('Рулевой')
                     ->state(fn (RegattaEntry $record): string => $record->crew()
                         ->where('role', 'captain')
-                        ->first()?->teamMember?->user?->name ?? '—'
+                        ->first()?->displayName() ?? '—'
                     ),
                 TextColumn::make('crew_count')
                     ->label('Экипаж')

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Regatta;
 
+use App\Enums\ParticipationKind;
 use App\Enums\PaymentPurpose;
 use App\Enums\PaymentStatus;
 use App\Enums\RegattaEntrySource;
@@ -24,11 +25,13 @@ final class SubmitRegattaEntryAction
      * Требует роль Organizer или TeamAdmin у вызывающего пользователя.
      *
      * @param  array<string, 'main'|'reserve'|'captain'>  $crew  team_member_id => role
+     * @param  array{open_for_join?: bool, join_conditions?: ?string, join_contact_email?: ?string}  $joinOptions
+     *                                                                                                             Добор людей со стороны: экипаж объявляет условия и почту для откликов.
      *
      * @throws InsufficientTeamRoleException
      * @throws ValidationException
      */
-    public function handle(Regatta $regatta, Team $team, Yacht $yacht, User $actor, array $crew = [], ?string $entryPassword = null, bool $feePaid = false): RegattaEntry
+    public function handle(Regatta $regatta, Team $team, Yacht $yacht, User $actor, array $crew = [], ?string $entryPassword = null, bool $feePaid = false, array $joinOptions = []): RegattaEntry
     {
         TeamRoleGuard::authorize($team, $actor, TeamMemberRole::ACTION_SUBMIT_ENTRY);
 
@@ -58,13 +61,22 @@ final class SubmitRegattaEntryAction
             ]);
         }
 
+        $openForJoin = (bool) ($joinOptions['open_for_join'] ?? false);
+
         $entry = RegattaEntry::create([
             'regatta_id' => $regatta->id,
             'team_id' => $team->id,
             'yacht_id' => $yacht->id,
+            'participation_kind' => ParticipationKind::Crew,
+            // Автор заявки — адресат уведомлений в ЛК (отклики в экипаж, модерация).
+            'user_id' => $actor->id,
             'status' => 'approved',
             'source' => RegattaEntrySource::QuickRequest,
             'submitted_at' => now(),
+            'open_for_join' => $openForJoin,
+            // Условия и почта имеют смысл только при открытом доборе.
+            'join_conditions' => $openForJoin ? ($joinOptions['join_conditions'] ?? null) : null,
+            'join_contact_email' => $openForJoin ? ($joinOptions['join_contact_email'] ?? null) : null,
             // Сбор за участие отмечается участником только если регата его требует
             'fee_paid' => $regatta->entry_fee_required ? $feePaid : false,
             // Хешируется кастом 'hashed' в модели
