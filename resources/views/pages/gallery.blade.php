@@ -31,7 +31,9 @@
     lbImages: [],
     activeGallery: null,
     activeTab: 'photo',
-    listTab: 'photo',
+    {{-- Вкладка списка. Переключается из меню: ссылка «Видео» ведёт на #video,
+         а на самой странице приходит событие switch-gallery-tab. --}}
+    listTab: window.location.hash === '#video' ? 'video' : 'photo',
     selectedYear: '{{ $years->first() }}',
     selectedWater: '',
     selectedRegatta: '',
@@ -133,7 +135,9 @@
         if (!container) return;
         container.scrollBy({ left: dir * 200, behavior: 'smooth' });
     },
-}" x-init="openFilterFromUrl(); openAlbumFromUrl()" class="main">
+}" x-init="openFilterFromUrl(); openAlbumFromUrl()"
+   x-on:switch-gallery-tab.window="listTab = $event.detail.tab"
+   class="main">
     <section class="md:py-12 py-4 reggata-list px-2 2xl:px-0">
         <div class="container mx-auto">
             <div class="flex justify-between mb-6 flex-col md:flex-row">

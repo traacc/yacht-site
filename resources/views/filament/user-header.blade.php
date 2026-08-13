@@ -65,7 +65,23 @@
                         @endif
                     </div>
                 </div>
-                <a href="{{ route('gallery') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Галерея</a>
+                <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
+                    <button @click="open = !open"
+                        class="flex items-center gap-1 px-3 py-2 text-[#2E325C] transition-colors">
+                        Галерея
+                        <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" x-cloak x-transition
+                        class="absolute top-full left-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
+                        @if(request()->routeIs('gallery'))
+                        <a href="{{ route('gallery') }}" @click.prevent="open = false; $dispatch('switch-gallery-tab', { tab: 'photo' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Фотографии</a>
+                        <a href="{{ route('gallery') }}#video" @click.prevent="open = false; $dispatch('switch-gallery-tab', { tab: 'video' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Видео</a>
+                        @else
+                        <a href="{{ route('gallery') }}" class="block px-4 py-2 text-gray-700">Фотографии</a>
+                        <a href="{{ route('gallery') }}#video" class="block px-4 py-2 text-gray-700">Видео</a>
+                        @endif
+                    </div>
+                </div>
                 <a href="{{ route('news') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Новости</a>
                 <a href="{{ route('help') }}"  class="px-3 py-2 text-[#2E325C] transition-colors">Помощь</a>
             </div>
@@ -216,7 +232,22 @@
                             <a href="{{ route('series-results') }}" class="block px-4 py-2 text-sm">Серии</a>
                         </div>
                     </div>
-                    <a href="{{ route('gallery') }}"  class="block py-2 text-sm">Галерея</a>
+                    <div x-data="{ open: false }" class="relative">
+                        <button @click="open = !open"
+                            class="flex items-center gap-1 py-2 text-sm transition-colors">
+                            Галерея
+                            <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" x-cloak x-transition class="">
+                            @if(request()->routeIs('gallery'))
+                            <a href="{{ route('gallery') }}" @click.prevent="mobileOpen = false; $dispatch('switch-gallery-tab', { tab: 'photo' })" class="block px-4 py-2 text-sm">Фотографии</a>
+                            <a href="{{ route('gallery') }}#video" @click.prevent="mobileOpen = false; $dispatch('switch-gallery-tab', { tab: 'video' })" class="block px-4 py-2 text-sm">Видео</a>
+                            @else
+                            <a href="{{ route('gallery') }}" class="block px-4 py-2 text-sm">Фотографии</a>
+                            <a href="{{ route('gallery') }}#video" class="block px-4 py-2 text-sm">Видео</a>
+                            @endif
+                        </div>
+                    </div>
                     <a href="{{ route('news') }}"  class="block py-2 text-sm">Новости</a>
                     <a href="{{ route('help') }}"  class="block py-2 text-sm">Помощь</a>
                 </div>

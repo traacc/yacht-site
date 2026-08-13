@@ -14,7 +14,7 @@
             <div class="hidden xl:flex items-center gap-1">
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
                     <button @click="open = !open"
-                        class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
+                        class="flex items-center gap-1 px-2 2xl:px-3 py-2 text-sm text-[#2E325C] transition-colors">
                         Ассоциация
                         <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
@@ -50,7 +50,7 @@
                 </div>
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
                     <button @click="open = !open"
-                        class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
+                        class="flex items-center gap-1 px-2 2xl:px-3 py-2 text-sm text-[#2E325C] transition-colors">
                         Соревнования
                         <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
@@ -91,7 +91,7 @@
                 </div>
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
                     <button @click="open = !open"
-                        class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
+                        class="flex items-center gap-1 px-2 2xl:px-3 py-2 text-sm text-[#2E325C] transition-colors">
                         Carter&nbsp;30
                         <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
@@ -107,7 +107,7 @@
                 </div>
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
                     <button @click="open = !open"
-                        class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
+                        class="flex items-center gap-1 px-2 2xl:px-3 py-2 text-sm text-[#2E325C] transition-colors">
                         {{ \App\Enums\ServiceType::hubLabel() }}
                         <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
@@ -121,7 +121,7 @@
                 </div>
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
                     <button @click="open = !open"
-                        class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
+                        class="flex items-center gap-1 px-2 2xl:px-3 py-2 text-sm text-[#2E325C] transition-colors">
                         Флот
                         <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
@@ -133,7 +133,7 @@
                 </div>
                 <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
                     <button @click="open = !open"
-                        class="flex items-center gap-1 px-3 py-2 text-sm text-[#2E325C] transition-colors">
+                        class="flex items-center gap-1 px-2 2xl:px-3 py-2 text-sm text-[#2E325C] transition-colors">
                         Новости
                         <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
@@ -142,7 +142,24 @@
                         <a href="{{ route('news') }}"  class="block px-4 py-2 text-gray-700">Новости ассоциации</a>
                         <a href="{{ route('world-news') }}" class="block px-4 py-2 text-gray-700">Новости парусного мира</a>
                         <a href="{{ route('press') }}"  class="block px-4 py-2 text-gray-700">Пресса о нас</a>
-                        <a href="{{ route('gallery') }}" class="block px-4 py-2 text-gray-700 border-t border-gray-100">Галерея</a>
+                    </div>
+                </div>
+                <div x-data="{ open: false }" class="relative" @mouseenter="open = true" @mouseleave="open = false">
+                    <button @click="open = !open"
+                        class="flex items-center gap-1 px-2 2xl:px-3 py-2 text-sm text-[#2E325C] transition-colors">
+                        Галерея
+                        <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" x-cloak x-transition
+                        class="absolute top-full right-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
+                        {{-- Подпункты переключают вкладку списка галереи (см. pages/gallery.blade.php: listTab). --}}
+                        @if(request()->routeIs('gallery'))
+                        <a href="{{ route('gallery') }}" @click.prevent="open = false; $dispatch('switch-gallery-tab', { tab: 'photo' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Фотографии</a>
+                        <a href="{{ route('gallery') }}#video" @click.prevent="open = false; $dispatch('switch-gallery-tab', { tab: 'video' })" class="block px-4 py-2 text-gray-700 cursor-pointer">Видео</a>
+                        @else
+                        <a href="{{ route('gallery') }}" class="block px-4 py-2 text-gray-700">Фотографии</a>
+                        <a href="{{ route('gallery') }}#video" class="block px-4 py-2 text-gray-700">Видео</a>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -355,7 +372,22 @@
                             <a href="{{ route('news') }}"  class="block px-4 py-2 text-sm">Новости ассоциации</a>
                             <a href="{{ route('world-news') }}" class="block px-4 py-2 text-sm">Новости парусного мира</a>
                             <a href="{{ route('press') }}"  class="block px-4 py-2 text-sm">Пресса о нас</a>
-                            <a href="{{ route('gallery') }}" class="block px-4 py-2 text-sm">Галерея</a>
+                        </div>
+                    </div>
+                    <div x-data="{ open: false }" class="relative">
+                        <button @click="open = !open"
+                            class="flex items-center gap-1 py-2 text-sm transition-colors">
+                            Галерея
+                            <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" x-cloak x-transition class="">
+                            @if(request()->routeIs('gallery'))
+                            <a href="{{ route('gallery') }}" @click.prevent="mobileOpen = false; $dispatch('switch-gallery-tab', { tab: 'photo' })" class="block px-4 py-2 text-sm">Фотографии</a>
+                            <a href="{{ route('gallery') }}#video" @click.prevent="mobileOpen = false; $dispatch('switch-gallery-tab', { tab: 'video' })" class="block px-4 py-2 text-sm">Видео</a>
+                            @else
+                            <a href="{{ route('gallery') }}" class="block px-4 py-2 text-sm">Фотографии</a>
+                            <a href="{{ route('gallery') }}#video" class="block px-4 py-2 text-sm">Видео</a>
+                            @endif
                         </div>
                     </div>
                 </div>
