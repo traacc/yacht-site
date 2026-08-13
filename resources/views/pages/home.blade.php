@@ -399,7 +399,7 @@ function gallerySlider() {
                         type="button"
                         @click="openSponsor(s)"
                         :disabled="! hasDetails(s)"
-                        class="shrink-0 h-64 flex flex-col items-center gap-2 p-2 hover:shadow-md transition-shadow text-left"
+                        class="shrink-0 h-38 md:h-64 flex flex-col items-center gap-2 p-2 hover:shadow-md transition-shadow text-left"
                         :class="hasDetails(s) ? 'cursor-pointer' : 'cursor-default'"
                         :style="`width: ${cardWidth}px`"
                     >
