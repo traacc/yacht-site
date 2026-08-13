@@ -41,6 +41,10 @@ bgImage="{{ asset('images/bg/results.webp') }}"
         initials(name) {
             if (!name) return '?';
             return name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+        },
+        // Приводим строку к виду для поиска: регистр и «ё» не должны мешать совпадению.
+        norm(value) {
+            return (value ?? '').toString().toLowerCase().replace(/ё/g, 'е').trim();
         }
     }"
     @keydown.escape.window="teamModal = false; participantModal = false; regattaModal = false"
@@ -64,8 +68,26 @@ bgImage="{{ asset('images/bg/results.webp') }}"
 
             <div class="grid grid-cols-1 gap-4">
 
-                <div x-show="activeTab === 'team'" role="tabpanel" class="bg-brand-light rounded-xl md:p-4 md:pr-0">
-                    <h3 class="font-display  text-[#2E325C] text-3xl mb-4 a-font">Командный рейтинг@if($ratingSeasonYear) — сезон {{ $ratingSeasonYear }}@endif</h3>
+                <div x-show="activeTab === 'team'" role="tabpanel" class="bg-brand-light rounded-xl md:p-4 md:pr-0"
+                    x-data="{
+                        teams: {{ Js::from($teamRatings) }},
+                        teamSearch: '',
+                        // Ищем и по названию команды, и по людям: капитан и состав.
+                        get filteredTeams() {
+                            const q = this.norm(this.teamSearch);
+                            if (!q) return this.teams;
+                            return this.teams.filter(team =>
+                                this.norm(team.name).includes(q)
+                                || this.norm(team.captain).includes(q)
+                                || (team.members || []).some(m => this.norm(m.name).includes(q))
+                            );
+                        }
+                    }"
+                >
+                    <div class="flex items-center justify-between flex-wrap gap-3 mb-4 md:pr-4">
+                        <h3 class="font-display  text-[#2E325C] text-3xl a-font">Командный рейтинг@if($ratingSeasonYear) — сезон {{ $ratingSeasonYear }}@endif</h3>
+                        <x-rating-search model="teamSearch" placeholder="Поиск: команда, имя" />
+                    </div>
                     <div class="overflow-auto md:pb-6 md:pt-0 bg-white">
                         <table class="w-full text-sm md:text-base">
                             <thead class="sticky bg-white top-0 pt-6">
@@ -75,10 +97,8 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                     <th class="pb-2 text-center font-medium a-font pt-6">Очки</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y text-center font-medium"
-                                x-data="{ teams: {{ Js::from($teamRatings) }} }"
-                            >
-                                <template x-for="(team, i) in teams" :key="i">
+                            <tbody class="divide-y text-center font-medium">
+                                <template x-for="(team, i) in filteredTeams" :key="i">
                                     <tr>
                                         <td class="py-2" data-label="Место">
                                             <div class="flex items-center md:justify-center gap-3">
@@ -122,9 +142,10 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                         </td>
                                     </tr>
                                 </template>
-                                <template x-if="teams.length === 0">
+                                <template x-if="filteredTeams.length === 0">
                                     <tr>
-                                        <td colspan="3" class="py-6 text-gray-400">Данные рейтинга пока не опубликованы</td>
+                                        <td colspan="3" class="py-6 text-gray-400"
+                                            x-text="teamSearch.trim() ? 'По запросу ничего не найдено' : 'Данные рейтинга пока не опубликованы'"></td>
                                     </tr>
                                 </template>
                             </tbody>
@@ -138,9 +159,21 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                         personalView: 'places',
                         sortField: 'points',
                         sortDir: 'desc',
+                        personalSearch: '',
+                        // Группы мест сохраняем, но внутри оставляем только подходящих
+                        // участников; пустые группы из выдачи убираем.
+                        get filteredGroups() {
+                            const q = this.norm(this.personalSearch);
+                            if (!q) return this.participants;
+                            return this.participants
+                                .map(group => Object.assign({}, group, {
+                                    participants: (group.participants || []).filter(p => this.norm(p.name).includes(q)),
+                                }))
+                                .filter(group => group.participants.length > 0);
+                        },
                         get flatParticipants() {
                             const rows = [];
-                            this.participants.forEach(group => {
+                            this.filteredGroups.forEach(group => {
                                 (group.participants || []).forEach(p => {
                                     rows.push(Object.assign({}, p, { place: group.place }));
                                 });
@@ -171,6 +204,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                 >
                     <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
                         <h3 class="font-display  text-[#2E325C]  text-3xl a-font">Личный рейтинг@if($ratingSeasonYear) — сезон {{ $ratingSeasonYear }}@endif</h3>
+                        <x-rating-search model="personalSearch" placeholder="Поиск по имени" />
                         <div class="inline-flex rounded-lg overflow-hidden border border-[#EAEAEA] bg-white">
                             <button
                                 type="button"
@@ -198,7 +232,7 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                 </tr>
                             </thead>
                             <tbody class="divide-y text-center font-medium">
-                                <template x-for="(row, i) in participants" :key="i">
+                                <template x-for="(row, i) in filteredGroups" :key="i">
                                     <tr>
                                         <td class="py-2" data-label="Место">
                                             <div class="flex items-center md:justify-center gap-3">
@@ -234,9 +268,10 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                         </td>
                                     </tr>
                                 </template>
-                                <template x-if="participants.length === 0">
+                                <template x-if="filteredGroups.length === 0">
                                     <tr>
-                                        <td colspan="3" class="py-6 text-gray-400">Данные рейтинга пока не опубликованы</td>
+                                        <td colspan="3" class="py-6 text-gray-400"
+                                            x-text="personalSearch.trim() ? 'По запросу ничего не найдено' : 'Данные рейтинга пока не опубликованы'"></td>
                                     </tr>
                                 </template>
                             </tbody>
@@ -301,7 +336,8 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                 </template>
                                 <template x-if="flatParticipants.length === 0">
                                     <tr>
-                                        <td colspan="3" class="py-6 text-gray-400">Данные рейтинга пока не опубликованы</td>
+                                        <td colspan="3" class="py-6 text-gray-400"
+                                            x-text="personalSearch.trim() ? 'По запросу ничего не найдено' : 'Данные рейтинга пока не опубликованы'"></td>
                                     </tr>
                                 </template>
                             </tbody>
