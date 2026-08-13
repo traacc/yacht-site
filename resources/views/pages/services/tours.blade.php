@@ -1,12 +1,12 @@
 <x-public-layout
-    title="Яхтенные путешествия и походы — Yacht Association"
-    description="Многодневные походы под парусом: маршруты, даты, стоимость места и каюты, заявка на участие.">
+    :title="$type->label() . ' — Yacht Association'"
+    :description="$type->seoDescription()">
 
-    <x-breadcrumbs_page title="Яхтенные путешествия и походы"></x-breadcrumbs_page>
+    <x-breadcrumbs_page :title="$type->label()"></x-breadcrumbs_page>
 
     <x-hero-section
-        title="Яхтенные путешествия и походы"
-        desc="Многодневные походы под парусом по маршрутам ассоциации"
+        :title="$type->label()"
+        :desc="$type->tagline()"
         bgImage="{{ $heroImage ?? asset('images/bg/charter.webp') }}"></x-hero-section>
 
     <section class="py-10 px-4 sm:px-6 lg:px-8">

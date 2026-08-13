@@ -9,6 +9,7 @@ use App\Contracts\ServiceSubject;
 use App\Models\ForeignRegatta;
 use App\Models\GiftCertificate;
 use App\Models\Tour;
+use App\Services\ServiceContent;
 use App\Support\Plural;
 use Illuminate\Database\Eloquent\Model;
 
@@ -33,7 +34,36 @@ enum ServiceType: string
     case ForeignRegatta = 'foreign_regatta';
     case GiftCertificate = 'gift_certificate';
 
+    /**
+     * Название подраздела: меню, карточки хаба, шапка лендинга, письма, админка.
+     *
+     * Текст берётся из настроек раздела (@see ServiceContent), поэтому его
+     * правят в админке, а не в шаблонах: одно название на все места сразу.
+     */
     public function label(): string
+    {
+        return app(ServiceContent::class)->title($this);
+    }
+
+    /** Текст карточки на хабе «Услуги» и в блоке «Другие услуги». */
+    public function shortDescription(): string
+    {
+        return app(ServiceContent::class)->shortDescription($this);
+    }
+
+    /** Подзаголовок под названием в шапке лендинга. */
+    public function tagline(): string
+    {
+        return app(ServiceContent::class)->tagline($this);
+    }
+
+    /** Мета-описание страницы подраздела: выдача поиска и превью ссылки. */
+    public function seoDescription(): string
+    {
+        return app(ServiceContent::class)->seoDescription($this);
+    }
+
+    public function defaultLabel(): string
     {
         return match ($this) {
             self::YachtRental => 'Аренда яхт',
@@ -46,8 +76,7 @@ enum ServiceType: string
         };
     }
 
-    /** Текст карточки на хабе «Услуги». */
-    public function shortDescription(): string
+    public function defaultShortDescription(): string
     {
         return match ($this) {
             self::YachtRental => 'Аренда яхты на день или на несколько дней: поиск по датам, цены и бронирование онлайн.',
@@ -58,6 +87,44 @@ enum ServiceType: string
             self::ForeignRegatta => 'Участие в зарубежных регатах: заявка, аренда яхты и сопровождение.',
             self::GiftCertificate => 'Подарочный сертификат на выход в море, обучение или аренду яхты.',
         };
+    }
+
+    public function defaultTagline(): string
+    {
+        return match ($this) {
+            self::YachtRental => 'Выберите даты — покажем свободные яхты и стоимость периода',
+            self::FleetRental => 'Подбор нескольких яхт на нужный диапазон дат',
+            self::Event => 'Корпоративы, регаты и тимбилдинг на воде',
+            self::Training => 'С нуля, повышение квалификации и подготовка к экзаменам IYT и ГИМС',
+            self::Tour => 'Многодневные походы под парусом по маршрутам ассоциации',
+            self::ForeignRegatta => 'Участие в зарубежных регатах: заявка, аренда яхты и сопровождение',
+            self::GiftCertificate => 'Подарок на выход в море, обучение или аренду яхты',
+        };
+    }
+
+    public function defaultSeoDescription(): string
+    {
+        return match ($this) {
+            self::YachtRental => 'Аренда парусной яхты на день или несколько суток: поиск по свободным датам, стоимость периода и бронирование.',
+            self::FleetRental => 'Подбор нескольких яхт на нужный диапазон дат: корпоративная регата, тренировка, съёмки.',
+            self::Event => 'Организация мероприятий на воде: корпоративы, регаты, тимбилдинг. Флот, площадки и программа под ваш формат.',
+            self::Training => 'Обучение с нуля, повышение квалификации и подготовка к экзаменам на права IYT и ГИМС.',
+            self::Tour => 'Многодневные походы под парусом: маршруты, даты, стоимость места и каюты, заявка на участие.',
+            self::ForeignRegatta => 'Участие в зарубежных регатах: календарь, варианты участия, стоимость места и каюты, аренда яхты и заявка на участие.',
+            self::GiftCertificate => 'Подарочный сертификат на выход в море, обучение судовождению или аренду яхты: каталог, номиналы и оформление заказа.',
+        };
+    }
+
+    /** Название раздела целиком — пункт меню «Услуги» и заголовок хаба. */
+    public static function hubLabel(): string
+    {
+        return app(ServiceContent::class)->hubTitle();
+    }
+
+    /** Подзаголовок в шапке хаба «Услуги». */
+    public static function hubTagline(): string
+    {
+        return app(ServiceContent::class)->hubTagline();
     }
 
     /** Heroicon для карточки услуги и колокольчика в админке. */

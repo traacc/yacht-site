@@ -1,12 +1,12 @@
 <x-public-layout
-    title="Регаты за рубежом — Yacht Association"
-    description="Участие в зарубежных регатах: календарь, варианты участия, стоимость места и каюты, аренда яхты и заявка на участие.">
+    :title="$type->label() . ' — Yacht Association'"
+    :description="$type->seoDescription()">
 
-    <x-breadcrumbs_page title="Регаты за рубежом"></x-breadcrumbs_page>
+    <x-breadcrumbs_page :title="$type->label()"></x-breadcrumbs_page>
 
     <x-hero-section
-        title="Регаты за рубежом"
-        desc="Участие в зарубежных регатах: заявка, аренда яхты и сопровождение"
+        :title="$type->label()"
+        :desc="$type->tagline()"
         bgImage="{{ $heroImage ?? asset('images/bg/charter.webp') }}"></x-hero-section>
 
     <section class="py-10 px-4 sm:px-6 lg:px-8">

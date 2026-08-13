@@ -1,12 +1,12 @@
 <x-public-layout
-    title="Обучение — Yacht Association"
-    description="Обучение с нуля, повышение квалификации и подготовка к экзаменам на права IYT и ГИМС.">
+    :title="$type->label() . ' — Yacht Association'"
+    :description="$type->seoDescription()">
 
-    <x-breadcrumbs_page title="Обучение"></x-breadcrumbs_page>
+    <x-breadcrumbs_page :title="$type->label()"></x-breadcrumbs_page>
 
     <x-hero-section
-        title="Обучение"
-        desc="С нуля, повышение квалификации и подготовка к экзаменам IYT и ГИМС"
+        :title="$type->label()"
+        :desc="$type->tagline()"
         bgImage="{{ $heroImage ?? asset('images/bg/charter.webp') }}"></x-hero-section>
 
     <section class="py-10 px-4 sm:px-6 lg:px-8">

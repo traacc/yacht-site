@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Enums\ServiceType;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Services\SettingsService;
 use BackedEnum;
@@ -56,6 +57,28 @@ class ServicesPageSettings extends Page
     /** Группа настроек: один forgetGroup() сбрасывает кэш всего раздела. */
     private const GROUP = 'services';
 
+    /**
+     * Префикс полей формы → подраздел.
+     *
+     * У вкладок исторически свои префиксы ('rental', 'fleet'), а ключи настроек
+     * строит сам подраздел (@see ServiceType::settingsPrefix()) — карта связывает
+     * одно с другим, чтобы названия и описания заполнялись и сохранялись циклом.
+     *
+     * @var array<string, ServiceType>
+     */
+    private const SUBSECTIONS = [
+        'rental' => ServiceType::YachtRental,
+        'fleet' => ServiceType::FleetRental,
+        'events' => ServiceType::Event,
+        'training' => ServiceType::Training,
+        'tours' => ServiceType::Tour,
+        'foreign' => ServiceType::ForeignRegatta,
+        'certificates' => ServiceType::GiftCertificate,
+    ];
+
+    /** Тексты подраздела, которые правятся одинаково у всех вкладок. */
+    private const NAME_KEYS = ['title', 'short_description', 'tagline', 'seo_description'];
+
     public array $data = [];
 
     public function mount(): void
@@ -64,7 +87,12 @@ class ServicesPageSettings extends Page
         $settings = app(SettingsService::class);
 
         $this->form->fill([
+            // Названия и описания подразделов: меню, карточки, шапки, мета-теги
+            ...$this->namesState($settings),
+
             // Хаб раздела
+            'hub_title' => $settings->get('services.hub.title', ''),
+            'hub_tagline' => $settings->get('services.hub.tagline', ''),
             'hub_intro' => $settings->get('services.hub.intro', ''),
             'hub_hero_image' => $this->fileState($settings->get('services.hub.hero_image')),
             'hub_seo_description' => $settings->get('services.hub.seo_description', ''),
@@ -179,8 +207,23 @@ class ServicesPageSettings extends Page
     {
         return [
             Section::make('Страница «Услуги»')
-                ->description('Вводный текст хаба раздела. Карточки подразделов формируются автоматически.')
+                ->description('Название раздела и вводный текст хаба. Карточки подразделов формируются автоматически — их названия и описания правятся на соседних вкладках.')
                 ->schema([
+                    TextInput::make('hub_title')
+                        ->label('Название раздела')
+                        ->helperText('Пункт меню «Услуги», заголовок и хлебные крошки хаба. Пусто — название по умолчанию.')
+                        ->placeholder('Услуги')
+                        ->maxLength(255)
+                        ->rules(['nullable', 'string', 'max:255'])
+                        ->columnSpanFull(),
+
+                    TextInput::make('hub_tagline')
+                        ->label('Подзаголовок в шапке страницы')
+                        ->placeholder('Аренда яхт и флота, мероприятия на воде и обучение судовождению')
+                        ->maxLength(255)
+                        ->rules(['nullable', 'string', 'max:255'])
+                        ->columnSpanFull(),
+
                     $this->heroImage('hub_hero_image', 'services'),
 
                     RichEditor::make('hub_intro')
@@ -208,6 +251,8 @@ class ServicesPageSettings extends Page
             Section::make('Описание подраздела')
                 ->description('Сами яхты и их цены ведут владельцы в своих карточках — здесь только обрамление витрины бронирования.')
                 ->schema([
+                    ...$this->nameFields('rental'),
+
                     $this->heroImage('rental_hero_image', 'services/yacht-rental'),
 
                     RichEditor::make('rental_intro')
@@ -271,6 +316,8 @@ class ServicesPageSettings extends Page
         return [
             Section::make('Описание подраздела')
                 ->schema([
+                    ...$this->nameFields('fleet'),
+
                     $this->heroImage('fleet_hero_image', 'services/fleet-rental'),
 
                     RichEditor::make('fleet_intro')
@@ -333,6 +380,8 @@ class ServicesPageSettings extends Page
         return [
             Section::make('Описание подраздела')
                 ->schema([
+                    ...$this->nameFields('events'),
+
                     $this->heroImage('events_hero_image', 'services/events'),
 
                     RichEditor::make('events_intro')
@@ -468,6 +517,8 @@ class ServicesPageSettings extends Page
         return [
             Section::make('Описание подраздела')
                 ->schema([
+                    ...$this->nameFields('training'),
+
                     $this->heroImage('training_hero_image', 'services/training'),
 
                     RichEditor::make('training_intro')
@@ -527,6 +578,8 @@ class ServicesPageSettings extends Page
             Section::make('Описание подраздела')
                 ->description('Сами походы добавляются в разделе «Услуги: Походы» — здесь только обрамление страницы.')
                 ->schema([
+                    ...$this->nameFields('tours'),
+
                     $this->heroImage('tours_hero_image', 'services/tours'),
 
                     RichEditor::make('tours_intro')
@@ -584,6 +637,8 @@ class ServicesPageSettings extends Page
             Section::make('Описание подраздела')
                 ->description('Сами регаты добавляются в разделе «Услуги: Регаты за рубежом» — здесь только обрамление страницы.')
                 ->schema([
+                    ...$this->nameFields('foreign'),
+
                     $this->heroImage('foreign_hero_image', 'services/foreign-regattas'),
 
                     RichEditor::make('foreign_intro')
@@ -641,6 +696,8 @@ class ServicesPageSettings extends Page
             Section::make('Описание подраздела')
                 ->description('Сами сертификаты добавляются в разделе «Услуги: Подарочные сертификаты» — здесь только обрамление страницы.')
                 ->schema([
+                    ...$this->nameFields('certificates'),
+
                     $this->heroImage('certificates_hero_image', 'services/gift-certificates'),
 
                     RichEditor::make('certificates_intro')
@@ -694,6 +751,56 @@ class ServicesPageSettings extends Page
     // ──────────────────────────────────────────────
     // Общие поля
     // ──────────────────────────────────────────────
+
+    /**
+     * Название и описания подраздела.
+     *
+     * Пустое поле — текст по умолчанию из ServiceType, поэтому значения по
+     * умолчанию показываются плейсхолдером, а не подставляются в поле: иначе
+     * «вернуть как было» стало бы невозможно, а сохранённая копия перестала бы
+     * обновляться вместе с кодом.
+     *
+     * @return list<Component>
+     */
+    private function nameFields(string $prefix): array
+    {
+        $type = self::SUBSECTIONS[$prefix];
+
+        return [
+            TextInput::make($prefix.'_title')
+                ->label('Название подраздела')
+                ->helperText('Пункт меню, карточка на странице «Услуги», заголовок и хлебные крошки страницы. Пусто — название по умолчанию.')
+                ->placeholder($type->defaultLabel())
+                ->maxLength(255)
+                ->rules(['nullable', 'string', 'max:255'])
+                ->columnSpanFull(),
+
+            Textarea::make($prefix.'_short_description')
+                ->label('Краткое описание')
+                ->helperText('Текст карточки подраздела на странице «Услуги» и в блоке «Другие услуги».')
+                ->placeholder($type->defaultShortDescription())
+                ->rows(2)
+                ->maxLength(500)
+                ->rules(['nullable', 'string', 'max:500'])
+                ->columnSpanFull(),
+
+            TextInput::make($prefix.'_tagline')
+                ->label('Подзаголовок в шапке страницы')
+                ->placeholder($type->defaultTagline())
+                ->maxLength(255)
+                ->rules(['nullable', 'string', 'max:255'])
+                ->columnSpanFull(),
+
+            Textarea::make($prefix.'_seo_description')
+                ->label('Описание для поисковых систем')
+                ->helperText('Показывается в результатах поиска и при отправке ссылки в мессенджер.')
+                ->placeholder($type->defaultSeoDescription())
+                ->rows(2)
+                ->maxLength(300)
+                ->rules(['nullable', 'string', 'max:300'])
+                ->columnSpanFull(),
+        ];
+    }
 
     private function heroImage(string $key, string $directory): FileUpload
     {
@@ -750,6 +857,43 @@ class ServicesPageSettings extends Page
     // ──────────────────────────────────────────────
     // Нормализация состояния формы ↔ настроек
     // ──────────────────────────────────────────────
+
+    /**
+     * Названия и описания всех подразделов → состояние формы.
+     *
+     * @return array<string, string>
+     */
+    private function namesState(SettingsService $settings): array
+    {
+        $state = [];
+
+        foreach (self::SUBSECTIONS as $prefix => $type) {
+            foreach (self::NAME_KEYS as $key) {
+                $state[$prefix.'_'.$key] = (string) $settings->get($type->settingsPrefix().'.'.$key, '');
+            }
+        }
+
+        return $state;
+    }
+
+    /**
+     * Обратное преобразование: состояние формы → ключи настроек подразделов.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, string>
+     */
+    private function namesValue(array $data): array
+    {
+        $values = [];
+
+        foreach (self::SUBSECTIONS as $prefix => $type) {
+            foreach (self::NAME_KEYS as $key) {
+                $values[$type->settingsPrefix().'.'.$key] = trim((string) ($data[$prefix.'_'.$key] ?? ''));
+            }
+        }
+
+        return $values;
+    }
 
     /** FileUpload хранит состояние массивом, настройка — строкой. */
     private function fileState(mixed $value): array
@@ -841,7 +985,12 @@ class ServicesPageSettings extends Page
         $settings = app(SettingsService::class);
 
         $settings->setMany([
+            // Названия и описания подразделов
+            ...$this->namesValue($data),
+
             // Хаб
+            'services.hub.title' => trim((string) ($data['hub_title'] ?? '')),
+            'services.hub.tagline' => trim((string) ($data['hub_tagline'] ?? '')),
             'services.hub.intro' => $data['hub_intro'] ?? '',
             'services.hub.hero_image' => $this->fileValue($data['hub_hero_image'] ?? null),
             'services.hub.seo_description' => trim((string) ($data['hub_seo_description'] ?? '')),

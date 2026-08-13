@@ -1,12 +1,12 @@
 <x-public-layout
-    title="Подарочные сертификаты — Yacht Association"
-    description="Подарочный сертификат на выход в море, обучение судовождению или аренду яхты: каталог, номиналы и оформление заказа.">
+    :title="$type->label() . ' — Yacht Association'"
+    :description="$type->seoDescription()">
 
-    <x-breadcrumbs_page title="Подарочные сертификаты"></x-breadcrumbs_page>
+    <x-breadcrumbs_page :title="$type->label()"></x-breadcrumbs_page>
 
     <x-hero-section
-        title="Подарочные сертификаты"
-        desc="Подарок на выход в море, обучение или аренду яхты"
+        :title="$type->label()"
+        :desc="$type->tagline()"
         bgImage="{{ $heroImage ?? asset('images/bg/charter.webp') }}"></x-hero-section>
 
     <section class="py-10 px-4 sm:px-6 lg:px-8">

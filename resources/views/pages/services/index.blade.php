@@ -1,12 +1,12 @@
 <x-public-layout
-    title="Услуги — Yacht Association"
+    :title="\App\Enums\ServiceType::hubLabel() . ' — Yacht Association'"
     :description="$seoDescription !== '' ? $seoDescription : 'Аренда яхт и флота, проведение мероприятий на воде, обучение судовождению — услуги ассоциации парусного спорта.'">
 
-    <x-breadcrumbs_page title="Услуги"></x-breadcrumbs_page>
+    <x-breadcrumbs_page :title="\App\Enums\ServiceType::hubLabel()"></x-breadcrumbs_page>
 
     <x-hero-section
-        title="Услуги"
-        desc="Аренда яхт и флота, мероприятия на воде и обучение судовождению"
+        :title="\App\Enums\ServiceType::hubLabel()"
+        :desc="\App\Enums\ServiceType::hubTagline()"
         bgImage="{{ $heroImage ?? asset('images/bg/charter.webp') }}"></x-hero-section>
 
     <section class="py-10 px-4 sm:px-6 lg:px-8">

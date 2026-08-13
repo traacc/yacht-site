@@ -14,14 +14,14 @@
 @endphp
 
 <x-public-layout
-    title="Аренда яхт — бронирование онлайн — Yacht Association"
-    description="Аренда парусной яхты на день или несколько суток: поиск по свободным датам, стоимость периода и бронирование.">
+    :title="$type->label() . ' — Yacht Association'"
+    :description="$type->seoDescription()">
 
-    <x-breadcrumbs_page title="Аренда яхт"></x-breadcrumbs_page>
+    <x-breadcrumbs_page :title="$type->label()"></x-breadcrumbs_page>
 
     <x-hero-section
-        title="Аренда яхт"
-        desc="Выберите даты — покажем свободные яхты и стоимость периода"
+        :title="$type->label()"
+        :desc="$type->tagline()"
         bgImage="{{ $heroImage ?? asset('images/bg/yachts.webp') }}"></x-hero-section>
 
     <section class="py-10 px-4 sm:px-6 lg:px-8">

@@ -1,12 +1,12 @@
 <x-public-layout
-    title="Проведение мероприятий — Yacht Association"
-    description="Организация мероприятий на воде: корпоративы, регаты, тимбилдинг. Флот, площадки и программа под ваш формат.">
+    :title="$type->label() . ' — Yacht Association'"
+    :description="$type->seoDescription()">
 
-    <x-breadcrumbs_page title="Проведение мероприятий"></x-breadcrumbs_page>
+    <x-breadcrumbs_page :title="$type->label()"></x-breadcrumbs_page>
 
     <x-hero-section
-        title="Проведение мероприятий"
-        desc="Корпоративы, регаты и тимбилдинг на воде"
+        :title="$type->label()"
+        :desc="$type->tagline()"
         bgImage="{{ $heroImage ?? asset('images/bg/competitions.webp') }}"></x-hero-section>
 
     <section class="py-10 px-4 sm:px-6 lg:px-8">
