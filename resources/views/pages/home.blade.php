@@ -399,7 +399,7 @@ function gallerySlider() {
                         type="button"
                         @click="openSponsor(s)"
                         :disabled="! hasDetails(s)"
-                        class="shrink-0 h-54 flex flex-col items-center gap-2 p-2 hover:shadow-md transition-shadow text-left"
+                        class="shrink-0 h-64 flex flex-col items-center gap-2 p-2 hover:shadow-md transition-shadow text-left"
                         :class="hasDetails(s) ? 'cursor-pointer' : 'cursor-default'"
                         :style="`width: ${cardWidth}px`"
                     >
@@ -408,7 +408,7 @@ function gallerySlider() {
                         <span
                             x-show="s.name"
                             x-text="s.name"
-                            class="a-font w-full text-center text-base sm:text-xl leading-tight uppercase tracking-wide text-[#2E325C] truncate"
+                            class="a-font w-full text-center text-lg md:text-3xl leading-tight uppercase tracking-wide text-[#2E325C] truncate"
                         ></span>
                     </button>
                 </template>
