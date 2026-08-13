@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\Hash;
 
 class RegattaEntry extends Model
 {
@@ -33,11 +34,11 @@ class RegattaEntry extends Model
     protected function casts(): array
     {
         return [
-            'submitted_at'       => 'datetime',
-            'entry_password'     => 'hashed',
+            'submitted_at' => 'datetime',
+            'entry_password' => 'hashed',
             'documents_complete' => 'boolean',
-            'fee_paid'           => 'boolean',
-            'source'             => RegattaEntrySource::class,
+            'fee_paid' => 'boolean',
+            'source' => RegattaEntrySource::class,
         ];
     }
 
@@ -60,10 +61,12 @@ class RegattaEntry extends Model
         return $this->belongsTo(Yacht::class);
     }
 
-    /** Экипаж заявки: участники команды с ролями (main / reserve) */
+    /** Экипаж заявки: участники команды с ролями (captain / main / reserve), капитан всегда первым */
     public function crew(): HasMany
     {
-        return $this->hasMany(RegattaEntryCrew::class);
+        return $this->hasMany(RegattaEntryCrew::class)
+            ->orderByRaw("FIELD(`role`, 'captain', 'main', 'reserve')")
+            ->orderBy('id');
     }
 
     /** Результаты этой заявки по отдельным гонкам */
@@ -104,18 +107,33 @@ class RegattaEntry extends Model
     public function checkEntryPassword(string $plain): bool
     {
         return $this->entry_password !== null
-            && \Illuminate\Support\Facades\Hash::check($plain, $this->entry_password);
+            && Hash::check($plain, $this->entry_password);
     }
 
-    public function isPending(): bool   { return $this->status === 'pending'; }
-    public function isApproved(): bool  { return $this->status === 'approved'; }
-    public function isRejected(): bool  { return $this->status === 'rejected'; }
-    public function isWithdrawn(): bool { return $this->status === 'withdrawn'; }
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === 'approved';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === 'rejected';
+    }
+
+    public function isWithdrawn(): bool
+    {
+        return $this->status === 'withdrawn';
+    }
 
     public function approve(): void
     {
         $this->update([
-            'status'       => 'approved',
+            'status' => 'approved',
             'submitted_at' => $this->submitted_at ?? now(),
         ]);
     }
