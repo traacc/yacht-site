@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Filament\Pages;
 
 use App\Filament\Concerns\RestrictsAccessByRole;
-use App\Models\Team;
-use App\Models\User;
 use App\Services\ImageConverter;
 use App\Services\SettingsService;
 use BackedEnum;
@@ -66,8 +64,6 @@ class HomePageSettings extends Page
         /** @var SettingsService $settings */
         $settings = app(SettingsService::class);
 
-        $teams = $settings->get('home.top_teams', []);
-        $participants = $settings->get('home.top_participants', []);
         $sponsors = $settings->get('home.sponsors', []);
 
         // Нормализуем gallery_photos в индексированный массив строк
@@ -87,20 +83,6 @@ class HomePageSettings extends Page
 
         // Заполняем форму через fill() — это запускает afterStateHydrated на FileUpload
         $this->form->fill([
-            // TOP-3 команд
-            'top_team_1' => $teams[0]['id'] ?? null,
-            'top_team_1_points' => $teams[0]['points'] ?? null,
-            'top_team_2' => $teams[1]['id'] ?? null,
-            'top_team_2_points' => $teams[1]['points'] ?? null,
-            'top_team_3' => $teams[2]['id'] ?? null,
-            'top_team_3_points' => $teams[2]['points'] ?? null,
-            // TOP-3 участников
-            'top_participant_1' => $participants[0]['id'] ?? null,
-            'top_participant_1_points' => $participants[0]['points'] ?? null,
-            'top_participant_2' => $participants[1]['id'] ?? null,
-            'top_participant_2_points' => $participants[1]['points'] ?? null,
-            'top_participant_3' => $participants[2]['id'] ?? null,
-            'top_participant_3_points' => $participants[2]['points'] ?? null,
             // Спонсоры / партнёры
             'sponsors' => $sponsors,
             // Галерея
@@ -327,7 +309,6 @@ class HomePageSettings extends Page
                             ]),
                     ]),
 
-
                 // ── Галерея главной страницы ──────────────────
                 Section::make('Галерея главной страницы')
                     ->description('Настройте фотографии, отображаемые в слайдере галереи на главной странице.')
@@ -409,18 +390,6 @@ class HomePageSettings extends Page
         $data = $this->form->getState();
 
         $this->validate([
-            'data.top_team_1' => ['nullable', 'exists:teams,id'],
-            'data.top_team_1_points' => ['nullable', 'numeric', 'min:0'],
-            'data.top_team_2' => ['nullable', 'exists:teams,id'],
-            'data.top_team_2_points' => ['nullable', 'numeric', 'min:0'],
-            'data.top_team_3' => ['nullable', 'exists:teams,id'],
-            'data.top_team_3_points' => ['nullable', 'numeric', 'min:0'],
-            'data.top_participant_1' => ['nullable', 'exists:users,id'],
-            'data.top_participant_1_points' => ['nullable', 'numeric', 'min:0'],
-            'data.top_participant_2' => ['nullable', 'exists:users,id'],
-            'data.top_participant_2_points' => ['nullable', 'numeric', 'min:0'],
-            'data.top_participant_3' => ['nullable', 'exists:users,id'],
-            'data.top_participant_3_points' => ['nullable', 'numeric', 'min:0'],
             'data.gallery_count' => ['required', 'integer', 'min:1', 'max:50'],
             'data.gallery_random' => ['boolean'],
             'data.gallery_sort' => ['required', 'in:manual,newest,oldest'],
@@ -434,18 +403,6 @@ class HomePageSettings extends Page
         /** @var SettingsService $settings */
         $settings = app(SettingsService::class);
         $converter = app(ImageConverter::class);
-
-        $settings->set('home.top_teams', [
-            ['id' => $data['top_team_1'], 'points' => $data['top_team_1_points']],
-            ['id' => $data['top_team_2'], 'points' => $data['top_team_2_points']],
-            ['id' => $data['top_team_3'], 'points' => $data['top_team_3_points']],
-        ], 'home');
-
-        $settings->set('home.top_participants', [
-            ['id' => $data['top_participant_1'], 'points' => $data['top_participant_1_points']],
-            ['id' => $data['top_participant_2'], 'points' => $data['top_participant_2_points']],
-            ['id' => $data['top_participant_3'], 'points' => $data['top_participant_3_points']],
-        ], 'home');
 
         // Спонсоры: оставляем только записи с загруженным логотипом
         $sponsors = collect((array) ($data['sponsors'] ?? []))
