@@ -482,10 +482,11 @@ function sponsorsSlider() {
     return {
         sponsors: {!! json_encode($sponsors->values()->all()) !!},
 
-        // Брейкпоинты: сколько логотипов видно
+        // Брейкпоинты: сколько логотипов видно. Только целые значения —
+        // карточки показываются полностью, в кадре одновременно максимум четыре.
         breakpoints: [
-            { maxWidth: 639,  visible: 2.2 },
-            { maxWidth: 1023, visible: 3.3 },
+            { maxWidth: 639,  visible: 2 },
+            { maxWidth: 1023, visible: 3 },
             { maxWidth: Infinity, visible: 4 },
         ],
 
@@ -521,7 +522,9 @@ function sponsorsSlider() {
 
             const w = window.innerWidth;
             const bp = this.breakpoints.find(b => w <= b.maxWidth);
-            this.visible = bp ? bp.visible : 4;
+            // Больше четырёх карточек в кадре не показываем ни при какой ширине,
+            // и не растягиваем трек, если партнёров меньше.
+            this.visible = Math.min(4, bp ? bp.visible : 4, Math.max(1, this.sponsors.length));
 
             this.cardWidth = (track.clientWidth - this.gap * (this.visible - 1)) / this.visible;
 
