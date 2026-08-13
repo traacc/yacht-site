@@ -110,7 +110,9 @@ class SeriesStageResultsService
                     'yacht' => $item->displayYachtName ?: '—',
                     'sail_number' => $item->displaySailNumber ?: '—',
                     'captain_id' => $captain['id'] ?? null,
-                    'captain_name' => $captain['name'] ?: $item->captain_name,
+                    // Заявки может не быть вовсе (строка результата — снапшот удалённой
+                    // команды), тогда остаётся денормализованное имя из результата.
+                    'captain_name' => ($captain['name'] ?? null) ?: $item->captain_name,
                     'points' => $item->displayTotalPoints,
                 ];
             })
