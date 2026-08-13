@@ -148,12 +148,14 @@ class RatingCalculator
         // Количество участвовавших команд в каждой регате.
         $participantsByResult = $items->groupBy('regatta_result_id')->map->count();
 
-        $teamNames = Team::whereIn('id', $items->pluck('team_id')->unique())->pluck('name', 'id');
+        // Строки удалённых команд (team_id обнулён) считаются в размере флота,
+        // но в зачёт серии не попадают — начислять очки уже некому.
+        $teamNames = Team::whereIn('id', $items->pluck('team_id')->unique()->filter())->pluck('name', 'id');
 
         // Результаты по отдельным гонкам — для детализации в карточке команды.
         // Логика повторяет GenerateRegattaResultPdfAction: гонки регаты нумеруются
         // по порядку старта, результат команды в гонке достаётся через её заявку.
-        $teamIds = $items->pluck('team_id')->unique()->values();
+        $teamIds = $items->pluck('team_id')->unique()->filter()->values();
         $regattaIds = collect($regattas)->pluck('id');
 
         $racesByRegatta = Regatta::query()
@@ -212,6 +214,10 @@ class RatingCalculator
         // Суммируем очки по командам, сохраняя разбивку по регатам.
         $byTeam = [];
         foreach ($items as $item) {
+            if ($item->team_id === null) {
+                continue;
+            }
+
             $participants = $participantsByResult[$item->regatta_result_id] ?? 0;
             $score = ($participants + 1 - (int) $item->final_position) * (float) $item->level_coefficient;
 
@@ -287,6 +293,10 @@ class RatingCalculator
     /**
      * Результаты регат сезона с числовым местом, к каждому добавлено поле
      * `score` — очки по формуле (участвовало команд + 1 − место) × коэффициент.
+     *
+     * Строки удалённых команд (team_id обнулён, см. миграцию
+     * add_snapshot_to_regatta_result_items) участвуют в подсчёте размера флота,
+     * но из выборки исключаются: начислять очки уже некому.
      */
     private function scoredResultItems(Season $season): Collection
     {
@@ -313,7 +323,7 @@ class RatingCalculator
             ->map->count();
 
         return $items
-            ->filter(fn ($item) => is_numeric($item->final_position))
+            ->filter(fn ($item) => is_numeric($item->final_position) && $item->team_id !== null)
             ->map(function ($item) use ($participantsByResult) {
                 $participants = $participantsByResult[$item->regatta_result_id] ?? 0;
 
