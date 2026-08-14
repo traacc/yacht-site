@@ -223,6 +223,18 @@ REST API для судейской программы «КАРТЕР 30». Middl
 
 **Добор в экипаж:** `CrewJoinModal` → `SubmitCrewJoinRequestAction` создаёт `CrewJoinRequest` и рассылает уведомления (письмо на почту экипажа и в info@, уведомления в ЛК автору заявки и администраторам). Решение — `ResolveCrewJoinRequestAction` (ресурс «Заявки в экипажи»): принятый кандидат добавляется строкой в `regatta_entry_crew`, не меняя состав команды.
 
+**Мастер «Хочу участвовать»** (кнопка под hero на главной): `ParticipationWizard` + `ParticipationOptions`. Пять шагов — вариант участия (экипажем/индивидуально) → тип регаты (клубная/регулярная/выездная) → регата → лодка или число мест → заявка. Сам мастер только подбирает варианты, а на последнем шаге отдаёт работу существующим формам и действиям:
+
+| Ветка | Что предлагается | Куда уходит заявка |
+|-------|------------------|--------------------|
+| Клубная, экипажем | своя лодка либо свободная арендная на даты регаты (`Yacht::availableForRent`) | `JoinRegattaModal` / `SubmitYachtRentalRequestAction` |
+| Клубная, индивидуально | экипажи с `open_for_join` | `CrewJoinModal` |
+| Регулярная | лодка ассоциации или число мест | `SubmitSeatEntryAction` |
+| Выездная | лодка целиком или места в экипаже на регате партнёров | `SubmitSeatEntryAction` |
+| Выездная (зарубежная) | регаты раздела «Услуги» в том же списке | карточка регаты со своей формой (`ServiceRequest`) |
+
+Зарубежные регаты попадают в выездные и фильтруются по объявленным `participation_options`: «яхта целиком» — для экипажа, «место»/«каюта» — для индивидуального участия. Число купленных мест хранится в `regatta_entries.seats`: индивидуальная заявка берёт места и на спутников, чьи имена ещё не известны, и счёт выставляется по ним.
+
 ### 7.3. Результаты и рейтинги
 Импорт протокола: `ImportRegattaResultItemsAction` (Excel), `ImportRgdResultItemsAction` + `Services/Rgd/RgdParser` (формат RGD, также команда `regattas:import-rgd`) или по API от судейской программы (`POST /api/regattas/{regatta}/results` + `ApplyRegattaResultsAction`). Очки считает `RaceScorer` (позиции/штрафы — строки: DNF, DNS и т.п.), рейтинги сезона — `RatingCalculator` (+ команда `ratings:recalculate` и действие пересчёта в ресурсах рейтингов админки) с учётом `level_coefficient`; места — dense ranking по `rank_position`. Строки протокола хранят снапшоты состава и разбивку по гонкам; ручные правки — override-флаги. Публикация протокола — `is_published`, PDF — `GenerateRegattaResultPdfAction`. Пересчёты триггерятся обсерверами (`RegattaEntryResultObserver`, `RegattaResultItemObserver`).
 

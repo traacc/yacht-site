@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\ParticipationKind;
+use App\Enums\ParticipationOption;
 use App\Enums\RegattaType;
+use App\Models\ForeignRegatta;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use App\Models\Yacht;
@@ -20,15 +22,23 @@ use Illuminate\Support\Collection;
  */
 final class ParticipationOptions
 {
+    /** Источник строки списка: своя регата или зарубежная из раздела «Услуги». */
+    public const SOURCE_REGATTA = 'regatta';
+
+    public const SOURCE_FOREIGN = 'foreign';
+
     /**
      * Регаты, куда можно заявиться выбранным способом.
      *
      * Клубные с экипажем показываем все открытые: даже без свободных лодок
-     * в аренду остаётся вариант «своя лодка». Остальные ветки отбираются по
-     * наличию того, что в них покупают, — мест или лодки.
+     * в аренду остаётся вариант «своя лодка». Регулярные отбираются по наличию
+     * того, что в них покупают, — мест или лодки. В выездные попадают и наши
+     * регаты на площадках партнёров, и зарубежные регаты раздела «Услуги»
+     * (@see foreignRegattas()): для участника это один и тот же вопрос — лодка
+     * целиком или место в экипаже.
      *
      * @return Collection<int, array{
-     *     id: string, name: string, dates: string, location: ?string,
+     *     id: string, source: string, name: string, dates: string, location: ?string,
      *     type: string, type_label: string, background_class: string,
      *     yachts_count: int, crews_count: int,
      *     seat_price: ?float, boat_price: ?float, crew_limit: ?int, url: string
@@ -36,10 +46,94 @@ final class ParticipationOptions
      */
     public function regattas(ParticipationKind $kind, RegattaType $type): Collection
     {
-        return $this->openRegattas($type)
+        $own = $this->openRegattas($type)
             ->map(fn (Regatta $regatta): array => $this->describe($regatta, $kind))
-            ->filter(fn (array $item): bool => $this->isOffered($item, $kind, $type))
+            ->filter(fn (array $item): bool => $this->isOffered($item, $kind, $type));
+
+        if ($type !== RegattaType::Travel) {
+            return $own->values();
+        }
+
+        return $own
+            ->concat($this->foreignRegattas($kind))
+            ->sortBy('sort_date')
             ->values();
+    }
+
+    /**
+     * Зарубежные регаты раздела «Услуги» — они же выездные для участника.
+     *
+     * Заявка на них живёт своим порядком (ServiceRequest с вариантами участия
+     * и ценами за место или каюту), поэтому мастер только доводит человека до
+     * карточки регаты — там форма со всеми её опциями.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function foreignRegattas(ParticipationKind $kind): Collection
+    {
+        return ForeignRegatta::query()
+            ->published()
+            ->upcoming()
+            ->ordered()
+            ->get()
+            ->filter(fn (ForeignRegatta $regatta): bool => $this->foreignOffers($regatta, $kind))
+            ->map(fn (ForeignRegatta $regatta): array => [
+                'id' => (string) $regatta->id,
+                'source' => self::SOURCE_FOREIGN,
+                'name' => $regatta->title,
+                'dates' => $regatta->dateRange(),
+                'sort_date' => $regatta->date_start->toDateString(),
+                'location' => $regatta->placeLabel(),
+                'type' => SeasonCalendar::FOREIGN_TYPE,
+                'type_label' => 'За рубежом',
+                'background_class' => 'bg-[#7B5FC4]',
+                'yachts_count' => 0,
+                'crews_count' => 0,
+                'seat_price' => $regatta->price_per_seat !== null ? (float) $regatta->price_per_seat : null,
+                'boat_price' => null,
+                'crew_limit' => null,
+                'url' => $regatta->publicUrl(),
+            ])
+            ->values();
+    }
+
+    /**
+     * Подходит ли зарубежная регата выбранному способу участия.
+     *
+     * Варианты объявляет сама регата: место и каюта — это индивидуальное
+     * участие, яхта целиком — экипажем. Если организатор вариантов не указал,
+     * регату показываем в обоих случаях: детали выяснятся в заявке.
+     */
+    private function foreignOffers(ForeignRegatta $regatta, ParticipationKind $kind): bool
+    {
+        $options = $regatta->participationOptions();
+
+        if ($options === []) {
+            return true;
+        }
+
+        // Сравниваем сами enum-случаи: array_intersect привёл бы их к строке.
+        return $kind === ParticipationKind::Crew
+            ? in_array(ParticipationOption::Yacht, $options, true)
+            : in_array(ParticipationOption::Seat, $options, true)
+                || in_array(ParticipationOption::Cabin, $options, true);
+    }
+
+    /**
+     * Есть ли вообще открытые регаты этого типа — независимо от того, осталось
+     * ли в них место для конкретного человека.
+     *
+     * Нужно, чтобы отличить «таких регат сейчас нет» от «регаты есть, но мест
+     * в них не осталось»: подсказки на шаге выбора у этих случаев разные.
+     */
+    public function hasAnyRegattas(RegattaType $type): bool
+    {
+        if ($this->openRegattas($type)->isNotEmpty()) {
+            return true;
+        }
+
+        return $type === RegattaType::Travel
+            && ForeignRegatta::query()->published()->upcoming()->exists();
     }
 
     /**
@@ -94,14 +188,17 @@ final class ParticipationOptions
     {
         return [
             'id' => $regatta->id,
+            'source' => self::SOURCE_REGATTA,
             'name' => $regatta->name,
             'dates' => $regatta->dateRange(),
+            'sort_date' => $regatta->date_start?->toDateString() ?? '',
             'location' => $regatta->location,
             'type' => $regatta->type->value,
             'type_label' => $regatta->type->getLabel(),
             'background_class' => $regatta->type->backgroundClass(),
-            // Лодки считаем только там, где их предлагают выбирать.
-            'yachts_count' => $kind === ParticipationKind::Crew
+            // Лодки считаем только там, где их предлагают выбирать. На выездных
+            // флот даёт принимающая сторона — наши арендные лодки там не при чём.
+            'yachts_count' => $kind === ParticipationKind::Crew && $regatta->type !== RegattaType::Travel
                 ? $this->availableYachts($regatta)->count()
                 : 0,
             'crews_count' => $kind === ParticipationKind::Individual && $regatta->type === RegattaType::Club
@@ -119,12 +216,18 @@ final class ParticipationOptions
      *
      * Клубная с экипажем доступна всегда — своя лодка не зависит от аренды.
      * Индивидуальное участие в клубной возможно, только если кто-то из экипажей
-     * объявил добор; в регулярной — если места вообще продаются.
+     * объявил добор; в регулярной — если места вообще продаются. Выездные
+     * доступны всегда: лодку и места там даёт партнёр, а цену организатор
+     * нередко называет уже в переписке.
      *
      * @param  array<string, mixed>  $item
      */
     private function isOffered(array $item, ParticipationKind $kind, RegattaType $type): bool
     {
+        if ($type === RegattaType::Travel) {
+            return true;
+        }
+
         if ($type === RegattaType::Club) {
             return $kind === ParticipationKind::Crew || $item['crews_count'] > 0;
         }

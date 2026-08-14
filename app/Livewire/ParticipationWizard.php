@@ -129,11 +129,21 @@ class ParticipationWizard extends Component
         $this->step = 'form';
     }
 
-    /** Регулярная регата: лодку можно не выбирать — её назначит ассоциация. */
+    /**
+     * Лодку выбирать не из чего: на регулярной её назначит ассоциация,
+     * на выездной флот даёт принимающая сторона.
+     */
     public function skipYacht(): void
     {
         $this->yachtId = null;
         $this->step = 'form';
+    }
+
+    /** Нужен ли на шаге лодки счётчик мест (индивидуальное участие за деньги). */
+    public function needsSeatPicker(): bool
+    {
+        return $this->kind === ParticipationKind::Individual->value
+            && in_array($this->type, [RegattaType::Regular->value, RegattaType::Travel->value], true);
     }
 
     /** Отклик в открытый экипаж уходит в свою форму — там условия экипажа. */
@@ -229,6 +239,45 @@ class ParticipationWizard extends Component
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * Что показать на шаге выбора, когда предлагать нечего.
+     *
+     * «Регат нет» и «в регатах не осталось мест» — разные ситуации: в первой
+     * человеку идти некуда, во второй стоит заглянуть позже или выбрать другой
+     * тип. Поэтому текст зависит от того, есть ли вообще регаты этого типа.
+     *
+     * @return array{title: string, hint: string}
+     */
+    public function emptyState(): array
+    {
+        $type = $this->type !== null ? RegattaType::from($this->type) : null;
+
+        if ($type === null || ! app(ParticipationOptions::class)->hasAnyRegattas($type)) {
+            return [
+                'title' => 'Регат этого типа сейчас нет',
+                'hint' => 'Ближайшие соревнования смотрите в календаре регат.',
+            ];
+        }
+
+        $label = mb_strtolower($type->getLabel());
+        $isIndividual = $this->kind === ParticipationKind::Individual->value;
+
+        return match (true) {
+            $type === RegattaType::Club && $isIndividual => [
+                'title' => 'Свободных мест в экипажах нет',
+                'hint' => 'Сейчас ни один экипаж не набирает людей. Загляните позже или заявитесь своим экипажем.',
+            ],
+            $isIndividual => [
+                'title' => 'Свободных мест нет',
+                'hint' => "Во всех {$label} регатах места уже разобраны или ещё не поступили в продажу.",
+            ],
+            default => [
+                'title' => 'Свободных лодок нет',
+                'hint' => "Во всех {$label} регатах лодки уже заняты. Попробуйте другой тип регаты или загляните позже.",
+            ],
+        };
     }
 
     /** Итоговая сумма выбранного варианта; null — цену назначит администратор. */

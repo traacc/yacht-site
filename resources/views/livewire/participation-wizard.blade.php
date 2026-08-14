@@ -13,7 +13,7 @@
                 'kind' => 'Участие',
                 'type' => 'Тип регаты',
                 'regatta' => 'Регата',
-                'boat' => $kind === 'individual' && $type === 'regular' ? 'Места' : 'Лодка',
+                'boat' => $this->needsSeatPicker() ? 'Места' : 'Лодка',
                 'form' => 'Заявка',
             ];
             $currentIndex = array_search($step, array_keys($steps), true);
@@ -72,7 +72,7 @@
                     {{-- ШАГ 2. Тип регаты --}}
                     @elseif($step === 'type')
                         <p class="text-brand-gray mb-4">В какой регате хотите участвовать?</p>
-                        <div class="grid gap-3 sm:grid-cols-2">
+                        <div class="grid gap-3 sm:grid-cols-3">
                             <button type="button" wire:click="chooseType('club')"
                                     class="p-5 bg-brand-light-bg hover:bg-[#2D92CE26] text-left transition-colors cursor-pointer">
                                 <span class="flex items-center gap-2">
@@ -89,6 +89,14 @@
                                 </span>
                                 <span class="block text-sm text-brand-gray-light mt-1">Лодки выставляет ассоциация, места продаются</span>
                             </button>
+                            <button type="button" wire:click="chooseType('travel')"
+                                    class="p-5 bg-brand-light-bg hover:bg-[#2D92CE26] text-left transition-colors cursor-pointer">
+                                <span class="flex items-center gap-2">
+                                    <span class="size-3 rounded-full inline-block {{ \App\Enums\RegattaType::Travel->backgroundClass() }}"></span>
+                                    <span class="text-brand-dark font-semibold text-lg">Выездная</span>
+                                </span>
+                                <span class="block text-sm text-brand-gray-light mt-1">Лодка или место в экипаже на регатах партнёров, включая зарубежные</span>
+                            </button>
                         </div>
 
                     {{-- ШАГ 3. Выбор регаты --}}
@@ -102,8 +110,14 @@
                         </p>
 
                         @forelse($this->regattas() as $item)
-                            <button type="button" wire:click="chooseRegatta('{{ $item['id'] }}')"
-                                    class="w-full flex items-start gap-3 p-4 mb-2 bg-brand-light-bg hover:bg-[#2D92CE26] text-left transition-colors cursor-pointer">
+                            @php
+                                // Зарубежные регаты живут в «Услугах» со своей формой заявки
+                                // (место в каюте, каюта, яхта целиком) — ведём прямо в карточку.
+                                $isForeign = $item['source'] === \App\Services\ParticipationOptions::SOURCE_FOREIGN;
+                            @endphp
+                            <{{ $isForeign ? 'a' : 'button' }}
+                                @if($isForeign) href="{{ $item['url'] }}" @else type="button" wire:click="chooseRegatta('{{ $item['id'] }}')" @endif
+                                class="w-full flex items-start gap-3 p-4 mb-2 bg-brand-light-bg hover:bg-[#2D92CE26] text-left transition-colors cursor-pointer">
                                 <span class="size-3 rounded-full inline-block mt-1.5 shrink-0 {{ $item['background_class'] }}"></span>
                                 <span class="flex-1">
                                     <span class="block text-brand-dark font-semibold">{{ $item['name'] }}</span>
@@ -111,26 +125,49 @@
                                         {{ $item['dates'] }}@if($item['location']) · {{ $item['location'] }}@endif
                                     </span>
                                     <span class="block text-sm text-brand-blue mt-1">
-                                        @if($kind === 'individual' && $type === 'club')
+                                        @if($isForeign)
+                                            За рубежом@if($item['seat_price']) · Место — {{ number_format((float) $item['seat_price'], 0, ',', ' ') }} ₽@endif · Подробности и заявка →
+                                        @elseif($kind === 'individual' && $type === 'club')
                                             Экипажей с добором: {{ $item['crews_count'] }}
                                         @elseif($kind === 'individual')
-                                            Место — {{ number_format((float) $item['seat_price'], 0, ',', ' ') }} ₽
+                                            @if($item['seat_price'])
+                                                Место — {{ number_format((float) $item['seat_price'], 0, ',', ' ') }} ₽
+                                            @else
+                                                Место в экипаже · цену уточним в заявке
+                                            @endif
                                         @else
                                             @if($item['yachts_count'] > 0)Свободных лодок: {{ $item['yachts_count'] }}@endif
                                             @if($item['boat_price'])@if($item['yachts_count'] > 0) · @endif Лодка — {{ number_format((float) $item['boat_price'], 0, ',', ' ') }} ₽@endif
-                                            @if($item['yachts_count'] === 0 && ! $item['boat_price'])Заявка со своей лодкой@endif
+                                            @if($item['yachts_count'] === 0 && ! $item['boat_price'])
+                                                {{ $type === 'travel' ? 'Лодка целиком · цену уточним в заявке' : 'Заявка со своей лодкой' }}
+                                            @endif
                                         @endif
                                     </span>
                                 </span>
-                            </button>
+                            </{{ $isForeign ? 'a' : 'button' }}>
                         @empty
-                            <p class="text-brand-gray-light py-6 text-center">
-                                Подходящих регат сейчас нет. Загляните в
-                                <a href="{{ route('competitions') }}" class="text-brand-blue hover:underline">календарь регат</a>.
-                            </p>
+                            {{-- Разные причины пустого списка: регат нет вовсе или мест в них не осталось --}}
+                            @php($empty = $this->emptyState())
+                            <div class="py-6 text-center">
+                                <p class="text-brand-dark font-semibold">{{ $empty['title'] }}</p>
+                                <p class="text-brand-gray-light text-sm mt-1">{{ $empty['hint'] }}</p>
+                                <div class="flex flex-wrap gap-3 justify-center mt-4">
+                                    <button type="button" wire:click="back"
+                                            class="px-4 py-2 bg-brand-light-bg text-brand-dark text-sm font-semibold cursor-pointer hover:bg-[#2D92CE26] transition-colors">
+                                        Выбрать другой тип
+                                    </button>
+                                    <a href="{{ route('competitions') }}"
+                                       class="px-4 py-2 bg-brand-blue text-white text-sm font-semibold hover:opacity-90 transition-opacity">
+                                        Календарь регат
+                                    </a>
+                                </div>
+                            </div>
                         @endforelse
 
-                        <button type="button" wire:click="back" class="mt-2 text-sm text-brand-gray-light hover:text-brand-dark cursor-pointer">← Назад</button>
+                        {{-- В пустом состоянии кнопка возврата уже есть в подсказке --}}
+                        @if($this->regattas() !== [])
+                            <button type="button" wire:click="back" class="mt-2 text-sm text-brand-gray-light hover:text-brand-dark cursor-pointer">← Назад</button>
+                        @endif
 
                     {{-- ШАГ 4. Лодка, экипаж или количество мест --}}
                     @elseif($step === 'boat')
@@ -150,8 +187,10 @@
                                 <p class="text-brand-gray-light py-6 text-center">Экипажи этой регаты пока никого не набирают.</p>
                             @endforelse
 
-                        @elseif($kind === 'individual')
-                            <p class="text-brand-gray mb-4">Сколько мест нужно?</p>
+                        @elseif($this->needsSeatPicker())
+                            <p class="text-brand-gray mb-4">
+                                {{ $type === 'travel' ? 'Сколько мест в экипаже нужно?' : 'Сколько мест нужно?' }}
+                            </p>
 
                             <div class="flex items-center justify-center gap-6 py-4">
                                 <button type="button" wire:click="setSeats({{ $seats - 1 }})"
@@ -166,11 +205,31 @@
                                 <p class="text-center text-brand-dark font-semibold mb-4">
                                     Итого: {{ number_format($this->price(), 0, ',', ' ') }} ₽
                                 </p>
+                            @else
+                                <p class="text-center text-brand-gray-light text-sm mb-4">
+                                    Стоимость подтвердит организатор — она зависит от условий принимающей стороны.
+                                </p>
                             @endif
 
                             <button type="button" wire:click="confirmSeats"
                                     class="w-full bg-brand-blue text-white py-3 px-6 hover:opacity-90 transition-opacity font-semibold cursor-pointer">
                                 Продолжить
+                            </button>
+
+                        @elseif($type === 'travel')
+                            {{-- Выездная: флот даёт принимающая сторона, выбирать не из чего --}}
+                            <p class="text-brand-gray mb-4">Как идёте на регату партнёров?</p>
+
+                            <button type="button" wire:click="skipYacht"
+                                    class="w-full p-4 mb-2 bg-brand-light-bg hover:bg-[#2D92CE26] text-left transition-colors cursor-pointer">
+                                <span class="block text-brand-dark font-semibold">Лодка целиком</span>
+                                <span class="block text-sm text-brand-gray-light">
+                                    @if($this->regatta()?->boat_price)
+                                        {{ number_format((float) $this->regatta()->boat_price, 0, ',', ' ') }} ₽ · лодку подбирает организатор
+                                    @else
+                                        Лодку и стоимость подберёт организатор
+                                    @endif
+                                </span>
                             </button>
 
                         @else
@@ -216,12 +275,14 @@
                             @if($this->isRentalBranch())
                                 <p>Аренда лодки на даты регаты. Заявку на регату подадите после подтверждения брони.</p>
                             @elseif($kind === 'individual')
-                                <p>Мест: <span class="font-semibold">{{ $seats }}</span></p>
+                                <p>{{ $type === 'travel' ? 'Мест в экипаже' : 'Мест' }}: <span class="font-semibold">{{ $seats }}</span></p>
                             @else
-                                <p>Участие экипажем</p>
+                                <p>{{ $type === 'travel' ? 'Лодка целиком на регате партнёров' : 'Участие экипажем' }}</p>
                             @endif
                             @if($this->price())
                                 <p>Итого: <span class="font-semibold">{{ number_format($this->price(), 0, ',', ' ') }} ₽</span></p>
+                            @elseif($type === 'travel')
+                                <p>Стоимость подтвердит организатор.</p>
                             @endif
                         </div>
 
