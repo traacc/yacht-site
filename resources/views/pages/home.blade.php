@@ -500,6 +500,7 @@ function sponsorsSlider() {
         // Брейкпоинты: сколько логотипов видно. Только целые значения —
         // карточки показываются полностью, в кадре одновременно максимум четыре.
         breakpoints: [
+            { maxWidth: 480,  visible: 1 },
             { maxWidth: 639,  visible: 2 },
             { maxWidth: 1023, visible: 3 },
             { maxWidth: Infinity, visible: 4 },
