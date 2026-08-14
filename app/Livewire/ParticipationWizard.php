@@ -11,6 +11,7 @@ use App\Enums\RegattaType;
 use App\Models\Regatta;
 use App\Models\Yacht;
 use App\Services\ParticipationOptions;
+use App\Services\SeasonCalendar;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -49,6 +50,9 @@ class ParticipationWizard extends Component
     /** Выбранный экипаж для добора (клубная + индивидуально). */
     public ?string $entryId = null;
 
+    /** Фильтр списка по типу регаты; null — показывать все. */
+    public ?string $typeFilter = null;
+
     public int $seats = 1;
 
     public string $name = '';
@@ -65,7 +69,7 @@ class ParticipationWizard extends Component
     #[On('open-participation-wizard')]
     public function open(): void
     {
-        $this->reset(['kind', 'type', 'regattaId', 'yachtId', 'entryId', 'comment', 'agreement']);
+        $this->reset(['kind', 'type', 'regattaId', 'yachtId', 'entryId', 'typeFilter', 'comment', 'agreement']);
         $this->resetValidation();
         $this->seats = 1;
         $this->step = 'kind';
@@ -81,7 +85,7 @@ class ParticipationWizard extends Component
     public function closeModal(): void
     {
         $this->isOpen = false;
-        $this->reset(['kind', 'type', 'regattaId', 'yachtId', 'entryId', 'comment', 'agreement']);
+        $this->reset(['kind', 'type', 'regattaId', 'yachtId', 'entryId', 'typeFilter', 'comment', 'agreement']);
         $this->resetValidation();
         $this->step = 'kind';
     }
@@ -93,7 +97,15 @@ class ParticipationWizard extends Component
     public function chooseKind(string $kind): void
     {
         $this->kind = ParticipationKind::from($kind)->value;
+        // Набор доступных типов зависит от способа участия — фильтр сбрасываем.
+        $this->typeFilter = null;
         $this->step = 'regatta';
+    }
+
+    /** Повторный клик по активному фильтру снимает его. */
+    public function filterByType(?string $type): void
+    {
+        $this->typeFilter = $this->typeFilter === $type ? null : $type;
     }
 
     /**
@@ -196,7 +208,7 @@ class ParticipationWizard extends Component
      * @return array<int, array<string, mixed>>
      */
     #[Computed]
-    public function regattas(): array
+    public function allRegattas(): array
     {
         if ($this->kind === null) {
             return [];
@@ -205,6 +217,60 @@ class ParticipationWizard extends Component
         return app(ParticipationOptions::class)
             ->regattas(ParticipationKind::from($this->kind))
             ->all();
+    }
+
+    /**
+     * Список с учётом выбранного фильтра по типу.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    #[Computed]
+    public function regattas(): array
+    {
+        if ($this->typeFilter === null) {
+            return $this->allRegattas();
+        }
+
+        return array_values(array_filter(
+            $this->allRegattas(),
+            fn (array $item): bool => $item['type'] === $this->typeFilter,
+        ));
+    }
+
+    /**
+     * Кнопки фильтра — всегда весь набор типов, включая зарубежные.
+     *
+     * Типы, которых сейчас нет, остаются в ряду с нулём: постоянный состав
+     * фильтров показывает, какие соревнования вообще бывают, и ряд не скачет
+     * при переключении способа участия.
+     *
+     * @return array<int, array{value: string, label: string, class: string, count: int}>
+     */
+    #[Computed]
+    public function typeFilters(): array
+    {
+        $counts = array_count_values(array_column($this->allRegattas(), 'type'));
+
+        $filters = [];
+
+        // Порядок фильтров повторяет порядок типов, а не порядок регат в списке.
+        foreach (RegattaType::cases() as $type) {
+            $filters[] = [
+                'value' => $type->value,
+                'label' => $type->pluralLabel(),
+                'class' => $type->backgroundClass(),
+                'count' => $counts[$type->value] ?? 0,
+            ];
+        }
+
+        $filters[] = [
+            'value' => SeasonCalendar::FOREIGN_TYPE,
+            'label' => 'За рубежом',
+            'class' => 'bg-[#7B5FC4]',
+            'count' => $counts[SeasonCalendar::FOREIGN_TYPE] ?? 0,
+        ];
+
+        return $filters;
     }
 
     /** @return array<int, array{id: string, name: string, vfps: ?string}> */
@@ -261,6 +327,14 @@ class ParticipationWizard extends Component
      */
     public function emptyState(): array
     {
+        // Фильтр спрятал всё, что было: это не «мест нет», а «нет в этом типе».
+        if ($this->typeFilter !== null && $this->allRegattas() !== []) {
+            return [
+                'title' => 'В этом типе регат ничего не нашлось',
+                'hint' => 'Снимите фильтр — в других типах регат варианты есть.',
+            ];
+        }
+
         if (! app(ParticipationOptions::class)->hasAnyRegattas()) {
             return [
                 'title' => 'Регат сейчас нет',

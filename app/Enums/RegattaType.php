@@ -38,6 +38,16 @@ enum RegattaType: string implements HasColor, HasLabel
         };
     }
 
+    /** Множественное число — для фильтров и легенд («Клубные», «Выездные»). */
+    public function pluralLabel(): string
+    {
+        return match ($this) {
+            self::Club => 'Клубные',
+            self::Regular => 'Регулярные',
+            self::Travel => 'Выездные',
+        };
+    }
+
     /** Полное название для заголовков и писем. */
     public function title(): string
     {

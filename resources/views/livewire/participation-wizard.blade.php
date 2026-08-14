@@ -70,7 +70,25 @@
 
                     {{-- ШАГ 2. Выбор регаты --}}
                     @elseif($step === 'regatta')
-                        <p class="text-brand-gray mb-4">Регаты, куда можно заявиться:</p>
+                        <p class="text-brand-gray mb-3">Регаты, куда можно заявиться:</p>
+
+                        {{-- Фильтр по типу: показывается всегда, полным составом.
+                             Типы без доступных регат приглушены, но кликабельны —
+                             по клику видно, почему в них ничего нет. --}}
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <button type="button" wire:click="filterByType(null)"
+                                    class="px-3 py-1.5 text-sm cursor-pointer transition-colors {{ $typeFilter === null ? 'bg-brand-blue text-white' : 'bg-brand-light-bg text-brand-dark hover:bg-[#2D92CE26]' }}">
+                                Все
+                            </button>
+                            @foreach($this->typeFilters() as $filter)
+                                <button type="button" wire:click="filterByType('{{ $filter['value'] }}')"
+                                        class="px-3 py-1.5 text-sm cursor-pointer transition-colors flex items-center gap-2 {{ $typeFilter === $filter['value'] ? 'text-white '.$filter['class'] : 'bg-brand-light-bg text-brand-dark hover:bg-[#2D92CE26]' }} {{ $filter['count'] === 0 && $typeFilter !== $filter['value'] ? 'opacity-50' : '' }}">
+                                    <span class="size-2 rounded-full inline-block {{ $typeFilter === $filter['value'] ? 'bg-white' : $filter['class'] }}"></span>
+                                    {{ $filter['label'] }}
+                                    <span class="{{ $typeFilter === $filter['value'] ? 'text-white/70' : 'text-brand-gray-light' }}">{{ $filter['count'] }}</span>
+                                </button>
+                            @endforeach
+                        </div>
 
                         @forelse($this->regattas() as $item)
                             @php
@@ -121,14 +139,21 @@
                                 <p class="text-brand-dark font-semibold">{{ $empty['title'] }}</p>
                                 <p class="text-brand-gray-light text-sm mt-1">{{ $empty['hint'] }}</p>
                                 <div class="flex flex-wrap gap-3 justify-center mt-4">
-                                    <button type="button" wire:click="back"
-                                            class="px-4 py-2 bg-brand-light-bg text-brand-dark text-sm font-semibold cursor-pointer hover:bg-[#2D92CE26] transition-colors">
-                                        Другой вариант участия
-                                    </button>
-                                    <a href="{{ route('competitions') }}"
-                                       class="px-4 py-2 bg-brand-blue text-white text-sm font-semibold hover:opacity-90 transition-opacity">
-                                        Календарь регат
-                                    </a>
+                                    @if($typeFilter !== null && $this->allRegattas() !== [])
+                                        <button type="button" wire:click="filterByType(null)"
+                                                class="px-4 py-2 bg-brand-blue text-white text-sm font-semibold cursor-pointer hover:opacity-90 transition-opacity">
+                                            Показать все регаты
+                                        </button>
+                                    @else
+                                        <button type="button" wire:click="back"
+                                                class="px-4 py-2 bg-brand-light-bg text-brand-dark text-sm font-semibold cursor-pointer hover:bg-[#2D92CE26] transition-colors">
+                                            Другой вариант участия
+                                        </button>
+                                        <a href="{{ route('competitions') }}"
+                                           class="px-4 py-2 bg-brand-blue text-white text-sm font-semibold hover:opacity-90 transition-opacity">
+                                            Календарь регат
+                                        </a>
+                                    @endif
                                 </div>
                             </div>
                         @endforelse
