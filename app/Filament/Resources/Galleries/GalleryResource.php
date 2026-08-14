@@ -118,6 +118,18 @@ class GalleryResource extends Resource
                     ->required()
                     ->maxLength(255),
 
+                // Адрес альбома на сайте: /gallery/{slug}. Пустое поле заполняет
+                // Gallery::generateSlug() (название + год, с проверкой уникальности).
+                // Slug сам не меняется при переименовании альбома — старые ссылки
+                // не должны ломаться; чтобы получить новый адрес, очистите поле.
+                TextInput::make('slug')
+                    ->label('Ссылка на альбом')
+                    ->prefix(url('/gallery').'/')
+                    ->helperText('Оставьте пустым — заполнится автоматически по названию и году.')
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true)
+                    ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? Str::slug($state, '-', 'ru') : null),
+
                 TextInput::make('water_area')
                     ->label('Акватория')
                     ->maxLength(255),
@@ -355,6 +367,15 @@ class GalleryResource extends Resource
                     ->label('Название')
                     ->searchable()
                     ->sortable(),
+
+                // Готовая ссылка на альбом — чтобы её можно было скопировать и отправить.
+                TextColumn::make('slug')
+                    ->label('Ссылка')
+                    ->state(fn (Gallery $record): ?string => $record->slug ? $record->publicUrl() : null)
+                    ->copyable()
+                    ->copyMessage('Ссылка скопирована')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 IconColumn::make('is_published')
                     ->label('Опубликовано')

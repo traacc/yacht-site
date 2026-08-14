@@ -1198,15 +1198,20 @@ Route::get('/series/{series}', function (Series $series) {
 
     return view('pages.series-show', compact('series'));
 })->name('series-details');
-Route::get('/gallery', function () {
+// Страница галереи. Альбом открывается модалкой поверх списка, поэтому и общий
+// адрес, и адрес отдельного альбома рендерят одно и то же представление:
+// во втором случае вьюхе передаётся $openAlbum, и модалка раскрывается сразу.
+$galleryPage = function (?Gallery $openAlbum = null) {
     $galleries = Gallery::published()
-        ->with('season', 'regatta')
+        ->with('season', 'regatta', 'videoLinks')
         ->ordered()
         ->get()
         ->groupBy(fn (Gallery $g) => $g->season?->year ?? $g->date?->year ?? now()->year);
 
-    return view('pages.gallery', compact('galleries'));
-})->name('gallery');
+    return view('pages.gallery', compact('galleries', 'openAlbum'));
+};
+
+Route::get('/gallery', fn () => $galleryPage())->name('gallery');
 
 // Скачать все фотографии галереи одним ZIP-архивом.
 Route::get('/gallery/{gallery}/download', function (Gallery $gallery) {
@@ -1219,6 +1224,15 @@ Route::get('/gallery/{gallery}/download', function (Gallery $gallery) {
 
     return MediaStream::create($fileName)->addMedia($media);
 })->name('gallery.download');
+
+// Понятная ссылка на альбом: /gallery/kubok-baltiki-2025.
+// Gallery::resolveRouteBinding принимает и UUID — старые ссылки продолжают работать.
+Route::get('/gallery/{gallery}', function (Gallery $gallery) use ($galleryPage) {
+    abort_unless($gallery->is_published, 404);
+
+    return $galleryPage($gallery);
+})->name('gallery.album');
+
 Route::get('/help', function () {
     $directory = app(HelpDirectory::class);
     $categories = $directory->categories();

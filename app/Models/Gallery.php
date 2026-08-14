@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
@@ -37,6 +38,8 @@ class Gallery extends Model implements HasMedia
         'season_id',
         'regatta_id',
         'name',
+        // Человекопонятная часть адреса альбома: /gallery/{slug}.
+        'slug',
         'water_area',
         'date',
         // ↓↓↓ УДАЛЕНО: 'cover_path' — заменено коллекцией 'cover' (см. registerMediaCollections)
@@ -57,6 +60,92 @@ class Gallery extends Model implements HasMedia
             'is_published' => 'boolean',
             'sort_order' => 'integer',
         ];
+    }
+
+    // ──────────────────────────────────────────────
+    // Slug & публичный адрес
+    // ──────────────────────────────────────────────
+
+    protected static function booted(): void
+    {
+        // Slug заполняется один раз и дальше не меняется сам: адрес альбома
+        // могли уже разослать, переименование альбома не должно его ломать.
+        // Чтобы получить новый адрес, админ очищает поле slug в форме.
+        static::saving(function (self $gallery): void {
+            if (filled($gallery->slug) || blank($gallery->name)) {
+                return;
+            }
+
+            $gallery->slug = static::generateSlug($gallery->name, $gallery->slugYear(), $gallery->getKey());
+        });
+    }
+
+    /**
+     * Уникальный slug из названия альбома.
+     *
+     * К названию добавляется год (если его ещё нет в названии) — у альбомов
+     * повторяющихся регат названия совпадают из года в год, и без года адреса
+     * превращались бы в «kubok-baltiki-2», «kubok-baltiki-3».
+     *
+     * @param  string|null  $ignoreId  id альбома, который не считается конфликтом
+     */
+    public static function generateSlug(string $name, ?int $year = null, ?string $ignoreId = null): string
+    {
+        // Язык 'ru' — иначе кириллица транслитерируется по умолчанию как «lucsee»
+        // вместо «luchshee»: адрес перестаёт читаться.
+        $base = Str::slug($name, '-', 'ru') ?: 'album';
+
+        if ($year !== null && ! str_contains($base, (string) $year)) {
+            $base .= '-'.$year;
+        }
+
+        $slug = $base;
+        $suffix = 2;
+
+        while (static::withTrashed()
+            ->where('slug', $slug)
+            ->when($ignoreId !== null, fn (Builder $query) => $query->whereKeyNot($ignoreId))
+            ->exists()
+        ) {
+            $slug = $base.'-'.$suffix++;
+        }
+
+        return $slug;
+    }
+
+    /** Год альбома для slug: своя дата, затем сезон, затем дата регаты. */
+    public function slugYear(): ?int
+    {
+        return $this->date?->year
+            ?? $this->season?->year
+            ?? $this->regatta?->date_start?->year;
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    /** У черновиков без названия slug ещё нет — тогда адрес строится по id. */
+    public function getRouteKey(): mixed
+    {
+        return $this->slug ?? $this->getKey();
+    }
+
+    /**
+     * Кроме slug принимаем и UUID: ссылки вида /gallery?album=<uuid> и
+     * /gallery/<uuid>/download разошлись до появления slug и должны работать.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return $this->resolveRouteBindingQuery($this, $value, $field)->first()
+            ?? $this->newQuery()->whereKey($value)->first();
+    }
+
+    /** Публичный адрес альбома. */
+    public function publicUrl(): string
+    {
+        return route('gallery.album', $this);
     }
 
     // ──────────────────────────────────────────────

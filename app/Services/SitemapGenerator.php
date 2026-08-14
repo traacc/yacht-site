@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Advert;
 use App\Models\ForeignRegatta;
+use App\Models\Gallery;
 use App\Models\News;
 use App\Models\PressMention;
 use App\Models\Regatta;
@@ -175,6 +176,18 @@ class SitemapGenerator
                 $urls[] = [
                     'loc' => $advert->publicUrl(),
                     'lastmod' => $advert->updated_at?->toAtomString(),
+                ];
+            });
+
+        // Альбомы галереи: у каждого свой адрес /gallery/{slug}.
+        Gallery::published()
+            ->whereNotNull('slug')
+            ->ordered()
+            ->get()
+            ->each(function (Gallery $gallery) use (&$urls): void {
+                $urls[] = [
+                    'loc' => $gallery->publicUrl(),
+                    'lastmod' => $gallery->updated_at?->toAtomString(),
                 ];
             });
 

@@ -1,4 +1,18 @@
-<x-public-layout title="Фото и видео с регат - галерея парусных гонок" description="Профессиональные фотографии и репортажи с гонок. Старты, финиши, атмосфера регат и яркие моменты парусных соревнований">
+@php
+    // Страница открыта по адресу альбома (/gallery/{slug}) — тогда и заголовок,
+    // и og:image берём у альбома: ссылкой делятся, превью должно быть его.
+    $openAlbum = $openAlbum ?? null;
+    $metaTitle = $openAlbum
+        ? trim(($openAlbum->regatta?->name ? $openAlbum->regatta->name.' — ' : '').$openAlbum->name).' — фото и видео'
+        : 'Фото и видео с регат - галерея парусных гонок';
+    $albumDate = $openAlbum?->regatta?->dateRange() ?? $openAlbum?->date?->isoFormat('D MMMM YYYY');
+    $metaDescription = $openAlbum
+        ? collect(['Фотографии альбома «'.$openAlbum->name.'»', $openAlbum->water_area, $albumDate])
+            ->filter()
+            ->implode(', ')
+        : 'Профессиональные фотографии и репортажи с гонок. Старты, финиши, атмосфера регат и яркие моменты парусных соревнований';
+@endphp
+<x-public-layout :title="$metaTitle" :description="$metaDescription" :og-image="$openAlbum?->cover_path">
 <x-breadcrumbs_page title="Галерея">
 </x-breadcrumbs_page>
 @php
@@ -40,18 +54,21 @@
     regattaYears: {{ Js::from($regattaYears) }},
     touchStartX: 0,
     copied: false,
-    {{-- Собирает текущее состояние фильтров/альбома в query-строку, чтобы ссылку
-         можно было скопировать и позже открыть уже применённый фильтр. --}}
+    {{-- Slug альбома, открытого по адресу /gallery/{slug} (см. route gallery.album). --}}
+    initialAlbum: {{ Js::from($openAlbum?->slug ?? $openAlbum?->getKey()) }},
+    {{-- Держит адрес в браузере в согласии с открытым альбомом и фильтром:
+         /gallery/<slug-альбома>?regatta=<id>. Такую ссылку можно скопировать
+         и позже открыть тот же альбом с тем же фильтром. --}}
     updateUrl() {
+        const path = (this.gallery_modal_open && this.activeGallery?.slug)
+            ? '{{ url('/gallery') }}/' + this.activeGallery.slug
+            : '{{ route('gallery') }}';
         const params = new URLSearchParams();
-        if (this.gallery_modal_open && this.activeGallery) {
-            params.set('album', this.activeGallery.id);
-        }
         if (this.selectedRegatta) {
             params.set('regatta', this.selectedRegatta);
         }
         const qs = params.toString();
-        history.replaceState(null, '', '{{ route('gallery') }}' + (qs ? '?' + qs : ''));
+        history.replaceState(null, '', path + (qs ? '?' + qs : ''));
     },
     {{-- Выбор регаты: подстраиваем год под регату, сбрасываем акваторию и пишем фильтр в URL. --}}
     onRegattaChange() {
@@ -68,13 +85,21 @@
         this.selectedRegatta = regatta;
         if (this.regattaYears[regatta]) this.selectedYear = this.regattaYears[regatta];
     },
-    {{-- Открывает альбом: проставляет состояние модалки и пишет id альбома в URL,
+    {{-- Открывает альбом: проставляет состояние модалки и пишет адрес альбома в URL,
          чтобы текущую ссылку можно было скопировать/расшарить. --}}
     openAlbum(gallery) {
         this.activeGallery = gallery;
         this.activeTab = this.listTab;
         this.gallery_modal_open = true;
         this.updateUrl();
+    },
+    {{-- Карточка альбома — обычная ссылка на /gallery/{slug}: её видно в статусной
+         строке, можно скопировать и открыть в новой вкладке. Обычный клик
+         перехватываем и открываем модалку без перезагрузки страницы. --}}
+    openAlbumFromLink(event, gallery) {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        this.openAlbum(gallery);
     },
     {{-- Закрывает модалку альбома и убирает ?album из URL, сохраняя активный фильтр. --}}
     closeAlbum() {
@@ -83,7 +108,7 @@
     },
     {{-- Копирует ссылку на альбом / вызывает нативный «Поделиться» на мобильных. --}}
     shareAlbum() {
-        const url = '{{ route('gallery') }}?album=' + (this.activeGallery?.id ?? '');
+        const url = this.activeGallery?.url ?? '{{ route('gallery') }}';
         /*
         if (navigator.share) {
             navigator.share({ title: this.activeGallery?.name ?? 'Галерея', url }).catch(() => {});
@@ -95,11 +120,14 @@
             //setTimeout(() => this.copied = false, 2000);
         });
     },
-    {{-- При загрузке страницы: если в URL есть ?album=<id>, открываем нужный альбом. --}}
+    {{-- При загрузке страницы открываем альбом: либо из адреса /gallery/{slug},
+         либо из старой ссылки /gallery?album=<uuid|slug>. --}}
     openAlbumFromUrl() {
-        const id = new URLSearchParams(window.location.search).get('album');
+        const id = this.initialAlbum ?? new URLSearchParams(window.location.search).get('album');
         if (!id) return;
-        const card = document.querySelector('[data-album-id=' + JSON.stringify(id) + ']');
+        const key = JSON.stringify(id);
+        const card = document.querySelector('[data-album-slug=' + key + ']')
+            ?? document.querySelector('[data-album-id=' + key + ']');
         if (!card) return;
         if (card.dataset.albumYear) this.selectedYear = card.dataset.albumYear;
         this.$nextTick(() => {
@@ -185,36 +213,46 @@
             <h2 class="section-title a-font text-5xl">{{ $year }}</h2>
             <div class="grid md:grid-cols-3 gap-6 mt-6">
                 @foreach($items as $gallery)
+                @php
+                    // Данные альбома для модалки. Дублируются в JS, чтобы открытие
+                    // альбома не ходило на сервер.
+                    $albumData = [
+                        'id'          => $gallery->id,
+                        // slug и url — для адресной строки и кнопки «Поделиться».
+                        'slug'        => $gallery->getRouteKey(),
+                        'url'         => $gallery->publicUrl(),
+                        'name'        => $gallery->name,
+                        'date'        => $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM YYYY'),
+                        'date_short'  => $gallery->regatta
+                            ? ($gallery->regatta->date_start?->isSameDay($gallery->regatta->date_end ?? $gallery->regatta->date_start)
+                                ? $gallery->regatta->date_start->isoFormat('D MMMM')
+                                : $gallery->regatta->date_start->isoFormat('D').'–'.$gallery->regatta->date_end->isoFormat('D MMMM'))
+                            : $gallery->date?->isoFormat('D MMMM'),
+                        'water_area'  => $gallery->water_area,
+                        'location'    => $gallery->regatta?->location,
+                        // ★ ИЗМЕНЕНО: аксессор cover_path теперь возвращает готовый URL (см. Gallery::getCoverPathAttribute)
+                        'cover'       => $gallery->cover_path ?: asset('images/news/news_1.webp'),
+                        // ★ ИЗМЕНЕНО: аксессор images теперь возвращает массив готовых URL (см. Gallery::getImagesAttribute)
+                        // Используется для лайтбокса (полноэкранный просмотр — оригинал).
+                        'images'      => $gallery->images,
+                        // Наборы URL {url, webp, avif} для грида-превью через <picture>.
+                        'images_responsive' => $gallery->imagesResponsive(),
+                        // ★ ДОБАВЛЕНО: video_links из таблицы video_links (embed-блоки)
+                        'video_links' => $gallery->videoLinks->map(fn ($vl) => [
+                            'url'       => $vl->url,
+                            'title'     => $vl->title,
+                            'embed_url' => $vl->embed_url,
+                        ])->values()->toArray(),
+                    ];
+                @endphp
                 {{-- ★ В режиме вкладки «Видео» показываем только альбомы с видео-ссылками --}}
-                <div class="cursor-pointer group relative"
+                <a href="{{ $gallery->publicUrl() }}"
+                     class="block cursor-pointer group relative"
                      data-album-id="{{ $gallery->id }}"
+                     data-album-slug="{{ $gallery->getRouteKey() }}"
                      data-album-year="{{ $year }}"
                      x-show="(listTab === 'photo' || {{ $gallery->videoLinks->isNotEmpty() ? 'true' : 'false' }}) && (selectedRegatta === '' || selectedRegatta == '{{ $gallery->regatta?->id }}')"
-                     @click="openAlbum({{ Js::from([
-                         'id'          => $gallery->id,
-                         'name'        => $gallery->name,
-                         'date'        => $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM YYYY'),
-                         'date_short'  => $gallery->regatta
-                             ? ($gallery->regatta->date_start?->isSameDay($gallery->regatta->date_end ?? $gallery->regatta->date_start)
-                                 ? $gallery->regatta->date_start->isoFormat('D MMMM')
-                                 : $gallery->regatta->date_start->isoFormat('D').'–'.$gallery->regatta->date_end->isoFormat('D MMMM'))
-                             : $gallery->date?->isoFormat('D MMMM'),
-                         'water_area'  => $gallery->water_area,
-                         'location'    => $gallery->regatta?->location,
-                         // ★ ИЗМЕНЕНО: аксессор cover_path теперь возвращает готовый URL (см. Gallery::getCoverPathAttribute)
-                         'cover'       => $gallery->cover_path ?: asset('images/news/news_1.webp'),
-                         // ★ ИЗМЕНЕНО: аксессор images теперь возвращает массив готовых URL (см. Gallery::getImagesAttribute)
-                         // Используется для лайтбокса (полноэкранный просмотр — оригинал).
-                         'images'      => $gallery->images,
-                         // Наборы URL {url, webp, avif} для грида-превью через <picture>.
-                         'images_responsive' => $gallery->imagesResponsive(),
-                         // ★ ДОБАВЛЕНО: video_links из таблицы video_links (embed-блоки)
-                         'video_links' => $gallery->videoLinks->map(fn ($vl) => [
-                             'url'       => $vl->url,
-                             'title'     => $vl->title,
-                             'embed_url' => $vl->embed_url,
-                         ])->values()->toArray(),
-                     ]) }})">
+                     @click="openAlbumFromLink($event, {{ Js::from($albumData) }})">
 
                     {{-- Обложка через <picture> (avif/webp + оригинал-фолбэк); при отсутствии обложки — статичный плейсхолдер --}}
                     @if($coverMedia = $gallery->coverMedia())
@@ -235,7 +273,7 @@
                         <p class="mb-3 flex gap-3">{!! file_get_contents(public_path('images/icons/calendar.svg')) !!} {{ $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM') }}</p>
                         <p class="flex gap-3">{!! file_get_contents(public_path('images/icons/waves.svg')) !!} {{ $gallery->water_area }}</p>
                     </div>
-                </div>
+                </a>
                 @endforeach
             </div>
         </div>
@@ -299,7 +337,7 @@
             <div x-show="activeTab === 'photo'">
                 {{-- Кнопка скачивания всех фото галереи одним ZIP-архивом --}}
                 <div class="flex justify-end mb-4" x-show="(activeGallery?.images ?? []).length > 0">
-                    <a :href="'{{ url('/gallery') }}/' + (activeGallery?.id ?? '') + '/download'"
+                    <a :href="'{{ url('/gallery') }}/' + (activeGallery?.slug ?? '') + '/download'"
                        class="inline-flex items-center gap-2 bg-[#2D92CE] hover:bg-[#247fb3] text-white px-4 py-2 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
                         Скачать все фото
