@@ -93,18 +93,23 @@ class ParticipationWizard extends Component
     public function chooseKind(string $kind): void
     {
         $this->kind = ParticipationKind::from($kind)->value;
-        $this->step = 'type';
-    }
-
-    public function chooseType(string $type): void
-    {
-        $this->type = RegattaType::from($type)->value;
         $this->step = 'regatta';
     }
 
+    /**
+     * Тип регаты человек не выбирает — список общий, а тип берётся из самой
+     * регаты: от него зависят следующий шаг и способ подачи заявки.
+     */
     public function chooseRegatta(string $regattaId): void
     {
-        $this->regattaId = $regattaId;
+        $regatta = Regatta::find($regattaId);
+
+        if ($regatta === null) {
+            return;
+        }
+
+        $this->regattaId = $regatta->id;
+        $this->type = $regatta->type->value;
         $this->yachtId = null;
         $this->entryId = null;
         $this->step = 'boat';
@@ -167,8 +172,7 @@ class ParticipationWizard extends Component
     public function back(): void
     {
         $this->step = match ($this->step) {
-            'type' => 'kind',
-            'regatta' => 'type',
+            'regatta' => 'kind',
             'boat' => 'regatta',
             'form' => 'boat',
             default => 'kind',
@@ -185,16 +189,21 @@ class ParticipationWizard extends Component
         return $this->regattaId ? Regatta::find($this->regattaId) : null;
     }
 
-    /** @return array<int, array<string, mixed>> */
+    /**
+     * Все регаты, куда можно заявиться выбранным способом, — любого типа
+     * и вместе с зарубежными. Тип виден меткой в строке списка.
+     *
+     * @return array<int, array<string, mixed>>
+     */
     #[Computed]
     public function regattas(): array
     {
-        if ($this->kind === null || $this->type === null) {
+        if ($this->kind === null) {
             return [];
         }
 
         return app(ParticipationOptions::class)
-            ->regattas(ParticipationKind::from($this->kind), RegattaType::from($this->type))
+            ->regattas(ParticipationKind::from($this->kind))
             ->all();
     }
 
@@ -252,32 +261,22 @@ class ParticipationWizard extends Component
      */
     public function emptyState(): array
     {
-        $type = $this->type !== null ? RegattaType::from($this->type) : null;
-
-        if ($type === null || ! app(ParticipationOptions::class)->hasAnyRegattas($type)) {
+        if (! app(ParticipationOptions::class)->hasAnyRegattas()) {
             return [
-                'title' => 'Регат этого типа сейчас нет',
+                'title' => 'Регат сейчас нет',
                 'hint' => 'Ближайшие соревнования смотрите в календаре регат.',
             ];
         }
 
-        $label = mb_strtolower($type->getLabel());
-        $isIndividual = $this->kind === ParticipationKind::Individual->value;
-
-        return match (true) {
-            $type === RegattaType::Club && $isIndividual => [
-                'title' => 'Свободных мест в экипажах нет',
-                'hint' => 'Сейчас ни один экипаж не набирает людей. Загляните позже или заявитесь своим экипажем.',
-            ],
-            $isIndividual => [
+        return $this->kind === ParticipationKind::Individual->value
+            ? [
                 'title' => 'Свободных мест нет',
-                'hint' => "Во всех {$label} регатах места уже разобраны или ещё не поступили в продажу.",
-            ],
-            default => [
+                'hint' => 'Ни один экипаж сейчас не набирает людей, а места на лодках ассоциации ещё не в продаже. Загляните позже или заявитесь своим экипажем.',
+            ]
+            : [
                 'title' => 'Свободных лодок нет',
-                'hint' => "Во всех {$label} регатах лодки уже заняты. Попробуйте другой тип регаты или загляните позже.",
-            ],
-        };
+                'hint' => 'Лодки во всех ближайших регатах заняты. Загляните позже — или подайте заявку со своей лодкой со страницы регаты.',
+            ];
     }
 
     /** Итоговая сумма выбранного варианта; null — цену назначит администратор. */

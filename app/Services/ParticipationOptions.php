@@ -44,14 +44,19 @@ final class ParticipationOptions
      *     seat_price: ?float, boat_price: ?float, crew_limit: ?int, url: string
      * }>
      */
-    public function regattas(ParticipationKind $kind, RegattaType $type): Collection
+    public function regattas(ParticipationKind $kind, ?RegattaType $type = null): Collection
     {
-        $own = $this->openRegattas($type)
-            ->map(fn (Regatta $regatta): array => $this->describe($regatta, $kind))
-            ->filter(fn (array $item): bool => $this->isOffered($item, $kind, $type));
+        $types = $type !== null ? [$type] : RegattaType::cases();
 
-        if ($type !== RegattaType::Travel) {
-            return $own->values();
+        $own = collect($types)->flatMap(
+            fn (RegattaType $current): Collection => $this->openRegattas($current)
+                ->map(fn (Regatta $regatta): array => $this->describe($regatta, $kind))
+                ->filter(fn (array $item): bool => $this->isOffered($item, $kind, $current))
+        );
+
+        // Зарубежные — часть выездных, поэтому попадают и в общий список.
+        if ($type !== null && $type !== RegattaType::Travel) {
+            return $own->sortBy('sort_date')->values();
         }
 
         return $own
@@ -120,19 +125,23 @@ final class ParticipationOptions
     }
 
     /**
-     * Есть ли вообще открытые регаты этого типа — независимо от того, осталось
-     * ли в них место для конкретного человека.
+     * Есть ли вообще открытые регаты — независимо от того, осталось ли в них
+     * место для конкретного человека. Без аргумента считает все типы.
      *
-     * Нужно, чтобы отличить «таких регат сейчас нет» от «регаты есть, но мест
-     * в них не осталось»: подсказки на шаге выбора у этих случаев разные.
+     * Нужно, чтобы отличить «регат сейчас нет» от «регаты есть, но мест в них
+     * не осталось»: подсказки на шаге выбора у этих случаев разные.
      */
-    public function hasAnyRegattas(RegattaType $type): bool
+    public function hasAnyRegattas(?RegattaType $type = null): bool
     {
-        if ($this->openRegattas($type)->isNotEmpty()) {
-            return true;
+        $types = $type !== null ? [$type] : RegattaType::cases();
+
+        foreach ($types as $current) {
+            if ($this->openRegattas($current)->isNotEmpty()) {
+                return true;
+            }
         }
 
-        return $type === RegattaType::Travel
+        return ($type === null || $type === RegattaType::Travel)
             && ForeignRegatta::query()->published()->upcoming()->exists();
     }
 

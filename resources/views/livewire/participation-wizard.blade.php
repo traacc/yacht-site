@@ -11,7 +11,6 @@
         @php
             $steps = [
                 'kind' => 'Участие',
-                'type' => 'Тип регаты',
                 'regatta' => 'Регата',
                 'boat' => $this->needsSeatPicker() ? 'Места' : 'Лодка',
                 'form' => 'Заявка',
@@ -69,65 +68,35 @@
                             </button>
                         </div>
 
-                    {{-- ШАГ 2. Тип регаты --}}
-                    @elseif($step === 'type')
-                        <p class="text-brand-gray mb-4">В какой регате хотите участвовать?</p>
-                        <div class="grid gap-3 sm:grid-cols-3">
-                            <button type="button" wire:click="chooseType('club')"
-                                    class="p-5 bg-brand-light-bg hover:bg-[#2D92CE26] text-left transition-colors cursor-pointer">
-                                <span class="flex items-center gap-2">
-                                    <span class="size-3 rounded-full inline-block {{ \App\Enums\RegattaType::Club->backgroundClass() }}"></span>
-                                    <span class="text-brand-dark font-semibold text-lg">Клубная</span>
-                                </span>
-                                <span class="block text-sm text-brand-gray-light mt-1">Регаты ассоциации: экипажи на своих лодках</span>
-                            </button>
-                            <button type="button" wire:click="chooseType('regular')"
-                                    class="p-5 bg-brand-light-bg hover:bg-[#2D92CE26] text-left transition-colors cursor-pointer">
-                                <span class="flex items-center gap-2">
-                                    <span class="size-3 rounded-full inline-block {{ \App\Enums\RegattaType::Regular->backgroundClass() }}"></span>
-                                    <span class="text-brand-dark font-semibold text-lg">Регулярная</span>
-                                </span>
-                                <span class="block text-sm text-brand-gray-light mt-1">Лодки выставляет ассоциация, места продаются</span>
-                            </button>
-                            <button type="button" wire:click="chooseType('travel')"
-                                    class="p-5 bg-brand-light-bg hover:bg-[#2D92CE26] text-left transition-colors cursor-pointer">
-                                <span class="flex items-center gap-2">
-                                    <span class="size-3 rounded-full inline-block {{ \App\Enums\RegattaType::Travel->backgroundClass() }}"></span>
-                                    <span class="text-brand-dark font-semibold text-lg">Выездная</span>
-                                </span>
-                                <span class="block text-sm text-brand-gray-light mt-1">Лодка или место в экипаже на регатах партнёров, включая зарубежные</span>
-                            </button>
-                        </div>
-
-                    {{-- ШАГ 3. Выбор регаты --}}
+                    {{-- ШАГ 2. Выбор регаты --}}
                     @elseif($step === 'regatta')
-                        <p class="text-brand-gray mb-4">
-                            @if($kind === 'individual' && $type === 'club')
-                                Регаты, где экипажи набирают людей:
-                            @else
-                                Регаты, куда можно заявиться:
-                            @endif
-                        </p>
+                        <p class="text-brand-gray mb-4">Регаты, куда можно заявиться:</p>
 
                         @forelse($this->regattas() as $item)
                             @php
                                 // Зарубежные регаты живут в «Услугах» со своей формой заявки
                                 // (место в каюте, каюта, яхта целиком) — ведём прямо в карточку.
                                 $isForeign = $item['source'] === \App\Services\ParticipationOptions::SOURCE_FOREIGN;
+                                // Тип берётся из самой регаты: списка по типам больше нет.
+                                $isClub = $item['type'] === \App\Enums\RegattaType::Club->value;
+                                $isTravel = $item['type'] === \App\Enums\RegattaType::Travel->value;
                             @endphp
                             <{{ $isForeign ? 'a' : 'button' }}
                                 @if($isForeign) href="{{ $item['url'] }}" @else type="button" wire:click="chooseRegatta('{{ $item['id'] }}')" @endif
                                 class="w-full flex items-start gap-3 p-4 mb-2 bg-brand-light-bg hover:bg-[#2D92CE26] text-left transition-colors cursor-pointer">
                                 <span class="size-3 rounded-full inline-block mt-1.5 shrink-0 {{ $item['background_class'] }}"></span>
                                 <span class="flex-1">
-                                    <span class="block text-brand-dark font-semibold">{{ $item['name'] }}</span>
+                                    <span class="flex flex-wrap items-center gap-2">
+                                        <span class="text-brand-dark font-semibold">{{ $item['name'] }}</span>
+                                        <span class="text-[10px] uppercase tracking-wide text-white px-2 py-0.5 {{ $item['background_class'] }}">{{ $item['type_label'] }}</span>
+                                    </span>
                                     <span class="block text-sm text-brand-gray-light">
                                         {{ $item['dates'] }}@if($item['location']) · {{ $item['location'] }}@endif
                                     </span>
                                     <span class="block text-sm text-brand-blue mt-1">
                                         @if($isForeign)
-                                            За рубежом@if($item['seat_price']) · Место — {{ number_format((float) $item['seat_price'], 0, ',', ' ') }} ₽@endif · Подробности и заявка →
-                                        @elseif($kind === 'individual' && $type === 'club')
+                                            @if($item['seat_price'])Место — {{ number_format((float) $item['seat_price'], 0, ',', ' ') }} ₽ · @endif Подробности и заявка →
+                                        @elseif($kind === 'individual' && $isClub)
                                             Экипажей с добором: {{ $item['crews_count'] }}
                                         @elseif($kind === 'individual')
                                             @if($item['seat_price'])
@@ -139,7 +108,7 @@
                                             @if($item['yachts_count'] > 0)Свободных лодок: {{ $item['yachts_count'] }}@endif
                                             @if($item['boat_price'])@if($item['yachts_count'] > 0) · @endif Лодка — {{ number_format((float) $item['boat_price'], 0, ',', ' ') }} ₽@endif
                                             @if($item['yachts_count'] === 0 && ! $item['boat_price'])
-                                                {{ $type === 'travel' ? 'Лодка целиком · цену уточним в заявке' : 'Заявка со своей лодкой' }}
+                                                {{ $isTravel ? 'Лодка целиком · цену уточним в заявке' : 'Заявка со своей лодкой' }}
                                             @endif
                                         @endif
                                     </span>
@@ -154,7 +123,7 @@
                                 <div class="flex flex-wrap gap-3 justify-center mt-4">
                                     <button type="button" wire:click="back"
                                             class="px-4 py-2 bg-brand-light-bg text-brand-dark text-sm font-semibold cursor-pointer hover:bg-[#2D92CE26] transition-colors">
-                                        Выбрать другой тип
+                                        Другой вариант участия
                                     </button>
                                     <a href="{{ route('competitions') }}"
                                        class="px-4 py-2 bg-brand-blue text-white text-sm font-semibold hover:opacity-90 transition-opacity">
@@ -169,7 +138,7 @@
                             <button type="button" wire:click="back" class="mt-2 text-sm text-brand-gray-light hover:text-brand-dark cursor-pointer">← Назад</button>
                         @endif
 
-                    {{-- ШАГ 4. Лодка, экипаж или количество мест --}}
+                    {{-- ШАГ 3. Лодка, экипаж или количество мест --}}
                     @elseif($step === 'boat')
                         @if($kind === 'individual' && $type === 'club')
                             <p class="text-brand-gray mb-4">Выберите экипаж, который набирает людей:</p>
@@ -267,7 +236,7 @@
 
                         <button type="button" wire:click="back" class="mt-2 text-sm text-brand-gray-light hover:text-brand-dark cursor-pointer">← Назад</button>
 
-                    {{-- ШАГ 5. Заявка --}}
+                    {{-- ШАГ 4. Заявка --}}
                     @elseif($step === 'form')
                         <div class="mb-5 p-4 bg-brand-light-bg text-sm text-brand-gray space-y-1">
                             <p class="text-brand-dark font-semibold">{{ $this->regatta()?->name }}</p>
