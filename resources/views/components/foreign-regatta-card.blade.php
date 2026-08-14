@@ -50,13 +50,29 @@
                 <div class="text-[#2E325C] font-semibold text-sm mb-2">от {{ $regatta->seatPriceLabel() }}</div>
             @endif
 
-            @php $free = $regatta->showsCharterFleet() ? $regatta->availableCharterYachts()->count() : null; @endphp
+            {{-- Что осталось во флоте: лодки под чартер целиком и места в экипажи. --}}
+            @if ($regatta->showsCharterFleet())
+                @php
+                    $freeYachts = $regatta->yachtsForWholeCharter()->count();
+                    $freeSeats = $regatta->freeCrewSeats();
+                @endphp
 
-            @if ($free !== null)
-                <div class="inline-block text-xs px-2 py-1 mb-2 {{ $free > 0 ? 'bg-[#DCEBE3] text-[#2E325C]' : 'bg-gray-200 text-brand-gray-light' }}">
-                    {{ $free > 0
-                        ? 'Свободно '.\App\Support\Plural::with($free, 'яхта', 'яхты', 'яхт')
-                        : 'Весь чартер разобран' }}
+                <div class="flex flex-wrap gap-1 mb-2">
+                    @if ($freeYachts > 0)
+                        <span class="inline-block text-xs px-2 py-1 bg-[#DCEBE3] text-[#2E325C]">
+                            Свободно {{ \App\Support\Plural::with($freeYachts, 'яхта', 'яхты', 'яхт') }}
+                        </span>
+                    @endif
+
+                    @if ($freeSeats > 0)
+                        <span class="inline-block text-xs px-2 py-1 bg-[#E4ECF7] text-[#2E325C]">
+                            {{ \App\Support\Plural::with($freeSeats, 'место', 'места', 'мест') }} в экипажах
+                        </span>
+                    @endif
+
+                    @if ($freeYachts === 0 && $freeSeats === 0)
+                        <span class="inline-block text-xs px-2 py-1 bg-gray-200 text-brand-gray-light">Весь флот разобран</span>
+                    @endif
                 </div>
             @endif
         @endunless

@@ -465,6 +465,15 @@ enum ServiceType: string
                     'options' => [],
                     'visible_when' => ['participation', ParticipationOption::Yacht->value],
                 ],
+                // Отдельно от charter_yacht: под «яхту целиком» подходят
+                // свободные лодки без шкипера, а в экипаж просятся к лодкам
+                // со шкипером, у которых остались места.
+                'crew_yacht' => [
+                    'label' => 'Яхта (место в экипаже)',
+                    'type' => 'select',
+                    'options' => [],
+                    'visible_when' => ['participation', ParticipationOption::Seat->value],
+                ],
             ],
 
             self::GiftCertificate => [

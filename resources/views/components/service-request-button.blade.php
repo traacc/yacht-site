@@ -10,6 +10,11 @@
     'subject' => null,
     // Даты известны из объекта: поля прячем, значения передаём через preset.
     'lockDates' => false,
+    // Имя window-события, по которому модалка открывается извне. Тогда своя
+    // кнопка не рисуется: во флоте регаты кнопок десятки, а форма нужна одна.
+    // Событие несёт {payload: {...}, label: '…'} — чем предзаполнить форму и
+    // что показать в шапке.
+    'openEvent' => null,
 ])
 
 {{--
@@ -42,7 +47,18 @@
         submitted: false,
         loading: false,
         error: '',
+        detail: '',
         form: @js($initialForm),
+
+        // Открытие извне: форма долистывается значениями из события, чтобы
+        // человек, нажавший кнопку у конкретной лодки, не искал её в списке.
+        openWith(event) {
+            this.submitted = false;
+            this.error = '';
+            this.detail = event?.label ?? '';
+            this.form.payload = Object.assign({}, this.form.payload, event?.payload ?? {});
+            this.open = true;
+        },
 
         async submitForm() {
             this.error = '';
@@ -77,12 +93,15 @@
             }
         },
      }"
+     @if ($openEvent) x-on:{{ $openEvent }}.window="openWith($event.detail)" @endif
      {{ $attributes->merge(['class' => 'inline-block']) }}>
 
-    <button type="button" @click="open = true"
-            class="bg-[#2D92CE] text-white py-3 px-8 hover:bg-[#0074CC] transition-colors md:text-lg text-sm font-semibold">
-        {{ $label }} →
-    </button>
+    @unless ($openEvent)
+        <button type="button" @click="open = true"
+                class="bg-[#2D92CE] text-white py-3 px-8 hover:bg-[#0074CC] transition-colors md:text-lg text-sm font-semibold">
+            {{ $label }} →
+        </button>
+    @endunless
 
     <div x-show="open" x-cloak
          class="fixed inset-0 z-50 overflow-y-auto"
@@ -116,8 +135,11 @@
                 <p class="text-brand-gray-light text-sm{{ $subject ? ' mb-1' : ' mb-4' }}">{{ $type->label() }}</p>
 
                 @if ($subject)
-                    <p class="text-[#2E325C] font-semibold text-sm mb-4">{{ $subject->subjectLabel() }}</p>
+                    <p class="text-[#2E325C] font-semibold text-sm{{ $openEvent ? ' mb-1' : ' mb-4' }}">{{ $subject->subjectLabel() }}</p>
                 @endif
+
+                {{-- Что именно выбрано кнопкой на карточке лодки. --}}
+                <p x-show="detail" x-cloak x-text="detail" class="text-brand-gray-light text-sm mb-4"></p>
 
                 <div x-show="submitted" x-cloak
                      class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 mb-4" role="alert">

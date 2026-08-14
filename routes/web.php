@@ -582,7 +582,9 @@ Route::get('/services/foreign-regattas', function () use ($servicePage) {
 Route::get('/services/foreign-regattas/{regatta}', function (ForeignRegatta $regatta) {
     abort_unless($regatta->is_published, 404);
 
-    $regatta->load(['charterYachts', 'media']);
+    // Дивизион нужен каждой лодке: у флота одинаковых лодок характеристики и
+    // фотографии наследуются от него (@see ForeignRegattaYacht::spec()).
+    $regatta->load(['charterYachts.division.media', 'charterYachts.media', 'divisions', 'media']);
 
     return view('pages.services.foreign-regatta-item', [
         'regatta' => $regatta,

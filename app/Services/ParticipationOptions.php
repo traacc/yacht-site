@@ -80,6 +80,9 @@ final class ParticipationOptions
             ->published()
             ->upcoming()
             ->ordered()
+            // Флот сам объявляет варианты участия (@see ForeignRegatta::participationOptions()),
+            // поэтому без него foreignOffers() сделал бы запрос на каждую регату.
+            ->with('charterYachts')
             ->get()
             ->filter(fn (ForeignRegatta $regatta): bool => $this->foreignOffers($regatta, $kind))
             ->map(fn (ForeignRegatta $regatta): array => [
@@ -92,8 +95,10 @@ final class ParticipationOptions
                 'type' => SeasonCalendar::FOREIGN_TYPE,
                 'type_label' => 'За рубежом',
                 'background_class' => 'bg-[#7B5FC4]',
-                'yachts_count' => 0,
-                'crews_count' => 0,
+                // Флот зарубежной регаты живёт своей моделью, но считается так же:
+                // свободные лодки под чартер целиком и экипажи, добирающие людей.
+                'yachts_count' => $regatta->yachtsForWholeCharter()->count(),
+                'crews_count' => $regatta->yachtsSellingSeats()->count(),
                 'seat_price' => $regatta->price_per_seat !== null ? (float) $regatta->price_per_seat : null,
                 'boat_price' => null,
                 'crew_limit' => null,

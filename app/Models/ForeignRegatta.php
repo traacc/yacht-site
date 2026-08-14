@@ -114,6 +114,12 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
         return $this->belongsTo(Season::class);
     }
 
+    /** Дивизионы флота: «флот одинаковых лодок» и «список конкретных лодок». */
+    public function divisions(): HasMany
+    {
+        return $this->hasMany(ForeignRegattaDivision::class)->ordered();
+    }
+
     /** Чартерный флот регаты: список «яхт под аренду» из ТЗ. */
     public function charterYachts(): HasMany
     {
@@ -207,8 +213,11 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     // ──────────────────────────────────────────────
 
     /**
-     * Варианты участия — только объявленные регатой, яхты — только свободные:
-     * ТЗ требует выбирать яхту «из свободных».
+     * Варианты участия — объявленные регатой, яхты — те, что ещё предлагаются.
+     *
+     * Списка яхт два, потому что вопросы разные: под «яхту целиком» подходят
+     * свободные лодки без шкипера, под «место» — лодки со шкипером, у которых
+     * остались места.
      *
      * @return array<string, array<string, string>>
      */
@@ -221,10 +230,18 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
                 ])
                 ->all(),
 
-            'charter_yacht' => $this->availableCharterYachts()
+            'charter_yacht' => $this->yachtsForWholeCharter()
                 ->mapWithKeys(fn (ForeignRegattaYacht $yacht): array => [
                     (string) $yacht->getKey() => $yacht->title()
                         .($yacht->priceLabel() === null ? '' : ' — '.$yacht->priceLabel()),
+                ])
+                ->all(),
+
+            'crew_yacht' => $this->yachtsSellingSeats()
+                ->mapWithKeys(fn (ForeignRegattaYacht $yacht): array => [
+                    (string) $yacht->getKey() => $yacht->title()
+                        .' — шкипер '.$yacht->skipper_name
+                        .', '.$yacht->freeSeatsLabel(),
                 ])
                 ->all(),
         ];
@@ -240,12 +257,13 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
             return ParticipationOption::tryFrom($value)?->label();
         }
 
-        if ($field !== 'charter_yacht') {
+        if ($field !== 'charter_yacht' && $field !== 'crew_yacht') {
             return null;
         }
 
         return $this->charterYachts()
             ->withTrashed()
+            ->with('division')
             ->whereKey($value)
             ->first()
             ?->title();
@@ -303,7 +321,7 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     }
 
     /**
-     * Объявленные варианты участия.
+     * Варианты участия: объявленные галочками плюс те, что предлагает флот.
      *
      * @return list<ParticipationOption>
      */
@@ -312,8 +330,29 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
         return collect($this->participation_options ?? [])
             ->map(fn ($value): ?ParticipationOption => ParticipationOption::tryFrom((string) $value))
             ->filter()
+            ->concat($this->participationOfferedByFleet())
+            ->unique()
             ->values()
             ->all();
+    }
+
+    /**
+     * Варианты, которые следуют из состояния флота.
+     *
+     * Кнопка на карточке лодки подставляет вариант участия в заявку, а форма
+     * принимает только объявленные варианты. Поэтому лодка со свободными
+     * местами объявляет «место», а свободная лодка без шкипера — «яхту
+     * целиком», даже если галочку в форме регаты забыли поставить.
+     *
+     * @return Collection<int, ParticipationOption>
+     */
+    private function participationOfferedByFleet(): Collection
+    {
+        return $this->charterYachts
+            ->map(fn (ForeignRegattaYacht $yacht): ?ParticipationOption => $yacht->offeredParticipation())
+            ->filter()
+            ->unique()
+            ->values();
     }
 
     public function offers(ParticipationOption $option): bool
@@ -321,18 +360,71 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
         return in_array($option, $this->participationOptions(), strict: true);
     }
 
-    /** Показывать ли список чартерных яхт: он нужен только под вариант «яхта». */
+    /** Показывать ли флот на странице регаты. */
     public function showsCharterFleet(): bool
     {
-        return $this->offers(ParticipationOption::Yacht) && $this->charterYachts->isNotEmpty();
+        return $this->charterYachts->isNotEmpty();
     }
 
-    /** @return Collection<int, ForeignRegattaYacht> */
-    public function availableCharterYachts(): Collection
+    /**
+     * Флот, разложенный по дивизионам, — так он и выводится на странице.
+     *
+     * Лодки без дивизиона (заведённые до появления дивизионов) собираются в
+     * группу без заголовка, чтобы не пропасть с витрины.
+     *
+     * @return Collection<int, array{division: ForeignRegattaDivision|null, yachts: Collection<int, ForeignRegattaYacht>}>
+     */
+    public function fleetGroups(): Collection
+    {
+        $byDivision = $this->charterYachts->groupBy('division_id');
+
+        $groups = $this->divisions
+            ->map(fn (ForeignRegattaDivision $division): array => [
+                'division' => $division,
+                'yachts' => $byDivision->get((string) $division->getKey(), collect())->values(),
+            ])
+            ->filter(fn (array $group): bool => $group['yachts']->isNotEmpty());
+
+        // groupBy приводит null-ключ к пустой строке.
+        $orphans = $byDivision->get('', collect())->values();
+
+        if ($orphans->isNotEmpty()) {
+            $groups = $groups->concat([['division' => null, 'yachts' => $orphans]]);
+        }
+
+        return $groups->values();
+    }
+
+    /**
+     * Лодки, которые сдаются целиком: шкипера нет, статус свободный.
+     *
+     * @return Collection<int, ForeignRegattaYacht>
+     */
+    public function yachtsForWholeCharter(): Collection
     {
         return $this->charterYachts->filter(
-            fn (ForeignRegattaYacht $yacht): bool => $yacht->isAvailable(),
+            fn (ForeignRegattaYacht $yacht): bool => $yacht->offersWholeCharter(),
         )->values();
+    }
+
+    /**
+     * Лодки, которые набирают экипаж: шкипер есть, места остались.
+     *
+     * @return Collection<int, ForeignRegattaYacht>
+     */
+    public function yachtsSellingSeats(): Collection
+    {
+        return $this->charterYachts->filter(
+            fn (ForeignRegattaYacht $yacht): bool => $yacht->sellsSeats(),
+        )->values();
+    }
+
+    /** Сколько всего мест в экипажи продаётся по всему флоту. */
+    public function freeCrewSeats(): int
+    {
+        return $this->yachtsSellingSeats()->sum(
+            fn (ForeignRegattaYacht $yacht): int => $yacht->freeSeats(),
+        );
     }
 
     public function seatPriceLabel(): ?string

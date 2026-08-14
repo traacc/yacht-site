@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace App\Filament\Resources\ForeignRegattas;
 
 use App\Enums\CharterPriceUnit;
-use App\Enums\CharterYachtStatus;
+use App\Enums\DownwindSail;
+use App\Enums\FleetDivisionType;
 use App\Enums\ParticipationOption;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\ForeignRegattas\Pages\ManageForeignRegattas;
+use App\Filament\Resources\ForeignRegattaYachts\ForeignRegattaYachtResource;
 use App\Models\ForeignRegatta;
 use App\Models\Season;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\CheckboxList;
@@ -26,7 +29,9 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -168,7 +173,7 @@ class ForeignRegattaResource extends Resource
                     ->schema([
                         CheckboxList::make('participation_options')
                             ->label('Варианты участия')
-                            ->helperText('Из отмеченных вариантов заказчик выбирает в заявке. Список яхт под аренду показывается только при варианте «Яхта целиком».')
+                            ->helperText('Из отмеченных вариантов заказчик выбирает в заявке. Флот добавляет варианты сам: лодка со свободными местами объявляет «Место», свободная лодка без шкипера — «Яхта целиком».')
                             ->options(ParticipationOption::options())
                             ->columns(3)
                             ->columnSpanFull(),
@@ -201,61 +206,20 @@ class ForeignRegattaResource extends Resource
                     ])
                     ->columns(2),
 
-                Section::make('Яхты под аренду')
-                    ->description('Чартерные лодки этой регаты. К реестру яхт сайта отношения не имеют: занятость переключается вручную, свободные лодки предлагаются в заявке.')
+                Section::make('Флот регаты')
+                    ->description('Флот объявляется дивизионами. «Флот одинаковых яхт» — характеристики задаются здесь один раз, лодки создаются автоматически по количеству. «Список конкретных яхт» — дивизион только группирует, характеристики вводятся у каждой лодки. Шкиперов, свободные места и занятость по каждой лодке правьте в разделе «Услуги: Флот регат».')
                     ->schema([
-                        Repeater::make('charterYachts')
-                            ->label('Яхты')
+                        Repeater::make('divisions')
+                            ->label('Дивизионы')
                             ->relationship()
-                            ->addActionLabel('Добавить яхту')
+                            ->addActionLabel('Добавить дивизион')
                             ->reorderable()
                             ->orderColumn('sort_order')
                             ->collapsible()
+                            ->collapsed()
                             ->defaultItems(0)
-                            ->itemLabel(fn (array $state): ?string => trim(
-                                ($state['model'] ?? '').' '.($state['name'] ?? ''),
-                            ) ?: null)
-                            ->schema([
-                                TextInput::make('model')
-                                    ->label('Модель')
-                                    ->placeholder('Bavaria 46')
-                                    ->required()
-                                    ->maxLength(255),
-
-                                TextInput::make('name')
-                                    ->label('Название')
-                                    ->placeholder('Nika')
-                                    ->maxLength(255),
-
-                                TextInput::make('year')
-                                    ->label('Год выпуска')
-                                    ->numeric()
-                                    ->minValue(1900)
-                                    ->maxValue((int) now()->addYear()->format('Y')),
-
-                                TextInput::make('price')
-                                    ->label('Цена аренды')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->suffix('₽'),
-
-                                Select::make('price_unit')
-                                    ->label('За что цена')
-                                    ->options(CharterPriceUnit::options())
-                                    ->default(CharterPriceUnit::Regatta->value),
-
-                                Select::make('status')
-                                    ->label('Занятость')
-                                    ->options(CharterYachtStatus::options())
-                                    ->default(CharterYachtStatus::Free->value)
-                                    ->required(),
-
-                                TextInput::make('price_note')
-                                    ->label('Примечание')
-                                    ->placeholder('Например: депозит 1 500 €')
-                                    ->maxLength(255)
-                                    ->columnSpanFull(),
-                            ])
+                            ->itemLabel(fn (array $state): ?string => self::divisionItemLabel($state))
+                            ->schema(self::divisionFields())
                             ->columns(3)
                             ->columnSpanFull(),
                     ]),
@@ -391,6 +355,150 @@ class ForeignRegattaResource extends Resource
             ]);
     }
 
+    /**
+     * Поля дивизиона.
+     *
+     * Спецификация показывается только у дивизиона-флота: у списка конкретных
+     * лодок она живёт на самих лодках, и пустые поля здесь только путали бы.
+     *
+     * @return list<Component>
+     */
+    private static function divisionFields(): array
+    {
+        $isFleet = fn (Get $get): bool => $get('type') === FleetDivisionType::Fleet->value;
+
+        return [
+            Select::make('type')
+                ->label('Тип дивизиона')
+                ->options(FleetDivisionType::options())
+                ->default(FleetDivisionType::Fleet->value)
+                ->helperText(fn (?string $state): string => FleetDivisionType::tryFrom((string) $state)?->hint() ?? '')
+                ->required()
+                ->live(),
+
+            TextInput::make('name')
+                ->label('Название дивизиона')
+                ->placeholder('Например: Дивизион А')
+                ->helperText('Необязательно — станет заголовком группы яхт на странице регаты.')
+                ->maxLength(255),
+
+            TextInput::make('yachts_count')
+                ->label('Количество яхт в дивизионе')
+                ->helperText('Столько карточек яхт появится в разделе «Услуги: Флот регат» — там укажете шкиперов и свободные места.')
+                ->numeric()
+                ->minValue(1)
+                ->maxValue(200)
+                ->required($isFleet)
+                ->visible($isFleet),
+
+            TextInput::make('model')
+                ->label('Модель лодки')
+                ->placeholder('Bavaria 46')
+                ->required($isFleet)
+                ->visible($isFleet)
+                ->maxLength(255),
+
+            TextInput::make('cabins')
+                ->label('Кают')
+                ->numeric()
+                ->minValue(1)
+                ->maxValue(20)
+                ->required($isFleet)
+                ->visible($isFleet),
+
+            TextInput::make('year')
+                ->label('Год выпуска')
+                ->numeric()
+                ->minValue(1900)
+                ->maxValue((int) now()->addYear()->format('Y'))
+                ->visible($isFleet),
+
+            Select::make('downwind_sail')
+                ->label('Спинакер / геннакер')
+                ->options(DownwindSail::options())
+                ->visible($isFleet),
+
+            TextInput::make('price')
+                ->label('Стоимость')
+                ->numeric()
+                ->minValue(0)
+                ->suffix('₽')
+                ->required($isFleet)
+                ->visible($isFleet),
+
+            Select::make('price_unit')
+                ->label('За что цена')
+                ->options(CharterPriceUnit::options())
+                ->default(CharterPriceUnit::Regatta->value)
+                ->visible($isFleet),
+
+            TextInput::make('charter_fee')
+                ->label('Сборы чартерной компании')
+                ->numeric()
+                ->minValue(0)
+                ->suffix('₽')
+                ->visible($isFleet),
+
+            TextInput::make('deposit')
+                ->label('Депозит')
+                ->numeric()
+                ->minValue(0)
+                ->suffix('₽')
+                ->visible($isFleet),
+
+            TextInput::make('price_note')
+                ->label('Примечание к стоимости')
+                ->placeholder('Например: судовая касса оплачивается на месте')
+                ->maxLength(255)
+                ->visible($isFleet)
+                ->columnSpan(2),
+
+            Textarea::make('description')
+                ->label('Описание лодки')
+                ->rows(3)
+                ->maxLength(2000)
+                ->visible($isFleet)
+                ->columnSpanFull(),
+
+            SpatieMediaLibraryFileUpload::make('gallery')
+                ->label('Фотографии лодки')
+                ->helperText('Общая галерея для всех лодок дивизиона.')
+                ->collection('gallery')
+                ->multiple()
+                ->reorderable()
+                ->image()
+                ->acceptedFileTypes(self::IMAGE_MIMES)
+                ->imageEditor()
+                ->disk('public')
+                ->visibility('public')
+                ->maxSize(10240)
+                ->panelLayout('grid')
+                ->visible($isFleet)
+                ->columnSpanFull(),
+        ];
+    }
+
+    /** @param  array<string, mixed>  $state */
+    private static function divisionItemLabel(array $state): ?string
+    {
+        $name = trim((string) ($state['name'] ?? ''));
+        $model = trim((string) ($state['model'] ?? ''));
+        $count = (int) ($state['yachts_count'] ?? 0);
+
+        $isFleet = ($state['type'] ?? null) === FleetDivisionType::Fleet->value;
+
+        $spec = $isFleet
+            ? trim($model.($count > 0 ? ' × '.$count : ''))
+            : 'список яхт';
+
+        return match (true) {
+            $name !== '' && $spec !== '' => $name.' — '.$spec,
+            $name !== '' => $name,
+            $spec !== '' => $spec,
+            default => null,
+        };
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -416,7 +524,7 @@ class ForeignRegattaResource extends Resource
                     ->placeholder('—'),
                 TextColumn::make('charter_yachts_count')
                     ->counts('charterYachts')
-                    ->label('Яхт в чартере'),
+                    ->label('Яхт во флоте'),
                 TextColumn::make('price_per_seat')
                     ->label('Цена места')
                     ->state(fn (ForeignRegatta $record): ?string => $record->seatPriceLabel())
@@ -447,6 +555,14 @@ class ForeignRegattaResource extends Resource
             ->emptyStateDescription('Добавьте регату — она появится на странице «Регаты за рубежом» и в календаре сезона.')
             ->recordActions([
                 EditAction::make(),
+                // Лодки правятся отдельным ресурсом: у каждой своя галерея,
+                // шкипер и места, и их бывает несколько десятков.
+                Action::make('fleet')
+                    ->label('Флот')
+                    ->icon(Heroicon::OutlinedRectangleStack)
+                    ->url(fn (ForeignRegatta $record): string => ForeignRegattaYachtResource::getUrl(parameters: [
+                        'tableFilters' => ['foreign_regatta_id' => ['value' => $record->getKey()]],
+                    ])),
                 DeleteAction::make()
                     ->requiresConfirmation()
                     ->successNotification(

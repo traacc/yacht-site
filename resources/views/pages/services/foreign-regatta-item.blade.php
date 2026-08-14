@@ -9,8 +9,12 @@
         $regatta->seatPriceLabel(),
         $regatta->cabinPriceLabel(),
     ]);
-    $fleet = $regatta->charterYachts;
-    $freeYachts = $regatta->availableCharterYachts()->count();
+    $fleetGroups = $regatta->fleetGroups();
+    $freeYachts = $regatta->yachtsForWholeCharter()->count();
+    $freeSeats = $regatta->freeCrewSeats();
+    // Одна форма заявки на весь флот: кнопки у лодок открывают её событием и
+    // подставляют выбранную лодку (@see components/service-request-button).
+    $fleetRequestEvent = $regatta->acceptsServiceRequests() ? 'fleet-request' : null;
 @endphp
 
 <x-public-layout
@@ -85,59 +89,58 @@
                     </div>
                 @endif
 
-                {{-- ===== Яхты под аренду =====
-                     По ТЗ список раскрывается по клику: заказчику он нужен только
-                     при варианте участия «яхта целиком». --}}
+                {{-- ===== Флот регаты =====
+                     Лодки разложены по дивизионам. У лодки со шкипером
+                     продаются места в экипаж, у лодки без шкипера — она сама. --}}
                 @if ($regatta->showsCharterFleet())
-                    <div class="mb-10" x-data="{ open: false }">
-                        <button type="button" @click="open = !open"
-                                class="flex items-center justify-between w-full border border-[#C6C6C6] p-6 text-left hover:border-[#2D92CE] transition-colors">
-                            <span>
-                                <span class="a-font text-xl md:text-2xl text-[#2E325C] block">Яхты под аренду</span>
-                                <span class="text-brand-gray-light text-sm">
-                                    {{ \App\Support\Plural::with($fleet->count(), 'яхта', 'яхты', 'яхт') }} в чартере@if ($freeYachts > 0), свободных — {{ $freeYachts }}@endif
-                                </span>
-                            </span>
-                            <svg :class="open ? 'rotate-180' : ''" class="w-6 h-6 shrink-0 text-[#2D92CE] transition-transform"
-                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
+                    <div class="mb-10">
+                        <h2 class="section-title a-font text-2xl md:text-3xl mb-2">Яхты регаты</h2>
 
-                        <div x-show="open" x-cloak x-transition class="border border-t-0 border-[#C6C6C6] overflow-x-auto">
-                            <table class="w-full text-sm">
-                                <thead>
-                                    <tr class="bg-[#F8F8F8] text-[#2E325C] text-left">
-                                        <th class="p-3 font-semibold">Модель</th>
-                                        <th class="p-3 font-semibold">Название</th>
-                                        <th class="p-3 font-semibold">Год</th>
-                                        <th class="p-3 font-semibold">Аренда</th>
-                                        <th class="p-3 font-semibold">Занятость</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($fleet as $yacht)
-                                        <tr class="border-t border-[#EAEAEA]">
-                                            <td class="p-3 text-[#2E325C] font-medium">{{ $yacht->model }}</td>
-                                            <td class="p-3 text-brand-gray-light">{{ $yacht->name ?: '—' }}</td>
-                                            <td class="p-3 text-brand-gray-light">{{ $yacht->year ?: '—' }}</td>
-                                            <td class="p-3 text-brand-gray-light">
-                                                {{ $yacht->priceLabel() ?? 'по запросу' }}
-                                                @if ($yacht->price_note)
-                                                    <span class="block text-xs">{{ $yacht->price_note }}</span>
-                                                @endif
-                                            </td>
-                                            <td class="p-3">
-                                                <span class="inline-block text-xs px-2 py-1
-                                                    {{ $yacht->isAvailable() ? 'bg-[#DCEBE3] text-[#2E325C]' : 'bg-gray-200 text-brand-gray-light' }}">
-                                                    {{ $yacht->status->label() }}
-                                                </span>
-                                            </td>
-                                        </tr>
+                        <p class="text-brand-gray-light mb-6">
+                            @if ($freeYachts > 0)
+                                Свободно {{ \App\Support\Plural::with($freeYachts, 'яхта', 'яхты', 'яхт') }} под чартер целиком.
+                            @endif
+                            @if ($freeSeats > 0)
+                                В экипажи набирается {{ \App\Support\Plural::with($freeSeats, 'человек', 'человека', 'человек') }}.
+                            @endif
+                            @if ($freeYachts === 0 && $freeSeats === 0)
+                                Весь флот разобран — напишите нам, если хотите в лист ожидания.
+                            @endif
+                        </p>
+
+                        @foreach ($fleetGroups as $group)
+                            <div class="mb-8">
+                                @if ($group['division'])
+                                    <h3 class="a-font text-xl md:text-2xl text-[#2E325C] mb-1">{{ $group['division']->title() }}</h3>
+                                    @if ($group['division']->summaryLabel())
+                                        <div class="text-brand-gray-light text-sm mb-4">{{ $group['division']->summaryLabel() }}</div>
+                                    @else
+                                        <div class="mb-4"></div>
+                                    @endif
+                                @endif
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    @foreach ($group['yachts'] as $yacht)
+                                        <x-foreign-yacht-card :yacht="$yacht" :request-event="$fleetRequestEvent" />
                                     @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+                                </div>
+                            </div>
+                        @endforeach
+
+                        {{-- Одна форма на весь флот: своей кнопки не рисует,
+                             открывается событием от карточки лодки. --}}
+                        @if ($fleetRequestEvent)
+                            <x-service-request-button
+                                :type="$type"
+                                :subject="$regatta"
+                                lock-dates
+                                open-event="fleet-request"
+                                :preset="[
+                                    'date_start' => $regatta->date_start?->toDateString(),
+                                    'date_end' => ($regatta->date_end ?? $regatta->date_start)?->toDateString(),
+                                ]"
+                                heading="Заявка на участие" />
+                        @endif
                     </div>
                 @endif
 
