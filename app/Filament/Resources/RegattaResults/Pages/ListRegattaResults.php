@@ -15,20 +15,36 @@ use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\ManageRecords;
+use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 
-class ManageRegattaResults extends ManageRecords
+class ListRegattaResults extends ListRecords
 {
     protected static string $resource = RegattaResultResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->createAnother(false)->modalHeading('Новые результаты регаты'),
+            CreateAction::make()
+                ->createAnother(false)
+                ->modalHeading('Новые результаты регаты')
+                // Участников на форме создания заполнить нечем (таблица ввода
+                // строится по сохранённой записи), поэтому список формируем по
+                // активным заявкам сразу после создания и открываем таблицу.
+                ->after(function (RegattaResult $record): void {
+                    $created = RegattaResultResource::createItemsFromEntries($record);
+
+                    Notification::make()
+                        ->title($created > 0
+                            ? 'Добавлено участников по заявкам: '.$created
+                            : 'Активных заявок на эту регату нет')
+                        ->success()
+                        ->send();
+                })
+                ->successRedirectUrl(fn (RegattaResult $record): string => RegattaResultResource::getUrl('edit', ['record' => $record])),
 
             Action::make('import_csv_new')
                 ->label('Импорт из CSV')

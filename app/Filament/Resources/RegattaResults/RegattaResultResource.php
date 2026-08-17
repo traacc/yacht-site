@@ -6,7 +6,8 @@ use App\Actions\Document\SyncDocumentFilesAction;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Concerns\ScopesToOwnedRegattas;
 use App\Filament\Resources\RegattaEntries\RegattaEntryResource;
-use App\Filament\Resources\RegattaResults\Pages\ManageRegattaResults;
+use App\Filament\Resources\RegattaResults\Pages\EditRegattaResult;
+use App\Filament\Resources\RegattaResults\Pages\ListRegattaResults;
 use App\Models\RaceResult;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
@@ -15,7 +16,6 @@ use App\Models\RegattaResult;
 use App\Models\RegattaResultItem;
 use App\Models\Season;
 use App\Models\Team;
-use App\Models\Yacht;
 use App\Services\RatingCalculator;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -112,8 +112,11 @@ class RegattaResultResource extends Resource
                         }
                         $set('regattaRaces', $races);
 
-                        // Заполняем список участников по активным заявкам на регату.
-                        $set('items', self::itemsFromEntries($state));
+                        // Участников здесь НЕ трогаем: на создании таблицы ещё нет
+                        // (строки создаёт createItemsFromEntries после сохранения),
+                        // а на странице редактирования сброс списка стёр бы уже
+                        // введённые результаты гонок. Добор участников — кнопкой
+                        // «Заполнить по заявкам» над таблицей.
                     })
                     ->columnSpanFull(),
 
@@ -148,82 +151,36 @@ class RegattaResultResource extends Resource
                 self::racesManagerSchema()
                     ->columnSpanFull(),
 
-                Repeater::make('items')
-                    ->label('Результаты участников')
-                    ->relationship('items')
-                    ->hintAction(self::fillItemsFromEntriesAction())
+                // Таблица ввода результатов. Колонки гонок строятся по списку
+                // RegattaEvents выбранной регаты, поэтому нужна сохранённая запись:
+                // на создании ни regatta_id, ни заявок ещё нет. Замыкание в schema()
+                // резолвится лениво — к этому моменту запись страницы уже известна.
+                Group::make()
+                    ->columnSpanFull()
+                    ->schema(fn (?RegattaResult $record): array => $record === null
+                        ? [
+                            Placeholder::make('items_hint')
+                                ->hiddenLabel()
+                                ->content('Участники будут добавлены по активным заявкам на регату сразу после сохранения — откроется таблица ввода результатов гонок.'),
+                        ]
+                        : [
+                            // Защита от случайной правки: при включении все поля таблицы,
+                            // где уже есть значение, становятся недоступны для ввода.
+                            // Пустые поля остаются доступными для новых результатов.
+                            Toggle::make('lock_filled')
+                                ->label('Заблокировать заполненные поля')
+                                ->helperText('Уже введённые значения нельзя изменить; пустые поля остаются доступными.')
+                                ->default(false)
+                                ->live()
+                                ->dehydrated(false),
 
-                    ->extraAttributes(['class' => 'regatta-result-list'])
+                            // Фиксируем соответствие колонок гонок их id (для корректного сохранения).
+                            Hidden::make('race_event_ids')
+                                ->dehydrated(true)
+                                ->formatStateUsing(fn (): string => self::raceEventsFor($record)->pluck('id')->implode(',')),
 
-                    ->schema([
-                        Select::make('yacht_id')
-                            ->label('Яхта')
-                            // Только яхты из активных заявок на выбранную регату.
-                            ->options(fn (Get $get): array => self::entryYachtOptions($get('../../regatta_id')))
-                            ->searchable()
-                            ->preload()
-                            ->live()
-                            ->afterStateUpdated(function ($state, Get $get, Set $set): void {
-                                // Команда подставляется автоматически по заявке выбранной яхты.
-                                $regattaId = $get('../../regatta_id');
-
-                                if (blank($state) || blank($regattaId)) {
-                                    return;
-                                }
-
-                                $teamId = RegattaEntry::query()
-                                    ->where('regatta_id', $regattaId)
-                                    ->where('yacht_id', $state)
-                                    ->whereNotIn('status', ['rejected', 'withdrawn'])
-                                    ->value('team_id');
-
-                                if (filled($teamId)) {
-                                    $set('team_id', $teamId);
-                                }
-                            })
-                            ->disabled()
-                            ->dehydrated()
-                            ->nullable()
-                            ->columnSpan(2),
-
-                        Select::make('team_id')
-                            ->label('Команда')
-                            ->relationship('team', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                            ->disabled()
-                            ->dehydrated()
-                            ->columnSpan(2),
-
-                        /*
-                        TextInput::make('not_participate')
-                            ->label('Не участвовали'),
-                        */
-
-                        // TextInput::make('total_points')
-                        //     ->label('Очки')
-                        //     //->numeric()
-                        //     ->required()
-                        //     ->default(0.0),
-
-                        // TextInput::make('final_position')
-                        //     ->label('Место')
-                        //     ->rule(static function () {
-                        //         return static function (string $attribute, $value, \Closure $fail): void {
-                        //             $value = trim((string) $value);
-
-                        //             if ($value === '0' || str_contains($value, '-')) {
-                        //                 $fail('Недопустимое значение');
-                        //             }
-                        //         };
-                        //     })
-                        //     ->nullable(),
-                    ])
-                    ->defaultItems(0)
-                    ->columns(6)
-                    ->addActionLabel('Добавить участника')
-                    ->columnSpanFull(),
+                            self::itemsTableSchema($record),
+                        ]),
             ])->extraAttributes([
                 // Этот атрибут заставит блок становиться полупрозрачным во время сетевых запросов формы
                 'wire:loading.class' => 'opacity-50 pointer-events-none transition-opacity duration-200',
@@ -231,23 +188,24 @@ class RegattaResultResource extends Resource
     }
 
     /**
-     * Кнопка «Заполнить по заявкам»: полностью пересоздаёт список участников
-     * по заявкам (RegattaEntry) на выбранную регату. Текущие строки сбрасываются.
-     * Берём активные заявки (не отклонённые и не отозванные).
+     * Кнопка «Заполнить по заявкам»: дополняет список участников заявками
+     * (RegattaEntry) на регату, которых в таблице ещё нет. Берём активные
+     * заявки (не отклонённые и не отозванные).
+     *
+     * Именно дополняет, а не пересоздаёт: строки таблицы держат введённые места
+     * и очки гонок, и полная замена состояния отправила бы их в saveRaceResults
+     * пустыми — то есть удалила бы уже сохранённые результаты гонок.
      */
-    protected static function fillItemsFromEntriesAction(): Action
+    protected static function fillItemsFromEntriesAction(?string $regattaId = null): Action
     {
         return Action::make('fillFromEntries')
             ->label('Заполнить по заявкам')
             ->icon(Heroicon::UserGroup)
             ->color('gray')
-            ->requiresConfirmation()
-            ->modalHeading('Заполнить по заявкам')
-            ->modalDescription('Текущий список участников будет очищен и заполнен заново по заявкам на регату.')
-            ->action(function (Get $get, Set $set): void {
-                $regattaId = $get('regatta_id');
+            ->action(function (Get $get, Set $set) use ($regattaId): void {
+                $resolvedRegattaId = $regattaId ?? $get('regatta_id');
 
-                if (blank($regattaId)) {
+                if (blank($resolvedRegattaId)) {
                     Notification::make()
                         ->title('Сначала выберите регату')
                         ->warning()
@@ -256,15 +214,30 @@ class RegattaResultResource extends Resource
                     return;
                 }
 
-                // Сбрасываем текущие строки и заполняем заново по заявкам.
-                $items = self::itemsFromEntries($regattaId);
+                $items = $get('items') ?? [];
+
+                // Уже присутствующие участники — по паре «команда + яхта».
+                $known = [];
+                foreach ($items as $row) {
+                    $known[($row['team_id'] ?? '').'|'.($row['yacht_id'] ?? '')] = true;
+                }
+
+                $added = 0;
+                foreach (self::itemsFromEntries($resolvedRegattaId) as $key => $row) {
+                    if (isset($known[($row['team_id'] ?? '').'|'.($row['yacht_id'] ?? '')])) {
+                        continue;
+                    }
+
+                    $items[$key] = $row;
+                    $added++;
+                }
 
                 $set('items', $items);
 
                 Notification::make()
-                    ->title($items !== []
-                        ? 'Добавлено участников: '.count($items)
-                        : 'Активных заявок на эту регату нет')
+                    ->title($added > 0
+                        ? 'Добавлено участников: '.$added
+                        : 'Новых заявок нет — в таблице уже все участники')
                     ->success()
                     ->send();
             });
@@ -361,6 +334,10 @@ class RegattaResultResource extends Resource
                 'yacht_id' => $entry->yacht_id,
                 'total_points' => 0.0,
                 'final_position' => null,
+                // Флаги ручного ввода — скрытые поля таблицы: без них новые строки
+                // ушли бы в БД с NULL, и авторасчёт итогов счёл бы их ручными.
+                'total_points_overridden' => false,
+                'final_position_overridden' => false,
             ];
         }
 
@@ -368,35 +345,31 @@ class RegattaResultResource extends Resource
     }
 
     /**
-     * Яхты из активных заявок (RegattaEntry) на регату — для выбора в результатах.
+     * Создаёт строки участников по активным заявкам на регату. Нужно сразу после
+     * создания результата: таблица ввода доступна только для сохранённой записи,
+     * поэтому на форме создания участников заполнить нечем.
      *
-     * @return array<string, string> [yacht_id => name]
+     * @return int Сколько строк создано
      */
-    protected static function entryYachtOptions(?string $regattaId): array
+    public static function createItemsFromEntries(RegattaResult $record): int
     {
-        if (blank($regattaId)) {
-            return [];
+        $created = 0;
+
+        foreach (self::itemsFromEntries($record->regatta_id) as $attributes) {
+            $exists = $record->items()
+                ->where('team_id', $attributes['team_id'])
+                ->when(filled($attributes['yacht_id']), fn (Builder $query) => $query->where('yacht_id', $attributes['yacht_id']))
+                ->exists();
+
+            if ($exists) {
+                continue;
+            }
+
+            $record->items()->create($attributes);
+            $created++;
         }
 
-        $yachtIds = RegattaEntry::query()
-            ->where('regatta_id', $regattaId)
-            ->whereNotIn('status', ['rejected', 'withdrawn'])
-            ->whereNotNull('yacht_id')
-            ->pluck('yacht_id')
-            ->unique();
-
-        if ($yachtIds->isEmpty()) {
-            return [];
-        }
-
-        return Yacht::query()
-            ->whereIn('id', $yachtIds)
-            ->orderBy('name')
-            ->get()
-            ->mapWithKeys(fn (Yacht $yacht): array => [
-                $yacht->id => trim(($yacht->name ?? '').($yacht->vfps_number ? " ({$yacht->vfps_number})" : '')),
-            ])
-            ->all();
+        return $created;
     }
 
     /**
@@ -726,6 +699,7 @@ class RegattaResultResource extends Resource
 
         return Repeater::make('items')
             ->label('Результаты участников')
+            ->hintAction(self::fillItemsFromEntriesAction($regattaId))
             // Таблицу участников сортируем сначала по очкам по возрастанию, затем
             // по итоговому месту (важно для ручных мест: при равных очках строки
             // упорядочиваются по final_position). Обе колонки строковые, поэтому
@@ -777,10 +751,30 @@ class RegattaResultResource extends Resource
     }
 
     /**
+     * Общий пост-сейв конвейер результата регаты: сохраняет результаты гонок из
+     * таблицы, пересчитывает очки, итоги и места участников и рейтинги сезона.
+     *
+     * Состав участников и число лодок могли измениться в этом же сохранении,
+     * поэтому очки за буквенные статусы (DNF, DSQ… = «число лодок + 1») всегда
+     * пересчитываются заново — saveRaceResults пишет их по прежнему составу.
+     *
+     * @param  array<string, mixed>  $data  Дегидрированные данные формы; без ключа
+     *                                      race_event_ids (создание записи) сохранение
+     *                                      результатов гонок пропускается.
+     */
+    public static function afterSave(RegattaResult $record, array $data = []): void
+    {
+        self::saveRaceResults($record, $data);
+        self::recomputeRacePoints($record);
+        self::recomputeItemTotals($record);
+        self::recalculateRatings($record);
+    }
+
+    /**
      * Сохраняет виртуальные поля результатов гонок из таблицы в race_results.
      * Команды без заявки (RegattaEntry) пропускаются — выводится уведомление.
      *
-     * @param  array<string, mixed>  $data  Данные формы edit_table
+     * @param  array<string, mixed>  $data  Данные формы страницы редактирования
      */
     public static function saveRaceResults(RegattaResult $record, array $data): void
     {
@@ -1292,50 +1286,10 @@ class RegattaResultResource extends Resource
                     }),
             ])
             ->recordActions([
+                // Таблица ввода результатов шире модалки, поэтому редактирование —
+                // на отдельной странице (EditRegattaResult).
                 EditAction::make()
-                    ->modalHeading('Редактировать результат регаты')
-                    // После удаления/добавления участника в форме число лодок и
-                    // состав меняются — пересчитываем очки гонок (DNF/DSQ… =
-                    // число лодок + 1), итоги и места участников и рейтинги сезона.
-                    ->after(function (RegattaResult $record): void {
-                        self::recomputeRacePoints($record);
-                        self::recomputeItemTotals($record);
-                        self::recalculateRatings($record);
-                    }),
-                EditAction::make('edit_table')
-                    ->label('Редактировать таблицей')
-                    ->icon(Heroicon::TableCells)
-                    ->modalHeading('Редактировать результат регаты (таблица)')
-                    ->modalWidth('screen')
-                    ->schema(fn (RegattaResult $record): array => [
-                        Actions::make([
-                            self::createEntryAction($record->regatta_id),
-                        ]),
-                        // self::racesManagerSchema(),
-                        // Защита от случайной правки: при включении все поля таблицы,
-                        // где уже есть значение, становятся недоступны для ввода.
-                        // Пустые поля остаются доступными для новых результатов.
-                        Toggle::make('lock_filled')
-                            ->label('Заблокировать заполненные поля')
-                            ->helperText('Уже введённые значения нельзя изменить; пустые поля остаются доступными.')
-                            ->default(false)
-                            ->live()
-                            ->dehydrated(false),
-                        // Фиксируем соответствие колонок гонок их id (для корректного сохранения).
-                        Hidden::make('race_event_ids')
-                            ->dehydrated(true)
-                            ->formatStateUsing(fn (): string => self::raceEventsFor($record)->pluck('id')->implode(',')),
-                        self::itemsTableSchema($record),
-                    ])
-                    ->after(function (RegattaResult $record, array $data): void {
-                        self::saveRaceResults($record, $data);
-                        // После удаления участника число лодок меняется — очки за
-                        // буквенные статусы (DNF, DSQ…) = «число лодок + 1» надо
-                        // пересчитать (saveRaceResults сохраняет старые очки как есть).
-                        self::recomputeRacePoints($record);
-                        self::recomputeItemTotals($record);
-                        self::recalculateRatings($record);
-                    }),
+                    ->url(fn (RegattaResult $record): string => self::getUrl('edit', ['record' => $record])),
                 Action::make('publish')
                     ->label('Опубликовать')
                     ->icon(Heroicon::CheckCircle)
@@ -1411,7 +1365,8 @@ class RegattaResultResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ManageRegattaResults::route('/'),
+            'index' => ListRegattaResults::route('/'),
+            'edit' => EditRegattaResult::route('/{record}/edit'),
         ];
     }
 }
