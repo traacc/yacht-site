@@ -18,6 +18,7 @@ use App\Models\RegattaEntry;
 use App\Models\Scopes\OwnedScope;
 use App\Models\Team;
 use App\Models\Yacht;
+use App\Services\MembershipFees;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -102,12 +103,33 @@ class PaymentRegistryResource extends Resource
                     ->minValue(0)
                     ->step(0.01)
                     ->suffix('₽')
-                    ->required(),
+                    ->required()
+                    // Подсказка со ставкой членского взноса: сумму бухгалтер вносит
+                    // руками (нал, доплаты, прошлые годы), поэтому не подставляем.
+                    ->helperText(static function (Get $get): ?string {
+                        $purpose = $get('purpose');
+                        $purpose = $purpose instanceof PaymentPurpose
+                            ? $purpose
+                            : PaymentPurpose::tryFrom((string) $purpose);
+
+                        if ($purpose !== PaymentPurpose::MembershipFee) {
+                            return null;
+                        }
+
+                        $fees = app(MembershipFees::class);
+                        $rate = $fees->current();
+
+                        return $rate === null
+                            ? 'Размер членского взноса не задан — раздел «Сайт → Правила вступления».'
+                            : 'Членский взнос на '.$rate['year'].' год — '.$rate['formatted'].' ('.$fees->unit().').';
+                    }),
                 Select::make('purpose')
                     ->label('Назначение платежа')
                     ->options(PaymentPurpose::class)
                     ->placeholder('Не указано')
-                    ->native(false),
+                    ->native(false)
+                    // Нужен для подсказки со ставкой взноса в поле «Сумма».
+                    ->live(),
                 TextInput::make('payer_name')
                     ->label('Плательщик (ФИО)')
                     ->maxLength(255)

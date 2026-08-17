@@ -48,6 +48,51 @@ bgImage="{{ asset('images/bg/rules.webp') }}"
         </div>
     </div>
   </section>
+
+  {{-- ===== Членский взнос (размер задаётся в админке: Сайт → Правила вступления) ===== --}}
+  @if (($membershipFee ?? null) !== null)
+  <section class="container mx-auto md:mb-24 mb-8 px-4 sm:px-6 lg:px-8">
+    <h2 class="section-title a-font text-[#2E325C] text-5xl mb-8">Членский взнос</h2>
+    <div class="flex flex-col md:flex-row gap-6 md:gap-10 items-start">
+        @if ($membershipFee['current'] || ! empty($membershipFee['upcoming']))
+        <div class="bg-[#F8F8F8] p-6 md:p-8 w-full md:max-w-[360px] md:shrink-0">
+            @if ($membershipFee['current'])
+            <div class="text-brand-gray-light font-medium text-sm md:text-base mb-2">
+                Размер взноса на {{ $membershipFee['current']['year'] }} год
+            </div>
+            <div class="a-font text-[#2E325C] text-4xl md:text-5xl mb-2">
+                {{ $membershipFee['current']['formatted'] }}
+            </div>
+            <div class="text-brand-gray font-medium md:text-lg">{{ $membershipFee['unit'] }}</div>
+
+            @if ($membershipFee['current']['note'])
+            <p class="text-brand-gray-light font-medium text-sm md:text-base mt-4">
+                {{ $membershipFee['current']['note'] }}
+            </p>
+            @endif
+            @endif
+
+            {{-- Ставки, заведённые на будущие годы: при отсутствии действующей остаются
+                 единственным содержимым карточки, поэтому вынесены из блока выше. --}}
+            @if (! empty($membershipFee['upcoming']))
+            <ul class="space-y-2 @if ($membershipFee['current']) mt-6 pt-6 border-t border-[#E8E8E8] @endif">
+                @foreach ($membershipFee['upcoming'] as $rate)
+                <li class="text-brand-gray font-medium text-sm md:text-base">
+                    С {{ $rate['year'] }} года — <span class="text-[#2E325C] font-semibold">{{ $rate['formatted'] }}</span>@if ($rate['note']) <span class="text-brand-gray-light">({{ $rate['note'] }})</span>@endif
+                </li>
+                @endforeach
+            </ul>
+            @endif
+        </div>
+        @endif
+
+        <div class="prose max-w-none text-brand-gray font-medium text-base md:text-lg">
+            <x-rich-content :content="$membershipFee['intro']" />
+        </div>
+    </div>
+  </section>
+  @endif
+
   <section class="hidden container mx-auto md:mb-24 mb-8">
   
   <h2 class="section-title a-font text-[#2E325C] text-5xl mb-8">Порядок вступления</h2>

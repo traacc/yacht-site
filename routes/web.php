@@ -54,6 +54,7 @@ use App\Services\AdvertBoard;
 use App\Services\Chat\ChatAttachments;
 use App\Services\FleetAvailability;
 use App\Services\HelpDirectory;
+use App\Services\MembershipFees;
 use App\Services\Payments\PaymentManager;
 use App\Services\Payments\Providers\TestPaymentProvider;
 use App\Services\RatingCalculator;
@@ -189,7 +190,12 @@ Route::get('/association/trustees', function () {
     return view('pages.association-info.trustees', compact('members'));
 })->name('trustees');
 Route::view('/association/policy', 'pages/association-info/policy')->name('policy');
-Route::view('/association/rules', 'pages/association-info/rules')->name('rules');
+Route::get('/association/rules', function () {
+    return view('pages.association-info.rules', [
+        // Размер членского взноса задаётся в админке в этом же разделе (ТЗ 3-го этапа).
+        'membershipFee' => app(MembershipFees::class)->publication(),
+    ]);
+})->name('rules');
 Route::get('/association/regulations', function () {
     $settings = app(SettingsService::class);
 
