@@ -13,6 +13,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
@@ -21,6 +22,8 @@ use Illuminate\Validation\ValidationException;
 
 class EditProfile extends BaseEditProfile
 {
+    use HasUnsavedDataChangesAlert;
+
     protected static string|BackedEnum|null $navigationIcon = 'profile';
 
     protected static ?string $navigationLabel = 'Профиль';          // название вкладки
@@ -50,6 +53,10 @@ class EditProfile extends BaseEditProfile
 
             return;
         }
+
+        // Профиль сохранён — текущее состояние формы становится эталонным
+        // для предупреждения о несохранённых изменениях.
+        $this->rememberData();
 
         // Письмо отправляем только после коммита: parent::save() оборачивает
         // сохранение в транзакцию, а отправленное письмо не откатится.

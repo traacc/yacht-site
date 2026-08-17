@@ -19,6 +19,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ViewField;
 use Filament\Notifications\Notification;
+use Filament\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
@@ -33,6 +34,7 @@ use UnitEnum;
 
 class HomePageSettings extends Page
 {
+    use HasUnsavedDataChangesAlert;
     use RestrictsAccessByRole;
 
     protected string $view = 'filament-panels::pages.page';
@@ -487,5 +489,9 @@ class HomePageSettings extends Page
             ->title('Настройки сохранены')
             ->success()
             ->send();
+
+        // Состояние формы теперь совпадает с сохранённым — сбрасываем базу сравнения,
+        // иначе уход со страницы после сохранения будет считаться потерей изменений.
+        $this->rememberData();
     }
 }

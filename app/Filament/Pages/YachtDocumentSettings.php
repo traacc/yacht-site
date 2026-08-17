@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Filament\Pages;
 
 use App\Actions\Yacht\UpdateYachtRequiredDocumentsAction;
+use App\Models\User;
+use App\Models\YachtDocumentType;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
+use Filament\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
@@ -29,6 +32,8 @@ use UnitEnum;
  */
 class YachtDocumentSettings extends Page
 {
+    use HasUnsavedDataChangesAlert;
+
     protected string $view = 'filament-panels::pages.page';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCheck;
@@ -60,7 +65,7 @@ class YachtDocumentSettings extends Page
 
     public static function canAccess(): bool
     {
-        /** @var \App\Models\User|null $user */
+        /** @var User|null $user */
         $user = auth()->user();
 
         return $user?->isAdmin() ?? false;
@@ -85,7 +90,7 @@ class YachtDocumentSettings extends Page
 
     public function form(Schema $schema): Schema
     {
-        $types = \App\Models\YachtDocumentType::cachedConfigurable();
+        $types = YachtDocumentType::cachedConfigurable();
 
         if ($types->isEmpty()) {
             return $schema
@@ -98,7 +103,7 @@ class YachtDocumentSettings extends Page
                                 ->hiddenLabel()
                                 ->content(new HtmlString(
                                     'Добавьте типы документов через раздел '
-                                    . '«<strong>Яхты → Типы документов</strong>» в боковом меню.'
+                                    .'«<strong>Яхты → Типы документов</strong>» в боковом меню.'
                                 )),
                         ]),
                 ]);
@@ -110,7 +115,7 @@ class YachtDocumentSettings extends Page
                 Section::make('Обязательные документы')
                     ->schema(
                         $types->map(
-                            fn (\App\Models\YachtDocumentType $type) => Toggle::make($type->key)
+                            fn (YachtDocumentType $type) => Toggle::make($type->key)
                                 ->label($type->label)
                                 ->helperText($type->description)
                                 ->default(false),
@@ -148,5 +153,9 @@ class YachtDocumentSettings extends Page
             ->body('Изменения применены. Теперь пользователи будут видеть обновлённый список обязательных документов.')
             ->success()
             ->send();
+
+        // Состояние формы теперь совпадает с сохранённым — сбрасываем базу сравнения,
+        // иначе уход со страницы после сохранения будет считаться потерей изменений.
+        $this->rememberData();
     }
 }

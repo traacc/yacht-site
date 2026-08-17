@@ -37,6 +37,10 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->profile(EditProfile::class, isSimple: false)
             ->login()
+            // Предупреждение при уходе со страницы с несохранёнными изменениями:
+            // страницы создания/редактирования ресурсов, открытые модалки действий,
+            // а также кастомные Page с трейтом HasUnsavedDataChangesAlert.
+            ->unsavedChangesAlerts()
             // Тот же колокольчик, что и в ЛК: уведомления администраторам.
             ->databaseNotifications()
             ->databaseNotificationsPolling('60s')

@@ -17,6 +17,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
@@ -35,6 +36,7 @@ use UnitEnum;
  */
 class BroadcastNotification extends Page
 {
+    use HasUnsavedDataChangesAlert;
     use RestrictsAccessByRole;
 
     /** Размер порции получателей на одну job. */
@@ -178,5 +180,9 @@ class BroadcastNotification extends Page
             ->body("Порций к отправке: {$chunks}. Доставка идёт в фоне.")
             ->success()
             ->send();
+
+        // Состояние формы теперь совпадает с сохранённым — сбрасываем базу сравнения,
+        // иначе уход со страницы после сохранения будет считаться потерей изменений.
+        $this->rememberData();
     }
 }

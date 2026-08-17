@@ -9,6 +9,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
@@ -27,6 +28,8 @@ use UnitEnum;
  */
 class TestEmailSender extends Page
 {
+    use HasUnsavedDataChangesAlert;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;
 
     protected static ?string $slug = 'test-email-sender';
@@ -54,7 +57,7 @@ class TestEmailSender extends Page
     {
         $this->form->fill([
             'to' => auth()->user()?->email,
-            'subject' => 'Тестовое письмо — ' . config('app.name'),
+            'subject' => 'Тестовое письмо — '.config('app.name'),
             'body' => 'Это тестовое сообщение, отправленное со страницы проверки почты админ-панели.',
         ]);
     }
@@ -78,7 +81,7 @@ class TestEmailSender extends Page
             ->statePath('data')
             ->components([
                 Section::make('Проверка отправки почты')
-                    ->description('Отправляет письмо через текущий почтовый драйвер (' . config('mail.default') . '), чтобы проверить настройки SMTP.')
+                    ->description('Отправляет письмо через текущий почтовый драйвер ('.config('mail.default').'), чтобы проверить настройки SMTP.')
                     ->schema([
                         TextInput::make('to')
                             ->label('Получатель')
@@ -134,8 +137,12 @@ class TestEmailSender extends Page
 
         Notification::make()
             ->title('Письмо отправлено')
-            ->body("Получатель: {$data['to']}. Драйвер: " . config('mail.default'))
+            ->body("Получатель: {$data['to']}. Драйвер: ".config('mail.default'))
             ->success()
             ->send();
+
+        // Состояние формы теперь совпадает с сохранённым — сбрасываем базу сравнения,
+        // иначе уход со страницы после сохранения будет считаться потерей изменений.
+        $this->rememberData();
     }
 }

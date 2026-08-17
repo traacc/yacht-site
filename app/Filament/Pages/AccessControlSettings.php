@@ -10,6 +10,7 @@ use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
+use Filament\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
@@ -31,6 +32,8 @@ use UnitEnum;
  */
 class AccessControlSettings extends Page
 {
+    use HasUnsavedDataChangesAlert;
+
     protected string $view = 'filament-panels::pages.page';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLockClosed;
@@ -141,5 +144,9 @@ class AccessControlSettings extends Page
             ->body('Изменения применяются сразу. Администратор всегда имеет полный доступ.')
             ->success()
             ->send();
+
+        // Состояние формы теперь совпадает с сохранённым — сбрасываем базу сравнения,
+        // иначе уход со страницы после сохранения будет считаться потерей изменений.
+        $this->rememberData();
     }
 }

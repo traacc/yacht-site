@@ -14,6 +14,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
@@ -26,6 +27,7 @@ use UnitEnum;
 
 class ManagementPageSettings extends Page
 {
+    use HasUnsavedDataChangesAlert;
     use RestrictsAccessByRole;
 
     protected string $view = 'filament-panels::pages.page';
@@ -242,5 +244,9 @@ class ManagementPageSettings extends Page
             ->title('Настройки сохранены')
             ->success()
             ->send();
+
+        // Состояние формы теперь совпадает с сохранённым — сбрасываем базу сравнения,
+        // иначе уход со страницы после сохранения будет считаться потерей изменений.
+        $this->rememberData();
     }
 }

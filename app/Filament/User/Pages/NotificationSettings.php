@@ -18,6 +18,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Placeholder;
 use Filament\Notifications\Notification;
+use Filament\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
@@ -39,6 +40,8 @@ use Throwable;
  */
 class NotificationSettings extends Page
 {
+    use HasUnsavedDataChangesAlert;
+
     protected string $view = 'filament-panels::pages.page';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBellAlert;
@@ -149,6 +152,10 @@ class NotificationSettings extends Page
             ->title('Настройки уведомлений сохранены')
             ->success()
             ->send();
+
+        // Состояние формы теперь совпадает с сохранённым — сбрасываем базу сравнения,
+        // иначе уход со страницы после сохранения будет считаться потерей изменений.
+        $this->rememberData();
     }
 
     /**

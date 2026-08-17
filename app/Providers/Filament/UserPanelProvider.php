@@ -31,6 +31,10 @@ class UserPanelProvider extends PanelProvider
             ->path('user')
             ->login()
             ->profile(EditProfile::class, isSimple: false)
+            // Предупреждение при уходе со страницы с несохранёнными изменениями:
+            // страницы создания/редактирования ресурсов, открытые модалки действий,
+            // а также кастомные Page с трейтом HasUnsavedDataChangesAlert.
+            ->unsavedChangesAlerts()
             // Канал «В личном кабинете» центра уведомлений: колокольчик в топбаре.
             ->databaseNotifications()
             ->databaseNotificationsPolling('60s')

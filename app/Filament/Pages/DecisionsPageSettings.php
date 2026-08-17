@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Services\SettingsService;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -11,6 +12,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
@@ -18,11 +20,13 @@ use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use UnitEnum;
 
 class DecisionsPageSettings extends Page
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use HasUnsavedDataChangesAlert;
+    use RestrictsAccessByRole;
 
     protected string $view = 'filament-panels::pages.page';
 
@@ -63,6 +67,7 @@ class DecisionsPageSettings extends Page
                 } else {
                     $document['file'] = [];
                 }
+
                 return $document;
             })
             ->values()
@@ -162,14 +167,14 @@ class DecisionsPageSettings extends Page
                 if (is_array($file)) {
                     $file = ! empty($file) ? reset($file) : null;
                 }
-                if ($file instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
+                if ($file instanceof TemporaryUploadedFile) {
                     $file = null;
                 }
 
                 return [
                     'title' => $document['title'] ?? '',
-                    'desc'  => $document['desc'] ?? '',
-                    'file'  => $file,
+                    'desc' => $document['desc'] ?? '',
+                    'file' => $file,
                 ];
             })
             ->values()
@@ -182,5 +187,9 @@ class DecisionsPageSettings extends Page
             ->title('Настройки сохранены')
             ->success()
             ->send();
+
+        // Состояние формы теперь совпадает с сохранённым — сбрасываем базу сравнения,
+        // иначе уход со страницы после сохранения будет считаться потерей изменений.
+        $this->rememberData();
     }
 }
