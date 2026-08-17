@@ -12,6 +12,16 @@ class ListRegattaResults extends ListRecords
 {
     protected static string $resource = RegattaResultResource::class;
 
+    /**
+     * Хлебные крошки скрыты (как и на странице редактирования результата).
+     *
+     * @return array<string>
+     */
+    public function getBreadcrumbs(): array
+    {
+        return [];
+    }
+
     protected function getHeaderActions(): array
     {
         return [
