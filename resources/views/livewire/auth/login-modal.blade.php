@@ -82,10 +82,8 @@
                         <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                     @enderror
                 </div>
-                <div wire:ignore class="smart-captcha mt-4" data-callback="loginCaptchaCallback"
-                    data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
-                </div>
-                
+                <x-yandex-captcha name="login" callback="$wire.set('loginCaptchaToken', token)" />
+
                 @error('loginCaptchaToken')
                     <div style="color: red;">{{ $message }}</div>
                 @enderror
@@ -270,10 +268,8 @@
                     </div>
                 </div>
 
-                <div wire:ignore class="smart-captcha mt-4" data-callback="registerCaptchaCallback"
-                    data-sitekey="{{ config('services.yandex_captcha.site_key') }}">
-                </div>
-                
+                <x-yandex-captcha name="register" callback="$wire.set('registerCaptchaToken', token)" />
+
                 @error('registerCaptchaToken')
                     <div style="color: red;">{{ $message }}</div>
                 @enderror
@@ -405,7 +401,10 @@
         </div>
     </div>
     <script>
-        function loginCaptchaCallback(token) { @this.set('loginCaptchaToken', token); }
-        function registerCaptchaCallback(token) { @this.set('registerCaptchaToken', token); }
+        // Токен капчи одноразовый: после неудачного входа/регистрации виджет
+        // нужно сбросить, иначе повторная отправка уйдёт со «сгоревшим» токеном.
+        document.addEventListener('livewire:init', () => {
+            Livewire.on('yandex-captcha-reset', ({ name }) => window.yandexCaptcha?.reset(name));
+        });
     </script>
 </div>

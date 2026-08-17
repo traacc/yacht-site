@@ -183,7 +183,7 @@ erDiagram
 | GET | `/news`, `/news/{news}` | Новости |
 | GET | `/gallery` (+ `/gallery/{gallery}/download`) | Галерея, скачивание альбома |
 | GET | `/help` | Помощь |
-| POST | `/feedback`, `/questions` | Обратная связь, вопрос (Yandex SmartCaptcha) |
+| POST | `/feedback`, `/questions` | Обратная связь (Yandex SmartCaptcha), вопрос (auth + throttle) |
 
 ### Панели Filament
 
@@ -305,7 +305,7 @@ REST API для судейской программы «КАРТЕР 30». Middl
 | Telegram (новости в канал) | `TelegramService` + job | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_PROXY` |
 | VK (новости в группу) | `VkService` + job (OAuth-refresh токены) | `VK_CLIENT_ID/SECRET`, `VK_ACCESS_TOKEN`, `VK_REFRESH_TOKEN`, `VK_GROUP_ID`, `VK_DEVICE_ID`, `VK_PROXY` |
 | Яндекс.Карты / Геокодер | `YandexMapService`, `YandexGeocoderService`, filament-yandex-map, map-picker | `YANDEX_MAP_API_KEY`, `YANDEX_MAP_SUGGEST_API_KEY` |
-| Yandex SmartCaptcha | `Rules/YandexCaptcha` (формы feedback/questions/rental) | `YANDEX_SMARTCAPTCHA_SITE_KEY/SERVER_KEY` |
+| Yandex SmartCaptcha | `Rules/YandexCaptcha` + компонент `<x-yandex-captcha>` (вход, регистрация, формы обратной связи); без ключей проверка отключается | `YANDEX_SMARTCAPTCHA_SITE_KEY/SERVER_KEY` |
 | Погода | `WeatherService` (кэшируется) | — |
 | Почта | Mailable-классы `app/Mail`; в dev — Mailpit | `MAIL_*`, `FEEDBACK_NOTIFICATION_EMAIL` |
 | Эквайринг (онлайн-оплата) | `Services/Payments` (`PaymentGateway`/`PaymentManager`), пока только `TestPaymentProvider`; настройки — `settings`, группа `payments` | — (креденшелы реальных провайдеров добавятся в `config/services.php`) |

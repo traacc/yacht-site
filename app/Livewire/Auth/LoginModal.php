@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 class LoginModal extends Component
@@ -71,14 +72,15 @@ class LoginModal extends Component
 
     public function login()
     {
-        $credentials = $this->validate([
+        $this->validateWithCaptcha('loginCaptchaToken', 'login', [
             'email' => ['required', 'email'],
             'password' => ['required'],
-            // 'loginCaptchaToken' => ['required', new YandexCaptcha()],
+            'loginCaptchaToken' => YandexCaptcha::rules(),
         ], attributes: [
-            'loginCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
             'email' => 'email',
             'password' => 'пароль',
+        ], messages: [
+            'loginCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
         ]);
 
         // Попытка авторизации. Всегда выдаём remember-куку: сессия живёт
@@ -95,7 +97,38 @@ class LoginModal extends Component
         }
 
         // Если пароль не подошел, возвращаем ошибку в форму
+        $this->resetCaptcha('loginCaptchaToken', 'login');
         $this->addError('email', 'Неверный email или пароль.');
+    }
+
+    /**
+     * Валидация формы с капчей: при любой ошибке виджет сбрасывается, потому
+     * что токен SmartCaptcha одноразовый и повторная отправка с тем же
+     * токеном заведомо не пройдёт.
+     *
+     * @param  array<string, mixed>  $rules
+     * @param  array<string, string>  $attributes
+     * @param  array<string, string>  $messages
+     * @return array<string, mixed>
+     */
+    private function validateWithCaptcha(string $property, string $widget, array $rules, array $attributes = [], array $messages = []): array
+    {
+        try {
+            return $this->validate($rules, messages: $messages, attributes: $attributes);
+        } catch (ValidationException $e) {
+            $this->resetCaptcha($property, $widget);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Сбрасывает виджет капчи на фронте и «сгоревший» токен в состоянии.
+     */
+    private function resetCaptcha(string $property, string $widget): void
+    {
+        $this->{$property} = '';
+        $this->dispatch('yandex-captcha-reset', name: $widget);
     }
 
     public function sendResetLink()
@@ -126,7 +159,7 @@ class LoginModal extends Component
 
     public function register()
     {
-        $this->validate([
+        $this->validateWithCaptcha('registerCaptchaToken', 'register', [
             'name' => ['required', 'string', 'max:255', function (string $attribute, mixed $value, \Closure $fail): void {
                 // ФИО должно содержать отчество: «Фамилия Имя Отчество» — минимум три слова.
                 if (count(preg_split('/\s+/', trim((string) $value), -1, PREG_SPLIT_NO_EMPTY)) < 3) {
@@ -148,9 +181,8 @@ class LoginModal extends Component
             'sports_category' => ['nullable', Rule::enum(SportCategory::class)],
             'notification_categories' => ['array'],
             'notification_categories.*' => [Rule::enum(NotificationCategory::class)],
-            // 'registerCaptchaToken' => ['required', new YandexCaptcha()],
+            'registerCaptchaToken' => YandexCaptcha::rules(),
         ], attributes: [
-            'registerCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
             'name' => 'ФИО',
             /*
             'first_name'            => 'имя',
@@ -168,10 +200,12 @@ class LoginModal extends Component
         ], messages: [
             'email.unique' => 'Пользователь с таким email уже зарегистрирован',
             'phone.unique' => 'Пользователь с таким телефоном уже зарегистрирован',
+            'registerCaptchaToken.required' => 'Вам необходимо пройти проверку на бота',
         ]);
 
         // Проверка корректности даты (30 февраля и т.п.)
         if (! checkdate((int) $this->birth_month, (int) $this->birth_day, (int) $this->birth_year)) {
+            $this->resetCaptcha('registerCaptchaToken', 'register');
             $this->addError('birth_day', 'Некорректная дата рождения.');
 
             return;

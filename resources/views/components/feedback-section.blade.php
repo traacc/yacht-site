@@ -19,6 +19,7 @@
                 submitted: false,
                 loading: false,
                 error: '',
+                captchaToken: '',
                 successMessage: 'Спасибо! Ваша заявка успешно отправлена. Мы свяжемся с вами в ближайшее время.',
 
                 async submitForm() {
@@ -36,6 +37,7 @@
                             body: JSON.stringify({
                                 name: this.$refs.name.value,
                                 phone: this.$refs.phone.value,
+                                captchaToken: this.captchaToken,
                             }),
                         });
 
@@ -49,6 +51,9 @@
                         this.$refs.phone.value = '';
                     } catch (err) {
                         this.error = err.message || 'Произошла ошибка при отправке. Попробуйте позже.';
+                        // Токен капчи одноразовый — после ошибки нужен новый.
+                        this.captchaToken = '';
+                        window.yandexCaptcha?.reset('feedback-section');
                     } finally {
                         this.loading = false;
                     }
@@ -86,7 +91,8 @@
                        x-mask="+7 (999) 999-99-99"
                        x-ref="phone">
 
-                
+                <x-yandex-captcha name="feedback-section" callback="captchaToken = token" />
+
                 <button class="bg-[#2D92CE] text-white text-center w-full py-4 font-semibold mt-4"
                         :disabled="loading"
                         x-text="loading ? 'Отправка...' : 'Отправить'"></button>

@@ -50,6 +50,7 @@ use App\Models\User;
 use App\Models\Vote;
 use App\Models\Voting;
 use App\Models\Yacht;
+use App\Rules\YandexCaptcha;
 use App\Services\AdvertBoard;
 use App\Services\Chat\ChatAttachments;
 use App\Services\FleetAvailability;
@@ -1353,7 +1354,9 @@ Route::post('/feedback', function (Request $request) {
         'name' => ['required', 'string', 'max:255'],
         'phone' => ['required', 'string', 'max:20'],
         'message' => ['nullable', 'string', 'max:2000'],
-        // 'captchaToken' => ['required', new YandexCaptcha()],
+        'captchaToken' => YandexCaptcha::rules(),
+    ], messages: [
+        'captchaToken.required' => 'Вам необходимо пройти проверку на бота',
     ]);
 
     app(SubmitFeedbackAction::class)->handle(

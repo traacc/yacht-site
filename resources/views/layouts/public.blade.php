@@ -38,7 +38,41 @@
     <link rel="preload" href="{{ Vite::asset('resources/fonts/TTLakesCondensed-DemiBold.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ Vite::asset('resources/fonts/Montserrat-Regular.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="shortcut icon" href="{{ asset('favicon.jpg?v=4') }}?v=2" type="image/svg+xml">
-    <script src="https://smartcaptcha.yandexcloud.net/captcha.js" defer async></script>
+    @if (\App\Rules\YandexCaptcha::enabled())
+        {{-- Реестр виджетов Yandex SmartCaptcha. Скрипт капчи грузится асинхронно,
+             поэтому формы не вызывают smartCaptcha.render() напрямую, а ставят
+             отрисовку в очередь; она выполнится в onload-колбэке. Виджеты
+             хранятся по имени, чтобы форма могла сбросить свой (токен одноразовый,
+             после неудачной отправки его нужно получать заново). --}}
+        <script>
+            window.yandexCaptcha = {
+                loaded: false,
+                queue: [],
+                widgets: {},
+                onLoad(callback) {
+                    this.loaded ? callback() : this.queue.push(callback);
+                },
+                render(name, container, params) {
+                    this.onLoad(() => {
+                        this.widgets[name] = window.smartCaptcha.render(container, params);
+                    });
+                },
+                reset(name) {
+                    const widgetId = this.widgets[name];
+
+                    if (widgetId !== undefined) {
+                        window.smartCaptcha.reset(widgetId);
+                    }
+                },
+            };
+
+            window.yandexCaptchaOnLoad = function () {
+                window.yandexCaptcha.loaded = true;
+                window.yandexCaptcha.queue.splice(0).forEach((callback) => callback());
+            };
+        </script>
+        <script src="https://smartcaptcha.yandexcloud.net/captcha.js?render=onload&amp;onload=yandexCaptchaOnLoad" defer></script>
+    @endif
     <meta name="yandex-verification" content="4bd7f3f3aecedff0" />
     <meta name="google-site-verification" content="A8qH64mGazrMuvqwvvGCQvLR5xkkqBGqa7Unkg39JSs" />
 </head>
