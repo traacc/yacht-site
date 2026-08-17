@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\RegattaResults;
 
-use App\Actions\Document\SyncDocumentFilesAction;
+use App\Actions\Regatta\SyncRegattaRaceCountAction;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Concerns\ScopesToOwnedRegattas;
-use App\Filament\Resources\RegattaEntries\RegattaEntryResource;
 use App\Filament\Resources\RegattaResults\Pages\EditRegattaResult;
 use App\Filament\Resources\RegattaResults\Pages\ListRegattaResults;
+use App\Filament\Resources\RegattaResults\RelationManagers\EntriesRelationManager;
 use App\Models\RaceResult;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
@@ -24,7 +24,6 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
@@ -37,9 +36,7 @@ use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Group;
-use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
@@ -95,29 +92,6 @@ class RegattaResultResource extends Resource
                     )
 
                     ->required()
-                    ->live()
-                    ->afterStateUpdated(function ($state, Set $set): void {
-                        // Перезагружаем блок «Гонки регаты» под выбранную регату —
-                        // relationship-репитер сам по себе не реактивен.
-                        // Ключ ОБЯЗАН быть в формате "record-{id}" — именно так Filament
-                        // помечает существующие записи relationship-репитера (см.
-                        // Repeater::getCachedExistingRecords). С сырым id гонки считаются
-                        // новыми и при сохранении дублируются.
-                        $races = [];
-                        foreach (self::raceEventsForRegatta($state) as $event) {
-                            $races["record-{$event->getKey()}"] = [
-                                'name' => $event->name,
-                                'event_datetime' => $event->event_datetime?->format('Y-m-d H:i:s'),
-                            ];
-                        }
-                        $set('regattaRaces', $races);
-
-                        // Участников здесь НЕ трогаем: на создании таблицы ещё нет
-                        // (строки создаёт createItemsFromEntries после сохранения),
-                        // а на странице редактирования сброс списка стёр бы уже
-                        // введённые результаты гонок. Добор участников — кнопкой
-                        // «Заполнить по заявкам» над таблицей.
-                    })
                     ->columnSpanFull(),
 
                 Select::make('result_type')
@@ -144,13 +118,6 @@ class RegattaResultResource extends Resource
                     ->required()
                     ->default('manual'),
 
-                Actions::make([
-                    self::createEntryAction(),
-                ])->columnSpanFull(),
-
-                self::racesManagerSchema()
-                    ->columnSpanFull(),
-
                 // Таблица ввода результатов. Колонки гонок строятся по списку
                 // RegattaEvents выбранной регаты, поэтому нужна сохранённая запись:
                 // на создании ни regatta_id, ни заявок ещё нет. Замыкание в schema()
@@ -161,7 +128,7 @@ class RegattaResultResource extends Resource
                         ? [
                             Placeholder::make('items_hint')
                                 ->hiddenLabel()
-                                ->content('Участники будут добавлены по активным заявкам на регату сразу после сохранения — откроется таблица ввода результатов гонок.'),
+                                ->content('Участники будут добавлены по активным заявкам на регату сразу после сохранения — откроется страница с таблицей результатов, заявками и настройкой гонок.'),
                         ]
                         : [
                             // Защита от случайной правки: при включении все поля таблицы,
@@ -222,13 +189,19 @@ class RegattaResultResource extends Resource
                     $known[($row['team_id'] ?? '').'|'.($row['yacht_id'] ?? '')] = true;
                 }
 
+                $raceEvents = self::raceEventsForRegatta($resolvedRegattaId);
                 $added = 0;
+
                 foreach (self::itemsFromEntries($resolvedRegattaId) as $key => $row) {
                     if (isset($known[($row['team_id'] ?? '').'|'.($row['yacht_id'] ?? '')])) {
                         continue;
                     }
 
-                    $items[$key] = $row;
+                    // Подтягиваем уже сохранённые результаты гонок этой заявки.
+                    // Без этого возвращённый в таблицу участник приехал бы с пустыми
+                    // местами и очками, а сохранение формы восприняло бы пустые поля
+                    // как «очищено» и удалило его результаты (см. saveRaceResults).
+                    $items[$key] = self::withRaceResults($row, $resolvedRegattaId, $raceEvents);
                     $added++;
                 }
 
@@ -238,73 +211,6 @@ class RegattaResultResource extends Resource
                     ->title($added > 0
                         ? 'Добавлено участников: '.$added
                         : 'Новых заявок нет — в таблице уже все участники')
-                    ->success()
-                    ->send();
-            });
-    }
-
-    /**
-     * Кнопка «Добавить заявку»: открывает окно с полной формой заявки
-     * (RegattaEntry) — экипаж и документы. Регата подставляется из текущей
-     * формы результата. Создание выполняется тем же путём, что и на странице
-     * заявок (синхронизация экипажа и документов).
-     *
-     * Если регата известна заранее (например, в таблице редактирования по
-     * записи), её id передаётся явно; иначе берётся из поля основной формы.
-     */
-    protected static function createEntryAction(?string $regattaId = null): Action
-    {
-        return Action::make('createEntry')
-            ->label('Добавить заявку')
-            ->icon(Heroicon::PlusCircle)
-            ->color('primary')
-            ->modalHeading('Новая заявка на регату')
-            ->modalWidth('4xl')
-            ->modalSubmitActionLabel('Создать')
-            // Форма заявки использует relationship-поля (team/yacht/regatta),
-            // поэтому модель формы экшена — RegattaEntry, а не RegattaResult.
-            ->model(RegattaEntry::class)
-            ->schema(fn (Schema $schema): Schema => RegattaEntryResource::form($schema))
-            // Подставляем регату: явно переданную или из поля основной формы.
-            // fillForm с явными данными не применяет default() компонентов,
-            // поэтому набор документов формируем здесь же — иначе обязательные
-            // документы требуются валидацией, но в форме нет полей загрузки.
-            ->fillForm(function (Get $get) use ($regattaId): array {
-                $resolvedRegattaId = $regattaId ?? $get('regatta_id');
-
-                return [
-                    'regatta_id' => $resolvedRegattaId,
-                    'required_documents' => RegattaEntryResource::defaultRequiredDocuments($resolvedRegattaId),
-                ];
-            })
-            ->action(function (array $data): void {
-                $requiredDocs = $data['required_documents'] ?? [];
-                $crew = $data['crew'] ?? [];
-                unset($data['required_documents'], $data['crew']);
-
-                // Проверка дубликата: та же команда уже подала заявку на эту регату.
-                $conflict = RegattaEntry::query()
-                    ->where('regatta_id', $data['regatta_id'])
-                    ->where('team_id', $data['team_id'])
-                    ->first();
-
-                if ($conflict) {
-                    Notification::make()
-                        ->title('Заявка уже существует')
-                        ->body('Эта команда уже подала заявку на эту регату.')
-                        ->danger()
-                        ->send();
-
-                    return;
-                }
-
-                $record = RegattaEntry::create($data);
-
-                app(SyncDocumentFilesAction::class)->execute($record, $requiredDocs);
-                RegattaEntryResource::syncCrew($record, $crew);
-
-                Notification::make()
-                    ->title('Заявка создана')
                     ->success()
                     ->send();
             });
@@ -383,7 +289,8 @@ class RegattaResultResource extends Resource
     }
 
     /**
-     * Гонки (события типа race) указанной регаты по порядку.
+     * Гонки указанной регаты по порядку — источник колонок таблицы результатов
+     * и порядка гонок в расчётах (выбросы, тай-брейк по последней гонке).
      *
      * @return Collection<int, RegattaEvents>
      */
@@ -393,57 +300,7 @@ class RegattaResultResource extends Resource
             return collect();
         }
 
-        return RegattaEvents::query()
-            ->where('regatta_id', $regattaId)
-            ->orderBy('event_datetime')
-            ->orderBy('name')
-            ->get()
-            ->values();
-    }
-
-    /**
-     * Управление гонками регаты (добавить / изменить / удалить) прямо из окна таблицы.
-     * Сохраняется через relationship regattaRaces (RegattaEvents).
-     */
-    public static function racesManagerSchema(): Section
-    {
-        return Section::make('Гонки регаты')
-            ->description('Колонки с результатами обновятся после повторного открытия таблицы.')
-            ->collapsible()
-            ->collapsed()
-            ->schema([
-                Repeater::make('regattaRaces')
-                    ->hiddenLabel()
-                    ->relationship('regattaRaces')
-                    ->table([
-                        TableColumn::make('Название'),
-                        TableColumn::make('Дата и время')->markAsRequired(false),
-                    ])
-                    ->schema([
-                        TextInput::make('name')
-                            ->label('Название')
-                            ->required(),
-
-                        DateTimePicker::make('event_datetime')
-                            ->label('Дата и время')
-                            ->seconds(false)
-                            ->nullable(),
-                    ])
-                    // На создании результата кэш «существующих гонок» строится во время
-                    // валидации, когда у новой записи ещё нет regatta_id (он проставляется
-                    // только после создания). С пустым кэшом Filament не находит уже
-                    // существующие гонки регаты и плодит дубли. Сбрасываем кэш перед
-                    // сохранением, чтобы он пересобрался по сохранённой записи и
-                    // сопоставил гонки по ключам record-{id}.
-                    ->saveRelationshipsUsing(function (Repeater $component): void {
-                        $component->clearCachedExistingRecords();
-                        $component->saveToRelationship();
-                    })
-                    ->defaultItems(0)
-                    ->addActionLabel('Добавить гонку')
-                    ->deleteAction(fn ($action) => $action->requiresConfirmation())
-                    ->columnSpanFull(),
-            ]);
+        return SyncRegattaRaceCountAction::orderedRaces($regattaId);
     }
 
     /**
@@ -726,28 +583,45 @@ class RegattaResultResource extends Resource
             // результатов гонок. Ключ items не входит в $fillable RegattaResult — игнорируется.
             ->dehydrated(true)
             // Подгружаем существующие результаты гонок в виртуальные поля строки.
-            ->mutateRelationshipDataBeforeFillUsing(function (array $data) use ($regattaId, $raceEvents): array {
-                $entryId = RegattaEntry::query()
-                    ->where('regatta_id', $regattaId)
-                    ->where('team_id', $data['team_id'] ?? null)
-                    ->when(filled($data['yacht_id'] ?? null), fn ($q) => $q->where('yacht_id', $data['yacht_id']))
-                    ->value('id');
-
-                $results = $entryId
-                    ? RaceResult::query()->where('regatta_entry_id', $entryId)->get()->keyBy('event_id')
-                    : collect();
-
-                foreach ($raceEvents as $i => $race) {
-                    $result = $results->get($race->id);
-                    $data["race_{$i}_position"] = $result?->position;
-                    $data["race_{$i}_points"] = $result?->points;
-                }
-
-                return $data;
-            })
+            ->mutateRelationshipDataBeforeFillUsing(
+                fn (array $data): array => self::withRaceResults($data, $regattaId, $raceEvents),
+            )
             ->defaultItems(0)
             ->addActionLabel('Добавить участника')
             ->columnSpanFull();
+    }
+
+    /**
+     * Дополняет строку таблицы виртуальными полями race_{i}_position/points по
+     * уже сохранённым результатам гонок заявки этого участника.
+     *
+     * Одна точка для обоих путей заполнения строки — загрузки формы и кнопки
+     * «Заполнить по заявкам»: строка без этих полей означает для saveRaceResults
+     * «результаты очищены» и приводит к удалению результатов гонок.
+     *
+     * @param  array<string, mixed>  $row
+     * @param  Collection<int, RegattaEvents>  $raceEvents
+     * @return array<string, mixed>
+     */
+    protected static function withRaceResults(array $row, ?string $regattaId, Collection $raceEvents): array
+    {
+        $entryId = RegattaEntry::query()
+            ->where('regatta_id', $regattaId)
+            ->where('team_id', $row['team_id'] ?? null)
+            ->when(filled($row['yacht_id'] ?? null), fn (Builder $query) => $query->where('yacht_id', $row['yacht_id']))
+            ->value('id');
+
+        $results = $entryId
+            ? RaceResult::query()->where('regatta_entry_id', $entryId)->get()->keyBy('event_id')
+            : collect();
+
+        foreach ($raceEvents as $i => $race) {
+            $result = $results->get($race->id);
+            $row["race_{$i}_position"] = $result?->position;
+            $row["race_{$i}_points"] = $result?->points;
+        }
+
+        return $row;
     }
 
     /**
@@ -1360,6 +1234,13 @@ class RegattaResultResource extends Resource
                         }),
                 ]),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            EntriesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

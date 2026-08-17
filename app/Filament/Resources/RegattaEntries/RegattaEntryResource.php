@@ -8,6 +8,7 @@ use App\Actions\Document\SyncDocumentFilesAction;
 use App\Enums\RegattaEntrySource;
 use App\Enums\RegattaStatus;
 use App\Enums\TeamMemberRole;
+use App\Filament\Concerns\OverwritesRegattaEntries;
 use App\Filament\Concerns\ResolvesCrewMembers;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Concerns\ScopesToOwnedRegattas;
@@ -110,6 +111,64 @@ class RegattaEntryResource extends Resource
             ],
             ManageRegattaEntries::getRequiredDocuments($regattaId),
         );
+    }
+
+    /**
+     * Создаёт заявку по данным формы: документы и экипаж синхронизируются
+     * отдельно, дубликат (та же команда на ту же регату) предлагается перезаписать.
+     *
+     * Общая точка для всех форм создания заявки в админке — страницы заявок и
+     * релейшен-менеджера заявок на странице результата.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @see OverwritesRegattaEntries — обработчик кнопки «Перезаписать»
+     */
+    public static function createFromFormData(array $data, Action $action): RegattaEntry
+    {
+        $requiredDocs = $data['required_documents'] ?? [];
+        $crew = $data['crew'] ?? [];
+        unset($data['required_documents'], $data['crew']);
+
+        $data['source'] = RegattaEntrySource::Admin->value;
+
+        $conflict = RegattaEntry::query()
+            ->where('regatta_id', $data['regatta_id'])
+            ->where('team_id', $data['team_id'])
+            ->first();
+
+        if ($conflict) {
+            // Сохраняем данные формы, чтобы кнопка «Перезаписать» могла их применить.
+            session()->put("regatta_entry_overwrite:create:{$conflict->id}", [
+                'data' => $data,
+                'docs' => $requiredDocs,
+                'crew' => $crew,
+            ]);
+
+            Notification::make()
+                ->title('Заявка уже существует')
+                ->body('Эта команда уже подала заявку на эту регату. Можно перезаписать существующую заявку данными из формы.')
+                ->danger()
+                ->persistent()
+                ->actions([
+                    Action::make('overwrite')
+                        ->label('Перезаписать')
+                        ->color('danger')
+                        ->button()
+                        ->close()
+                        ->dispatch('overwriteRegattaEntryOnCreate', ['conflictId' => $conflict->id]),
+                ])
+                ->send();
+
+            $action->halt();
+        }
+
+        $record = RegattaEntry::create($data);
+
+        app(SyncDocumentFilesAction::class)->execute($record, $requiredDocs);
+        static::syncCrew($record, $crew);
+
+        return $record;
     }
 
     public static function form(Schema $schema): Schema

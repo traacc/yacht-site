@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class RegattaResult extends Model
 {
@@ -23,8 +24,8 @@ class RegattaResult extends Model
     protected function casts(): array
     {
         return [
-            'result_type'  => 'string',
-            'source'       => 'string',
+            'result_type' => 'string',
+            'source' => 'string',
             'is_published' => 'boolean',
         ];
     }
@@ -47,21 +48,21 @@ class RegattaResult extends Model
     }
 
     /**
-     * Гонки регаты (RegattaEvents) — через общий regatta_id.
-     * Используется табличным редактором для управления гонками результата.
+     * Заявки на ту же регату — через общий regatta_id.
+     * Нужны релейшен-менеджеру заявок на странице редактирования результата:
+     * состав участников результата формируется именно по ним.
      */
-    public function regattaRaces(): HasMany
+    public function entries(): HasMany
     {
-        return $this->hasMany(RegattaEvents::class, 'regatta_id', 'regatta_id')
-                    ->orderBy('event_datetime');
+        return $this->hasMany(RegattaEntry::class, 'regatta_id', 'regatta_id');
     }
+
     public function regattaEntry(): HasOne
     {
         return $this->hasOne(RegattaEntry::class, 'regatta_id', 'regatta_id')
-                    ->where('team_id', $this->team_id)    // dynamic – see note below
-                    ->where('yacht_id', $this->yacht_id);
+            ->where('team_id', $this->team_id)    // dynamic – see note below
+            ->where('yacht_id', $this->yacht_id);
     }
-
 
     // ──────────────────────────────────────────────
     // Helpers
@@ -69,7 +70,7 @@ class RegattaResult extends Model
 
     public function getPdfUrlAttribute(): ?string
     {
-        return $this->pdf_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->pdf_path) : null;
+        return $this->pdf_path ? Storage::disk('public')->url($this->pdf_path) : null;
     }
 
     public function isPreliminary(): bool
