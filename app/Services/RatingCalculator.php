@@ -312,6 +312,9 @@ class RatingCalculator
             ->join('regatta_results', 'regatta_results.id', '=', 'regatta_result_items.regatta_result_id')
             ->join('regattas', 'regattas.id', '=', 'regatta_results.regatta_id')
             ->where('regattas.season_id', $season->id)
+            // join в обход глобального скоупа SoftDeletes: удалённые регаты
+            // иначе продолжают начислять очки в рейтинг.
+            ->whereNull('regattas.deleted_at')
             ->get([
                 'regatta_result_items.team_id',
                 'regatta_result_items.regatta_entry_id',
