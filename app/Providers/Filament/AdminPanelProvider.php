@@ -45,7 +45,7 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotifications()
             ->databaseNotificationsPolling('60s')
             ->darkMode(false)
-            ->favicon(asset('favicon.jpg?v=4'))
+            ->favicon(asset('favicon.svg?v=4'))
             ->brandLogo(asset('images/logo.svg'))
             ->brandLogoHeight('2rem')
             ->colors([

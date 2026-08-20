@@ -6,7 +6,7 @@
     @php
         $metaTitle = $title ?? 'Регаты CarterPro';
         $metaDescription = $description ?? 'Календарь гонок, рейтинги, правила и новости парусного спорта. Официальный сайт CarterPro: регистрация на гонки!';
-        $metaImage = $ogImage ?? asset('favicon.jpg');
+        $metaImage = $ogImage ?? asset('favicon.svg');
     @endphp
     <title>{{ $metaTitle }}</title>
     <meta name="description" content="{{ $metaDescription }}">
@@ -37,7 +37,7 @@
     <meta name="mailru-verification" content="cfd9f51b9ce97857" />
     <link rel="preload" href="{{ Vite::asset('resources/fonts/TTLakesCondensed-DemiBold.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ Vite::asset('resources/fonts/Montserrat-Regular.woff2') }}" as="font" type="font/woff2" crossorigin>
-    <link rel="shortcut icon" href="{{ asset('favicon.jpg?v=4') }}?v=2" type="image/svg+xml">
+    <link rel="shortcut icon" href="{{ asset('favicon.svg?v=4') }}?v=2" type="image/svg+xml">
     @if (\App\Rules\YandexCaptcha::enabled())
         {{-- Реестр виджетов Yandex SmartCaptcha. Скрипт капчи грузится асинхронно,
              поэтому формы не вызывают smartCaptcha.render() напрямую, а ставят
