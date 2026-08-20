@@ -311,6 +311,8 @@ class UserResource extends Resource
     {
         return $table
             ->deferLoading()
+            // Иначе колонка Telegram делает отдельный запрос на каждую строку.
+            ->modifyQueryUsing(fn (Builder $query) => $query->with('telegramAccount'))
             ->columns([
                 TextColumn::make('name')
                     ->label('ФИО')
@@ -333,9 +335,48 @@ class UserResource extends Resource
                     ->formatStateUsing(fn (CreationSource $state): string => $state->label())
                     ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('email_verified_at')
-                    ->label('E-mail подтверждён')
+                    ->label('E-mail')
                     ->boolean()
-                    ->tooltip(fn (User $record): ?string => $record->email_verified_at?->format('d.m.Y H:i'))
+                    // Без явного bool состояние null и иконка «не подтверждён» не рисуется вовсе.
+                    ->state(fn (User $record): bool => $record->email_verified_at !== null)
+                    ->tooltip(fn (User $record): string => match (true) {
+                        $record->email_verified_at !== null => 'Подтверждён '.$record->email_verified_at->format('d.m.Y H:i'),
+                        $record->hasTechnicalEmail() => 'Технический адрес — подтверждение невозможно',
+                        default => 'Не подтверждён',
+                    })
+                    ->toggleable(),
+                IconColumn::make('phone_verified_at')
+                    ->label('Телефон')
+                    ->boolean()
+                    ->state(fn (User $record): bool => $record->phone_verified_at !== null)
+                    ->tooltip(fn (User $record): string => $record->phone_verified_at !== null
+                        ? 'Подтверждён '.$record->phone_verified_at->format('d.m.Y H:i')
+                        : 'Не подтверждён')
+                    ->toggleable(),
+                IconColumn::make('telegram_status')
+                    ->label('Telegram')
+                    // Привязка живёт в отдельной таблице: привязан / бот заблокирован / нет привязки.
+                    ->state(fn (User $record): string => match (true) {
+                        $record->telegramAccount === null => 'none',
+                        $record->telegramAccount->isBlocked() => 'blocked',
+                        default => 'linked',
+                    })
+                    ->icon(fn (string $state): string => match ($state) {
+                        'linked' => 'heroicon-o-check-circle',
+                        'blocked' => 'heroicon-o-exclamation-triangle',
+                        default => 'heroicon-o-x-circle',
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'linked' => 'success',
+                        'blocked' => 'warning',
+                        default => 'danger',
+                    })
+                    ->tooltip(fn (User $record): string => match (true) {
+                        $record->telegramAccount === null => 'Не привязан',
+                        $record->telegramAccount->isBlocked() => 'Бот заблокирован пользователем — уведомления не доставляются',
+                        default => 'Привязан: '.$record->telegramAccount->displayName()
+                            .($record->telegramAccount->linked_at ? ' ('.$record->telegramAccount->linked_at->format('d.m.Y H:i').')' : ''),
+                    })
                     ->toggleable(),
                 TextColumn::make('created_at')
                     ->label('Рег.')
@@ -368,6 +409,26 @@ class UserResource extends Resource
                     ->queries(
                         true: fn (Builder $query) => $query->whereNotNull('email_verified_at'),
                         false: fn (Builder $query) => $query->whereNull('email_verified_at'),
+                        blank: fn (Builder $query) => $query,
+                    ),
+                TernaryFilter::make('phone_verified')
+                    ->label('Телефон подтверждён')
+                    ->placeholder('Все')
+                    ->trueLabel('Подтверждён')
+                    ->falseLabel('Не подтверждён')
+                    ->queries(
+                        true: fn (Builder $query) => $query->whereNotNull('phone_verified_at'),
+                        false: fn (Builder $query) => $query->whereNull('phone_verified_at'),
+                        blank: fn (Builder $query) => $query,
+                    ),
+                TernaryFilter::make('telegram_linked')
+                    ->label('Telegram привязан')
+                    ->placeholder('Все')
+                    ->trueLabel('Привязан')
+                    ->falseLabel('Не привязан')
+                    ->queries(
+                        true: fn (Builder $query) => $query->whereHas('telegramAccount', fn (Builder $q) => $q->whereNull('blocked_at')),
+                        false: fn (Builder $query) => $query->whereDoesntHave('telegramAccount', fn (Builder $q) => $q->whereNull('blocked_at')),
                         blank: fn (Builder $query) => $query,
                     ),
                 TrashedFilter::make(),
