@@ -4,6 +4,8 @@ namespace App\Filament\User\Pages;
 
 use App\Actions\Auth\SendEmailVerificationLinkAction;
 use App\Enums\SportCategory;
+use App\Filament\Concerns\LinksTelegramAccount;
+use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Auth\Pages\EditProfile as BaseEditProfile;
@@ -23,6 +25,7 @@ use Illuminate\Validation\ValidationException;
 class EditProfile extends BaseEditProfile
 {
     use HasUnsavedDataChangesAlert;
+    use LinksTelegramAccount;
 
     protected static string|BackedEnum|null $navigationIcon = 'profile';
 
@@ -216,6 +219,18 @@ class EditProfile extends BaseEditProfile
                     ->maxLength(2000)
                     ->columnSpanFull(),
 
+                $this->telegramLinkSection($this->telegramUser(), static::getUrl())
+                    ->columnSpanFull(),
+
             ])->columns(2)->extraAttributes(['class' => 'profile_user_block']);
+    }
+
+    /** Авторизованный пользователь для блока привязки Telegram. */
+    private function telegramUser(): User
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        return $user;
     }
 }

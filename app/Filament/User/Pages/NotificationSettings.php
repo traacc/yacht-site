@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace App\Filament\User\Pages;
 
 use App\Actions\Auth\SendEmailVerificationLinkAction;
-use App\Actions\Notifications\GenerateTelegramLinkTokenAction;
 use App\Actions\Notifications\SaveNotificationPreferencesAction;
-use App\Actions\Notifications\UnlinkTelegramAccountAction;
 use App\Enums\NotificationCategory;
 use App\Enums\NotificationChannel;
+use App\Filament\Concerns\LinksTelegramAccount;
 use App\Models\User;
 use App\Services\Notifications\NotificationPreferences;
 use App\Services\SettingsService;
@@ -28,7 +27,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Validation\ValidationException;
-use Throwable;
 
 /**
  * Центр уведомлений: матрица «категория × канал» и привязка Telegram.
@@ -41,6 +39,7 @@ use Throwable;
 class NotificationSettings extends Page
 {
     use HasUnsavedDataChangesAlert;
+    use LinksTelegramAccount;
 
     protected string $view = 'filament-panels::pages.page';
 
@@ -111,7 +110,7 @@ class NotificationSettings extends Page
                     ->schema($categories),
 
                 $this->emailSection($emailBlocked),
-                $this->telegramSection(),
+                $this->telegramLinkSection($this->user(), static::getUrl()),
             ]);
     }
 
@@ -214,70 +213,6 @@ class NotificationSettings extends Page
                         ->visible(! $isTechnical && ! $user->hasVerifiedEmail())
                         ->action(fn () => redirect(static::getUrl())),
                 ])->key('email-actions'),
-            ]);
-    }
-
-    private function telegramSection(): Section
-    {
-        $account = $this->user()->telegramAccount;
-
-        return Section::make('Telegram')
-            ->description('Привяжите Telegram, чтобы получать отмеченные уведомления в мессенджере.')
-            ->schema([
-                Placeholder::make('telegram_status')
-                    ->label('Статус')
-                    ->content(match (true) {
-                        $account === null => 'Не привязан',
-                        $account->isBlocked() => 'Бот заблокирован в Telegram — отправьте боту команду /start, чтобы возобновить получение уведомлений',
-                        default => 'Привязан: '.$account->displayName(),
-                    }),
-
-                Actions::make([
-                    Action::make('linkTelegram')
-                        ->label($account === null ? 'Привязать Telegram' : 'Перепривязать')
-                        ->icon(Heroicon::OutlinedPaperAirplane)
-                        ->action(function () {
-                            try {
-                                // Токен создаём по клику, а не при каждом рендере страницы.
-                                $link = app(GenerateTelegramLinkTokenAction::class)->handle($this->user());
-                            } catch (Throwable $e) {
-                                report($e);
-
-                                Notification::make()
-                                    ->title('Не удалось создать ссылку')
-                                    ->body('Telegram-бот не настроен. Обратитесь к администратору сайта.')
-                                    ->danger()
-                                    ->send();
-
-                                return null;
-                            }
-
-                            return redirect()->away($link);
-                        }),
-
-                    Action::make('unlinkTelegram')
-                        ->label('Отвязать')
-                        ->color('danger')
-                        ->requiresConfirmation()
-                        ->modalHeading('Отвязать Telegram?')
-                        ->modalDescription('Уведомления в Telegram перестанут приходить. Настройки категорий сохранятся.')
-                        ->visible($account !== null)
-                        ->action(function () {
-                            app(UnlinkTelegramAccountAction::class)->handle($this->user());
-
-                            Notification::make()
-                                ->title('Telegram отвязан')
-                                ->success()
-                                ->send();
-
-                            return redirect(static::getUrl());
-                        }),
-
-                    Action::make('refreshTelegram')
-                        ->label('Проверить привязку')
-                        ->color('gray')
-                        ->action(fn () => redirect(static::getUrl())),
-                ])->key('telegram-actions'),
             ]);
     }
 
