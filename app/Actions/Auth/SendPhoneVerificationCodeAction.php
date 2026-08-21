@@ -176,11 +176,18 @@ final class SendPhoneVerificationCodeAction
             ->update(['expires_at' => now()]);
     }
 
-    /** Код фиксированной длины, ведущие нули допустимы. */
+    /**
+     * Код фиксированной длины без ведущего нуля.
+     *
+     * Ноль впереди теряется везде, где код по дороге становится числом
+     * (числовое поле формы, JSON, выгрузка в таблицу), и пользователь
+     * получает «неверный код» на верном коде. Потеря 10% пространства
+     * при 5 попытках ввода на цену вопроса не влияет.
+     */
     private function generateCode(): string
     {
-        $max = (10 ** PhoneVerificationCode::CODE_LENGTH) - 1;
+        $min = 10 ** (PhoneVerificationCode::CODE_LENGTH - 1);
 
-        return str_pad((string) random_int(0, $max), PhoneVerificationCode::CODE_LENGTH, '0', STR_PAD_LEFT);
+        return (string) random_int($min, ($min * 10) - 1);
     }
 }

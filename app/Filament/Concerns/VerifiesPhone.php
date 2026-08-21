@@ -90,13 +90,17 @@ trait VerifiesPhone
                         ->modalHeading('Подтверждение телефона')
                         ->modalSubmitActionLabel('Подтвердить')
                         ->schema([
+                            // Именно текстовое поле: ->numeric() навешивает
+                            // NumberStateCast с floatval(), и код с ведущим нулём
+                            // приезжает в действие без него. inputMode даёт
+                            // цифровую клавиатуру на телефоне, не меняя тип поля.
                             TextInput::make('code')
                                 ->label('Код из SMS')
                                 ->required()
-                                ->numeric()
-                                ->minLength(PhoneVerificationCode::CODE_LENGTH)
-                                ->maxLength(PhoneVerificationCode::CODE_LENGTH)
+                                ->inputMode('numeric')
+                                ->rule('digits:'.PhoneVerificationCode::CODE_LENGTH)
                                 ->autocomplete('one-time-code')
+                                ->extraInputAttributes(['pattern' => '[0-9]*'])
                                 ->placeholder(str_repeat('0', PhoneVerificationCode::CODE_LENGTH)),
                         ])
                         ->action(function (array $data, Action $action) use ($user, $returnUrl) {
