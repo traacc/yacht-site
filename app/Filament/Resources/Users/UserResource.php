@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users;
 
 use App\Actions\Auth\SendEmailVerificationLinkAction;
+use App\Actions\Auth\SendPhoneVerificationCodeAction;
 use App\Enums\CreationSource;
 use App\Enums\SportCategory;
 use App\Enums\SystemRole;
@@ -484,6 +485,44 @@ class UserResource extends Resource
                         }),
                 ])->label('E-mail')->icon(Heroicon::OutlinedEnvelope)->button()->color('gray')
                     ->visible(fn (User $record): bool => ! $record->hasVerifiedEmail()),
+                ActionGroup::make([
+                    Action::make('sendPhoneVerification')
+                        ->label('Код подтверждения по SMS')
+                        ->icon(Heroicon::OutlinedDevicePhoneMobile)
+                        ->requiresConfirmation()
+                        ->modalHeading('Отправить код подтверждения телефона?')
+                        ->modalDescription(fn (User $record): string => 'SMS с кодом уйдёт на '.(string) $record->phone.'. Код пользователь вводит в личном кабинете, в разделе «Профиль».')
+                        ->action(function (User $record): void {
+                            try {
+                                app(SendPhoneVerificationCodeAction::class)->handle($record, throttle: false);
+                            } catch (ValidationException $e) {
+                                Notification::make()
+                                    ->title('Не удалось отправить код')
+                                    ->body(collect($e->errors())->flatten()->first())
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            Notification::make()->title('Код отправлен')->success()->send();
+                        }),
+                    Action::make('verifyPhoneManually')
+                        ->label('Подтвердить вручную')
+                        ->icon(Heroicon::OutlinedCheckBadge)
+                        ->color('warning')
+                        // Нужно, когда номер проверен по звонку, а SMS не доходит.
+                        ->visible(fn (): bool => auth()->user()?->system_role === SystemRole::Admin)
+                        ->requiresConfirmation()
+                        ->modalHeading('Подтвердить телефон вручную?')
+                        ->modalDescription('Отметка ставится без проверки кодом. Убедитесь, что номер принадлежит именно этому пользователю.')
+                        ->action(function (User $record): void {
+                            $record->markPhoneAsVerified();
+
+                            Notification::make()->title('Телефон подтверждён')->success()->send();
+                        }),
+                ])->label('Телефон')->icon(Heroicon::OutlinedDevicePhoneMobile)->button()->color('gray')
+                    ->visible(fn (User $record): bool => ! $record->hasVerifiedPhone() && filled($record->phone)),
                 EditAction::make()->modalHeading('Редактировать пользователя'),
                 DeleteAction::make()->label('Удалить')
                     ->modalHeading('Удалить пользователя')

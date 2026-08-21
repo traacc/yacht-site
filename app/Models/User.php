@@ -8,6 +8,7 @@ use App\Enums\SystemRole;
 use App\Mail\ResetPasswordMail;
 use App\Mail\VerifyEmailMail;
 use App\Models\Concerns\NormalizesHeicImageColumns;
+use App\Support\PhoneNumber;
 use Carbon\Carbon;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -125,12 +126,48 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     }
 
     // ──────────────────────────────────────────────
+    // Верификация телефона
+    // ──────────────────────────────────────────────
+
+    /** Телефон подтверждён кодом из SMS. */
+    public function hasVerifiedPhone(): bool
+    {
+        return $this->phone_verified_at !== null;
+    }
+
+    /** Номер в виде 7XXXXXXXXXX (в БД он хранится в маске); null — номера нет. */
+    public function normalizedPhone(): ?string
+    {
+        return PhoneNumber::normalize($this->phone);
+    }
+
+    /**
+     * Отметить телефон подтверждённым.
+     *
+     * saveQuietly по той же причине, что и в markEmailAsVerified(): хук saving()
+     * бросает ValidationException при дубле ФИО + даты рождения, и пользователь
+     * с таким дублем никогда не смог бы подтвердить номер.
+     */
+    public function markPhoneAsVerified(): bool
+    {
+        return $this->forceFill([
+            'phone_verified_at' => $this->freshTimestamp(),
+        ])->saveQuietly();
+    }
+
+    // ──────────────────────────────────────────────
     // Boot
     // ──────────────────────────────────────────────
 
     protected static function booted(): void
     {
         static::saving(function (self $user) {
+            // Смена номера сбрасывает подтверждение: новый телефон
+            // нужно подтвердить заново (аналогично смене e-mail).
+            if ($user->exists && $user->isDirty('phone')) {
+                $user->phone_verified_at = null;
+            }
+
             // Уникальность пользователя по сочетанию ФИО + дата рождения
             if (blank($user->name) || blank($user->birth_date)) {
                 return;
@@ -458,6 +495,12 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return $this->belongsToMany(Conversation::class, 'conversation_participants')
             ->withPivot(['role', 'last_read_at'])
             ->withTimestamps();
+    }
+
+    /** Отправленные коды подтверждения телефона (последний — актуальный). */
+    public function phoneVerificationCodes(): HasMany
+    {
+        return $this->hasMany(PhoneVerificationCode::class)->latest();
     }
 
     /** Привязанный чат с ботом в Telegram (если пользователь прошёл привязку) */

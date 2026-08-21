@@ -92,6 +92,32 @@ return [
         'proxy' => env('VK_PROXY'),
     ],
 
+    /*
+     * SMS-провайдер «i-digital direct» (direct.i-dgtl.ru).
+     * Используется для подтверждения телефона (см. App\Services\SmsService).
+     *
+     * api_key — готовая строка Basic-авторизации из ЛК (Разработчикам → API-ключи),
+     * это уже base64 от <key_id>:<password>, дополнительно кодировать не нужно.
+     * Нужен ключ типа TOKEN_1 («Одиночные сообщения и рассылки»).
+     *
+     * sender_name — одобренное имя отправителя. Для тестов провайдер разрешает
+     * зарезервированное имя sms_promo.
+     */
+    'i_dgtl' => [
+        'base_url' => env('IDGTL_BASE_URL', 'https://direct.i-dgtl.ru/api/v1'),
+        'api_key' => env('IDGTL_API_KEY'),
+        'sender_name' => env('IDGTL_SENDER_NAME'),
+        // Вендор рекомендует ждать ответ до 70 секунд: обычно приходит за секунды,
+        // но под нагрузкой ответ может задержаться.
+        'timeout' => (int) env('IDGTL_TIMEOUT', 70),
+        'connect_timeout' => (int) env('IDGTL_CONNECT_TIMEOUT', 8),
+        // Повторы внутри запроса — только на обрыв связи и 5xx.
+        'retry_times' => (int) env('IDGTL_RETRY_TIMES', 2),
+        'retry_delay' => (int) env('IDGTL_RETRY_DELAY', 1000), // мс
+        // Время жизни SMS у оператора: доставлять код позже его срока бессмысленно.
+        'ttl' => (int) env('IDGTL_SMS_TTL', 600), // сек, 60 ≤ ttl ≤ 86400
+    ],
+
     'openai' => [
         // Ключ хранится только в окружении, в таблицу settings не попадает.
         'api_key' => env('OPENAI_API_KEY'),

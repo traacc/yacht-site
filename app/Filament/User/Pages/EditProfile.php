@@ -5,6 +5,7 @@ namespace App\Filament\User\Pages;
 use App\Actions\Auth\SendEmailVerificationLinkAction;
 use App\Enums\SportCategory;
 use App\Filament\Concerns\LinksTelegramAccount;
+use App\Filament\Concerns\VerifiesPhone;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -26,6 +27,7 @@ class EditProfile extends BaseEditProfile
 {
     use HasUnsavedDataChangesAlert;
     use LinksTelegramAccount;
+    use VerifiesPhone;
 
     protected static string|BackedEnum|null $navigationIcon = 'profile';
 
@@ -206,6 +208,7 @@ class EditProfile extends BaseEditProfile
                     ->telRegex('/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/')
                     ->mask('+7 (999) 999-99-99')
                     ->placeholder('+7 (___) ___-__-__')
+                    ->helperText('При смене номера подтверждение сбрасывается — новый номер нужно подтвердить по SMS.')
                     ->maxLength(255),
                 Select::make('sport_category')
                     ->label('Спортивный разряд')
@@ -219,14 +222,17 @@ class EditProfile extends BaseEditProfile
                     ->maxLength(2000)
                     ->columnSpanFull(),
 
-                $this->telegramLinkSection($this->telegramUser(), static::getUrl())
+                $this->phoneVerificationSection($this->profileUser(), static::getUrl())
+                    ->columnSpanFull(),
+
+                $this->telegramLinkSection($this->profileUser(), static::getUrl())
                     ->columnSpanFull(),
 
             ])->columns(2)->extraAttributes(['class' => 'profile_user_block']);
     }
 
-    /** Авторизованный пользователь для блока привязки Telegram. */
-    private function telegramUser(): User
+    /** Авторизованный пользователь для блоков подтверждения телефона и привязки Telegram. */
+    private function profileUser(): User
     {
         /** @var User $user */
         $user = $this->getUser();
