@@ -54,6 +54,26 @@ enum PaymentPurpose: string implements HasColor, HasLabel
         };
     }
 
+    /**
+     * Назначения, которыми оплачивается раздел «Услуги».
+     *
+     * ТЗ 3-го этапа требует вести приходы по «Услугам» отдельной строкой
+     * финансового отчёта. Список расширится вместе с подразделами услуг
+     * (обучение, походы, сертификаты), когда у них появится онлайн-оплата.
+     *
+     * @return list<self>
+     */
+    public static function serviceCases(): array
+    {
+        return [self::YachtRental, self::Event];
+    }
+
+    /** Приход относится к разделу «Услуги». */
+    public function isServiceIncome(): bool
+    {
+        return in_array($this, self::serviceCases(), true);
+    }
+
     /** Назначение по умолчанию для источника платежа. */
     public static function defaultForPayable(?Model $payable): ?self
     {

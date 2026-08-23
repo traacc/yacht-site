@@ -142,6 +142,20 @@ class PaymentRegistry extends Model
         return $this->updatedBy?->name ?? 'Система';
     }
 
+    /**
+     * «От кого» для финансового отчёта: плательщик, а при пустом поле —
+     * команда или источник платежа, чтобы строка отчёта не осталась безымянной.
+     */
+    public function payerLabel(): string
+    {
+        if (filled($this->payer_name)) {
+            return (string) $this->payer_name;
+        }
+
+        return $this->team?->name
+            ?? ($this->payableLabel() ?: 'Не указан');
+    }
+
     /** Назначение платежа для колонок и заголовков групп. */
     public function purposeLabel(): string
     {

@@ -82,7 +82,10 @@ graph TB
 
 **Финансы**
 - `payment_registries` — платежи с morph-привязкой `payable` (например, к заявке); name, amount, status, document.
-- `financial_reports`, `expenses` — публикуемые документы отчётности.
+- `financial_reports`, `expenses` — публикуемые документы отчётности; сюда же складываются
+  отчёты, сформированные страницей «Финансы → Отчёт за период» (.xlsx по реестру платежей:
+  приходы «от кого и за что», отдельный итог по разделу «Услуги», итог; расходы появятся
+  вместе с полноценным реестром расходов).
 
 **Контент и обратная связь**
 - `news` — author_id, type, title, content, external_url, cover_image_url (+object_position), published_to_tg/vk, published_at; soft deletes.

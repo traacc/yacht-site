@@ -9,6 +9,7 @@ use App\Filament\Concerns\ScopesToOwnedRegattas;
 use App\Filament\Pages\AccessControlSettings;
 use App\Filament\Pages\AiNewsSettings;
 use App\Filament\Pages\EditProfile;
+use App\Filament\Pages\FinancialPeriodReport;
 use App\Filament\Pages\YachtDocumentSettings;
 use App\Filament\Resources\ArchivedRegattaEntries\ArchivedRegattaEntryResource;
 use App\Filament\Resources\CrewJoinRequests\CrewJoinRequestResource;
@@ -150,6 +151,7 @@ final class AccessControl
             // @see \App\Filament\Concerns\RestrictsToPaymentRoles
             PaymentRegistryResource::class,
             PaymentRegistryLogResource::class,
+            FinancialPeriodReport::class,
         ];
     }
 

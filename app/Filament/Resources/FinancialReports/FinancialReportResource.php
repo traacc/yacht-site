@@ -58,7 +58,14 @@ class FinancialReportResource extends Resource
                     ->disk('public')
                     ->directory('financial-reports')
                     ->visibility('public')
-                    ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/avif', 'image/heic', 'image/heif'])
+                    // xlsx — формат отчётов, сформированных на странице
+                    // «Финансы → Отчёт за период».
+                    ->acceptedFileTypes([
+                        'application/pdf',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        'application/vnd.ms-excel',
+                        'image/jpeg', 'image/png', 'image/avif', 'image/heic', 'image/heif',
+                    ])
                     ->maxSize(10240)
                     ->downloadable()
                     ->openable()
