@@ -6,6 +6,7 @@ namespace App\Filament\Pages;
 
 use App\Enums\ServiceType;
 use App\Filament\Concerns\RestrictsAccessByRole;
+use App\Services\EventPlanner;
 use App\Services\SettingsService;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -122,6 +123,30 @@ class ServicesPageSettings extends Page
             'events_venues' => $this->venuesState((array) $settings->get('services.event.venues', [])),
             'events_gallery' => $this->galleryState($settings->get('services.event.gallery', [])),
             'events_cases' => (array) $settings->get('services.event.cases', []),
+
+            // Конструктор мероприятия: тарифы расчёта минимальной стоимости
+            'events_constructor_enabled' => (bool) $settings->get('services.event.constructor.enabled', true),
+            'events_constructor_intro' => $settings->get('services.event.constructor.intro', ''),
+            'events_constructor_note' => $settings->get('services.event.constructor.note', ''),
+            'events_constructor_activities' => (array) $settings->get('services.event.constructor.activities', []),
+            'events_constructor_yacht_capacity' => (int) $settings->get(
+                'services.event.constructor.yacht_capacity',
+                EventPlanner::DEFAULT_YACHT_CAPACITY,
+            ),
+            'events_constructor_min_hours' => (int) $settings->get(
+                'services.event.constructor.min_hours',
+                EventPlanner::DEFAULT_MIN_HOURS,
+            ),
+            'events_constructor_hour_share' => (int) $settings->get(
+                'services.event.constructor.hour_share',
+                EventPlanner::DEFAULT_HOUR_SHARE,
+            ),
+            'events_constructor_skipper_hour' => $settings->get('services.event.constructor.skipper_hour', 0),
+            'events_constructor_base_fee' => $settings->get('services.event.constructor.base_fee', 0),
+            'events_constructor_photo_price' => $settings->get('services.event.constructor.photo_price', 0),
+            'events_constructor_video_price' => $settings->get('services.event.constructor.video_price', 0),
+            'events_constructor_catering_person' => $settings->get('services.event.constructor.catering_person', 0),
+            'events_constructor_restaurant_person' => $settings->get('services.event.constructor.restaurant_person', 0),
 
             // Обучение судовождению
             'training_intro' => $settings->get('services.training.intro', ''),
@@ -456,6 +481,23 @@ class ServicesPageSettings extends Page
                                 ->placeholder('Например: до 80 гостей')
                                 ->maxLength(255)
                                 ->rules(['nullable', 'string', 'max:255']),
+                            // Числовые вместимость и цена нужны конструктору:
+                            // он подбирает самую дешёвую площадку, куда
+                            // помещаются все гости. Пусто — площадка остаётся
+                            // на лендинге, но в расчёт идёт «по запросу».
+                            TextInput::make('guests')
+                                ->label('Вмещает гостей, чел.')
+                                ->helperText('Для конструктора мероприятия. Пусто — ограничения не учитываются.')
+                                ->numeric()
+                                ->minValue(1)
+                                ->maxValue(1000)
+                                ->rules(['nullable', 'integer', 'min:1', 'max:1000']),
+                            TextInput::make('price')
+                                ->label('Стоимость площадки, ₽')
+                                ->helperText('Для конструктора мероприятия. Пусто — «по запросу».')
+                                ->numeric()
+                                ->minValue(0)
+                                ->rules(['nullable', 'numeric', 'min:0']),
                             Textarea::make('desc')
                                 ->label('Описание')
                                 ->rows(2)
@@ -479,6 +521,115 @@ class ServicesPageSettings extends Page
             Section::make('Галерея мероприятий')
                 ->schema([
                     $this->gallery('events_gallery', 'services/events/gallery'),
+                ]),
+
+            Section::make('Конструктор мероприятия')
+                ->description('Заказчик задаёт параметры ивента, конструктор подбирает свободные яхты на каждую из его дат и считает минимальную стоимость. Тарифы ниже — единственный источник цифр в расчёте: нулевая цена показывается заказчику строкой «по запросу», а не пропадает из сметы.')
+                ->schema([
+                    Toggle::make('events_constructor_enabled')
+                        ->label('Показывать конструктор на странице')
+                        ->default(true),
+
+                    Textarea::make('events_constructor_intro')
+                        ->label('Подводка к конструктору')
+                        ->placeholder('Например: соберите мероприятие сами — покажем свободные яхты и стоимость.')
+                        ->rows(2)
+                        ->maxLength(500)
+                        ->columnSpanFull(),
+
+                    Textarea::make('events_constructor_note')
+                        ->label('Примечание под расчётом')
+                        ->placeholder('Например: расчёт ориентировочный, итог подтверждает менеджер.')
+                        ->rows(2)
+                        ->maxLength(500)
+                        ->columnSpanFull(),
+
+                    TextInput::make('events_constructor_yacht_capacity')
+                        ->label('Гостей на одну яхту')
+                        ->helperText('Из этого числа считается, сколько яхт нужно подобрать.')
+                        ->numeric()
+                        ->minValue(1)
+                        ->maxValue(50)
+                        ->default(EventPlanner::DEFAULT_YACHT_CAPACITY)
+                        ->rules(['nullable', 'integer', 'min:1', 'max:50']),
+
+                    TextInput::make('events_constructor_min_hours')
+                        ->label('Минимум часов на воде')
+                        ->helperText('Программа короче оплачивается как этот минимум.')
+                        ->numeric()
+                        ->minValue(1)
+                        ->maxValue(12)
+                        ->default(EventPlanner::DEFAULT_MIN_HOURS)
+                        ->rules(['nullable', 'integer', 'min:1', 'max:12']),
+
+                    TextInput::make('events_constructor_hour_share')
+                        ->label('Час аренды яхты, % от суточной ставки')
+                        ->helperText('Суточную ставку задаёт владелец в карточке яхты. Итог за день не может превысить её.')
+                        ->numeric()
+                        ->minValue(1)
+                        ->maxValue(100)
+                        ->default(EventPlanner::DEFAULT_HOUR_SHARE)
+                        ->rules(['nullable', 'integer', 'min:1', 'max:100']),
+
+                    TextInput::make('events_constructor_skipper_hour')
+                        ->label('Шкипер, ₽ за час на яхту')
+                        ->numeric()
+                        ->minValue(0)
+                        ->rules(['nullable', 'numeric', 'min:0']),
+
+                    TextInput::make('events_constructor_base_fee')
+                        ->label('Организация мероприятия, ₽')
+                        ->helperText('Фиксированная часть сметы: подготовка, координатор, оснащение.')
+                        ->numeric()
+                        ->minValue(0)
+                        ->rules(['nullable', 'numeric', 'min:0']),
+
+                    TextInput::make('events_constructor_photo_price')
+                        ->label('Фотосъёмка, ₽')
+                        ->numeric()
+                        ->minValue(0)
+                        ->rules(['nullable', 'numeric', 'min:0']),
+
+                    TextInput::make('events_constructor_video_price')
+                        ->label('Видеосъёмка, ₽')
+                        ->numeric()
+                        ->minValue(0)
+                        ->rules(['nullable', 'numeric', 'min:0']),
+
+                    TextInput::make('events_constructor_catering_person')
+                        ->label('Кейтеринг, ₽ на гостя')
+                        ->numeric()
+                        ->minValue(0)
+                        ->rules(['nullable', 'numeric', 'min:0']),
+
+                    TextInput::make('events_constructor_restaurant_person')
+                        ->label('Ресторан, ₽ на гостя')
+                        ->numeric()
+                        ->minValue(0)
+                        ->rules(['nullable', 'numeric', 'min:0']),
+
+                    Repeater::make('events_constructor_activities')
+                        ->label('Активность на воде')
+                        ->helperText('Варианты для поля «Активность на воде»: прогулка, соревнования, фотосессия. Надбавка добавляется к смете один раз за мероприятие.')
+                        ->addActionLabel('Добавить вариант')
+                        ->reorderable()
+                        ->collapsible()
+                        ->defaultItems(0)
+                        ->itemLabel(fn (array $state): ?string => $state['title'] ?? null)
+                        ->columnSpanFull()
+                        ->schema([
+                            TextInput::make('title')
+                                ->label('Название')
+                                ->placeholder('Например: мини-регата с судейством')
+                                ->required()
+                                ->maxLength(255)
+                                ->rules(['required', 'string', 'max:255']),
+                            TextInput::make('surcharge')
+                                ->label('Надбавка, ₽')
+                                ->numeric()
+                                ->minValue(0)
+                                ->rules(['nullable', 'numeric', 'min:0']),
+                        ]),
                 ]),
 
             Section::make('Проведённые мероприятия')
@@ -1019,10 +1170,37 @@ class ServicesPageSettings extends Page
             'services.event.fleet_note' => trim((string) ($data['events_fleet_note'] ?? '')),
             'services.event.venues' => $this->repeaterValue(
                 $data['events_venues'] ?? [],
-                ['title', 'address', 'capacity', 'desc', 'photo'],
+                ['title', 'address', 'capacity', 'guests', 'price', 'desc', 'photo'],
             ),
             'services.event.gallery' => $this->galleryValue($data['events_gallery'] ?? []),
             'services.event.cases' => $this->repeaterValue($data['events_cases'] ?? [], ['title', 'date', 'desc']),
+
+            // Конструктор мероприятия
+            'services.event.constructor.enabled' => (bool) ($data['events_constructor_enabled'] ?? true),
+            'services.event.constructor.intro' => trim((string) ($data['events_constructor_intro'] ?? '')),
+            'services.event.constructor.note' => trim((string) ($data['events_constructor_note'] ?? '')),
+            'services.event.constructor.activities' => $this->repeaterValue(
+                $data['events_constructor_activities'] ?? [],
+                ['title', 'surcharge'],
+            ),
+            'services.event.constructor.yacht_capacity' => max(
+                1,
+                (int) ($data['events_constructor_yacht_capacity'] ?: EventPlanner::DEFAULT_YACHT_CAPACITY),
+            ),
+            'services.event.constructor.min_hours' => max(
+                1,
+                (int) ($data['events_constructor_min_hours'] ?: EventPlanner::DEFAULT_MIN_HOURS),
+            ),
+            'services.event.constructor.hour_share' => max(
+                1,
+                (int) ($data['events_constructor_hour_share'] ?: EventPlanner::DEFAULT_HOUR_SHARE),
+            ),
+            'services.event.constructor.skipper_hour' => (float) ($data['events_constructor_skipper_hour'] ?? 0),
+            'services.event.constructor.base_fee' => (float) ($data['events_constructor_base_fee'] ?? 0),
+            'services.event.constructor.photo_price' => (float) ($data['events_constructor_photo_price'] ?? 0),
+            'services.event.constructor.video_price' => (float) ($data['events_constructor_video_price'] ?? 0),
+            'services.event.constructor.catering_person' => (float) ($data['events_constructor_catering_person'] ?? 0),
+            'services.event.constructor.restaurant_person' => (float) ($data['events_constructor_restaurant_person'] ?? 0),
 
             // Обучение
             'services.training.intro' => $data['training_intro'] ?? '',

@@ -285,6 +285,7 @@ enum ServiceType: string
      *     required?: bool,
      *     placeholder?: string,
      *     visible_when?: array{0: string, 1: string},
+     *     forms?: list<ServiceForm>,
      * }>
      */
     public function payloadFields(?ServiceSubject $subject = null): array
@@ -305,18 +306,23 @@ enum ServiceType: string
     /**
      * Поля, которые реально показываются в форме, — они же и валидируются.
      *
-     * От payloadFields() отличается тем, что выбрасывает select без вариантов:
-     * на общей форме подраздела объекта нет и списка яхт взяться неоткуда, а у
-     * конкретной регаты весь чартер мог оказаться занят. В payloadFields такое
-     * поле остаётся — иначе уже поданная заявка потеряла бы подпись значения.
+     * От payloadFields() отличается двумя отсевами. Во-первых, выбрасывается
+     * select без вариантов: на общей форме подраздела объекта нет и списка яхт
+     * взяться неоткуда, а у конкретной регаты весь чартер мог оказаться занят.
+     * Во-вторых, остаются только поля запрошенной формы: у мероприятий рядом с
+     * модалкой работает конструктор со своими двенадцатью параметрами. В
+     * payloadFields такие поля остаются — иначе уже поданная заявка потеряла бы
+     * подпись значения.
      *
+     * @param  ServiceForm  $form  форма, для которой собирается набор полей
      * @return array<string, array<string, mixed>>
      */
-    public function formFields(?ServiceSubject $subject = null): array
+    public function formFields(?ServiceSubject $subject = null, ServiceForm $form = ServiceForm::Modal): array
     {
         return array_filter(
             $this->payloadFields($subject),
-            fn (array $field): bool => $field['type'] !== 'select' || ($field['options'] ?? []) !== [],
+            fn (array $field): bool => ($field['type'] !== 'select' || ($field['options'] ?? []) !== [])
+                && in_array($form, $field['forms'] ?? [ServiceForm::Modal], true),
         );
     }
 
@@ -362,7 +368,18 @@ enum ServiceType: string
                 ],
             ],
 
+            // Две формы сразу: короткая модалка «Обсудить мероприятие» и
+            // конструктор с двенадцатью параметрами ТЗ (@see ServiceForm).
+            // Порядок ключей — порядок строк в письме и в карточке админки,
+            // поэтому параметры конструктора идут в порядке ТЗ, а расчёт —
+            // последним блоком.
             self::Event => [
+                'event_name' => [
+                    'label' => 'Название мероприятия',
+                    'type' => 'text',
+                    'required' => true,
+                    'forms' => [ServiceForm::EventConstructor],
+                ],
                 'event_format' => [
                     'label' => 'Формат мероприятия',
                     'type' => 'select',
@@ -373,13 +390,80 @@ enum ServiceType: string
                         'teambuilding' => 'Тимбилдинг',
                         'birthday' => 'День рождения',
                         'wedding' => 'Свадьба',
+                        'photoshoot' => 'Фотосессия',
                         'other' => 'Другое',
                     ],
+                    'forms' => [ServiceForm::Modal, ServiceForm::EventConstructor],
+                ],
+                'event_details' => [
+                    'label' => 'Подробнее о мероприятии',
+                    'type' => 'textarea',
+                    'forms' => [ServiceForm::EventConstructor],
+                ],
+                // Список активностей ведётся в админке вместе с надбавками,
+                // поэтому в payload ложится сам текст, а не ключ варианта:
+                // подпись заявки не должна зависеть от того, что позже
+                // переименовали или убрали из списка.
+                'water_activity' => [
+                    'label' => 'Активность на воде',
+                    'type' => 'text',
+                    'forms' => [ServiceForm::EventConstructor],
+                ],
+                'dates' => [
+                    'label' => 'Возможные даты',
+                    'type' => 'text',
+                    'forms' => [ServiceForm::EventConstructor],
+                ],
+                'guests_afloat' => [
+                    'label' => 'Гостей на яхтах',
+                    'type' => 'text',
+                    'forms' => [ServiceForm::EventConstructor],
+                ],
+                'start_time' => [
+                    'label' => 'Начало водной части',
+                    'type' => 'text',
+                    'forms' => [ServiceForm::EventConstructor],
+                ],
+                'hours_afloat' => [
+                    'label' => 'Время на воде',
+                    'type' => 'text',
+                    'forms' => [ServiceForm::EventConstructor],
+                ],
+                'media' => [
+                    'label' => 'Фото- и видеосъёмка',
+                    'type' => 'select',
+                    'options' => [
+                        'none' => 'Не нужна',
+                        'photo' => 'Только фото',
+                        'video' => 'Только видео',
+                        'both' => 'Фото и видео',
+                    ],
+                    'forms' => [ServiceForm::EventConstructor],
+                ],
+                'needs_venue' => [
+                    'label' => 'Площадка на берегу',
+                    'type' => 'select',
+                    'options' => [
+                        'no' => 'Не нужна',
+                        'yes' => 'Нужна',
+                    ],
+                    'forms' => [ServiceForm::EventConstructor],
                 ],
                 'venue' => [
                     'label' => 'Предпочтительная площадка',
                     'type' => 'text',
                     'placeholder' => 'Необязательно',
+                    'forms' => [ServiceForm::Modal, ServiceForm::EventConstructor],
+                ],
+                'catering' => [
+                    'label' => 'Питание гостей',
+                    'type' => 'select',
+                    'options' => [
+                        'none' => 'Не нужно',
+                        'catering' => 'Кейтеринг',
+                        'restaurant' => 'Ресторан',
+                    ],
+                    'forms' => [ServiceForm::EventConstructor],
                 ],
                 'needs_fleet' => [
                     'label' => 'Нужен флот (выход в море для гостей)',
@@ -389,6 +473,24 @@ enum ServiceType: string
                     'label' => 'Ориентировочный бюджет',
                     'type' => 'text',
                     'placeholder' => 'Необязательно',
+                ],
+                // Итог работы конструктора: что он подобрал и во что оценил.
+                // Значения считает сервер (@see \App\Services\EventPlanner),
+                // форма их не присылает.
+                'fleet_selected' => [
+                    'label' => 'Подобранные яхты',
+                    'type' => 'textarea',
+                    'forms' => [ServiceForm::EventConstructor],
+                ],
+                'estimate' => [
+                    'label' => 'Ориентировочная стоимость',
+                    'type' => 'text',
+                    'forms' => [ServiceForm::EventConstructor],
+                ],
+                'estimate_details' => [
+                    'label' => 'Расчёт',
+                    'type' => 'textarea',
+                    'forms' => [ServiceForm::EventConstructor],
                 ],
             ],
 
@@ -518,11 +620,11 @@ enum ServiceType: string
      * @param  ServiceSubject|null  $subject  объект заявки: от него зависят варианты части полей
      * @return array<string, list<string>>
      */
-    public function payloadRules(?ServiceSubject $subject = null): array
+    public function payloadRules(?ServiceSubject $subject = null, ServiceForm $form = ServiceForm::Modal): array
     {
         $rules = [];
 
-        foreach ($this->formFields($subject) as $key => $field) {
+        foreach ($this->formFields($subject, $form) as $key => $field) {
             // Поле, зависящее от другого, обязательно только вместе с ним:
             // яхту спрашиваем лишь при участии «яхта целиком».
             $required = match (true) {

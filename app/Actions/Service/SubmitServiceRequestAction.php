@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Actions\Service;
 
 use App\Contracts\ServiceSubject;
+use App\Enums\ServiceForm;
 use App\Enums\ServiceRequestStatus;
 use App\Enums\ServiceType;
 use App\Filament\Resources\ServiceRequests\ServiceRequestResource;
 use App\Mail\ServiceRequested;
+use App\Mail\ServiceRequestReceived;
 use App\Models\ServiceRequest;
 use App\Models\User;
 use App\Services\Notifications\AdminRecipients;
@@ -46,12 +48,14 @@ class SubmitServiceRequestAction
      *     source?: string|null,
      * }  $data
      * @param  Model|null  $subject  Объект заявки: яхта, тур, регата, сертификат.
+     * @param  ServiceForm  $form  форма-источник: от неё зависит белый список payload
      */
     public function handle(
         ServiceType $type,
         array $data,
         ?User $user = null,
         ?Model $subject = null,
+        ServiceForm $form = ServiceForm::Modal,
     ): ServiceRequest {
         $serviceRequest = ServiceRequest::create([
             'type' => $type,
@@ -68,7 +72,7 @@ class SubmitServiceRequestAction
             'quantity' => $type->usesQuantity() && ($data['quantity'] ?? null) !== null
                 ? (int) $data['quantity']
                 : null,
-            'payload' => $this->cleanPayload($type, (array) ($data['payload'] ?? []), $subject),
+            'payload' => $this->cleanPayload($type, (array) ($data['payload'] ?? []), $subject, $form),
             'source' => $data['source'] ?? request()->header('Referer', 'unknown'),
         ]);
 
@@ -78,6 +82,7 @@ class SubmitServiceRequestAction
         $serviceRequest->setRelation('subject', $subject);
 
         $this->mailOrderDepartment($serviceRequest);
+        $this->mailCustomer($serviceRequest);
         $this->notifyPanel($serviceRequest);
 
         return $serviceRequest;
@@ -94,11 +99,15 @@ class SubmitServiceRequestAction
      * @param  array<string, mixed>  $raw
      * @return array<string, mixed>
      */
-    private function cleanPayload(ServiceType $type, array $raw, ?Model $subject = null): array
-    {
+    private function cleanPayload(
+        ServiceType $type,
+        array $raw,
+        ?Model $subject = null,
+        ServiceForm $form = ServiceForm::Modal,
+    ): array {
         $payload = [];
 
-        foreach ($type->formFields($subject instanceof ServiceSubject ? $subject : null) as $key => $field) {
+        foreach ($type->formFields($subject instanceof ServiceSubject ? $subject : null, $form) as $key => $field) {
             if (! array_key_exists($key, $raw)) {
                 continue;
             }
@@ -135,6 +144,26 @@ class SubmitServiceRequestAction
             Mail::to($this->settings->orderEmail())->send(
                 new ServiceRequested($serviceRequest, $this->adminUrl()),
             );
+        } catch (\Exception $e) {
+            report($e);
+        }
+    }
+
+    /**
+     * Копия заявки заказчику: ТЗ требует уведомлять обе стороны.
+     *
+     * Email в большинстве подразделов необязателен, поэтому письмо уходит
+     * только когда его оставили. Сбой отправки, как и с письмом в отдел
+     * заказов, не должен ронять уже сохранённую заявку.
+     */
+    private function mailCustomer(ServiceRequest $serviceRequest): void
+    {
+        if (blank($serviceRequest->email)) {
+            return;
+        }
+
+        try {
+            Mail::to($serviceRequest->email)->send(new ServiceRequestReceived($serviceRequest));
         } catch (\Exception $e) {
             report($e);
         }
