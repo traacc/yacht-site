@@ -29,19 +29,19 @@
                     Платежей: {{ $report->serviceCount }} · доля {{ $report->serviceShare() }} %
                 </div>
             </div>
-
+            <!--
             <div class="border border-gray-200 bg-white p-4">
                 <div class="text-xs uppercase tracking-wide text-gray-500">Расходы за период</div>
                 <div class="mt-1 text-2xl font-semibold text-gray-900">{{ $money($report->expenseTotal) }}</div>
                 @unless ($report->hasExpenses())
-                    <div class="mt-1 text-xs text-amber-700">Учёт расходов ещё не ведётся</div>
+                    <div class="mt-1 text-xs text-amber-700 hidden">Учёт расходов ещё не ведётся</div>
                 @endunless
             </div>
-
+            -->
             <div class="border border-gray-200 bg-white p-4">
                 <div class="text-xs uppercase tracking-wide text-gray-500">Итог</div>
                 <div class="mt-1 text-2xl font-semibold text-gray-900">{{ $money($report->balance()) }}</div>
-                <div class="mt-1 text-xs text-gray-500">Приходы − расходы</div>
+                <!--<div class="mt-1 text-xs text-gray-500">Приходы − расходы</div>-->
             </div>
         </div>
 
