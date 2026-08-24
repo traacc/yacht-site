@@ -31,6 +31,10 @@ final readonly class SaveHelpPageSettingsAction
                     'title' => (string) ($document['title'] ?? ''),
                     'desc' => (string) ($document['desc'] ?? ''),
                     'file' => is_string($file) ? $file : null,
+                    'show_on_pages' => array_values(array_filter(
+                        (array) ($document['show_on_pages'] ?? []),
+                        'is_string',
+                    )),
                 ];
             })
             ->filter(fn (array $document): bool => $document['file'] !== null)

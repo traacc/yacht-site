@@ -133,7 +133,11 @@ Route::get('/', function () {
     return view('pages.home', compact('latestNews', 'worldNews', 'pressMentions', 'galleryPhotos', 'faq', 'birthdays', 'sponsors'));
 })->name('home');
 Route::get('/association/charter', function () {
-    $documents = app(SettingsService::class)->documentLinks('charter.documents');
+    $settings = app(SettingsService::class);
+    $documents = [
+        ...$settings->documentLinks('charter.documents'),
+        ...$settings->documentLinks('help.site_guide_documents', 'charter'),
+    ];
 
     return view('pages.association-info.charter', compact('documents'));
 })->name('charter');
@@ -201,13 +205,20 @@ Route::get('/association/regulations', function () {
     $settings = app(SettingsService::class);
 
     return view('pages.association-info.regulations', [
-        'documents' => $settings->documentLinks('regulations.documents'),
+        'documents' => [
+            ...$settings->documentLinks('regulations.documents'),
+            ...$settings->documentLinks('help.site_guide_documents', 'regulations'),
+        ],
         'before_note' => $settings->get('regulations.before_note', ''),
         'provisions' => $settings->get('regulations.provisions', ''),
     ]);
 })->name('regulations');
 Route::get('/association/decisions', function () {
-    $documents = app(SettingsService::class)->documentLinks('decisions.documents');
+    $settings = app(SettingsService::class);
+    $documents = [
+        ...$settings->documentLinks('decisions.documents'),
+        ...$settings->documentLinks('help.site_guide_documents', 'decisions'),
+    ];
 
     return view('pages.association-info.decisions', compact('documents'));
 })->name('decisions');
@@ -273,7 +284,10 @@ Route::get('/carter30/regulations', function () {
     $settings = app(SettingsService::class);
 
     return view('pages.carter30.regulations', [
-        'documents' => $settings->documentLinks('regulations.documents'),
+        'documents' => [
+            ...$settings->documentLinks('regulations.documents'),
+            ...$settings->documentLinks('help.site_guide_documents', 'regulations'),
+        ],
         'before_note' => $settings->get('regulations.before_note', ''),
         'provisions' => $settings->get('regulations.provisions', ''),
     ]);
@@ -284,7 +298,10 @@ Route::get('/carter30/repair', function () {
 
     return view('pages.carter30.repair', [
         'intro' => $settings->get('carter30.repair.intro', ''),
-        'documents' => $settings->documentLinks('carter30.repair.documents'),
+        'documents' => [
+            ...$settings->documentLinks('carter30.repair.documents'),
+            ...$settings->documentLinks('help.site_guide_documents', 'carter30_repair'),
+        ],
         'cases' => RepairCase::published()->ordered()->with(['yacht', 'media'])->get(),
     ]);
 })->name('carter30.repair');

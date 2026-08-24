@@ -10,6 +10,7 @@ use App\Filament\Forms\Components\PdfRichEditor;
 use App\Services\SettingsService;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
@@ -130,6 +131,18 @@ class HelpPageSettings extends Page
                                     ->openable()
                                     ->downloadable()
                                     ->required(),
+
+                                CheckboxList::make('show_on_pages')
+                                    ->label('Также показывать на страницах')
+                                    ->helperText('Документ останется в списке «Помощь по сайту» и дополнительно появится в блоке документов на выбранных страницах.')
+                                    ->options([
+                                        'charter' => 'Устав',
+                                        'regulations' => 'Технический регламент',
+                                        'decisions' => 'Решения общего собрания',
+                                        'carter30_repair' => 'Ремонт и модернизация (Carter 30)',
+                                    ])
+                                    ->columns(2)
+                                    ->columnSpanFull(),
                             ])
                             ->columnSpanFull(),
                     ]),

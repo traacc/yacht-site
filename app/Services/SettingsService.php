@@ -71,12 +71,22 @@ class SettingsService
      * public. Публичному сайту нужен URL, поэтому нормализация вынесена сюда —
      * иначе она копируется в каждое замыкание роута.
      *
+     * $onlyPage фильтрует по полю show_on_pages — так документ из одного
+     * репитера (например, «Помощь по сайту») можно дополнительно показать
+     * на другой странице, не дублируя загрузку файла.
+     *
      * @return list<array{title: string, desc: string, file_url: string|null, original_name: string|null}>
      */
-    public function documentLinks(string $key): array
+    public function documentLinks(string $key, ?string $onlyPage = null): array
     {
         return collect((array) $this->get($key, []))
             ->filter(fn ($document) => is_array($document) && ! empty($document['title']))
+            ->when(
+                $onlyPage !== null,
+                fn (Collection $documents) => $documents->filter(
+                    fn (array $document) => in_array($onlyPage, (array) ($document['show_on_pages'] ?? []), true)
+                )
+            )
             ->map(function (array $document): array {
                 $filePath = $document['file'] ?? null;
                 $hasFile = is_string($filePath) && $filePath !== '';
