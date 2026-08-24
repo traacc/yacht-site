@@ -11,7 +11,10 @@ use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Одноразовый код подтверждения телефона, отправленный по SMS.
+ * Одноразовый код подтверждения телефона из звонка Flash Call.
+ *
+ * Код придумывает провайдер (zvonok.com): это последние цифры номера,
+ * с которого поступает звонок. Сайт хранит только его хеш.
  *
  * В БД хранится только sha256-хеш кода (как у App\Models\TelegramLinkToken).
  * Отработавшие записи чистит планировщик (`model:prune`, ежедневно).
@@ -20,16 +23,16 @@ class PhoneVerificationCode extends Model
 {
     use HasUuids, Prunable;
 
-    /** Длина кода в SMS. */
-    public const CODE_LENGTH = 6;
+    /** Длина кода: последние цифры номера звонящего (у zvonok.com — 4). */
+    public const CODE_LENGTH = 4;
 
-    /** Срок жизни кода. */
-    public const TTL_MINUTES = 10;
+    /** Срок жизни кода. Звонок поступает сразу, ждать доставки не нужно. */
+    public const TTL_MINUTES = 5;
 
     /** Сколько раз можно ошибиться при вводе, прежде чем код сгорит. */
     public const MAX_ATTEMPTS = 5;
 
-    /** Пауза между отправками кода одному пользователю, секунд. */
+    /** Пауза между звонками одному пользователю, секунд. */
     public const RESEND_COOLDOWN_SECONDS = 60;
 
     protected $fillable = [
@@ -39,7 +42,7 @@ class PhoneVerificationCode extends Model
         'attempts',
         'expires_at',
         'confirmed_at',
-        'provider_message_id',
+        'provider_call_id',
     ];
 
     protected function casts(): array
@@ -77,7 +80,7 @@ class PhoneVerificationCode extends Model
             && $this->attempts < self::MAX_ATTEMPTS;
     }
 
-    /** Сколько секунд осталось ждать до повторной отправки (0 — можно слать). */
+    /** Сколько секунд осталось ждать до повторного звонка (0 — можно звонить). */
     public function secondsUntilResend(): int
     {
         $readyAt = $this->created_at?->addSeconds(self::RESEND_COOLDOWN_SECONDS);

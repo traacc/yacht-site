@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\Users;
 
+use App\Actions\Auth\RequestPhoneVerificationCallAction;
 use App\Actions\Auth\SendEmailVerificationLinkAction;
-use App\Actions\Auth\SendPhoneVerificationCodeAction;
 use App\Enums\CreationSource;
 use App\Enums\SportCategory;
 use App\Enums\SystemRole;
@@ -11,6 +11,7 @@ use App\Enums\TeamMemberRole;
 use App\Exports\UserExport;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\Users\Pages\ManageUsers;
+use App\Models\PhoneVerificationCode;
 use App\Models\Regatta;
 use App\Models\User;
 use App\Support\SafeDelete;
@@ -486,18 +487,18 @@ class UserResource extends Resource
                 ])->label('E-mail')->icon(Heroicon::OutlinedEnvelope)->button()->color('gray')
                     ->visible(fn (User $record): bool => ! $record->hasVerifiedEmail()),
                 ActionGroup::make([
-                    Action::make('sendPhoneVerification')
-                        ->label('Код подтверждения по SMS')
-                        ->icon(Heroicon::OutlinedDevicePhoneMobile)
+                    Action::make('requestPhoneVerificationCall')
+                        ->label('Позвонить для подтверждения')
+                        ->icon(Heroicon::OutlinedPhoneArrowUpRight)
                         ->requiresConfirmation()
-                        ->modalHeading('Отправить код подтверждения телефона?')
-                        ->modalDescription(fn (User $record): string => 'SMS с кодом уйдёт на '.(string) $record->phone.'. Код пользователь вводит в личном кабинете, в разделе «Профиль».')
+                        ->modalHeading('Заказать звонок для подтверждения телефона?')
+                        ->modalDescription(fn (User $record): string => 'Звонок поступит на '.(string) $record->phone.'. Отвечать не нужно: код — последние '.PhoneVerificationCode::CODE_LENGTH.' цифры номера звонящего, пользователь вводит их в личном кабинете, в разделе «Профиль».')
                         ->action(function (User $record): void {
                             try {
-                                app(SendPhoneVerificationCodeAction::class)->handle($record, throttle: false);
+                                app(RequestPhoneVerificationCallAction::class)->handle($record, throttle: false);
                             } catch (ValidationException $e) {
                                 Notification::make()
-                                    ->title('Не удалось отправить код')
+                                    ->title('Не удалось заказать звонок')
                                     ->body(collect($e->errors())->flatten()->first())
                                     ->danger()
                                     ->send();
@@ -505,13 +506,13 @@ class UserResource extends Resource
                                 return;
                             }
 
-                            Notification::make()->title('Код отправлен')->success()->send();
+                            Notification::make()->title('Звонок заказан')->success()->send();
                         }),
                     Action::make('verifyPhoneManually')
                         ->label('Подтвердить вручную')
                         ->icon(Heroicon::OutlinedCheckBadge)
                         ->color('warning')
-                        // Нужно, когда номер проверен по звонку, а SMS не доходит.
+                        // Нужно, когда номер проверен вживую, а звонок не проходит.
                         ->visible(fn (): bool => auth()->user()?->system_role === SystemRole::Admin)
                         ->requiresConfirmation()
                         ->modalHeading('Подтвердить телефон вручную?')
@@ -521,7 +522,7 @@ class UserResource extends Resource
 
                             Notification::make()->title('Телефон подтверждён')->success()->send();
                         }),
-                ])->label('Телефон')->icon(Heroicon::OutlinedDevicePhoneMobile)->button()->color('gray')
+                ])->label('Телефон')->icon(Heroicon::OutlinedPhoneArrowUpRight)->button()->color('gray')
                     ->visible(fn (User $record): bool => ! $record->hasVerifiedPhone() && filled($record->phone)),
                 EditAction::make()->modalHeading('Редактировать пользователя'),
                 DeleteAction::make()->label('Удалить')

@@ -10,12 +10,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Проверяет код из SMS и отмечает телефон подтверждённым.
+ * Проверяет код из звонка (последние цифры номера звонящего)
+ * и отмечает телефон подтверждённым.
  *
  * Попытки считаются на самом коде: после MAX_ATTEMPTS промахов код сгорает
- * и нужен новый — перебор шестизначного кода становится бессмысленным.
+ * и нужен новый звонок — перебор четырёх цифр становится бессмысленным.
  *
- * @see SendPhoneVerificationCodeAction
+ * @see RequestPhoneVerificationCallAction
  */
 final class VerifyPhoneCodeAction
 {
@@ -32,7 +33,7 @@ final class VerifyPhoneCodeAction
 
         $code = $phone === null ? null : PhoneVerificationCode::query()
             ->where('user_id', $user->getKey())
-            // Номер мог смениться после отправки — старый код к нему не подходит.
+            // Номер мог смениться после звонка — старый код к нему не подходит.
             ->where('phone', $phone)
             ->usable()
             ->latest()
@@ -40,7 +41,7 @@ final class VerifyPhoneCodeAction
 
         if ($code === null) {
             throw ValidationException::withMessages([
-                'code' => 'Код не найден или устарел. Запросите новый.',
+                'code' => 'Код не найден или устарел. Закажите новый звонок.',
             ]);
         }
 
@@ -54,7 +55,7 @@ final class VerifyPhoneCodeAction
             throw ValidationException::withMessages([
                 'code' => $left > 0
                     ? "Неверный код. Осталось попыток: {$left}."
-                    : 'Неверный код, попытки исчерпаны. Запросите новый код.',
+                    : 'Неверный код, попытки исчерпаны. Закажите новый звонок.',
             ]);
         }
 

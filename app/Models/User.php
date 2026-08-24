@@ -129,7 +129,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     // Верификация телефона
     // ──────────────────────────────────────────────
 
-    /** Телефон подтверждён кодом из SMS. */
+    /** Телефон подтверждён кодом из звонка (Flash Call). */
     public function hasVerifiedPhone(): bool
     {
         return $this->phone_verified_at !== null;

@@ -208,7 +208,7 @@ class EditProfile extends BaseEditProfile
                     ->telRegex('/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/')
                     ->mask('+7 (999) 999-99-99')
                     ->placeholder('+7 (___) ___-__-__')
-                    ->helperText('При смене номера подтверждение сбрасывается — новый номер нужно подтвердить по SMS.')
+                    ->helperText('При смене номера подтверждение сбрасывается — новый номер нужно подтвердить звонком.')
                     ->maxLength(255),
                 Select::make('sport_category')
                     ->label('Спортивный разряд')

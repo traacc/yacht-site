@@ -35,6 +35,17 @@ final class PhoneNumber
         return strlen($digits) === 11 && $digits[0] === '7' ? $digits : null;
     }
 
+    /**
+     * Международный формат «+7XXXXXXXXXX» — в таком виде номер принимает
+     * API сервиса «Звонок»; null — если номер непригоден.
+     */
+    public static function international(?string $raw): ?string
+    {
+        $digits = self::normalize($raw);
+
+        return $digits === null ? null : '+'.$digits;
+    }
+
     /** Номер в маске «+7 (999) 999-99-99»; null — если номер непригоден. */
     public static function format(?string $raw): ?string
     {

@@ -6,37 +6,37 @@ namespace App\Actions\Auth;
 
 use App\Models\PhoneVerificationCode;
 use App\Models\User;
-use App\Services\SmsService;
+use App\Services\FlashCallService;
 use App\Support\PhoneNumber;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Единая точка отправки кода подтверждения телефона по SMS.
+ * Единая точка заказа звонка-подтверждения телефона (Flash Call).
  *
- * Через неё проходят все кнопки «отправить код», поэтому лимиты общие:
- * пауза между отправками (PhoneVerificationCode::RESEND_COOLDOWN_SECONDS)
- * и потолок отправок на пару «номер + IP» за окно.
+ * Через неё проходят все кнопки «позвонить», поэтому лимиты общие:
+ * пауза между звонками (PhoneVerificationCode::RESEND_COOLDOWN_SECONDS)
+ * и потолок звонков на пару «номер + IP» за окно.
  *
- * @see SmsService провайдер i-digital direct
+ * Код не генерируется на сайте: провайдер звонит с номера, последние цифры
+ * которого и есть код, и возвращает их в ответе — сохраняем только хеш.
+ *
+ * @see FlashCallService сервис «Звонок» (zvonok.com)
  * @see VerifyPhoneCodeAction проверка кода
  */
-final class SendPhoneVerificationCodeAction
+final class RequestPhoneVerificationCallAction
 {
-    /** Максимум отправок на пару «номер + IP» в течение окна. */
+    /** Максимум звонков на пару «номер + IP» в течение окна. */
     private const MAX_ATTEMPTS = 5;
 
     /** Окно троттлинга, секунд. */
     private const DECAY_SECONDS = 3600;
 
-    /** Текст SMS: до 70 символов — это одно сообщение в кириллице. */
-    private const MESSAGE_TEMPLATE = 'Код подтверждения: %s. Действует %d мин.';
-
-    public function __construct(private readonly SmsService $sms) {}
+    public function __construct(private readonly FlashCallService $flashCall) {}
 
     /**
-     * @param  bool  $throttle  false — для отправок, инициированных администратором
+     * @param  bool  $throttle  false — для звонков, инициированных администратором
      *
      * @throws ValidationException
      */
@@ -52,15 +52,15 @@ final class SendPhoneVerificationCodeAction
 
         if ($phone === null) {
             throw ValidationException::withMessages([
-                'phone' => 'Укажите телефон в профиле и сохраните изменения — код придёт на сохранённый номер.',
+                'phone' => 'Укажите телефон в профиле и сохраните изменения — звонок поступит на сохранённый номер.',
             ]);
         }
 
         $this->ensurePhoneIsNotTaken($user, $phone);
 
-        if (! $this->sms->isConfigured()) {
+        if (! $this->flashCall->isConfigured()) {
             throw ValidationException::withMessages([
-                'phone' => 'Отправка SMS не настроена. Обратитесь к администратору сайта.',
+                'phone' => 'Подтверждение звонком не настроено. Обратитесь к администратору сайта.',
             ]);
         }
 
@@ -70,29 +70,10 @@ final class SendPhoneVerificationCodeAction
             $this->ensureIsNotRateLimited($phone);
         }
 
-        // Прежние коды больше не действуют: одновременно живёт только последний.
-        $this->expirePreviousCodes($user);
-
-        $plainCode = $this->generateCode();
-
-        $code = PhoneVerificationCode::create([
-            'user_id' => $user->getKey(),
-            'phone' => $phone,
-            'code_hash' => PhoneVerificationCode::hashCode($plainCode),
-            'expires_at' => now()->addMinutes(PhoneVerificationCode::TTL_MINUTES),
-        ]);
-
-        $result = $this->sms->send(
-            $phone,
-            sprintf(self::MESSAGE_TEMPLATE, $plainCode, PhoneVerificationCode::TTL_MINUTES),
-            externalId: (string) $code->getKey(),
-        );
+        $result = $this->flashCall->call($phone);
 
         if (! $result->ok) {
-            // Неотправленный код не должен занимать «слот» и блокировать повтор паузой.
-            $code->delete();
-
-            Log::warning('Не удалось отправить код подтверждения телефона', [
+            Log::warning('Не удалось заказать звонок для подтверждения телефона', [
                 'user_id' => $user->getKey(),
                 'phone' => PhoneNumber::mask($phone),
                 'error' => $result->message(),
@@ -100,14 +81,23 @@ final class SendPhoneVerificationCodeAction
 
             throw ValidationException::withMessages([
                 'phone' => $result->shouldRetry()
-                    ? 'Не удалось отправить SMS. Попробуйте ещё раз через минуту.'
-                    : 'Не удалось отправить SMS. Обратитесь к администратору сайта.',
+                    ? 'Не удалось заказать звонок. Попробуйте ещё раз через минуту.'
+                    : 'Не удалось заказать звонок. Обратитесь к администратору сайта.',
             ]);
         }
 
-        $code->forceFill(['provider_message_id' => $result->messageUuid])->save();
+        // Прежние коды больше не действуют: одновременно живёт только последний.
+        // Гасим их после успешного звонка, иначе неудачная попытка обнулила бы
+        // ещё годный код.
+        $this->expirePreviousCodes($user);
 
-        return $code;
+        return PhoneVerificationCode::create([
+            'user_id' => $user->getKey(),
+            'phone' => $phone,
+            'code_hash' => PhoneVerificationCode::hashCode((string) $result->pincode()),
+            'expires_at' => now()->addMinutes(PhoneVerificationCode::TTL_MINUTES),
+            'provider_call_id' => $result->callId(),
+        ]);
     }
 
     /**
@@ -146,7 +136,7 @@ final class SendPhoneVerificationCodeAction
 
         if ($seconds > 0) {
             throw ValidationException::withMessages([
-                'phone' => "Код уже отправлен. Повторная отправка будет доступна через {$seconds} с.",
+                'phone' => "Звонок уже заказан. Повторный будет доступен через {$seconds} с.",
             ]);
         }
     }
@@ -160,7 +150,7 @@ final class SendPhoneVerificationCodeAction
             $minutes = (int) ceil(RateLimiter::availableIn($key) / 60);
 
             throw ValidationException::withMessages([
-                'phone' => "Слишком много запросов кода. Попробуйте через {$minutes} мин.",
+                'phone' => "Слишком много запросов звонка. Попробуйте через {$minutes} мин.",
             ]);
         }
 
@@ -174,20 +164,5 @@ final class SendPhoneVerificationCodeAction
             ->whereNull('confirmed_at')
             ->where('expires_at', '>', now())
             ->update(['expires_at' => now()]);
-    }
-
-    /**
-     * Код фиксированной длины без ведущего нуля.
-     *
-     * Ноль впереди теряется везде, где код по дороге становится числом
-     * (числовое поле формы, JSON, выгрузка в таблицу), и пользователь
-     * получает «неверный код» на верном коде. Потеря 10% пространства
-     * при 5 попытках ввода на цену вопроса не влияет.
-     */
-    private function generateCode(): string
-    {
-        $min = 10 ** (PhoneVerificationCode::CODE_LENGTH - 1);
-
-        return (string) random_int($min, ($min * 10) - 1);
     }
 }

@@ -40,7 +40,7 @@ graph TB
     Queue --> TG[Telegram Bot API]
     Queue --> VK[VK API]
     Actions --> Yandex[Яндекс: Карты / Геокодер / SmartCaptcha]
-    Actions --> Sms[i-digital direct: SMS]
+    Actions --> FlashCall[zvonok.com: звонок-подтверждение]
     Actions --> Weather[Погодный API]
     Actions --> Mail[SMTP / Mailpit в dev]
 
@@ -160,7 +160,7 @@ erDiagram
 Актуальная структура и разбор по доменам — в [`PROJECT_STRUCTURE.md`](PROJECT_STRUCTURE.md). Ключевое:
 
 - `app/Actions/{Regatta,RegattaEntry,RegattaResult,Team,Yacht,YachtRental,Voting,Feedback,Document}/` — бизнес-логика (Single Action Classes);
-- `app/Services/` — расчёты (`RaceScorer`, `RatingCalculator`), `SettingsService`, `Rgd/RgdParser`, интеграции (Telegram, VK, Яндекс, погода, SMS);
+- `app/Services/` — расчёты (`RaceScorer`, `RatingCalculator`), `SettingsService`, `Rgd/RgdParser`, интеграции (Telegram, VK, Яндекс, погода, звонки-подтверждения);
 - `app/Filament/` — админ-панель; `app/Filament/User/` — личный кабинет;
 - `app/Livewire/` — публичные компоненты; `app/Observers/` — регистрируются в `AppServiceProvider`;
 - `routes/web.php` (замыкания), `routes/auth.php` (Breeze), `routes/api.php` (внешний API судейской программы), `routes/console.php` (планировщик).
@@ -262,7 +262,7 @@ REST API для судейской программы «КАРТЕР 30». Middl
 ### 7.9. Верификация e-mail и телефона
 `User` реализует `MustVerifyEmail`; письмо — брендированное `VerifyEmailMail` через переопределённый `sendEmailVerificationNotification()` (подписанная ссылка формата Laravel, срок — `config('auth.verification.expire')`, сутки). Единая точка отправки — `SendEmailVerificationLinkAction` (троттлинг 3 письма / 10 мин на пару «e-mail + IP», отказ для технических адресов `@noemail.local`); её вызывают регистрация (`LoginModal::register`), гостевая быстрая заявка, смена e-mail в профиле ЛК (`EditProfile` сбрасывает `email_verified_at`) и все кнопки «отправить ещё раз». Подтверждение — стандартный `VerifyEmailController`; `markEmailAsVerified()` переопределён на `saveQuietly()`, иначе хук `saving` (проверка дублей ФИО) блокирует подтверждение.
 
-**Телефон.** Код из SMS отправляет `SendPhoneVerificationCodeAction` через `SmsService` (провайдер i-digital direct), проверяет `VerifyPhoneCodeAction`. Код генерирует и хранит сайт: `PhoneVerificationCode` (sha256-хеш кода, 6 цифр, 10 минут, 5 попыток ввода, пауза 60 с между отправками, потолок 5 отправок в час на пару «номер + IP»; чистка — `model:prune`). Смена номера где угодно сбрасывает `phone_verified_at` (хук `saving` у `User`), `markPhoneAsVerified()` — тем же `saveQuietly()`, что и у e-mail. UI: блок «Телефон» в профиле ЛК (трейт `VerifiesPhone`) и групповое действие «Телефон» в `UserResource` (отправка кода, ручное подтверждение — только админ). Номера сравниваются нормализованными (`Support/PhoneNumber`), поэтому один номер подтверждён максимум у одного аккаунта.
+**Телефон.** Подтверждение звонком (Flash Call) через сервис «Звонок» (zvonok.com): пользователю поступает звонок, отвечать не нужно — код это последние 4 цифры номера звонящего. Звонок заказывает `RequestPhoneVerificationCallAction` через `FlashCallService`, ввод проверяет `VerifyPhoneCodeAction`. Код придумывает провайдер и отдаёт в поле `pincode`; сайт хранит только его sha256-хеш и `call_id` — `PhoneVerificationCode` (4 цифры, 5 минут, 5 попыток ввода, пауза 60 с между звонками, потолок 5 звонков в час на пару «номер + IP»; чистка — `model:prune`). Запись создаётся только после успешного ответа провайдера, поэтому неудачная попытка не гасит ещё годный код. Смена номера где угодно сбрасывает `phone_verified_at` (хук `saving` у `User`), `markPhoneAsVerified()` — тем же `saveQuietly()`, что и у e-mail. UI: блок «Телефон» в профиле ЛК (трейт `VerifiesPhone`) и групповое действие «Телефон» в `UserResource` (заказ звонка, ручное подтверждение — только админ). Номера сравниваются нормализованными (`Support/PhoneNumber`), поэтому один номер подтверждён максимум у одного аккаунта.
 
 **Гейт**: онлайн-оплата доступна только с подтверждённым e-mail — проверка в `StartOnlinePaymentAction` (до переиспользования транзакции). UI: в ЛК и на экране поданной заявки вместо «Оплатить» показывается «Подтвердите e-mail», в панели ЛК — баннер (`EmailVerificationBanner`, renderHook `TOPBAR_AFTER`). В админке — колонка/фильтр статуса и действия «Письмо для подтверждения» / «Подтвердить вручную» (для офлайн-оплат, только админ).
 
@@ -312,7 +312,7 @@ REST API для судейской программы «КАРТЕР 30». Middl
 | VK (новости в группу) | `VkService` + job (OAuth-refresh токены) | `VK_CLIENT_ID/SECRET`, `VK_ACCESS_TOKEN`, `VK_REFRESH_TOKEN`, `VK_GROUP_ID`, `VK_DEVICE_ID`, `VK_PROXY` |
 | Яндекс.Карты / Геокодер | `YandexMapService`, `YandexGeocoderService`, filament-yandex-map, map-picker | `YANDEX_MAP_API_KEY`, `YANDEX_MAP_SUGGEST_API_KEY` |
 | Yandex SmartCaptcha | `Rules/YandexCaptcha` + компонент `<x-yandex-captcha>` (вход, регистрация, формы обратной связи); без ключей проверка отключается | `YANDEX_SMARTCAPTCHA_SITE_KEY/SERVER_KEY` |
-| SMS (подтверждение телефона) | `SmsService` — провайдер «i-digital direct», POST `/api/v1/message`; коды генерирует и хранит сайт (`PhoneVerificationCode`), проверка связи — `sms:check` | `IDGTL_API_KEY`, `IDGTL_SENDER_NAME` |
+| Подтверждение телефона звонком (Flash Call) | `FlashCallService` — сервис «Звонок» (zvonok.com), POST `/phones/flashcall/`; код (последние цифры номера звонящего) присылает провайдер, сайт хранит его хеш (`PhoneVerificationCode`), проверка доступа — `flashcall:check` | `ZVONOK_PUBLIC_KEY`, `ZVONOK_CAMPAIGN_ID` |
 | Погода | `WeatherService` (кэшируется) | — |
 | Почта | Mailable-классы `app/Mail`; в dev — Mailpit | `MAIL_*`, `FEEDBACK_NOTIFICATION_EMAIL` |
 | Эквайринг (онлайн-оплата) | `Services/Payments` (`PaymentGateway`/`PaymentManager`), пока только `TestPaymentProvider`; настройки — `settings`, группа `payments` | — (креденшелы реальных провайдеров добавятся в `config/services.php`) |

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Concerns;
 
-use App\Actions\Auth\SendPhoneVerificationCodeAction;
+use App\Actions\Auth\RequestPhoneVerificationCallAction;
 use App\Actions\Auth\VerifyPhoneCodeAction;
 use App\Models\PhoneVerificationCode;
 use App\Models\User;
@@ -19,12 +19,12 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Блок подтверждения телефона: статус + кнопки «Отправить код / Ввести код».
+ * Блок подтверждения телефона звонком: статус + кнопки «Позвонить / Ввести код».
  *
- * Код уходит на сохранённый в профиле номер, поэтому изменённый, но не
+ * Звонок поступает на сохранённый в профиле номер, поэтому изменённый, но не
  * сохранённый номер сюда не попадает — об этом сказано в описании секции.
  *
- * @see SendPhoneVerificationCodeAction
+ * @see RequestPhoneVerificationCallAction
  * @see VerifyPhoneCodeAction
  */
 trait VerifiesPhone
@@ -42,29 +42,30 @@ trait VerifiesPhone
 
         return Section::make('Телефон')
             ->description($verified
-                ? 'Номер подтверждён по SMS.'
-                : 'Подтвердите номер по SMS. Код придёт на сохранённый в профиле номер, поэтому новый номер сначала сохраните.')
+                ? 'Номер подтверждён звонком.'
+                : 'Подтвердите номер звонком: мы позвоним на сохранённый в профиле номер, отвечать не нужно. Код — последние '
+                    .PhoneVerificationCode::CODE_LENGTH.' цифры номера, с которого поступит звонок. Новый номер сначала сохраните.')
             ->schema([
                 Placeholder::make('phone_status')
                     ->label('Статус')
                     ->content(match (true) {
                         $verified => 'Подтверждён '.$user->phone_verified_at->format('d.m.Y H:i').' — '.(PhoneNumber::format($user->phone) ?? $user->phone),
                         ! $hasPhone => 'Номер не указан',
-                        $pending !== null => 'Не подтверждён. Код отправлен, действует до '.$pending->expires_at->format('H:i'),
+                        $pending !== null => 'Не подтверждён. Звонок заказан, код действует до '.$pending->expires_at->format('H:i'),
                         default => 'Не подтверждён',
                     }),
 
                 Actions::make([
-                    Action::make('sendPhoneCode')
-                        ->label($pending !== null ? 'Отправить код ещё раз' : 'Отправить код по SMS')
-                        ->icon(Heroicon::OutlinedDevicePhoneMobile)
+                    Action::make('requestPhoneCall')
+                        ->label($pending !== null ? 'Позвонить ещё раз' : 'Позвонить для подтверждения')
+                        ->icon(Heroicon::OutlinedPhoneArrowUpRight)
                         ->visible(! $verified && $hasPhone)
                         ->action(function (Action $action) use ($user, $returnUrl) {
                             try {
-                                app(SendPhoneVerificationCodeAction::class)->handle($user);
+                                app(RequestPhoneVerificationCallAction::class)->handle($user);
                             } catch (ValidationException $e) {
                                 Notification::make()
-                                    ->title('Не удалось отправить код')
+                                    ->title('Не удалось заказать звонок')
                                     ->body(collect($e->errors())->flatten()->first())
                                     ->danger()
                                     ->send();
@@ -75,8 +76,10 @@ trait VerifiesPhone
                             }
 
                             Notification::make()
-                                ->title('Код отправлен')
-                                ->body('SMS с кодом придёт в течение минуты. Код действует '.PhoneVerificationCode::TTL_MINUTES.' мин.')
+                                ->title('Звонок заказан')
+                                ->body('Дождитесь звонка — отвечать не нужно. Введите последние '
+                                    .PhoneVerificationCode::CODE_LENGTH.' цифры номера, с которого позвонили. Код действует '
+                                    .PhoneVerificationCode::TTL_MINUTES.' мин.')
                                 ->success()
                                 ->send();
 
@@ -90,17 +93,13 @@ trait VerifiesPhone
                         ->modalHeading('Подтверждение телефона')
                         ->modalSubmitActionLabel('Подтвердить')
                         ->schema([
-                            // Именно текстовое поле: ->numeric() навешивает
-                            // NumberStateCast с floatval(), и код с ведущим нулём
-                            // приезжает в действие без него. inputMode даёт
-                            // цифровую клавиатуру на телефоне, не меняя тип поля.
                             TextInput::make('code')
-                                ->label('Код из SMS')
+                                ->label('Последние '.PhoneVerificationCode::CODE_LENGTH.' цифры номера, с которого позвонили')
                                 ->required()
-                                ->inputMode('numeric')
-                                ->rule('digits:'.PhoneVerificationCode::CODE_LENGTH)
+                                ->numeric()
+                                ->minLength(PhoneVerificationCode::CODE_LENGTH)
+                                ->maxLength(PhoneVerificationCode::CODE_LENGTH)
                                 ->autocomplete('one-time-code')
-                                ->extraInputAttributes(['pattern' => '[0-9]*'])
                                 ->placeholder(str_repeat('0', PhoneVerificationCode::CODE_LENGTH)),
                         ])
                         ->action(function (array $data, Action $action) use ($user, $returnUrl) {

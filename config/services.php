@@ -93,29 +93,27 @@ return [
     ],
 
     /*
-     * SMS-провайдер «i-digital direct» (direct.i-dgtl.ru).
-     * Используется для подтверждения телефона (см. App\Services\SmsService).
+     * Подтверждение телефона звонком (Flash Call) — сервис «Звонок» (zvonok.com).
+     * Документация: https://api-docs.zvonok.com/
      *
-     * api_key — готовая строка Basic-авторизации из ЛК (Разработчикам → API-ключи),
-     * это уже base64 от <key_id>:<password>, дополнительно кодировать не нужно.
-     * Нужен ключ типа TOKEN_1 («Одиночные сообщения и рассылки»).
+     * Пользователю поступает звонок, отвечать на который не нужно: код —
+     * последние 4 цифры номера звонящего. Провайдер возвращает этот код в
+     * ответе на создание звонка (см. App\Services\FlashCallService).
      *
-     * sender_name — одобренное имя отправителя. Для тестов провайдер разрешает
-     * зарезервированное имя sms_promo.
+     * public_key — ключ доступа из настроек профиля в ЛК zvonok.com.
+     * campaign_id — ID кампании с типом «Flash Call»; кампании других типов
+     * этот эндпоинт не принимает.
      */
-    'i_dgtl' => [
-        'base_url' => env('IDGTL_BASE_URL', 'https://direct.i-dgtl.ru/api/v1'),
-        'api_key' => env('IDGTL_API_KEY'),
-        'sender_name' => env('IDGTL_SENDER_NAME'),
-        // Вендор рекомендует ждать ответ до 70 секунд: обычно приходит за секунды,
-        // но под нагрузкой ответ может задержаться.
-        'timeout' => (int) env('IDGTL_TIMEOUT', 70),
-        'connect_timeout' => (int) env('IDGTL_CONNECT_TIMEOUT', 8),
-        // Повторы внутри запроса — только на обрыв связи и 5xx.
-        'retry_times' => (int) env('IDGTL_RETRY_TIMES', 2),
-        'retry_delay' => (int) env('IDGTL_RETRY_DELAY', 1000), // мс
-        // Время жизни SMS у оператора: доставлять код позже его срока бессмысленно.
-        'ttl' => (int) env('IDGTL_SMS_TTL', 600), // сек, 60 ≤ ttl ≤ 86400
+    'zvonok' => [
+        'base_url' => env('ZVONOK_BASE_URL', 'https://zvonok.com/manager/cabapi_external/api/v1'),
+        'public_key' => env('ZVONOK_PUBLIC_KEY'),
+        'campaign_id' => env('ZVONOK_CAMPAIGN_ID'),
+        'timeout' => (int) env('ZVONOK_TIMEOUT', 30),
+        'connect_timeout' => (int) env('ZVONOK_CONNECT_TIMEOUT', 8),
+        // Повторы внутри запроса — только на обрыв связи, 5xx и 429
+        // (у API лимит 20 запросов в секунду).
+        'retry_times' => (int) env('ZVONOK_RETRY_TIMES', 2),
+        'retry_delay' => (int) env('ZVONOK_RETRY_DELAY', 1000), // мс
     ],
 
     'openai' => [
