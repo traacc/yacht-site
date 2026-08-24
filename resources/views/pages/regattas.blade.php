@@ -69,6 +69,13 @@ bgImage="{{ asset('images/bg/competitions.webp') }}"
 
 </div>
 
+@if($documents !== [])
+<section class="container mx-auto pb-12">
+    <h3 class="text-2xl font-semibold text-[#2E325C] mb-6">Документы</h3>
+    <x-document-list :documents="$documents" />
+</section>
+@endif
+
 <x-feedback-section>
     
 </x-feedback-section>

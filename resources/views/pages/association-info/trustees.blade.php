@@ -40,7 +40,16 @@ bgImage="{{ asset('images/bg/trustees.webp') }}"
         </div>
     </section>
 
-    <div x-show="open" 
+    @if($documents !== [])
+    <section class="pb-10">
+        <div class="container mx-auto">
+            <h3 class="text-2xl font-semibold text-[#2E325C] mb-6">Документы</h3>
+            <x-document-list :documents="$documents" />
+        </div>
+    </section>
+    @endif
+
+    <div x-show="open"
             x-cloak 
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 person-modal">
         <div class="md:flex relative p-6 max-w-[1000px] overflow-auto max-h-[95dvh] bg-white gap-6"

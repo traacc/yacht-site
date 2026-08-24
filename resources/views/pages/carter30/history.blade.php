@@ -22,6 +22,15 @@ bgImage="{{ asset('images/bg/regulations.webp') }}"
     </div>
 </section>
 
+@if($documents !== [])
+<section class="py-10 px-4 sm:px-6 lg:px-8">
+    <div class="container mx-auto">
+        <h3 class="text-2xl font-semibold text-[#2E325C] mb-6">Документы</h3>
+        <x-document-list :documents="$documents" />
+    </div>
+</section>
+@endif
+
 <x-feedback-section>
 
 </x-feedback-section>

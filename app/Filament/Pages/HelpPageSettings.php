@@ -140,11 +140,30 @@ class HelpPageSettings extends Page
                                         'regulations' => 'Технический регламент',
                                         'decisions' => 'Решения общего собрания',
                                         'carter30_repair' => 'Ремонт и модернизация (Carter 30)',
+                                        'carter30_history' => 'История Carter 30',
+                                        'carter30_technical_help' => 'Техническая помощь (Carter 30)',
                                         'regatta_entries' => 'Страница заявок',
+                                        'competitions' => 'Календарь регат',
+                                        'ratings' => 'Рейтинги',
+                                        'series' => 'Серии',
                                         'yachts' => 'Яхты',
                                         'teams' => 'Команды',
+                                        'management' => 'Правление',
+                                        'trustees' => 'Попечительский совет',
+                                        'rules' => 'Правила вступления',
+                                        'policy' => 'Политика Ассоциации',
+                                        'services' => 'Услуги',
+                                        'services_yacht_rental' => 'Аренда яхт',
+                                        'services_fleet_rental' => 'Аренда флота',
+                                        'services_events' => 'Мероприятия',
+                                        'services_training' => 'Обучение',
+                                        'services_tours' => 'Туры',
+                                        'services_foreign_regattas' => 'Выездные регаты',
+                                        'services_gift_certificates' => 'Подарочные сертификаты',
                                     ])
                                     ->columns(2)
+                                    ->searchable()
+                                    ->bulkToggleable()
                                     ->columnSpanFull(),
                             ])
                             ->columnSpanFull(),

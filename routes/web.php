@@ -166,7 +166,9 @@ Route::get('/association/management', function () {
         ->values()
         ->all();
 
-    return view('pages.association-info.management', compact('members'));
+    $documents = app(SettingsService::class)->documentLinks('help.site_guide_documents', 'management');
+
+    return view('pages.association-info.management', compact('members', 'documents'));
 })->name('management');
 Route::get('/association/trustees', function () {
     $members = app(SettingsService::class)->get('trustees.members', []);
@@ -192,13 +194,20 @@ Route::get('/association/trustees', function () {
         ->values()
         ->all();
 
-    return view('pages.association-info.trustees', compact('members'));
+    $documents = app(SettingsService::class)->documentLinks('help.site_guide_documents', 'trustees');
+
+    return view('pages.association-info.trustees', compact('members', 'documents'));
 })->name('trustees');
-Route::view('/association/policy', 'pages/association-info/policy')->name('policy');
+Route::get('/association/policy', function () {
+    $documents = app(SettingsService::class)->documentLinks('help.site_guide_documents', 'policy');
+
+    return view('pages.association-info.policy', compact('documents'));
+})->name('policy');
 Route::get('/association/rules', function () {
     return view('pages.association-info.rules', [
         // Размер членского взноса задаётся в админке в этом же разделе (ТЗ 3-го этапа).
         'membershipFee' => app(MembershipFees::class)->publication(),
+        'documents' => app(SettingsService::class)->documentLinks('help.site_guide_documents', 'rules'),
     ]);
 })->name('rules');
 Route::get('/association/regulations', function () {
@@ -273,8 +282,11 @@ Route::post('/association/votings/{voting}/vote', function (Request $request, Vo
 // Раздел «Carter 30» (ТЗ 3-го этапа, п. 5)
 // ──────────────────────────────────────────────
 Route::get('/carter30/history', function () {
+    $settings = app(SettingsService::class);
+
     return view('pages.carter30.history', [
-        'content' => app(SettingsService::class)->get('carter30.history', ''),
+        'content' => $settings->get('carter30.history', ''),
+        'documents' => $settings->documentLinks('help.site_guide_documents', 'carter30_history'),
     ]);
 })->name('carter30.history');
 
@@ -314,13 +326,15 @@ Route::get('/carter30/repair/{case}', function (RepairCase $case) {
 
 Route::get('/carter30/technical-help', function () {
     $directory = app(HelpDirectory::class);
+    $settings = app(SettingsService::class);
 
     return view('pages.carter30.technical-help', [
         'categories' => $directory->categories(),
         'defaultCategory' => $directory->defaultCategory(),
         // Вводный текст общий со страницей «Помощь»: контент один, редактируется
         // в одном месте (HelpPageSettings).
-        'beforeNote' => app(SettingsService::class)->get('help.before_note', ''),
+        'beforeNote' => $settings->get('help.before_note', ''),
+        'documents' => $settings->documentLinks('help.site_guide_documents', 'carter30_technical_help'),
     ]);
 })->name('carter30.technical-help');
 
@@ -459,6 +473,7 @@ Route::get('/services', function () {
             ? Storage::disk('public')->url($heroImage)
             : null,
         'services' => ServiceType::published(),
+        'documents' => $settings->documentLinks('help.site_guide_documents', 'services'),
     ]);
 })->name('services.index');
 
@@ -485,6 +500,7 @@ Route::get('/services/yacht-rental', function (Request $request) use ($servicePa
         'purposes' => $booking->purposes(),
         'steps' => (array) $settings->get('services.yacht_rental.steps', []),
         'note' => $settings->get('services.yacht_rental.note', ''),
+        'documents' => $settings->documentLinks('help.site_guide_documents', 'services_yacht_rental'),
     ]));
 })->name('services.yacht-rental');
 
@@ -531,6 +547,7 @@ Route::get('/services/fleet-rental', function (Request $request) use ($servicePa
         'summary' => $summary,
         'advantages' => (array) $settings->get('services.fleet_rental.advantages', []),
         'note' => $settings->get('services.fleet_rental.note', ''),
+        'documents' => $settings->documentLinks('help.site_guide_documents', 'services_fleet_rental'),
     ]));
 })->name('services.fleet-rental');
 
@@ -547,6 +564,7 @@ Route::get('/services/events', function () use ($servicePage) {
         'fleetNote' => $settings->get('services.event.fleet_note', ''),
         // Флот берём из каталога, чтобы не расходиться со страницей /yachts.
         'fleet' => $showFleet ? app(FleetAvailability::class)->fleet() : collect(),
+        'documents' => $settings->documentLinks('help.site_guide_documents', 'services_events'),
     ]));
 })->name('services.events');
 
@@ -556,6 +574,7 @@ Route::get('/services/training', function () use ($servicePage) {
     return view('pages.services.training', $servicePage(ServiceType::Training, [
         'programs' => (array) $settings->get('services.training.programs', []),
         'gallery' => (array) $settings->get('services.training.gallery', []),
+        'documents' => $settings->documentLinks('help.site_guide_documents', 'services_training'),
     ]));
 })->name('services.training');
 
@@ -569,6 +588,7 @@ Route::get('/services/tours', function () use ($servicePage) {
         'included' => (array) $settings->get('services.tour.included', []),
         'note' => $settings->get('services.tour.note', ''),
         'gallery' => (array) $settings->get('services.tour.gallery', []),
+        'documents' => $settings->documentLinks('help.site_guide_documents', 'services_tours'),
     ]));
 })->name('services.tours');
 
@@ -600,6 +620,7 @@ Route::get('/services/foreign-regattas', function () use ($servicePage) {
         'included' => (array) $settings->get('services.foreign_regatta.included', []),
         'note' => $settings->get('services.foreign_regatta.note', ''),
         'gallery' => (array) $settings->get('services.foreign_regatta.gallery', []),
+        'documents' => $settings->documentLinks('help.site_guide_documents', 'services_foreign_regattas'),
     ]));
 })->name('services.foreign-regattas');
 
@@ -630,6 +651,7 @@ Route::get('/services/gift-certificates', function () use ($servicePage) {
         'steps' => (array) $settings->get('services.gift_certificate.steps', []),
         'note' => $settings->get('services.gift_certificate.note', ''),
         'gallery' => (array) $settings->get('services.gift_certificate.gallery', []),
+        'documents' => $settings->documentLinks('help.site_guide_documents', 'services_gift_certificates'),
     ]));
 })->name('services.gift-certificates');
 
@@ -728,7 +750,9 @@ Route::get('/competitions', function () {
         ->sortByDesc(fn ($s) => $s->season?->year)
         ->values();
 
-    return view('pages.regattas', compact('regattas', 'series'));
+    $documents = app(SettingsService::class)->documentLinks('help.site_guide_documents', 'competitions');
+
+    return view('pages.regattas', compact('regattas', 'series', 'documents'));
 })->name('competitions');
 Route::get('/regattas/entries', function () {
     // Все заявки по каждой регате (любой статус), сгруппированные по регате.
@@ -1152,16 +1176,18 @@ Route::get('/ratings', function () {
         ->toArray();
 
     $ratingSeasonYear = $ratingSeason?->year;
+    $documents = app(SettingsService::class)->documentLinks('help.site_guide_documents', 'ratings');
 
-    return view('pages.ratings', compact('teamRatings', 'personalRatings', 'ratingSeasonYear'));
+    return view('pages.ratings', compact('teamRatings', 'personalRatings', 'ratingSeasonYear', 'documents'));
 })->name('ratings');
 // Подраздел «Серии» раздела «Соревнования»: описание каждой серии и результаты
 // по её этапам. Рейтинговая таблица серий живёт отдельно — в «Рейтингах»
 // (маршрут `series-results` ниже).
 Route::get('/series', function (SeriesStageResultsService $seriesStages) {
     $series = $seriesStages->overview();
+    $documents = app(SettingsService::class)->documentLinks('help.site_guide_documents', 'series');
 
-    return view('pages.series', compact('series'));
+    return view('pages.series', compact('series', 'documents'));
 })->name('series');
 Route::get('/series/results', function () {
     $calculator = app(RatingCalculator::class);

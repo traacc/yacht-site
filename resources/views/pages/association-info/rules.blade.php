@@ -171,7 +171,14 @@ bgImage="{{ asset('images/bg/rules.webp') }}"
     </div>
 
   </section>
-  
+
+  @if($documents !== [])
+  <section class="container mx-auto md:mb-24 mb-8">
+    <h3 class="text-2xl font-semibold text-[#2E325C] mb-6">Документы</h3>
+    <x-document-list :documents="$documents" />
+  </section>
+  @endif
+
   <section style="background-image: url('{{ asset('images/rules/rules_want.png') }}')" class="container mx-auto bg-cover bg-center py-20 mt-10 flex flex-col items-center text-center mb-8">
     <h2 class="a-font text-white text-3xl md:text-5xl max-w-4xl">Хотите присоединиться к Ассоциации и принимать участие в её деятельности?</h2>
     <button @click="$dispatch('open-login-modal', { tab: 'register' })" class="mt-6 bg-white cursor-pointer text-[#2E325C] py-2 px-9 hover:bg-[#E8E8E8] transition-colors text-lg font-semibold w-full md:w-auto ms flex items-center justify-center gap-2">

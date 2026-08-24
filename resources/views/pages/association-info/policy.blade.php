@@ -22,9 +22,19 @@ bgImage="{{ asset('images/bg/policy.webp') }}"
             <li>Материально-техническая и консультационная поддержка членов Ассоциации</li>
         </ol>
     </div>
-    
+
 
 </section>
+
+@if($documents !== [])
+<section class="pb-10">
+    <div class="container mx-auto">
+        <h3 class="text-2xl font-semibold text-[#2E325C] mb-6">Документы</h3>
+        <x-document-list :documents="$documents" />
+    </div>
+</section>
+@endif
+
 <x-feedback-section>
     
 </x-feedback-section>
