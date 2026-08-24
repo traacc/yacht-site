@@ -918,7 +918,11 @@ Route::get('/regatta/{regatta}/download-results-pdf', function (Regatta $regatta
 Route::get('/team/{team}/download-history', function (Team $team) {
     return app(GenerateTeamHistoryPdfAction::class)->execute($team);
 })->name('team.history.pdf');
-Route::view('/teams', 'pages.teams')->name('teams');
+Route::get('/teams', function () {
+    $documents = app(SettingsService::class)->documentLinks('help.site_guide_documents', 'teams');
+
+    return view('pages.teams', compact('documents'));
+})->name('teams');
 Route::get('/yachts', function () {
     $yachts = Yacht::with([
         'user', 'documents', 'regattaEntries.regatta', 'regattaEntries.team', 'rentals', 'optionValues.option',
@@ -1053,7 +1057,9 @@ Route::get('/yachts', function () {
         'suitable_for' => $yacht->suitable_for ?? [],
     ])->values()->toJson();
 
-    return view('pages.yachts', compact('yachts', 'yachtsJson'));
+    $documents = app(SettingsService::class)->documentLinks('help.site_guide_documents', 'yachts');
+
+    return view('pages.yachts', compact('yachts', 'yachtsJson', 'documents'));
 })->name('yachts');
 Route::get('/ratings', function () {
     $calculator = app(RatingCalculator::class);

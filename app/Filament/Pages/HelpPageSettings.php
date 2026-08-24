@@ -141,6 +141,8 @@ class HelpPageSettings extends Page
                                         'decisions' => 'Решения общего собрания',
                                         'carter30_repair' => 'Ремонт и модернизация (Carter 30)',
                                         'regatta_entries' => 'Страница заявок',
+                                        'yachts' => 'Яхты',
+                                        'teams' => 'Команды',
                                     ])
                                     ->columns(2)
                                     ->columnSpanFull(),
