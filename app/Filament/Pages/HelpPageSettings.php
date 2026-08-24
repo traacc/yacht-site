@@ -6,6 +6,7 @@ namespace App\Filament\Pages;
 
 use App\Actions\Help\SaveHelpPageSettingsAction;
 use App\Filament\Concerns\RestrictsAccessByRole;
+use App\Filament\Forms\Components\PdfRichEditor;
 use App\Services\SettingsService;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -89,12 +90,16 @@ class HelpPageSettings extends Page
                 Section::make('Помощь по сайту')
                     ->description('Описание разделов сайта и как ими пользоваться. Отображается в первой вкладке страницы «Помощь». Скриншоты добавляйте кнопкой «Прикрепить файлы» или перетаскиванием: при копировании из Word переносится только текст.')
                     ->schema([
-                        RichEditor::make('site_guide')
+                        PdfRichEditor::make('site_guide')
                             ->label('Содержание раздела')
                             ->fileAttachmentsDisk('public')
                             ->fileAttachmentsDirectory('help')
                             ->fileAttachmentsVisibility('public')
                             ->fileAttachmentsMaxSize(5120)
+                            ->pdfAttachmentsDisk('public')
+                            ->pdfAttachmentsDirectory('help/site-guide')
+                            ->pdfAttachmentsVisibility('public')
+                            ->pdfAttachmentsMaxSize(10240)
                             ->columnSpanFull(),
 
                         Repeater::make('site_guide_documents')
