@@ -12,10 +12,10 @@ use Illuminate\Support\Collection;
 /**
  * Данные публичной страницы «Серии» (раздел «Соревнования»).
  *
- * Для каждой серии отдаёт описание (как в подразделе «Календарь») и результаты
- * по этапам: отдельная таблица на каждую регату серии с её коэффициентом.
- * Строки таблицы этапа упорядочены по месту команды в рейтинге серии
- * (сумма очков всех этапов с учётом коэффициента), а не по месту на этапе.
+ * Для каждой серии отдаёт описание (как в подразделе «Календарь»), результаты
+ * по этапам (отдельная таблица на каждую регату серии с её коэффициентом,
+ * строки упорядочены по месту команды на самом этапе) и текущий зачёт серии
+ * (сумма очков всех этапов с учётом коэффициента) отдельной таблицей в конце.
  */
 class SeriesStageResultsService
 {
@@ -51,7 +51,7 @@ class SeriesStageResultsService
     }
 
     /**
-     * Одна серия: описание + таблицы результатов по этапам.
+     * Одна серия: описание + таблицы результатов по этапам + текущий зачёт серии.
      *
      * @return array<string, mixed>
      */
@@ -59,8 +59,8 @@ class SeriesStageResultsService
     {
         // Рейтинг серии считаем тем же калькулятором, что и «Результаты серий»
         // в разделе «Рейтинги», — очки этапа уже учитывают коэффициент регаты.
-        $standings = collect($this->calculator->seriesTeamStandings($series)['standings'])
-            ->keyBy('team_id');
+        $standingsList = collect($this->calculator->seriesTeamStandings($series)['standings']);
+        $standings = $standingsList->keyBy('team_id');
 
         $stages = $series->regattas
             ->values()
@@ -81,11 +81,20 @@ class SeriesStageResultsService
             'season' => $series->season?->year,
             'url' => route('series-details', $series),
             'stages' => $stages,
+            // Текущее распределение мест по рейтинговым очкам за серию — выводится
+            // отдельной таблицей в конце карточки серии.
+            'standings' => $standingsList
+                ->map(fn (array $row) => [
+                    'rank' => $row['rank'],
+                    'name' => $row['name'],
+                    'total' => Points::format($row['total']),
+                ])
+                ->values(),
         ];
     }
 
     /**
-     * Строки таблицы одного этапа, отсортированные по рейтингу серии.
+     * Строки таблицы одного этапа, отсортированные по месту (очкам) на самом этапе.
      *
      * @param  Collection<string, array<string, mixed>>  $standings  зачёт серии по team_id
      * @param  array<string, array{id: ?string, name: ?string}>  $captains
@@ -101,8 +110,6 @@ class SeriesStageResultsService
                 $seriesPoints = $standing['points'][$regatta->id] ?? null;
 
                 return [
-                    'series_rank' => $standing['rank'] ?? null,
-                    'series_total' => isset($standing['total']) ? Points::format($standing['total']) : null,
                     // Очки, которые этап дал команде в зачёт серии (с коэффициентом).
                     'series_points' => $seriesPoints !== null ? Points::format($seriesPoints) : null,
                     'place' => $item->final_position,
@@ -116,13 +123,8 @@ class SeriesStageResultsService
                     'points' => $item->displayTotalPoints,
                 ];
             })
-            // Ключ сортировки: место в рейтинге серии, затем место на этапе.
-            // Команды вне зачёта серии (без числового места) уходят вниз.
-            ->sortBy(fn (array $row) => sprintf(
-                '%06d%06d',
-                $row['series_rank'] ?? 999999,
-                is_numeric($row['place']) ? (int) $row['place'] : 999999,
-            ))
+            // Команды без числового места на этапе (не стартовали и т.п.) уходят вниз.
+            ->sortBy(fn (array $row) => is_numeric($row['place']) ? (int) $row['place'] : 999999)
             ->values();
     }
 

@@ -47,8 +47,8 @@
     </nav>
 
     <p class="text-brand-gray-light mb-8">
-        В таблице каждого этапа команды идут в порядке их положения в рейтинге серии
-        (сумма очков всех этапов с учётом коэффициента), а не по месту на самом этапе.
+        В таблице каждого этапа команды идут в порядке их места на самом этапе.
+        Текущее распределение мест по очкам за всю серию — в таблице в конце каждой серии.
         <a href="{{ route('series-results') }}" class="text-brand-blue font-semibold hover:underline whitespace-nowrap">Рейтинг серий →</a>
     </p>
 
@@ -105,7 +105,6 @@
                             <table class="w-full text-sm md:text-base">
                                 <thead>
                                     <tr class="text-lg md:text-2xl text-brand-dark border-b border-brand-border">
-                                        <th class="pb-2 px-2 text-center font-medium a-font w-16" title="Место в рейтинге серии">Рейтинг</th>
                                         <th class="pb-2 px-2 text-center font-medium a-font w-16">Место</th>
                                         <th class="pb-2 px-2 text-center font-medium a-font hidden md:table-cell">Яхта</th>
                                         <th class="pb-2 px-2 text-center font-medium a-font hidden lg:table-cell">Парус №</th>
@@ -118,7 +117,6 @@
                                 <tbody class="divide-y font-medium text-center">
                                     @foreach($stage['rows'] as $row)
                                         <tr class="border-b border-brand-border">
-                                            <td class="py-3 px-2 text-brand-dark">{{ $row['series_rank'] ?? '—' }}</td>
                                             <td class="py-3 px-2 text-brand-gray">{{ $row['place'] ?: '—' }}</td>
                                             <td class="py-3 px-2 hidden md:table-cell">{{ $row['yacht'] }}</td>
                                             <td class="py-3 px-2 hidden lg:table-cell">{{ $row['sail_number'] }}</td>
@@ -153,6 +151,35 @@
                     <p class="text-brand-gray-light">В этой серии пока нет этапов.</p>
                 </div>
             @endforelse
+
+            {{-- Текущий зачёт серии: распределение мест по очкам всех этапов. --}}
+            @if($serie['standings']->isNotEmpty())
+                <div class="border-t border-brand-border px-3 md:px-6 py-6">
+                    <h3 class="text-xl md:text-2xl font-semibold a-font text-brand-dark leading-tight mb-4">
+                        Текущий зачёт серии
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm md:text-base">
+                            <thead>
+                                <tr class="text-lg md:text-2xl text-brand-dark border-b border-brand-border">
+                                    <th class="pb-2 px-2 text-center font-medium a-font w-16">Место</th>
+                                    <th class="pb-2 px-2 text-left font-medium a-font">Команда</th>
+                                    <th class="pb-2 px-2 text-center font-medium a-font">Очки</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y font-medium text-center">
+                                @foreach($serie['standings'] as $row)
+                                    <tr class="border-b border-brand-border">
+                                        <td class="py-3 px-2 text-brand-dark">{{ $row['rank'] }}</td>
+                                        <td class="py-3 px-2 text-left">{{ $row['name'] }}</td>
+                                        <td class="py-3 px-2 font-bold text-brand-blue">{{ $row['total'] }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
         </section>
     @empty
         <p class="text-center text-brand-gray-light py-20 text-lg">Серии регат пока не опубликованы.</p>
