@@ -1251,11 +1251,12 @@ Route::get('/help', function () {
     $beforeNote = $settings->get('help.before_note', '');
     // Вкладка «Помощь по сайту» — единый документ из настроек (HelpPageSettings).
     $siteGuide = $settings->get('help.site_guide', '');
+    $siteGuideDocuments = $settings->documentLinks('help.site_guide_documents');
 
     // FAQ для вкладки «Для пользователей» (те же вопросы, что и на главной)
     $faq = Faq::active()->ordered()->get();
 
-    return view('pages.help', compact('categories', 'defaultCategory', 'beforeNote', 'siteGuide', 'faq'));
+    return view('pages.help', compact('categories', 'defaultCategory', 'beforeNote', 'siteGuide', 'siteGuideDocuments', 'faq'));
 })->name('help');
 Route::get('/news', function () {
     $news = News::manual()

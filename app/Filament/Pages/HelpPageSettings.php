@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Actions\Help\SaveHelpPageSettingsAction;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Services\SettingsService;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Filament\Pages\Page;
@@ -46,9 +50,21 @@ class HelpPageSettings extends Page
         /** @var SettingsService $settings */
         $settings = app(SettingsService::class);
 
+        $documents = collect((array) $settings->get('help.site_guide_documents', []))
+            ->filter(fn (mixed $document): bool => is_array($document))
+            ->map(function (array $document): array {
+                $file = $document['file'] ?? null;
+                $document['file'] = is_string($file) && $file !== '' ? [$file] : [];
+
+                return $document;
+            })
+            ->values()
+            ->all();
+
         $this->form->fill([
             'before_note' => $settings->get('help.before_note', ''),
             'site_guide' => $settings->get('help.site_guide', ''),
+            'site_guide_documents' => $documents,
         ]);
     }
 
@@ -80,6 +96,37 @@ class HelpPageSettings extends Page
                             ->fileAttachmentsVisibility('public')
                             ->fileAttachmentsMaxSize(5120)
                             ->columnSpanFull(),
+
+                        Repeater::make('site_guide_documents')
+                            ->label('PDF-документы')
+                            ->addActionLabel('Добавить PDF-документ')
+                            ->reorderable()
+                            ->collapsible()
+                            ->defaultItems(0)
+                            ->columns(3)
+                            ->schema([
+                                TextInput::make('title')
+                                    ->label('Название документа')
+                                    ->required()
+                                    ->maxLength(255),
+
+                                TextInput::make('desc')
+                                    ->label('Описание')
+                                    ->maxLength(255),
+
+                                FileUpload::make('file')
+                                    ->label('PDF-файл')
+                                    ->helperText('Максимальный размер: 10 МБ.')
+                                    ->disk('public')
+                                    ->directory('help/site-guide')
+                                    ->visibility('public')
+                                    ->acceptedFileTypes(['application/pdf'])
+                                    ->maxSize(10240)
+                                    ->openable()
+                                    ->downloadable()
+                                    ->required(),
+                            ])
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Вводный текст')
@@ -102,16 +149,9 @@ class HelpPageSettings extends Page
         ];
     }
 
-    public function save(): void
+    public function save(SaveHelpPageSettingsAction $saveSettings): void
     {
-        $data = $this->form->getState();
-
-        /** @var SettingsService $settings */
-        $settings = app(SettingsService::class);
-
-        $settings->set('help.before_note', $data['before_note'] ?? '', 'help');
-        $settings->set('help.site_guide', $data['site_guide'] ?? '', 'help');
-        $settings->forgetGroup('help');
+        $saveSettings->execute($this->form->getState());
 
         Notification::make()
             ->title('Настройки сохранены')
