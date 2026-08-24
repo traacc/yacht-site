@@ -140,6 +140,7 @@ class HelpPageSettings extends Page
                                         'regulations' => 'Технический регламент',
                                         'decisions' => 'Решения общего собрания',
                                         'carter30_repair' => 'Ремонт и модернизация (Carter 30)',
+                                        'regatta_entries' => 'Страница заявок',
                                     ])
                                     ->columns(2)
                                     ->columnSpanFull(),

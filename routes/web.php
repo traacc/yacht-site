@@ -749,7 +749,9 @@ Route::get('/regattas/entries', function () {
         ->orderBy('date_start', 'asc')
         ->get();
 
-    return view('pages.regatta-entries', compact('regattas'));
+    $documents = app(SettingsService::class)->documentLinks('help.site_guide_documents', 'regatta_entries');
+
+    return view('pages.regatta-entries', compact('regattas', 'documents'));
 })->name('regatta-entries');
 Route::get('/regattas/{regatta}', function (Regatta $regatta) {
     $regatta->loadMissing([
