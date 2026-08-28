@@ -423,7 +423,7 @@ function gallerySlider() {
                             <span
                                 x-show="s.name"
                                 x-text="s.name"
-                                class="w-full block text-lg md:text-lg font-semibold leading-tight tracking-wide text-[#2E325C] truncate"
+                                class="w-full block text-lg md:text-lg font-semibold leading-tight tracking-wide text-[#2E325C]"
                             ></span>
                             <span
                                 x-show="s.description"
@@ -477,7 +477,7 @@ function gallerySlider() {
                 <img :src="active.logo" :alt="active.name || ''" class="max-h-full max-w-full object-contain">
             </div>
 
-            <h3 x-show="active.name" x-text="active.name" class="text-xl md:text-2xl a-font text-[#2E325C] mb-3"></h3>
+            <h3 x-show="active.name" x-text="active.name" class="text-xl md:text-xl text-[#2E325C] mb-3"></h3>
 
             <div
                 x-show="active.description"
