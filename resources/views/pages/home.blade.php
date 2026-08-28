@@ -428,7 +428,7 @@ function gallerySlider() {
                             <span
                                 x-show="s.description"
                                 x-text="excerpt(s)"
-                                class="w-full block text-xs md:text-sm leading-snug text-brand-gray line-clamp-2"
+                                class="w-full block text-xs md:text-sm leading-snug text-brand-gray"
                             ></span>
                         </div>
                     </button>
