@@ -423,12 +423,12 @@ function gallerySlider() {
                             <span
                                 x-show="s.name"
                                 x-text="s.name"
-                                class="w-full block text-lg md:text-lg font-semibold leading-tight tracking-wide text-[#2E325C]"
+                                class="w-full block min-h-[2.5em] text-lg md:text-lg font-semibold leading-tight tracking-wide text-[#2E325C] line-clamp-2"
                             ></span>
                             <span
                                 x-show="s.description"
                                 x-text="excerpt(s)"
-                                class="w-full block text-xs md:text-sm leading-snug text-brand-gray"
+                                class="w-full block min-h-[2.75em] text-xs md:text-sm leading-snug text-brand-gray line-clamp-2"
                             ></span>
                         </div>
                     </button>
