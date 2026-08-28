@@ -413,17 +413,24 @@ function gallerySlider() {
                         type="button"
                         @click="openSponsor(s)"
                         :disabled="! hasDetails(s)"
-                        class="shrink-0 h-38 md:h-64 flex flex-col items-center gap-2 p-2 hover:shadow-md transition-shadow text-left"
+                        class="shrink-0 h-38 md:h-64 flex flex-col items-center gap-2 p-2 transition-shadow text-left"
                         :class="hasDetails(s) ? 'cursor-pointer' : 'cursor-default'"
                         :style="`width: ${cardWidth}px`"
                     >
                         {{-- w-full: логотип занимает всю ширину карточки, object-contain сохраняет пропорции --}}
                         <img :src="s.logo" :alt="s.name || ''" class="flex-1 min-h-0 w-full object-contain">
-                        <span
-                            x-show="s.name"
-                            x-text="s.name"
-                            class="a-font w-full text-center text-lg md:text-3xl leading-tight uppercase tracking-wide text-[#2E325C] truncate"
-                        ></span>
+                        <div class="w-full bg-[#F8F8F8] p-2 md:p-3">
+                            <span
+                                x-show="s.name"
+                                x-text="s.name"
+                                class="w-full block text-lg md:text-lg font-semibold leading-tight tracking-wide text-[#2E325C] truncate"
+                            ></span>
+                            <span
+                                x-show="s.description"
+                                x-text="excerpt(s)"
+                                class="w-full block text-xs md:text-sm leading-snug text-brand-gray line-clamp-2"
+                            ></span>
+                        </div>
                     </button>
                 </template>
             </div>
@@ -561,6 +568,13 @@ function sponsorsSlider() {
         // Модалка: открываем, только если есть что показать
         hasDetails(s) {
             return !! (s && (s.description || s.url));
+        },
+        // Краткий текст описания для карточки: description хранит HTML, здесь нужен только текст
+        excerpt(s) {
+            if (! s || ! s.description) return '';
+            const div = document.createElement('div');
+            div.innerHTML = s.description;
+            return (div.textContent || '').trim();
         },
         openSponsor(s) {
             // после свайпа браузер шлёт click по карточке — модалку не открываем
