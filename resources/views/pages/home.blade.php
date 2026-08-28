@@ -418,7 +418,7 @@ function gallerySlider() {
                         :style="`width: ${cardWidth}px`"
                     >
                         {{-- w-full: логотип занимает всю ширину карточки, object-contain сохраняет пропорции --}}
-                        <img :src="s.logo" :alt="s.name || ''" class="flex-1 min-h-0 w-full object-contain">
+                        <img :src="s.logo" :alt="s.name || ''" class="flex-1 min-h-32 w-full object-contain">
                         <div class="w-full bg-[#F8F8F8] p-2 md:p-3">
                             <span
                                 x-show="s.name"
