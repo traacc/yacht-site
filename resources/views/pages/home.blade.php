@@ -569,12 +569,13 @@ function sponsorsSlider() {
         hasDetails(s) {
             return !! (s && (s.description || s.url));
         },
-        // Краткий текст описания для карточки: description хранит HTML, здесь нужен только текст
+        // Краткий текст описания для карточки: description хранит HTML, здесь нужен только текст, обрезанный до 85 символов
         excerpt(s) {
             if (! s || ! s.description) return '';
             const div = document.createElement('div');
             div.innerHTML = s.description;
-            return (div.textContent || '').trim();
+            const text = (div.textContent || '').trim();
+            return text.length > 85 ? text.slice(0, 85).trim() + '…' : text;
         },
         openSponsor(s) {
             // после свайпа браузер шлёт click по карточке — модалку не открываем
