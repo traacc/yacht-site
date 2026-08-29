@@ -428,7 +428,7 @@ function gallerySlider() {
                             <span
                                 x-show="s.description"
                                 x-text="excerpt(s)"
-                                class="w-full block min-h-[2.75em] text-sm leading-snug text-brand-gray line-clamp-2"
+                                class="w-full block min-h-[2.75em] text-sm leading-snug text-brand-gray line-clamp-2 whitespace-pre-line"
                             ></span>
                         </div>
                     </button>
@@ -569,12 +569,20 @@ function sponsorsSlider() {
         hasDetails(s) {
             return !! (s && (s.description || s.url));
         },
-        // Краткий текст описания для карточки: description хранит HTML, здесь нужен только текст, обрезанный до 85 символов
+        // Краткий текст описания для карточки: description хранит HTML, здесь нужен только текст,
+        // обрезанный до 85 символов; переносы строк (<br>, </p> и т.п.) сохраняем как \n,
+        // иначе textContent склеит абзацы в одно слово
         excerpt(s) {
             if (! s || ! s.description) return '';
+            const html = s.description
+                .replace(/<br\s*\/?>/gi, '\n')
+                .replace(/<\/(p|div|li|h[1-6])>/gi, '\n');
             const div = document.createElement('div');
-            div.innerHTML = s.description;
-            const text = (div.textContent || '').trim();
+            div.innerHTML = html;
+            const text = (div.textContent || '')
+                .replace(/[ \t]+/g, ' ')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
             return text.length > 85 ? text.slice(0, 85).trim() + '…' : text;
         },
         openSponsor(s) {
