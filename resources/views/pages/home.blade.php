@@ -373,77 +373,34 @@ function gallerySlider() {
 
 {{-- ===== СПОНСОРЫ ===== --}}
 @if($sponsors->isNotEmpty())
-<section class="py-10 bg-white"
-    x-data="sponsorsSlider()"
-    x-init="init()"
-    @resize.window.debounce.100ms="calcDimensions()">
+<section class="py-10 bg-white" x-data="sponsorsList()">
 
     <div class="container mx-auto">
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="section-title a-font">Партнёры ассоциации</h2>
-            <div class="hidden md:flex items-center gap-2" x-show="maxIndex > 0">
-                <button @click="prev()"
-                    :disabled="current === 0"
-                    :class="current === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#0074CC] cursor-pointer'"
-                    class="bg-[#2D92CE] rounded-full w-8 h-8 flex items-center justify-center shadow-sm text-white transition-all">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                </button>
-                <button @click="next()"
-                    :disabled="current >= maxIndex"
-                    :class="current >= maxIndex ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#0074CC] cursor-pointer'"
-                    class="bg-[#2D92CE] rounded-full w-8 h-8 flex items-center justify-center shadow-sm text-white transition-all">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                </button>
-            </div>
-        </div>
+        <h2 class="section-title a-font mb-6">Партнёры ассоциации</h2>
 
-        {{-- Трек слайдера --}}
-        <div class="overflow-hidden"
-            x-ref="track"
-            @touchstart.passive="touchStart($event)"
-            @touchmove.passive="touchMove($event)"
-            @touchend="touchEnd($event)"
-        >
-            <div
-                class="flex"
-                :style="`gap: ${gap}px; transform: translateX(-${offset}px); transition: ${dragging ? 'none' : 'transform 0.4s cubic-bezier(0.4,0,0.2,1)'}; will-change: transform;`"
-            >
-                <template x-for="(s, idx) in sponsors" :key="idx">
-                    <button
-                        type="button"
-                        @click="openSponsor(s)"
-                        :disabled="! hasDetails(s)"
-                        class="shrink-0 flex flex-col items-center gap-2 p-2 transition-shadow text-left"
-                        :class="hasDetails(s) ? 'cursor-pointer' : 'cursor-default'"
-                        :style="`width: ${cardWidth}px`"
-                    >
-                        {{-- w-full: логотип занимает всю ширину карточки, object-contain сохраняет пропорции --}}
-                        <img :src="s.logo" :alt="s.name || ''" class="flex-1 min-h-32 w-full object-contain">
-                        <div class="w-full bg-[#F8F8F8] p-2 md:p-3">
-                            <span
-                                x-show="s.name"
-                                x-text="s.name"
-                                class="w-full block min-h-[2.5em] text-lg md:text-lg font-semibold leading-tight tracking-wide text-[#2E325C] line-clamp-2"
-                            ></span>
-                            <span
-                                x-show="s.description"
-                                x-text="excerpt(s)"
-                                class="w-full block min-h-[2.75em] text-sm leading-snug text-brand-gray line-clamp-2 whitespace-pre-line"
-                            ></span>
-                        </div>
-                    </button>
-                </template>
-            </div>
-        </div>
-
-        {{-- Точки пагинации --}}
-        <div class="flex justify-center gap-1.5 mt-5" x-show="maxIndex > 0">
-            <template x-for="(_, idx) in Array.from({ length: maxIndex + 1 })" :key="idx">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <template x-for="(s, idx) in sponsors" :key="idx">
                 <button
-                    class="page-dot h-1.5 rounded-full border-0 cursor-pointer transition-all duration-300"
-                    :class="idx === current ? 'w-5 bg-[#2D92CE]' : 'w-1.5 bg-slate-300'"
-                    @click="goTo(idx)"
-                    :aria-label="`Слайд ${idx + 1}`">
+                    type="button"
+                    @click="openSponsor(s)"
+                    :disabled="! hasDetails(s)"
+                    class="h-38 md:h-64 flex flex-col items-center gap-2 p-2 transition-shadow text-left"
+                    :class="hasDetails(s) ? 'cursor-pointer' : 'cursor-default'"
+                >
+                    {{-- w-full: логотип занимает всю ширину карточки, object-contain сохраняет пропорции --}}
+                    <img :src="s.logo" :alt="s.name || ''" class="flex-1 min-h-32 w-full object-contain">
+                    <div class="w-full bg-[#F8F8F8] p-2 md:p-3">
+                        <span
+                            x-show="s.name"
+                            x-text="s.name"
+                            class="w-full block min-h-[2.5em] text-lg md:text-lg font-semibold leading-tight tracking-wide text-[#2E325C] line-clamp-2"
+                        ></span>
+                        <span
+                            x-show="s.description"
+                            x-text="excerpt(s)"
+                            class="w-full block min-h-[2.75em] text-sm leading-snug text-brand-gray line-clamp-2 whitespace-pre-line"
+                        ></span>
+                    </div>
                 </button>
             </template>
         </div>
@@ -500,70 +457,13 @@ function gallerySlider() {
 </section>
 
 <script>
-function sponsorsSlider() {
+function sponsorsList() {
     return {
         sponsors: {!! json_encode($sponsors->values()->all()) !!},
-
-        // Брейкпоинты: сколько логотипов видно. Только целые значения —
-        // карточки показываются полностью, в кадре одновременно максимум четыре.
-        breakpoints: [
-            { maxWidth: 480,  visible: 1 },
-            { maxWidth: 639,  visible: 2 },
-            { maxWidth: 1023, visible: 3 },
-            { maxWidth: Infinity, visible: 4 },
-        ],
-
-        visible: 4,
-        gap: 16,
-        cardWidth: 0,
-        current: 0,
-
-        // Touch
-        touchStartX: 0,
-        touchDeltaX: 0,
-        dragging: false,
-        swiped: false,
 
         // Модалка с описанием партнёра
         modalOpen: false,
         active: {},
-
-        get maxIndex() {
-            return Math.max(0, this.sponsors.length - Math.floor(this.visible));
-        },
-        get offset() {
-            return this.current * (this.cardWidth + this.gap);
-        },
-
-        init() {
-            this.$nextTick(() => this.calcDimensions());
-        },
-
-        calcDimensions() {
-            const track = this.$refs.track;
-            if (!track) return;
-
-            const w = window.innerWidth;
-            const bp = this.breakpoints.find(b => w <= b.maxWidth);
-            // Больше четырёх карточек в кадре не показываем ни при какой ширине.
-            // Число партнёров здесь намеренно не учитывается: ширина карточки всегда
-            // считается на полный кадр, иначе двое партнёров растянулись бы на пол-экрана.
-            this.visible = Math.min(4, bp ? bp.visible : 4);
-
-            this.cardWidth = (track.clientWidth - this.gap * (this.visible - 1)) / this.visible;
-
-            if (this.current > this.maxIndex) this.current = this.maxIndex;
-        },
-
-        prev() {
-            if (this.current > 0) this.current--;
-        },
-        next() {
-            if (this.current < this.maxIndex) this.current++;
-        },
-        goTo(idx) {
-            this.current = Math.min(Math.max(0, idx), this.maxIndex);
-        },
 
         // Модалка: открываем, только если есть что показать
         hasDetails(s) {
@@ -586,32 +486,12 @@ function sponsorsSlider() {
             return text.length > 85 ? text.slice(0, 85).trim() + '…' : text;
         },
         openSponsor(s) {
-            // после свайпа браузер шлёт click по карточке — модалку не открываем
-            if (this.swiped || ! this.hasDetails(s)) return;
+            if (! this.hasDetails(s)) return;
             this.active = s;
             this.modalOpen = true;
         },
         closeSponsor() {
             this.modalOpen = false;
-        },
-
-        // Touch-свайп
-        touchStart(e) {
-            this.touchStartX = e.touches[0].clientX;
-            this.touchDeltaX = 0;
-            this.dragging = true;
-            this.swiped = false;
-        },
-        touchMove(e) {
-            this.touchDeltaX = e.touches[0].clientX - this.touchStartX;
-        },
-        touchEnd() {
-            this.dragging = false;
-            this.swiped = Math.abs(this.touchDeltaX) > 10;
-            const threshold = this.cardWidth * 0.25;
-            if (this.touchDeltaX < -threshold) this.next();
-            else if (this.touchDeltaX > threshold) this.prev();
-            this.touchDeltaX = 0;
         },
     };
 }
