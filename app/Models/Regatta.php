@@ -243,6 +243,16 @@ class Regatta extends Model
         return $this->belongsTo(self::class, 'postponed_to_regatta_id');
     }
 
+    /**
+     * Исторические снимки (см. RegattaService::postpone()), с которых была
+     * перенесена эта регата — от самого свежего к самому старому.
+     */
+    public function postponedFromRegattas(): HasMany
+    {
+        return $this->hasMany(self::class, 'postponed_to_regatta_id')
+            ->orderByDesc('date_start');
+    }
+
     /** Объявления бирж, поданные на эту регату (@see Advert) */
     public function adverts(): BelongsToMany
     {

@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Enums\RegattaStatus;
 use App\Enums\RegattaType;
 use App\Models\Regatta;
 use App\Models\Season;
@@ -96,7 +97,12 @@ class RegattasList extends Component
     public function render()
     {
         $regattas = Regatta::query()
-            ->with(['series', 'series.regattas:id,series_id,date_start,time_start'])
+            // Снимки статуса «Перенесена» — это не отдельные события, а история
+            // изменения даты «живой» регаты (см. RegattaService::postpone()).
+            // Без исключения они дублируют карточку в списке под старой датой.
+            // Факт переноса показывается на карточке живой регаты, см. блейд.
+            ->where('regatta_status', '!=', RegattaStatus::Postponed)
+            ->with(['series', 'series.regattas:id,series_id,date_start,time_start', 'postponedFromRegattas'])
             ->when($this->year, fn ($q) => $q->whereHas('season', fn ($sq) => $sq->where('year', $this->year)
             )
             )

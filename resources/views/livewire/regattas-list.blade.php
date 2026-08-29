@@ -34,6 +34,7 @@
         </div>
         <div class="reggata-list__items grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6" x-show="view === 'grid'">
             @forelse ($regattas as $regatta)
+            @php($postponedFrom = $regatta->postponedFromRegattas->first())
 
             <div class="bg-[#F8F8F8] overflow-hidden w-full font-sans">
                 <div class="relative">
@@ -74,17 +75,17 @@
                     <div class="absolute top-0 right-0 bg-[#FDE4E3] px-4 py-2 text-[10px] text-sm">
                         <span class="text-[#F24842] font-bold text-sm uppercase">Отменена</span>
                     </div>
-                    @elseif ($regatta->regatta_status === \App\Enums\RegattaStatus::Postponed)
-                    <div class="absolute top-0 right-0 bg-[#FFF3E0] px-4 py-2 text-[10px] text-sm">
-                        <span class="text-[#E67E22] font-bold text-sm uppercase">Перенесена</span>
-                    </div>
                     @endif
-                    @if ($regatta->regatta_status != \App\Enums\RegattaStatus::Postponed)
                     <div class="absolute bottom-0 left-0 bg-[#F8F8F8] text-[#2E325C] px-4 py-2  text-[10px] text-sm">
                         <span class="font-bold text-sm tracking-wide">{{ $regatta->dateRange() }}</span>
                     </div>
-                    @endif
                 </div>
+
+                @if ($postponedFrom)
+                <div class="bg-[#FFF3E0] text-[#E67E22] px-4 py-2 text-[10px] text-sm font-semibold">
+                    Перенесена с: {{ $postponedFrom->dateRange() }}
+                </div>
+                @endif
 
                 <div class="md:px-6 md:pt-6 md:pb-7 p-2 space-y-4">
                     <h2 class="text-brand-navy font-semibold text-sm md:text-lg leading-tight">
@@ -137,12 +138,12 @@
                         \App\Enums\RegattaStatus::Finished  => ['bg-[#E6F4EA] text-[#157949]', 'Состоявшаяся'],
                         \App\Enums\RegattaStatus::Active    => ['bg-[#FFF3E0] text-[#E67E22]', 'Идёт сейчас'],
                         \App\Enums\RegattaStatus::Cancelled => ['bg-[#FDE4E3] text-[#F24842]', 'Отменена'],
-                        \App\Enums\RegattaStatus::Postponed => ['bg-[#FFF3E0] text-[#E67E22]', 'Перенесена'],
                         default => null,
                     })
+                    @php($postponedFrom = $regatta->postponedFromRegattas->first())
                     {{-- Прошедшие регаты гасим цветом шрифта, а не убираем из списка --}}
                     <tr class="border-t {{ $regatta->isFinished() ? 'text-brand-gray-light' : '' }}">
-                        <td class="py-2 text-center">@if ($regatta->regatta_status != \App\Enums\RegattaStatus::Postponed) {{ $regatta->dateRange() }} @endif</td>
+                        <td class="py-2 text-center">{{ $regatta->dateRange() }}</td>
                         <td class="py-2 text-center {{ $regatta->isFinished() ? '' : 'text-brand-navy' }}">
                             {{ $regatta->name }}
                             <x-regatta-external-id :value="$regatta->external_id" class="text-[10px] block" />
@@ -152,6 +153,11 @@
                             @if ($statusBadge)
                             <div class="md:hidden mt-1">
                                 <span class="{{ $statusBadge[0] }} px-3 py-1 inline-block font-semibold text-sm">{{ $statusBadge[1] }}</span>
+                            </div>
+                            @endif
+                            @if ($postponedFrom)
+                            <div class="mt-1">
+                                <span class="bg-[#FFF3E0] text-[#E67E22] px-3 py-1 inline-block font-semibold text-sm">Перенесена с: {{ $postponedFrom->dateRange() }}</span>
                             </div>
                             @endif
                         </td>
