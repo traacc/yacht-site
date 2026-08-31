@@ -7,6 +7,7 @@ namespace App\Filament\Resources\AiNewsCandidates;
 use App\Actions\WorldNews\PublishAiNewsCandidateAction;
 use App\Actions\WorldNews\RefreshAiNewsCandidateImageAction;
 use App\Actions\WorldNews\RejectAiNewsCandidateAction;
+use App\Actions\WorldNews\RestoreAiNewsCandidateAction;
 use App\Enums\AiNewsCandidateStatus;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\AiNewsCandidates\Pages\ManageAiNewsCandidates;
@@ -309,6 +310,21 @@ class AiNewsCandidateResource extends Resource
                             ->send();
                     }),
 
+                Action::make('restore')
+                    ->label('Вернуть на модерацию')
+                    ->icon(Heroicon::OutlinedArrowUturnLeft)
+                    ->color('warning')
+                    ->visible(fn (AiNewsCandidate $record): bool => $record->status === AiNewsCandidateStatus::Rejected
+                        && $record->news_id === null)
+                    ->action(function (AiNewsCandidate $record): void {
+                        app(RestoreAiNewsCandidateAction::class)->handle($record);
+
+                        Notification::make()
+                            ->title('Кандидат возвращён на модерацию')
+                            ->success()
+                            ->send();
+                    }),
+
                 Action::make('refreshImage')
                     ->label('Найти картинку')
                     ->icon(Heroicon::OutlinedPhoto)
@@ -344,6 +360,34 @@ class AiNewsCandidateResource extends Resource
                     ->visible(fn (AiNewsCandidate $record): bool => $record->status === AiNewsCandidateStatus::Published),
             ])
             ->toolbarActions([
+                BulkAction::make('restoreCandidates')
+                    ->label('Вернуть на модерацию')
+                    ->icon(Heroicon::OutlinedArrowUturnLeft)
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Вернуть отклонённые на модерацию?')
+                    ->modalDescription('Из выбранных будут затронуты только отклонённые кандидаты: они снова попадут в очередь на публикацию.')
+                    ->modalSubmitActionLabel('Вернуть')
+                    ->deselectRecordsAfterCompletion()
+                    ->action(function (Collection $records): void {
+                        $action = app(RestoreAiNewsCandidateAction::class);
+                        $restored = 0;
+
+                        foreach ($records as $record) {
+                            if ($record->status !== AiNewsCandidateStatus::Rejected || $record->news_id !== null) {
+                                continue;
+                            }
+
+                            $action->handle($record);
+                            $restored++;
+                        }
+
+                        Notification::make()
+                            ->title("Возвращено на модерацию: {$restored} из {$records->count()}")
+                            ->success()
+                            ->send();
+                    }),
+
                 BulkAction::make('refreshImages')
                     ->label('Найти картинки')
                     ->icon(Heroicon::OutlinedPhoto)
