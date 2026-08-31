@@ -7,7 +7,6 @@ namespace App\Services\WorldNews;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
-use Illuminate\Support\Facades\Http;
 use Throwable;
 
 /**
@@ -31,7 +30,10 @@ final class ArticleImageExtractor
         'vk:image',
     ];
 
-    public function __construct(private readonly UrlCanonicalizer $urls) {}
+    public function __construct(
+        private readonly UrlCanonicalizer $urls,
+        private readonly PublicUrlFetcher $fetcher,
+    ) {}
 
     public function extract(string $pageUrl): ?string
     {
@@ -58,20 +60,17 @@ final class ArticleImageExtractor
 
     private function fetch(string $pageUrl): ?string
     {
-        try {
-            $response = Http::withHeaders([
+        $response = $this->fetcher->get(
+            $pageUrl,
+            headers: [
                 // Без внятного User-Agent часть новостных сайтов отдаёт заглушку.
                 'User-Agent' => 'Mozilla/5.0 (compatible; YachtAssociationBot/1.0)',
                 'Accept' => 'text/html,application/xhtml+xml',
-            ])
-                ->connectTimeout(5)
-                ->timeout((int) config('services.openai.news_image_timeout', 15))
-                ->get($pageUrl);
-        } catch (Throwable) {
-            return null;
-        }
+            ],
+            timeout: (int) config('services.openai.news_image_timeout', 15),
+        );
 
-        if ($response->failed()) {
+        if ($response === null || $response->failed()) {
             return null;
         }
 
@@ -126,31 +125,20 @@ final class ArticleImageExtractor
 
     /**
      * og:image часто указывают относительным путём или протокол-относительной
-     * ссылкой (`//cdn.example/pic.jpg`) — приводим к абсолютному виду.
+     * ссылкой (`//cdn.example/pic.jpg`) — приводим к абсолютному виду и
+     * проверяем, что картинка не уводит во внутреннюю сеть.
      */
     private function absolutize(string $pageUrl, string $candidate): ?string
     {
-        $candidate = trim(html_entity_decode($candidate, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        $absolute = $this->urls->resolve(
+            $pageUrl,
+            html_entity_decode($candidate, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+        );
 
-        if ($candidate === '' || str_starts_with($candidate, 'data:')) {
+        if ($absolute === null || ! $this->fetcher->isPublic($absolute)) {
             return null;
         }
 
-        $base = parse_url($pageUrl);
-
-        if (! is_array($base) || empty($base['scheme']) || empty($base['host'])) {
-            return null;
-        }
-
-        $authority = $base['host'].(isset($base['port']) ? ':'.$base['port'] : '');
-
-        $absolute = match (true) {
-            str_starts_with($candidate, '//') => $base['scheme'].':'.$candidate,
-            str_starts_with($candidate, '/') => "{$base['scheme']}://{$authority}{$candidate}",
-            (bool) preg_match('~^https?://~i', $candidate) => $candidate,
-            default => "{$base['scheme']}://{$authority}/".ltrim($candidate, '/'),
-        };
-
-        return $this->urls->canonicalize($absolute) !== null ? $absolute : null;
+        return $absolute;
     }
 }

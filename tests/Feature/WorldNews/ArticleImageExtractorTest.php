@@ -6,10 +6,20 @@ namespace Tests\Feature\WorldNews;
 
 use App\Services\WorldNews\ArticleImageExtractor;
 use Illuminate\Support\Facades\Http;
+use Tests\Concerns\FakesHostResolution;
 use Tests\TestCase;
 
 final class ArticleImageExtractorTest extends TestCase
 {
+    use FakesHostResolution;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->fakeHostResolution();
+    }
+
     public function test_it_prefers_open_graph_over_twitter_tags(): void
     {
         $this->fakePage(<<<'HTML'

@@ -63,11 +63,53 @@ final class UrlCanonicalizer
         return "{$scheme}://{$authority}{$path}".($query !== '' ? "?{$query}" : '');
     }
 
+    /**
+     * Приводит ссылку из разметки (og:image, заголовок Location) к абсолютному
+     * виду относительно страницы. В отличие от canonicalize() ничего не
+     * нормализует: подписанные CDN-ссылки ломаются от сортировки параметров.
+     */
+    public function resolve(string $base, string $reference): ?string
+    {
+        $reference = trim($reference);
+        $parts = parse_url($base);
+
+        if ($reference === '' || ! is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return null;
+        }
+
+        $scheme = strtolower((string) $parts['scheme']);
+        $authority = $parts['host'].(isset($parts['port']) ? ':'.$parts['port'] : '');
+
+        $absolute = match (true) {
+            (bool) preg_match('~^https?://~i', $reference) => $reference,
+            str_starts_with($reference, '//') => $scheme.':'.$reference,
+            str_starts_with($reference, '/') => "{$scheme}://{$authority}{$reference}",
+            // Прочие схемы (data:, javascript:, mailto:) до сюда доходить не должны.
+            (bool) preg_match('~^[a-z][a-z0-9+.-]*:~i', $reference) => null,
+            default => "{$scheme}://{$authority}".$this->directoryOf((string) ($parts['path'] ?? '')).$reference,
+        };
+
+        if ($absolute === null) {
+            return null;
+        }
+
+        return $this->canonicalize($absolute) === null ? null : $absolute;
+    }
+
     public function fingerprint(string $url): ?string
     {
         $canonical = $this->canonicalize($url);
 
         return $canonical === null ? null : hash('sha256', $canonical);
+    }
+
+    private function directoryOf(string $path): string
+    {
+        if ($path === '' || ! str_contains($path, '/')) {
+            return '/';
+        }
+
+        return substr($path, 0, strrpos($path, '/') + 1);
     }
 
     private function canonicalQuery(string $query): string

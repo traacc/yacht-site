@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\WorldNews;
 
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Throwable;
 
 /**
  * Скачивает превью-картинку новости на публичный диск.
@@ -18,6 +16,8 @@ use Throwable;
  */
 final class CoverImageDownloader
 {
+    public function __construct(private readonly PublicUrlFetcher $fetcher) {}
+
     private const DIRECTORY = 'news/covers';
 
     private const MAX_BYTES = 10485760;
@@ -43,16 +43,13 @@ final class CoverImageDownloader
             return null;
         }
 
-        try {
-            $response = Http::withHeaders(['User-Agent' => 'Mozilla/5.0 (compatible; YachtAssociationBot/1.0)'])
-                ->connectTimeout(5)
-                ->timeout(30)
-                ->get($imageUrl);
-        } catch (Throwable) {
-            return null;
-        }
+        $response = $this->fetcher->get(
+            $imageUrl,
+            headers: ['User-Agent' => 'Mozilla/5.0 (compatible; YachtAssociationBot/1.0)'],
+            timeout: 30,
+        );
 
-        if ($response->failed()) {
+        if ($response === null || $response->failed()) {
             return null;
         }
 

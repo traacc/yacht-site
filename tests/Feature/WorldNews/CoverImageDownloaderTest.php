@@ -7,10 +7,20 @@ namespace Tests\Feature\WorldNews;
 use App\Services\WorldNews\CoverImageDownloader;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\FakesHostResolution;
 use Tests\TestCase;
 
 final class CoverImageDownloaderTest extends TestCase
 {
+    use FakesHostResolution;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->fakeHostResolution();
+    }
+
     public function test_it_stores_the_image_next_to_manual_covers(): void
     {
         Storage::fake('public');
