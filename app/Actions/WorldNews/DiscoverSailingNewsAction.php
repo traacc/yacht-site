@@ -8,6 +8,7 @@ use App\Contracts\AiNewsProvider;
 use App\Enums\AiNewsCandidateStatus;
 use App\Models\AiNewsCandidate;
 use App\Services\Ai\Data\AiNewsArticle;
+use App\Services\WorldNews\ArticleImageExtractor;
 use App\Services\WorldNews\Data\DiscoveryResult;
 use App\Services\WorldNews\UrlCanonicalizer;
 use App\Services\WorldNews\WorldNewsSettings;
@@ -23,6 +24,7 @@ final class DiscoverSailingNewsAction
         private readonly AiNewsProvider $provider,
         private readonly WorldNewsSettings $settings,
         private readonly UrlCanonicalizer $urls,
+        private readonly ArticleImageExtractor $images,
         private readonly PublishAiNewsCandidateAction $publish,
     ) {}
 
@@ -139,6 +141,9 @@ final class DiscoverSailingNewsAction
             'source_name' => $sourceName,
             'source_url' => $sourceUrl,
             'source_hash' => $sourceHash,
+            // Ссылку достаём сразу, чтобы модератор видел превью; сам файл
+            // скачивается только при публикации, см. PublishAiNewsCandidateAction.
+            'image_url' => $this->images->extract($sourceUrl),
             'source_published_at' => $this->parseDate($article->sourcePublishedAt),
             'relevance_score' => $article->relevanceScore,
             'selection_reason' => $reason !== '' ? $reason : null,

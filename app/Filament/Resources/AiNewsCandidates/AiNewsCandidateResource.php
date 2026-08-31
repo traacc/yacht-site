@@ -25,11 +25,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 use UnitEnum;
 
 class AiNewsCandidateResource extends Resource
@@ -107,6 +109,26 @@ class AiNewsCandidateResource extends Resource
                             ->required()
                             ->maxLength(2048)
                             ->columnSpanFull(),
+
+                        TextInput::make('image_url')
+                            ->label('Превью-картинка')
+                            ->helperText('Ссылка со страницы источника (og:image). При публикации файл скачивается и становится обложкой новости; очистите поле, чтобы опубликовать без обложки.')
+                            ->url()
+                            ->maxLength(2048)
+                            ->columnSpanFull(),
+
+                        Placeholder::make('image_preview')
+                            ->label('Как выглядит превью')
+                            ->content(fn (?AiNewsCandidate $record): HtmlString => new HtmlString(
+                                $record?->image_url
+                                    ? sprintf(
+                                        '<img src="%s" alt="" style="max-height:220px;border-radius:8px" '
+                                        .'onerror="this.replaceWith(document.createTextNode(\'Картинка недоступна\'))">',
+                                        e($record->image_url),
+                                    )
+                                    : 'Картинка не найдена',
+                            ))
+                            ->columnSpanFull(),
                     ])
                     ->columns(2),
 
@@ -168,6 +190,12 @@ class AiNewsCandidateResource extends Resource
                     ->numeric(decimalPlaces: 0)
                     ->suffix('%')
                     ->sortable(),
+
+                ImageColumn::make('image_url')
+                    ->label('Превью')
+                    ->height(40)
+                    ->extraImgAttributes(['loading' => 'lazy'])
+                    ->placeholder('—'),
 
                 TextColumn::make('title')
                     ->label('Заголовок')

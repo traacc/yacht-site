@@ -26,6 +26,7 @@ class AiNewsCandidate extends Model
         'source_name',
         'source_url',
         'source_hash',
+        'image_url',
         'source_published_at',
         'status',
         'relevance_score',

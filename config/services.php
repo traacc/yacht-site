@@ -126,6 +126,8 @@ return [
         // auto: openai/* и прямой API — встроенный web_search, остальные — плагин роутера.
         'news_web_search' => env('OPENAI_NEWS_WEB_SEARCH', 'auto'),
         'news_web_max_results' => (int) env('OPENAI_NEWS_WEB_MAX_RESULTS', 5),
+        // Таймаут загрузки страницы источника при поиске превью-картинки (og:image).
+        'news_image_timeout' => (int) env('OPENAI_NEWS_IMAGE_TIMEOUT', 15),
         'news_max_output_tokens' => (int) env('OPENAI_NEWS_MAX_OUTPUT_TOKENS', 12000),
     ],
 ];
