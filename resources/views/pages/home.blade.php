@@ -378,27 +378,27 @@ function gallerySlider() {
     <div class="container mx-auto">
         <h2 class="section-title a-font mb-6">Партнёры ассоциации</h2>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             <template x-for="(s, idx) in sponsors" :key="idx">
                 <button
                     type="button"
                     @click="openSponsor(s)"
                     :disabled="! hasDetails(s)"
-                    class="h-38 md:h-64 flex flex-col items-center gap-2 p-2 transition-shadow text-left"
+                    class="md:h-64 flex flex-col items-center gap-2 p-2 transition-shadow text-left"
                     :class="hasDetails(s) ? 'cursor-pointer' : 'cursor-default'"
                 >
                     {{-- w-full: логотип занимает всю ширину карточки, object-contain сохраняет пропорции --}}
-                    <img :src="s.logo" :alt="s.name || ''" class="flex-1 min-h-32 w-full object-contain">
+                    <img :src="s.logo" :alt="s.name || ''" class="flex-1 md:min-h-32 w-full object-contain">
                     <div class="w-full bg-[#F8F8F8] p-2 md:p-3">
                         <span
                             x-show="s.name"
                             x-text="s.name"
-                            class="w-full block min-h-[2.5em] text-lg md:text-lg font-semibold leading-tight tracking-wide text-[#2E325C] line-clamp-2"
+                            class="w-full block md:min-h-[2.5em] text-lg md:text-lg font-semibold leading-tight tracking-wide text-[#2E325C] line-clamp-2"
                         ></span>
                         <span
                             x-show="s.description"
                             x-text="excerpt(s)"
-                            class="w-full block min-h-[2.75em] text-sm leading-snug text-brand-gray line-clamp-2 whitespace-pre-line"
+                            class="w-full block md:min-h-[2.75em] text-sm leading-snug text-brand-gray line-clamp-2 whitespace-pre-line"
                         ></span>
                     </div>
                 </button>
