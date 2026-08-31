@@ -22,7 +22,7 @@
             <x-responsive-picture :media="$photo" conversion="thumb" :alt="$yacht->name"
                 img-class="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105" />
         @else
-            <img class="w-full h-52 object-cover" src="{{ asset('images/gallery.png') }}" alt="{{ $yacht->name }}">
+            <img class="w-full h-52 object-cover" src="{{ asset('images/gallery.webp') }}" alt="{{ $yacht->name }}">
         @endif
 
         @if (($days ?? 0) > 0)

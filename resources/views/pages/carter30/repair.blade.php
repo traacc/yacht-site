@@ -60,7 +60,7 @@ bgImage="{{ asset('images/bg/regulations.webp') }}"
                                     :alt="$case->title"
                                     img-class="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105" />
                             @else
-                                <img class="w-full h-52 object-cover" src="{{ asset('images/gallery.png') }}" alt="{{ $case->title }}">
+                                <img class="w-full h-52 object-cover" src="{{ asset('images/gallery.webp') }}" alt="{{ $case->title }}">
                             @endif
                         </div>
                         <div class="p-4">

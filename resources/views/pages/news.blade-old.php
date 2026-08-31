@@ -33,7 +33,7 @@
                             <div class="img">
                                 <img
                                     class="w-full h-full"
-                                    src="{{ $featured->cover_image_url ? asset('storage/' . $featured->cover_image_url) : asset('images/gallery.png') }}"
+                                    src="{{ $featured->cover_image_url ? asset('storage/' . $featured->cover_image_url) : asset('images/gallery.webp') }}"
                                     alt="{{ $featured->title }}"
                                 >
                             </div>
@@ -54,7 +54,7 @@
                                     <div class="img max-w-[300px]">
                                         <img
                                             class="w-full max-w-[300px] md:max-w-full h-full object-cover"
-                                            src="{{ $item->cover_image_url ? asset('storage/' . $item->cover_image_url) : asset('images/gallery.png') }}"
+                                            src="{{ $item->cover_image_url ? asset('storage/' . $item->cover_image_url) : asset('images/gallery.webp') }}"
                                             alt="{{ $item->title }}"
                                         >
                                     </div>
@@ -79,7 +79,7 @@
                             <div class="img max-w-[300px] md:max-w-full">
                                 <img
                                     class="w-full max-w-[300px] md:max-w-full h-full object-cover"
-                                    src="{{ $item->cover_image_url ? asset('storage/' . $item->cover_image_url) : asset('images/gallery.png') }}"
+                                    src="{{ $item->cover_image_url ? asset('storage/' . $item->cover_image_url) : asset('images/gallery.webp') }}"
                                     alt="{{ $item->title }}"
                                 >
                             </div>

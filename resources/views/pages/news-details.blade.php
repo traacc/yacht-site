@@ -120,7 +120,7 @@
                                     <img
                                         class="w-full max-w-[150px] md:max-w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                         style="object-position: {{ $other->cover_object_position ?? 'center' }}"
-                                        src="{{ $other->cover_image_url ? asset('storage/' . $other->cover_image_url) : asset('images/gallery.png') }}"
+                                        src="{{ $other->cover_image_url ? asset('storage/' . $other->cover_image_url) : asset('images/gallery.webp') }}"
                                         alt="{{ $other->title }}"
                                     >
                                 </div>

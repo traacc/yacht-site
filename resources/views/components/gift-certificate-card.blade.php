@@ -26,7 +26,7 @@
             <x-responsive-picture :media="$cover" :alt="$certificate->title"
                 img-class="w-full h-52 object-cover" />
         @else
-            <img class="w-full h-52 object-cover" src="{{ asset('images/gallery.png') }}" alt="{{ $certificate->title }}">
+            <img class="w-full h-52 object-cover" src="{{ asset('images/gallery.webp') }}" alt="{{ $certificate->title }}">
         @endif
     </div>
 

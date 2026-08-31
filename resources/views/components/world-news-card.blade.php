@@ -18,7 +18,7 @@
         <img
             class="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105"
             style="object-position: {{ $news->cover_object_position ?? 'center' }}"
-            src="{{ $news->cover_image_url ? Storage::url($news->cover_image_url) : asset('images/gallery.png') }}"
+            src="{{ $news->cover_image_url ? Storage::url($news->cover_image_url) : asset('images/gallery.webp') }}"
             alt="{{ $news->title }}"
         >
     </a>

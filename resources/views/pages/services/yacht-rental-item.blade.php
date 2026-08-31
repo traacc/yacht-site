@@ -132,7 +132,7 @@
                                 </template>
                             </div>
                         @elseif ($cover === null)
-                            <img class="w-full aspect-video object-cover mb-10" src="{{ asset('images/gallery.png') }}" alt="{{ $yacht->name }}">
+                            <img class="w-full aspect-video object-cover mb-10" src="{{ asset('images/gallery.webp') }}" alt="{{ $yacht->name }}">
                         @endif
 
                         {{-- ===== Календарь ===== --}}

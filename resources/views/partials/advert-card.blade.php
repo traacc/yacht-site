@@ -9,7 +9,7 @@
                 :alt="$advert->title"
                 img-class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
         @else
-            <img class="w-full h-48 object-cover" src="{{ asset('images/gallery.png') }}" alt="{{ $advert->title }}">
+            <img class="w-full h-48 object-cover" src="{{ asset('images/gallery.webp') }}" alt="{{ $advert->title }}">
         @endif
 
         @if ($advert->isSold())

@@ -25,7 +25,7 @@
                 img-class="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105" />
         @else
             <img class="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105"
-                 src="{{ asset('images/gallery.png') }}" alt="{{ $mention->title }}">
+                 src="{{ asset('images/gallery.webp') }}" alt="{{ $mention->title }}">
         @endif
     </a>
 

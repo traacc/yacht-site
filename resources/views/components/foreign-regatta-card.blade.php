@@ -24,7 +24,7 @@
             <x-responsive-picture :media="$cover" :alt="$regatta->title"
                 img-class="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105" />
         @else
-            <img class="w-full h-52 object-cover" src="{{ asset('images/gallery.png') }}" alt="{{ $regatta->title }}">
+            <img class="w-full h-52 object-cover" src="{{ asset('images/gallery.webp') }}" alt="{{ $regatta->title }}">
         @endif
     </div>
 
