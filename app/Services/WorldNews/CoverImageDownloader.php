@@ -35,19 +35,23 @@ final class CoverImageDownloader
     ];
 
     /**
+     * @param  string|null  $refererUrl  Страница, с которой взята картинка: без
+     *                                   заголовка Referer часть CDN отдаёт 403 на прямой запрос (hotlink-защита).
      * @return string|null Путь на диске public либо null, если скачать не удалось.
      */
-    public function store(?string $imageUrl): ?string
+    public function store(?string $imageUrl, ?string $refererUrl = null): ?string
     {
         if ($imageUrl === null || trim($imageUrl) === '') {
             return null;
         }
 
-        $response = $this->fetcher->get(
-            $imageUrl,
-            headers: ['User-Agent' => 'Mozilla/5.0 (compatible; YachtAssociationBot/1.0)'],
-            timeout: 30,
-        );
+        $headers = ['User-Agent' => 'Mozilla/5.0 (compatible; YachtAssociationBot/1.0)'];
+
+        if ($refererUrl !== null && trim($refererUrl) !== '') {
+            $headers['Referer'] = trim($refererUrl);
+        }
+
+        $response = $this->fetcher->get($imageUrl, headers: $headers, timeout: 30);
 
         if ($response === null || $response->failed()) {
             return null;

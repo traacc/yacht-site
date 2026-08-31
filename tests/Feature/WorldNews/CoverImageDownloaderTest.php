@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\WorldNews;
 
 use App\Services\WorldNews\CoverImageDownloader;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\FakesHostResolution;
@@ -41,6 +42,29 @@ final class CoverImageDownloaderTest extends TestCase
         $this->fakeImage('image/webp; charset=binary', 'binary-webp');
 
         self::assertStringEndsWith('.webp', (string) $this->store('https://cdn.example.test/cover'));
+    }
+
+    public function test_it_sends_the_source_page_as_referer(): void
+    {
+        Storage::fake('public');
+        $this->fakeImage('image/jpeg', 'binary-jpeg');
+
+        app(CoverImageDownloader::class)->store(
+            'https://cdn.example.test/cover.jpg',
+            'https://news.example.test/article',
+        );
+
+        Http::assertSent(fn (Request $request): bool => $request->hasHeader('Referer', 'https://news.example.test/article'));
+    }
+
+    public function test_it_omits_the_referer_when_no_page_is_given(): void
+    {
+        Storage::fake('public');
+        $this->fakeImage('image/jpeg', 'binary-jpeg');
+
+        $this->store('https://cdn.example.test/cover.jpg');
+
+        Http::assertSent(fn (Request $request): bool => ! $request->hasHeader('Referer'));
     }
 
     public function test_it_refuses_a_non_image_content_type(): void

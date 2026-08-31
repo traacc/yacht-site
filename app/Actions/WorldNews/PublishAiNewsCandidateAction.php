@@ -22,7 +22,7 @@ final class PublishAiNewsCandidateAction
         // Обложку качаем до транзакции: HTTP-запрос под lockForUpdate держал бы
         // строку заблокированной всё время скачивания.
         $coverPath = $candidate->canBePublished()
-            ? $this->covers->store($candidate->image_url)
+            ? $this->covers->store($candidate->image_url, $candidate->source_url)
             : null;
 
         try {
