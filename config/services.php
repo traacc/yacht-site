@@ -122,6 +122,10 @@ return [
         'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
         'news_model' => env('OPENAI_NEWS_MODEL', 'gpt-5-mini'),
         'news_timeout' => (int) env('OPENAI_NEWS_TIMEOUT', 120),
+        // auto | native | plugin | off — как модель получает доступ к вебу.
+        // auto: openai/* и прямой API — встроенный web_search, остальные — плагин роутера.
+        'news_web_search' => env('OPENAI_NEWS_WEB_SEARCH', 'auto'),
+        'news_web_max_results' => (int) env('OPENAI_NEWS_WEB_MAX_RESULTS', 5),
         'news_max_output_tokens' => (int) env('OPENAI_NEWS_MAX_OUTPUT_TOKENS', 12000),
     ],
 ];

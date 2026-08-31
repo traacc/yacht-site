@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Ai;
 
 use App\Contracts\AiNewsProvider;
+use App\Enums\AiWebSearchMode;
 use App\Exceptions\AiNewsProviderException;
 use App\Services\Ai\Data\AiNewsArticle;
 use App\Services\Ai\Data\AiNewsBatch;
@@ -17,8 +18,10 @@ use InvalidArgumentException;
 use Throwable;
 
 /**
- * Поиск и редакционная обработка через OpenAI Responses API + web_search.
+ * Поиск и редакционная обработка через OpenAI Responses API.
  *
+ * Доступ к вебу зависит от модели, см. AiWebSearchMode: у моделей OpenAI это
+ * встроенный инструмент `web_search`, у остальных — плагин `web` роутера.
  * Используется REST-клиент Laravel: отдельный SDK проекту не требуется.
  */
 final class OpenAiNewsProvider implements AiNewsProvider
@@ -28,6 +31,8 @@ final class OpenAiNewsProvider implements AiNewsProvider
         private readonly ?string $configuredModel = null,
         private readonly ?string $baseUrl = null,
         private readonly ?int $timeoutSeconds = null,
+        private readonly ?AiWebSearchMode $webSearchMode = null,
+        private readonly ?int $webSearchMaxResults = null,
     ) {}
 
     public function isConfigured(): bool
@@ -124,12 +129,6 @@ final class OpenAiNewsProvider implements AiNewsProvider
             'store' => false,
             'instructions' => $request->systemPrompt,
             'input' => $request->searchPrompt,
-            'tools' => [[
-                'type' => 'web_search',
-                'search_context_size' => 'high',
-            ]],
-            'tool_choice' => 'auto',
-            'include' => ['web_search_call.action.sources'],
             'max_output_tokens' => (int) config('services.openai.news_max_output_tokens', 12000),
             'text' => [
                 'format' => [
@@ -139,7 +138,52 @@ final class OpenAiNewsProvider implements AiNewsProvider
                     'schema' => $this->schema($request->maxItems),
                 ],
             ],
+            ...$this->webSearchPayload(),
         ];
+    }
+
+    /**
+     * Инструмент `web_search` понимают только модели OpenAI — остальные молча
+     * получают запрос без него и отвечают пустым списком. Для них веб-поиск
+     * добавляет роутер через плагин `web`.
+     *
+     * @return array<string, mixed>
+     */
+    private function webSearchPayload(): array
+    {
+        return match ($this->resolvedWebSearchMode()) {
+            AiWebSearchMode::Native => [
+                'tools' => [[
+                    'type' => 'web_search',
+                    'search_context_size' => 'high',
+                ]],
+                'tool_choice' => 'auto',
+                'include' => ['web_search_call.action.sources'],
+            ],
+            AiWebSearchMode::Plugin => [
+                'plugins' => [[
+                    'id' => 'web',
+                    'max_results' => $this->maxSearchResults(),
+                ]],
+            ],
+            default => [],
+        };
+    }
+
+    private function resolvedWebSearchMode(): AiWebSearchMode
+    {
+        $mode = $this->webSearchMode
+            ?? AiWebSearchMode::fromConfig((string) config('services.openai.news_web_search', 'auto'));
+
+        return $mode->resolve($this->model());
+    }
+
+    private function maxSearchResults(): int
+    {
+        $configured = $this->webSearchMaxResults
+            ?? (int) config('services.openai.news_web_max_results', 5);
+
+        return max(1, min(20, $configured));
     }
 
     /** @return array<string, mixed> */
