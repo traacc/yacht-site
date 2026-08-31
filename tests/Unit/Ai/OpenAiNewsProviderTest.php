@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ai;
 
+use App\Enums\AiWebSearchMode;
 use App\Exceptions\AiNewsProviderException;
 use App\Services\Ai\Data\AiNewsBatch;
 use App\Services\Ai\OpenAiNewsProvider;
@@ -20,6 +21,7 @@ final class OpenAiNewsProviderTest extends TestCase
             configuredModel: 'configured-model',
             baseUrl: 'https://api.example.test/v1',
             timeoutSeconds: 10,
+            webSearchMode: AiWebSearchMode::Native,
         );
     }
 
@@ -69,6 +71,7 @@ final class OpenAiNewsProviderTest extends TestCase
         $batch = $this->provider->parseResponse([
             'id' => 'resp_top_level',
             'status' => 'completed',
+            'output' => [['type' => 'web_search_call', 'id' => 'ws_top_level']],
             'output_text' => self::json(['articles' => []]),
         ]);
 
@@ -127,6 +130,66 @@ final class OpenAiNewsProviderTest extends TestCase
                 'reason' => 'max_output_tokens',
             ],
         ]);
+    }
+
+    public function test_it_rejects_an_empty_result_when_no_search_was_performed(): void
+    {
+        $this->expectException(AiNewsProviderException::class);
+        $this->expectExceptionMessage('не выполнила ни одного веб-поиска (режим native)');
+
+        $this->provider->parseResponse([
+            'id' => 'resp_no_search',
+            'status' => 'completed',
+            'output_text' => self::json(['articles' => []]),
+        ]);
+    }
+
+    public function test_it_accepts_an_empty_result_backed_by_router_citations(): void
+    {
+        $provider = new OpenAiNewsProvider(
+            apiKey: 'test-key',
+            configuredModel: 'deepseek/deepseek-chat-v3.1',
+            baseUrl: 'https://api.example.test/v1',
+            timeoutSeconds: 10,
+            webSearchMode: AiWebSearchMode::Plugin,
+        );
+
+        $batch = $provider->parseResponse([
+            'id' => 'resp_plugin',
+            'status' => 'completed',
+            'output' => [[
+                'type' => 'message',
+                'content' => [[
+                    'type' => 'output_text',
+                    'text' => self::json(['articles' => []]),
+                    'annotations' => [[
+                        'type' => 'url_citation',
+                        'url_citation' => ['url' => 'https://www.sailing.org/news'],
+                    ]],
+                ]],
+            ]],
+        ]);
+
+        self::assertSame([], $batch->articles);
+    }
+
+    public function test_it_accepts_an_empty_result_when_search_is_disabled(): void
+    {
+        $provider = new OpenAiNewsProvider(
+            apiKey: 'test-key',
+            configuredModel: 'configured-model',
+            baseUrl: 'https://api.example.test/v1',
+            timeoutSeconds: 10,
+            webSearchMode: AiWebSearchMode::Off,
+        );
+
+        $batch = $provider->parseResponse([
+            'id' => 'resp_off',
+            'status' => 'completed',
+            'output_text' => self::json(['articles' => []]),
+        ]);
+
+        self::assertSame([], $batch->articles);
     }
 
     /** @return array<string, string|int> */

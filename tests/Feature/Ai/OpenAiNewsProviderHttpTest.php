@@ -20,6 +20,7 @@ final class OpenAiNewsProviderHttpTest extends TestCase
                 'id' => 'resp_http_test',
                 'status' => 'completed',
                 'model' => 'test-model',
+                'output' => [['type' => 'web_search_call', 'id' => 'ws_http_test']],
                 'output_text' => json_encode(['articles' => []], JSON_THROW_ON_ERROR),
             ]),
         ]);

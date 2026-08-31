@@ -114,11 +114,70 @@ final class OpenAiNewsProvider implements AiNewsProvider
             throw new AiNewsProviderException($exception->getMessage(), previous: $exception);
         }
 
+        $this->assertSearchWasPerformed($response, $articles);
+
         return new AiNewsBatch(
             responseId: (string) ($response['id'] ?? ''),
             model: (string) ($response['model'] ?? $this->model()),
             articles: $articles,
         );
+    }
+
+    /**
+     * Пустой список без единого следа поиска означает, что провайдер молча
+     * проигнорировал веб-поиск и модель отвечала по памяти. Внешне это
+     * неотличимо от честного «новостей нет», поэтому падаем с явной причиной.
+     *
+     * @param  array<string, mixed>  $response
+     * @param  list<AiNewsArticle>  $articles
+     */
+    private function assertSearchWasPerformed(array $response, array $articles): void
+    {
+        $mode = $this->resolvedWebSearchMode();
+
+        if ($articles !== [] || $mode === AiWebSearchMode::Off || $this->hasSearchTraces($response)) {
+            return;
+        }
+
+        throw new AiNewsProviderException(sprintf(
+            'Модель %s не выполнила ни одного веб-поиска (режим %s): в ответе нет ни web_search_call, '
+            .'ни ссылок на источники. Проверьте OPENAI_NEWS_WEB_SEARCH и поддержку веб-поиска моделью.',
+            $this->model(),
+            $mode->value,
+        ));
+    }
+
+    /**
+     * Встроенный web_search оставляет в output элементы web_search_call,
+     * плагин роутера — аннотации url_citation внутри сообщения.
+     *
+     * @param  array<string, mixed>  $response
+     */
+    private function hasSearchTraces(array $response): bool
+    {
+        foreach ((array) ($response['output'] ?? []) as $output) {
+            if (! is_array($output)) {
+                continue;
+            }
+
+            if (str_contains((string) ($output['type'] ?? ''), 'web_search')) {
+                return true;
+            }
+
+            foreach ((array) ($output['content'] ?? []) as $content) {
+                if (! is_array($content)) {
+                    continue;
+                }
+
+                foreach ((array) ($content['annotations'] ?? []) as $annotation) {
+                    if (is_array($annotation) && ($annotation['type'] ?? null) === 'url_citation') {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return is_array($response['citations'] ?? null) && $response['citations'] !== [];
     }
 
     /** @return array<string, mixed> */

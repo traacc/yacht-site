@@ -81,6 +81,11 @@ final class OpenAiNewsProviderWebSearchTest extends TestCase
         });
     }
 
+    /**
+     * Эти тесты проверяют исходящий payload, поэтому ответ пустой; след поиска
+     * в нём нужен, чтобы не сработала защита от «поиска не было» —
+     * она проверяется отдельно в Tests\Unit\Ai\OpenAiNewsProviderTest.
+     */
     private function fakeEmptyResponse(): void
     {
         Http::preventStrayRequests();
@@ -88,6 +93,7 @@ final class OpenAiNewsProviderWebSearchTest extends TestCase
             'https://api.example.test/v1/responses' => Http::response([
                 'id' => 'resp_web_search_test',
                 'status' => 'completed',
+                'output' => [['type' => 'web_search_call', 'id' => 'ws_test']],
                 'output_text' => json_encode(['articles' => []], JSON_THROW_ON_ERROR),
             ]),
         ]);
