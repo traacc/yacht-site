@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\AiNewsCandidates;
 
 use App\Actions\WorldNews\PublishAiNewsCandidateAction;
+use App\Actions\WorldNews\RefreshAiNewsCandidateImageAction;
 use App\Actions\WorldNews\RejectAiNewsCandidateAction;
 use App\Enums\AiNewsCandidateStatus;
 use App\Filament\Concerns\RestrictsAccessByRole;
@@ -12,6 +13,7 @@ use App\Filament\Resources\AiNewsCandidates\Pages\ManageAiNewsCandidates;
 use App\Models\AiNewsCandidate;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
@@ -31,6 +33,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\HtmlString;
 use UnitEnum;
 
@@ -306,6 +309,30 @@ class AiNewsCandidateResource extends Resource
                             ->send();
                     }),
 
+                Action::make('refreshImage')
+                    ->label('Найти картинку')
+                    ->icon(Heroicon::OutlinedPhoto)
+                    ->color('gray')
+                    ->visible(fn (AiNewsCandidate $record): bool => $record->status !== AiNewsCandidateStatus::Published)
+                    ->action(function (AiNewsCandidate $record): void {
+                        $imageUrl = app(RefreshAiNewsCandidateImageAction::class)->handle($record);
+
+                        if ($imageUrl === null) {
+                            Notification::make()
+                                ->title('Картинку найти не удалось')
+                                ->body('На странице источника нет подходящего изображения. Прежнее значение оставлено без изменений.')
+                                ->warning()
+                                ->send();
+
+                            return;
+                        }
+
+                        Notification::make()
+                            ->title('Картинка обновлена')
+                            ->success()
+                            ->send();
+                    }),
+
                 EditAction::make()
                     ->label('Редактировать')
                     ->modalHeading('Редактировать AI-кандидат')
@@ -315,6 +342,36 @@ class AiNewsCandidateResource extends Resource
                     ->label('Просмотреть')
                     ->modalHeading('Опубликованный AI-кандидат')
                     ->visible(fn (AiNewsCandidate $record): bool => $record->status === AiNewsCandidateStatus::Published),
+            ])
+            ->toolbarActions([
+                BulkAction::make('refreshImages')
+                    ->label('Найти картинки')
+                    ->icon(Heroicon::OutlinedPhoto)
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->modalHeading('Найти картинки заново?')
+                    ->modalDescription('Для каждого выбранного кандидата будет заново открыта страница источника. Кандидаты, у которых картинку найти не удалось, останутся с прежним значением.')
+                    ->modalSubmitActionLabel('Найти')
+                    ->deselectRecordsAfterCompletion()
+                    ->action(function (Collection $records): void {
+                        $action = app(RefreshAiNewsCandidateImageAction::class);
+                        $updated = 0;
+
+                        foreach ($records as $record) {
+                            if ($record->status === AiNewsCandidateStatus::Published) {
+                                continue;
+                            }
+
+                            if ($action->handle($record) !== null) {
+                                $updated++;
+                            }
+                        }
+
+                        Notification::make()
+                            ->title("Картинки обновлены: {$updated} из {$records->count()}")
+                            ->success()
+                            ->send();
+                    }),
             ]);
     }
 
