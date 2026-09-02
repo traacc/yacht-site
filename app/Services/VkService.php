@@ -17,17 +17,37 @@ class VkService
 {
     // Через прокси и при загрузке картинки соединение бывает медленным.
     private const TIMEOUT_SECONDS = 25;
+
     private const CONNECT_TIMEOUT_SECONDS = 8;
 
     // VK позволяет очень длинные посты; ограничиваем тело новости разумным запасом.
     private const TEXT_LIMIT = 4000;
+
+    // Форматы, которые принимает сервер загрузки фото VK. WebP/AVIF он молча
+    // отвергает: отвечает 200 с пустым полем «photo», поэтому перекодируем.
+    private const PHOTO_FORMATS = ['jpg', 'jpeg', 'png', 'gif'];
+
+    // Крупные снимки с телефона (5–10 МБ) не успевают залиться за таймаут
+    // через прокси, поэтому всё, что больше, пережимаем в JPEG.
+    private const PHOTO_MAX_BYTES = 3145728;
+
+    // Максимальная сторона после пережатия; VK всё равно ужимает превью.
+    private const PHOTO_MAX_SIDE = 2560;
+
+    private const PHOTO_JPEG_QUALITY = 86;
+
+    // upload_url одноразовый: повтор в тот же адрес возвращает пустое «photo»,
+    // поэтому на каждую попытку берём новый адрес.
+    private const UPLOAD_ATTEMPTS = 2;
 
     // Эндпоинт VK ID для обмена refresh-токена на access-токен.
     private const TOKEN_ENDPOINT = 'https://id.vk.com/oauth2/auth';
 
     // Ключи в таблице settings (группа «vk»), где хранится ротируемый токен.
     private const SETTING_ACCESS_TOKEN = 'vk.access_token';
+
     private const SETTING_ACCESS_EXPIRES = 'vk.access_token_expires_at';
+
     private const SETTING_REFRESH_TOKEN = 'vk.refresh_token';
 
     public function __construct(
@@ -88,8 +108,11 @@ class VkService
      * Публикует новость на стене сообщества VK.
      * Если есть обложка — сначала загружает фото и прикрепляет его к посту,
      * иначе отправляет только текст со ссылкой.
+     *
+     * @param  bool  $requireCover  Не публиковать пост, если у новости есть обложка,
+     *                              но загрузить её не удалось (см. ниже).
      */
-    public function publishNews(News $news): bool
+    public function publishNews(News $news, bool $requireCover = false): bool
     {
         if (! $this->isConfigured()) {
             Log::warning('VK is not configured, skipping news publication', [
@@ -99,8 +122,21 @@ class VkService
             return false;
         }
 
-        $coverPath  = $this->coverPath($news);
+        $coverPath = $this->coverPath($news);
         $attachment = $coverPath !== null ? $this->uploadWallPhoto($coverPath, $news) : null;
+
+        // Сбои сервера загрузки VK разовые: повторная отправка новости обычно
+        // проходит с картинкой. Поэтому пока попытки не исчерпаны, пост без
+        // обложки не публикуем — иначе исправить его можно только вручную,
+        // удалив запись в сообществе и отправив новость заново.
+        if ($requireCover && $attachment === null && $coverPath !== null) {
+            Log::warning('VK post postponed: cover upload failed', [
+                'news_id' => $news->id,
+                'cover' => $coverPath,
+            ]);
+
+            return false;
+        }
 
         return $this->wallPost($this->caption($news), $attachment, $news);
     }
@@ -158,7 +194,7 @@ class VkService
      */
     private function cachedAccessToken(): ?string
     {
-        $token     = $this->settings()->get(self::SETTING_ACCESS_TOKEN);
+        $token = $this->settings()->get(self::SETTING_ACCESS_TOKEN);
         $expiresAt = (int) $this->settings()->get(self::SETTING_ACCESS_EXPIRES, 0);
 
         return (! empty($token) && $expiresAt > time() + 60) ? (string) $token : null;
@@ -179,9 +215,9 @@ class VkService
         }
 
         $params = [
-            'grant_type'    => 'refresh_token',
+            'grant_type' => 'refresh_token',
             'refresh_token' => $refreshToken,
-            'client_id'     => config('services.vk.client_id'),
+            'client_id' => config('services.vk.client_id'),
             'client_secret' => config('services.vk.client_secret'),
         ];
 
@@ -192,10 +228,10 @@ class VkService
 
         try {
             $response = $this->baseRequest()->asForm()->post(self::TOKEN_ENDPOINT, $params);
-        } catch (ConnectionException | RequestException $e) {
+        } catch (ConnectionException|RequestException $e) {
             Log::warning('VK token refresh connection failed', [
                 'news_id' => $news->id,
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
             return null;
@@ -206,15 +242,15 @@ class VkService
         if (! $response->successful() || ! is_array($json) || empty($json['access_token'])) {
             Log::warning('VK token refresh failed', [
                 'news_id' => $news->id,
-                'status'  => $response->status(),
-                'body'    => $response->body(),
+                'status' => $response->status(),
+                'body' => $response->body(),
             ]);
 
             return null;
         }
 
         $accessToken = (string) $json['access_token'];
-        $expiresIn   = (int) ($json['expires_in'] ?? 3600);
+        $expiresIn = (int) ($json['expires_in'] ?? 3600);
 
         $this->settings()->set(self::SETTING_ACCESS_TOKEN, $accessToken, 'vk');
         $this->settings()->set(self::SETTING_ACCESS_EXPIRES, time() + $expiresIn, 'vk');
@@ -250,57 +286,190 @@ class VkService
      */
     private function uploadWallPhoto(string $coverPath, News $news): ?string
     {
-        // 1. Получаем адрес сервера для загрузки.
-        $server = $this->apiCall('photos.getWallUploadServer', [
-            'group_id' => $this->group(),
-        ], $news);
+        // 1. Готовим картинку: VK принимает только jpg/png/gif и плохо
+        //    переваривает многомегабайтные файлы.
+        $photo = $this->preparePhoto($coverPath, $news);
 
-        if ($server === null || empty($server['upload_url'])) {
+        if ($photo === null) {
             return null;
         }
 
-        // 2. Загружаем файл картинки на полученный сервер (multipart).
-        $contents = Storage::disk('public')->get($coverPath);
+        $uploaded = null;
 
-        try {
-            $uploaded = $this->baseRequest()
-                ->attach('photo', $contents, basename($coverPath))
-                ->post($server['upload_url'])
-                ->json();
-        } catch (ConnectionException | RequestException $e) {
-            Log::warning('VK photo upload connection failed', [
-                'news_id' => $news->id,
-                'error'   => $e->getMessage(),
-            ]);
+        for ($attempt = 1; $attempt <= self::UPLOAD_ATTEMPTS; $attempt++) {
+            // 2. На каждую попытку — свежий адрес сервера загрузки (он одноразовый).
+            $server = $this->apiCall('photos.getWallUploadServer', [
+                'group_id' => $this->group(),
+            ], $news);
 
+            if ($server === null || empty($server['upload_url'])) {
+                return null;
+            }
+
+            // 3. Загружаем файл картинки на полученный сервер (multipart).
+            $uploaded = $this->postPhoto($server['upload_url'], $photo, $news, $attempt);
+
+            if ($uploaded !== null) {
+                break;
+            }
+        }
+
+        if ($uploaded === null) {
             return null;
         }
 
-        // Пустой массив фото (строка «[]») означает, что загрузить не удалось.
-        if (! is_array($uploaded) || empty($uploaded['photo']) || $uploaded['photo'] === '[]') {
-            Log::warning('VK photo upload returned no photo', [
-                'news_id'  => $news->id,
-                'response' => $uploaded,
-            ]);
-
-            return null;
-        }
-
-        // 3. Сохраняем загруженное фото в сообществе.
+        // 4. Сохраняем загруженное фото в сообществе.
         $saved = $this->apiCall('photos.saveWallPhoto', [
             'group_id' => $this->group(),
-            'server'   => $uploaded['server'],
-            'photo'    => $uploaded['photo'],
-            'hash'     => $uploaded['hash'],
+            'server' => $uploaded['server'],
+            'photo' => $uploaded['photo'],
+            'hash' => $uploaded['hash'],
         ], $news);
 
         if ($saved === null || empty($saved[0])) {
             return null;
         }
 
-        $photo = $saved[0];
+        $savedPhoto = $saved[0];
 
-        return 'photo' . $photo['owner_id'] . '_' . $photo['id'];
+        return 'photo'.$savedPhoto['owner_id'].'_'.$savedPhoto['id'];
+    }
+
+    /**
+     * Одна попытка загрузки файла на сервер VK.
+     * Возвращает ответ сервера, если в нём есть непустое поле «photo», иначе null.
+     *
+     * Ретраи HTTP-клиента здесь отключены намеренно: upload_url одноразовый,
+     * и повтор в тот же адрес возвращает 200 с пустым «photo».
+     *
+     * @param  array{contents: string, filename: string}  $photo
+     * @return array<string, mixed>|null
+     */
+    private function postPhoto(string $uploadUrl, array $photo, News $news, int $attempt): ?array
+    {
+        try {
+            $response = $this->baseRequest(retry: false)
+                ->attach('photo', $photo['contents'], $photo['filename'])
+                ->post($uploadUrl);
+        } catch (ConnectionException|RequestException $e) {
+            Log::warning('VK photo upload connection failed', [
+                'news_id' => $news->id,
+                'attempt' => $attempt,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        $uploaded = $response->json();
+
+        // Пустое или «[]» поле photo означает, что сервер файл не принял.
+        if (! is_array($uploaded) || empty($uploaded['photo']) || $uploaded['photo'] === '[]') {
+            Log::warning('VK photo upload returned no photo', [
+                'news_id' => $news->id,
+                'attempt' => $attempt,
+                'status' => $response->status(),
+                'bytes' => strlen($photo['contents']),
+                'filename' => $photo['filename'],
+                'response' => $uploaded ?? $response->body(),
+            ]);
+
+            return null;
+        }
+
+        return $uploaded;
+    }
+
+    /**
+     * Готовит обложку к загрузке: содержимое файла и имя с расширением.
+     *
+     * VK принимает только jpg/png/gif — webp/avif (в них лежат обложки после
+     * нормализации HEIC и часть скачанных превью) он отвергает молча, отвечая
+     * 200 с пустым «photo». Крупные снимки дополнительно пережимаем, чтобы
+     * загрузка укладывалась в таймаут через прокси.
+     *
+     * @return array{contents: string, filename: string}|null
+     */
+    private function preparePhoto(string $coverPath, News $news): ?array
+    {
+        $contents = Storage::disk('public')->get($coverPath);
+
+        if (empty($contents)) {
+            Log::warning('VK cover file is empty or unreadable', [
+                'news_id' => $news->id,
+                'path' => $coverPath,
+            ]);
+
+            return null;
+        }
+
+        $extension = strtolower(pathinfo($coverPath, PATHINFO_EXTENSION));
+        $size = @getimagesizefromstring($contents);
+        $type = $size[2] ?? null;
+
+        $supported = in_array($extension, self::PHOTO_FORMATS, true)
+            && in_array($type, [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF], true);
+
+        // Анимацию GIF пережимать нельзя (останется один кадр), а размер у неё
+        // ограничен загрузчиком — отдаём как есть.
+        $oversized = strlen($contents) > self::PHOTO_MAX_BYTES
+            || (int) ($size[0] ?? 0) > self::PHOTO_MAX_SIDE
+            || (int) ($size[1] ?? 0) > self::PHOTO_MAX_SIDE;
+
+        if ($supported && (! $oversized || $type === IMAGETYPE_GIF)) {
+            return ['contents' => $contents, 'filename' => basename($coverPath)];
+        }
+
+        $jpeg = $this->toJpeg($contents);
+
+        if ($jpeg === null) {
+            Log::warning('VK cover conversion to JPEG failed', [
+                'news_id' => $news->id,
+                'path' => $coverPath,
+                'extension' => $extension,
+            ]);
+
+            // Неподдерживаемый формат без перекодирования VK не примет.
+            return $supported
+                ? ['contents' => $contents, 'filename' => basename($coverPath)]
+                : null;
+        }
+
+        return [
+            'contents' => $jpeg,
+            'filename' => pathinfo($coverPath, PATHINFO_FILENAME).'.jpg',
+        ];
+    }
+
+    /**
+     * Перекодирует изображение в JPEG, уменьшая длинную сторону до
+     * PHOTO_MAX_SIDE. Прозрачность заливается белым. null — если GD не смог
+     * прочитать формат (тогда вызывающий решает, что делать).
+     */
+    private function toJpeg(string $contents): ?string
+    {
+        $image = @imagecreatefromstring($contents);
+
+        if ($image === false) {
+            return null;
+        }
+
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $scale = min(1, self::PHOTO_MAX_SIDE / max($width, $height));
+
+        $target = imagecreatetruecolor((int) round($width * $scale), (int) round($height * $scale));
+        // JPEG не хранит альфу: подкладываем белый фон, иначе прозрачность станет чёрной.
+        imagefilledrectangle($target, 0, 0, imagesx($target), imagesy($target), imagecolorallocate($target, 255, 255, 255));
+        imagecopyresampled($target, $image, 0, 0, 0, 0, imagesx($target), imagesy($target), $width, $height);
+        imagedestroy($image);
+
+        ob_start();
+        $ok = imagejpeg($target, null, self::PHOTO_JPEG_QUALITY);
+        $jpeg = ob_get_clean();
+        imagedestroy($target);
+
+        return ($ok && is_string($jpeg) && $jpeg !== '') ? $jpeg : null;
     }
 
     /**
@@ -309,9 +478,9 @@ class VkService
     private function wallPost(string $message, ?string $attachment, News $news): bool
     {
         $params = [
-            'owner_id'   => '-' . $this->group(),
+            'owner_id' => '-'.$this->group(),
             'from_group' => 1,
-            'message'    => $message,
+            'message' => $message,
         ];
 
         if ($attachment !== null) {
@@ -325,12 +494,18 @@ class VkService
 
     /**
      * Базовый запрос с таймаутами, ретраями и прокси (если задан).
+     *
+     * @param  bool  $retry  Для загрузки фото ретраи выключаются: адрес
+     *                       upload_url одноразовый и повтор в него бесполезен.
      */
-    private function baseRequest(): PendingRequest
+    private function baseRequest(bool $retry = true): PendingRequest
     {
         $request = Http::connectTimeout(self::CONNECT_TIMEOUT_SECONDS)
-            ->timeout(self::TIMEOUT_SECONDS)
-            ->retry(2, 1000, throw: false);
+            ->timeout(self::TIMEOUT_SECONDS);
+
+        if ($retry) {
+            $request->retry(2, 1000, throw: false);
+        }
 
         if (! empty($this->proxy())) {
             $request->withOptions(['proxy' => $this->proxy()]);
@@ -360,18 +535,18 @@ class VkService
         if ($token === null) {
             Log::warning('VK access token unavailable', [
                 'news_id' => $news->id,
-                'method'  => $method,
+                'method' => $method,
             ]);
 
             return null;
         }
 
         $params['access_token'] = $token;
-        $params['v']            = $this->version();
+        $params['v'] = $this->version();
 
         try {
             $response = $this->baseRequest()->asForm()->post($this->endpoint($method), $params);
-            $json     = $response->json();
+            $json = $response->json();
 
             if ($response->successful() && is_array($json) && array_key_exists('response', $json)) {
                 return (array) $json['response'];
@@ -390,17 +565,17 @@ class VkService
 
             Log::warning('VK API responded with error', [
                 'news_id' => $news->id,
-                'method'  => $method,
-                'status'  => $response->status(),
-                'body'    => $response->body(),
+                'method' => $method,
+                'status' => $response->status(),
+                'body' => $response->body(),
             ]);
 
             return null;
-        } catch (ConnectionException | RequestException $e) {
+        } catch (ConnectionException|RequestException $e) {
             Log::warning('VK API connection failed', [
                 'news_id' => $news->id,
-                'method'  => $method,
-                'error'   => $e->getMessage(),
+                'method' => $method,
+                'error' => $e->getMessage(),
             ]);
 
             return null;
@@ -414,7 +589,7 @@ class VkService
      */
     private function caption(News $news): string
     {
-        $url   = route('news-details', $news);
+        $url = route('news-details', $news);
         $title = trim((string) $news->title);
 
         $body = Str::limit($this->plainContent($news), self::TEXT_LIMIT, '…');
