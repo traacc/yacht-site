@@ -114,8 +114,6 @@
         <div class="grid md:grid-cols-3 gap-6">
             @forelse($latestNews as $newsItem)
             @php
-                {{-- Переносы строк (<br>, </p> и т.п.) сохраняем как \n перед strip_tags,
-                     иначе абзацы склеятся в одно слово --}}
                 $newsExcerpt = Str::of($newsItem->content)
                     ->replaceMatches('/<br\s*\/?>/i', "\n")
                     ->replaceMatches('#</(p|div|li|h[1-6])>#i', "\n")
