@@ -346,8 +346,22 @@ x-init="{{-- Deep-link из объявлений биржи «Яхты для с
                             this.$watch('selectedYacht', () => { this.rangeStart = null; this.rangeEnd = null; this.hoverDate = null; });
                         },
                         get monthLabel() { return this.monthNames[this.calMonth] + ' ' + this.calYear; },
-                        get hasAvailability() {
+                        get isRentable() {
                             return (selectedYacht.rentals || []).some(r => r.start && r.end);
+                        },
+                        get hasAvailability() {
+                            const booked = selectedYacht.booked_dates || [];
+                            for (const r of (selectedYacht.rentals || [])) {
+                                if (!r.start || !r.end) continue;
+                                let d = new Date(r.start + 'T00:00:00');
+                                const end = new Date(r.end + 'T00:00:00');
+                                while (d <= end) {
+                                    const s = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                                    if (!booked.includes(s)) return true;
+                                    d.setDate(d.getDate() + 1);
+                                }
+                            }
+                            return false;
                         },
                         prevMonth() {
                             if (this.calMonth === 0) { this.calMonth = 11; this.calYear--; }
@@ -445,19 +459,20 @@ x-init="{{-- Deep-link из объявлений биржи «Яхты для с
                             openRentalModal(this.rangeStart, this.rangeEnd);
                         }
                     }">
-                    <p class="mb-4" x-show="hasAvailability">Выберите даты начала и окончания аренды, кликнув по свободным дням.</p>
-                    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-                        <h6 class="a-font text-xl md:text-2xl text-[#2E325C]" x-text="monthLabel"></h6>
-                        <div class="flex items-center gap-4 flex-wrap text-sm">
-                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#BAD5C6] inline-block"></span> Свободно</span>
-                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#F4C9C6] inline-block"></span> Занято</span>
-                            <div class="flex items-center gap-1">
-                                <button type="button" @click="prevMonth()" class="w-8 h-8 flex items-center justify-center text-[#2D92CE] text-xl hover:bg-white transition-colors">‹</button>
-                                <button type="button" @click="nextMonth()" class="w-8 h-8 flex items-center justify-center text-[#2D92CE] text-xl hover:bg-white transition-colors">›</button>
+                    {{-- Календарь показываем только при наличии свободных дат --}}
+                    <div x-show="hasAvailability">
+                        <p class="mb-4">Выберите даты начала и окончания аренды, кликнув по свободным дням.</p>
+                        <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+                            <h6 class="a-font text-xl md:text-2xl text-[#2E325C]" x-text="monthLabel"></h6>
+                            <div class="flex items-center gap-4 flex-wrap text-sm">
+                                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#BAD5C6] inline-block"></span> Свободно</span>
+                                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#F4C9C6] inline-block"></span> Занято</span>
+                                <div class="flex items-center gap-1">
+                                    <button type="button" @click="prevMonth()" class="w-8 h-8 flex items-center justify-center text-[#2D92CE] text-xl hover:bg-white transition-colors">‹</button>
+                                    <button type="button" @click="nextMonth()" class="w-8 h-8 flex items-center justify-center text-[#2D92CE] text-xl hover:bg-white transition-colors">›</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="relative" :class="{ 'opacity-60': !hasAvailability }">
                         <div class="grid grid-cols-7 mb-1">
                             <template x-for="wd in weekdays" :key="wd">
                                 <div class="text-center font-semibold text-[#2E325C] py-2" x-text="wd"></div>
@@ -472,18 +487,13 @@ x-init="{{-- Deep-link из объявлений биржи «Яхты для с
                                         x-text="cell.day"></div>
                             </template>
                         </div>
-                        {{-- Перечёркиваем календарь, если яхта не сдаётся / нет арендных дат --}}
-                        <div x-show="!hasAvailability" class="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
-                            <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
-                                <line x1="0" y1="0" x2="100" y2="100" stroke="#C6455E" stroke-width="1.5" vector-effect="non-scaling-stroke"></line>
-                                <line x1="100" y1="0" x2="0" y2="100" stroke="#C6455E" stroke-width="1.5" vector-effect="non-scaling-stroke"></line>
-                            </svg>
-                            <span class="relative bg-white/90 text-[#2E325C] a-font text-lg md:text-xl px-4 py-2">Яхта пока не сдаётся в аренду</span>
-                        </div>
+                        <p class="mt-3 text-sm text-brand-gray" x-show="rangeStart && !rangeEnd">
+                            Начало: <span class="font-semibold" x-text="rangeStart"></span>. Выберите дату окончания аренды.
+                        </p>
                     </div>
-                    <p class="mt-3 text-sm text-brand-gray" x-show="hasAvailability && rangeStart && !rangeEnd">
-                        Начало: <span class="font-semibold" x-text="rangeStart"></span>. Выберите дату окончания аренды.
-                    </p>
+                    {{-- Яхта не сдаётся или все даты заняты — вместо календаря только пояснение --}}
+                    <p class="text-[#2E325C]" x-show="!hasAvailability"
+                       x-text="isRentable ? 'Свободных дат для аренды сейчас нет.' : 'Яхта пока не сдаётся в аренду.'"></p>
                 </div>
                 <h3 class="text-3xl a-font mb-6">Параметры яхты</h3>
                 <div class="overflow-y-auto relative custom-scroll mb-8">
