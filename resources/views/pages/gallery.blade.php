@@ -307,8 +307,10 @@
                 <button @click="activeTab = 'photo'" :class="activeTab === 'photo' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="p-4 text-center">Фотографии</button>
                 <button @click="activeTab = 'video'" :class="activeTab === 'video' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="p-4 text-center">Видео</button>
             </div>
-            {{-- ★ ИЗМЕНЕНО: таб «Видео» теперь использует video_links из БД с embed-блоками --}}
-            <div x-show="activeTab === 'video'">
+            {{-- ★ ИЗМЕНЕНО: таб «Видео» теперь использует video_links из БД с embed-блоками.
+                 x-if, а не x-show: при уходе с вкладки или закрытии модалки iframe
+                 должен исчезнуть из DOM, иначе видео продолжает проигрываться. --}}
+            <template x-if="gallery_modal_open && activeTab === 'video'">
                 <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
                     <template x-for="item in activeGallery?.video_links ?? []">
                         <div class="bg-[#F8F8F8] overflow-hidden">
@@ -332,7 +334,7 @@
                         Видео пока нет
                     </div>
                 </div>
-            </div>
+            </template>
             {{-- Таб «Фотографии» — images уже возвращает готовые URL через аксессор --}}
             <div x-show="activeTab === 'photo'">
                 {{-- Кнопка скачивания всех фото галереи одним ZIP-архивом --}}
