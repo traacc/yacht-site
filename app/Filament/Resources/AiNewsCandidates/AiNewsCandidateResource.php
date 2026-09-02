@@ -189,18 +189,6 @@ class AiNewsCandidateResource extends Resource
                     ->color(fn (AiNewsCandidateStatus $state): string => $state->color())
                     ->sortable(),
 
-                TextColumn::make('relevance_score')
-                    ->label('Оценка')
-                    ->numeric(decimalPlaces: 0)
-                    ->suffix('%')
-                    ->sortable(),
-
-                ImageColumn::make('image_url')
-                    ->label('Превью')
-                    ->height(40)
-                    ->extraImgAttributes(['loading' => 'lazy'])
-                    ->placeholder('—'),
-
                 TextColumn::make('title')
                     ->label('Заголовок')
                     ->searchable()
@@ -208,22 +196,12 @@ class AiNewsCandidateResource extends Resource
                     ->wrap()
                     ->limit(100),
 
-                TextColumn::make('source_name')
-                    ->label('Источник')
-                    ->searchable()
-                    ->sortable(),
-
                 TextColumn::make('source_published_at')
                     ->label('Дата источника')
                     ->dateTime('d.m.Y H:i')
                     ->placeholder('—')
                     ->sortable(),
 
-                TextColumn::make('discovered_at')
-                    ->label('Найдено')
-                    ->dateTime('d.m.Y H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('discovered_at', 'desc')
             ->stackedOnMobile()
@@ -325,6 +303,7 @@ class AiNewsCandidateResource extends Resource
                             ->send();
                     }),
 
+                /*
                 Action::make('refreshImage')
                     ->label('Найти картинку')
                     ->icon(Heroicon::OutlinedPhoto)
@@ -348,7 +327,7 @@ class AiNewsCandidateResource extends Resource
                             ->success()
                             ->send();
                     }),
-
+                */
                 EditAction::make()
                     ->label('Редактировать')
                     ->modalHeading('Редактировать AI-кандидат')
