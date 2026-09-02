@@ -184,11 +184,23 @@ class YachtResource extends Resource
                     ->placeholder('Место стоянки'),
 
                 TextInput::make('orc_cert_url')
-                    ->label('ORC-сертификат')
-                    ->helperText('Ссылка на действующий ORC-сертификат яхты')
+                    ->label('ORC-сертификат: ссылка')
+                    ->helperText('Ссылка на действующий ORC-сертификат яхты (например, в базе ORC)')
                     ->placeholder('https://...')
                     ->url()
                     ->maxLength(255),
+                FileUpload::make('orc_cert_file')
+                    ->label('ORC-сертификат: файл')
+                    ->helperText('Скан или PDF сертификата. Файл будет доступен на публичной странице яхты.')
+                    ->multiple()
+                    ->reorderable()
+                    ->appendFiles()
+                    ->directory('documents')
+                    ->disk('public')
+                    ->acceptedFileTypes($acceptedTypes)
+                    ->maxSize(20480)
+                    ->maxFiles($maxFiles)
+                    ->downloadable(),
 
                 Select::make('approval_status')
                     ->label('Статус одобрения')
@@ -377,6 +389,10 @@ class YachtResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            // Признак «есть ORC-документ» одним подзапросом на всю страницу, без N+1
+            ->modifyQueryUsing(fn (Builder $query) => $query->withExists([
+                'documents as has_orc_document' => fn (Builder $q) => $q->where('doc_type', Yacht::ORC_DOC_TYPE),
+            ]))
             ->columns([
                 TextColumn::make('name')
                     ->label('Яхта')
@@ -387,10 +403,9 @@ class YachtResource extends Resource
                 TextColumn::make('user.name')
                     ->label('Владелец')
                     ->searchable()->sortable(['name'])->toggleable(),
-                TextColumn::make('orc_cert_url')
+                TextColumn::make('orc_cert')
                     ->label('ORC')
-                    ->state(fn ($record) => filled($record->orc_cert_url))
-                    ->sortable()
+                    ->state(fn (Yacht $record) => filled($record->orc_cert_url) || (bool) $record->has_orc_document)
                     ->formatStateUsing(fn ($state) => $state ? 'Есть' : 'Нет')
                     ->color(fn ($state) => $state ? 'success' : 'danger')->toggleable(),
 
@@ -451,7 +466,8 @@ class YachtResource extends Resource
 
                         $data = $record->toArray();
                         $data['required_documents'] = $sync->load($record, $requiredDocs);
-                        $data['extra_documents'] = $sync->loadExtra($record, $requiredDocTypes);
+                        $data['extra_documents'] = $sync->loadExtra($record, [...$requiredDocTypes, Yacht::ORC_DOC_TYPE]);
+                        $data['orc_cert_file'] = $sync->loadFlat($record, Yacht::ORC_DOC_TYPE);
                         $data += app(SyncYachtOptionsAction::class)->load($record);
                         $data['rentals'] = $record->rentals()
                             ->get()
@@ -468,19 +484,22 @@ class YachtResource extends Resource
                     ->using(function (Yacht $record, array $data): Yacht {
                         $requiredDocs = $data['required_documents'] ?? [];
                         $extraDocs = $data['extra_documents'] ?? [];
+                        $orcFiles = $data['orc_cert_file'] ?? [];
                         $rentals = $data['rentals'] ?? [];
                         $optionSync = app(SyncYachtOptionsAction::class);
                         $optionSelections = $optionSync->extract($data);
-                        unset($data['required_documents'], $data['extra_documents'], $data['rentals']);
+                        unset($data['required_documents'], $data['extra_documents'], $data['orc_cert_file'], $data['rentals']);
 
                         $record->update($data);
 
                         $sync = app(SyncDocumentFilesAction::class);
                         $sync->execute($record, $requiredDocs);
                         $sync->execute($record, $extraDocs);
+                        $sync->executeFlat($record, Yacht::ORC_DOC_TYPE, $orcFiles);
 
                         // Удалить осиротевшие типы, которых больше нет в extra
-                        $requiredDocTypes = array_column(ManageYachts::getRequiredDocuments(), 'doc_type');
+                        // (ORC исключён: им управляет отдельное поле формы)
+                        $requiredDocTypes = [...array_column(ManageYachts::getRequiredDocuments(), 'doc_type'), Yacht::ORC_DOC_TYPE];
                         $activeExtraTypes = array_filter(array_column($extraDocs, 'doc_type'));
                         $sync->pruneOrphanedDocTypes($record, $requiredDocTypes, $activeExtraTypes);
 

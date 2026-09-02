@@ -24,6 +24,9 @@ class Yacht extends Model implements HasMedia
 {
     use HasFactory, HasUuids, InteractsWithMedia, RegistersResponsiveFormats, SoftDeletes;
 
+    /** doc_type документа с ORC-сертификатом яхты */
+    public const ORC_DOC_TYPE = 'orc_certificate';
+
     protected $fillable = [
         'name',
         'vfps_number',

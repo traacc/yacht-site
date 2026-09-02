@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Yachts\Pages;
 
 use App\Actions\Document\SyncDocumentFilesAction;
+use App\Actions\Yacht\SyncYachtOptionsAction;
 use App\Actions\Yacht\UpdateYachtRequiredDocumentsAction;
 use App\Exports\YachtExport;
 use App\Filament\Resources\YachtDocumentTypeResource;
 use App\Filament\Resources\YachtOptionResource;
 use App\Filament\Resources\Yachts\YachtResource;
 use App\Imports\YachtImport;
+use App\Models\Scopes\OwnedScope;
 use App\Models\Yacht;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -129,11 +131,12 @@ class ManageYachts extends ManageRecords
                 ->using(function (array $data, string $model): Yacht {
                     $requiredDocs = $data['required_documents'] ?? [];
                     $extraDocs = $data['extra_documents'] ?? [];
+                    $orcFiles = $data['orc_cert_file'] ?? [];
                     $rentals = $data['rentals'] ?? [];
-                    $optionSync = app(\App\Actions\Yacht\SyncYachtOptionsAction::class);
+                    $optionSync = app(SyncYachtOptionsAction::class);
                     $optionSelections = $optionSync->extract($data);
                     $selectedYachtId = $data['selected_yacht_id'] ?? null;
-                    unset($data['required_documents'], $data['extra_documents'], $data['rentals'], $data['yacht_search'], $data['selected_yacht_id']);
+                    unset($data['required_documents'], $data['extra_documents'], $data['orc_cert_file'], $data['rentals'], $data['yacht_search'], $data['selected_yacht_id']);
 
                     // Если выбрана яхта из базы — обновляем её.
                     // Иначе ищем существующую по номеру ВФПС и перезаписываем,
@@ -142,11 +145,11 @@ class ManageYachts extends ManageRecords
 
                     if ($selectedYachtId) {
                         $existing = Yacht::query()
-                            ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
+                            ->withoutGlobalScope(OwnedScope::class)
                             ->findOrFail($selectedYachtId);
                     } elseif (! empty($data['vfps_number'])) {
                         $existing = Yacht::query()
-                            ->withoutGlobalScope(\App\Models\Scopes\OwnedScope::class)
+                            ->withoutGlobalScope(OwnedScope::class)
                             ->withTrashed()
                             ->where('vfps_number', $data['vfps_number'])
                             ->first();
@@ -169,6 +172,7 @@ class ManageYachts extends ManageRecords
                     $sync = app(SyncDocumentFilesAction::class);
                     $sync->execute($record, $requiredDocs);
                     $sync->execute($record, $extraDocs);
+                    $sync->executeFlat($record, Yacht::ORC_DOC_TYPE, $orcFiles);
 
                     YachtResource::syncRentals($record, $rentals);
                     $optionSync->execute($record, $optionSelections);

@@ -262,7 +262,11 @@ x-init="
                             <tr>
                                 <td class="font-semibold py-2 w-64">Сертификат ORC:</td>
                                 <td>
-                                    <template x-if="selectedYacht.has_orc_cert">
+                                    <template x-if="selectedYacht.has_orc_cert && selectedYacht.orc_cert_link">
+                                        <a :href="selectedYacht.orc_cert_link" target="_blank" rel="noopener"
+                                           class="text-[#2D92CE] hover:underline">Есть</a>
+                                    </template>
+                                    <template x-if="selectedYacht.has_orc_cert && !selectedYacht.orc_cert_link">
                                         <span class="">Есть</span>
                                     </template>
                                     <template x-if="!selectedYacht.has_orc_cert">

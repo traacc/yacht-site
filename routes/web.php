@@ -985,7 +985,13 @@ Route::get('/yachts', function () {
             default => '—',
         },
         'current_mass_kg' => $yacht->current_mass_kg ?? '—',
-        'has_orc_cert' => ! empty($yacht->orc_cert_url),
+        'has_orc_cert' => ! empty($yacht->orc_cert_url)
+            || $yacht->documents->contains(fn ($doc) => $doc->doc_type === Yacht::ORC_DOC_TYPE),
+        'orc_cert_link' => ! empty($yacht->orc_cert_url)
+            ? $yacht->orc_cert_url
+            : ($yacht->documents
+                ->first(fn ($doc) => $doc->doc_type === Yacht::ORC_DOC_TYPE && $doc->url)
+                ?->file_url),
         'registered_at' => $yacht->created_at?->format('Y') ?? '—',
         'documents' => $yacht->documents->map(fn ($doc) => [
             'title' => $doc->title,

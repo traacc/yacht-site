@@ -195,9 +195,15 @@ class YachtResource extends Resource
                 TextInput::make('reg_place')->label('Место регистрации')->placeholder('Введите место регистрации'),
                 TextInput::make('home_region')->label('Регион базирования')->placeholder('Город или область'),
                 TextInput::make('mooring_place')->label('Место стоянки')->placeholder('Название яхт-клуба'),
-                TextInput::make('orc_cert_url')->label('ORC-сертификат')->placeholder('https://...')
+                TextInput::make('orc_cert_url')->label('ORC-сертификат: ссылка')->placeholder('https://...')
                     ->url()->maxLength(255)
-                    ->hintIcon('heroicon-o-question-mark-circle', 'Ссылка на действующий ORC-сертификат яхты.'),
+                    ->hintIcon('heroicon-o-question-mark-circle', 'Ссылка на действующий ORC-сертификат яхты, например в базе ORC.'),
+                FileUpload::make('orc_cert_file')->label('ORC-сертификат: файл')
+                    ->multiple()->reorderable()->appendFiles()
+                    ->directory('documents')->disk('public')
+                    ->acceptedFileTypes($acceptedTypes)->maxSize(20480)->maxFiles($maxFiles)
+                    ->downloadable()
+                    ->helperText('Скан или PDF сертификата. Файл будет доступен на публичной странице яхты.'),
 
                 Placeholder::make('Опции')->columnSpanFull(),
                 ...app(SyncYachtOptionsAction::class)->formComponents(),
@@ -429,6 +435,8 @@ class YachtResource extends Resource
                         $data = $record->toArray();
                         $data['required_documents'] = app(SyncDocumentFilesAction::class)
                             ->load($record, ManageYachts::getRequiredDocuments());
+                        $data['orc_cert_file'] = app(SyncDocumentFilesAction::class)
+                            ->loadFlat($record, Yacht::ORC_DOC_TYPE);
                         $data += app(SyncYachtOptionsAction::class)->load($record);
                         $data['rentals'] = $record->rentals()
                             ->get()
@@ -443,15 +451,18 @@ class YachtResource extends Resource
                     })
                     ->using(function (Yacht $record, array $data): Yacht {
                         $docs = $data['required_documents'] ?? [];
+                        $orcFiles = $data['orc_cert_file'] ?? [];
                         $rentals = $data['rentals'] ?? [];
                         $optionSync = app(SyncYachtOptionsAction::class);
                         $optionSelections = $optionSync->extract($data);
-                        unset($data['required_documents'], $data['rentals'], $data['yacht_search']);
+                        unset($data['required_documents'], $data['orc_cert_file'], $data['rentals'], $data['yacht_search']);
 
                         $record->update($data);
 
                         app(SyncDocumentFilesAction::class)
                             ->execute($record, $docs);
+                        app(SyncDocumentFilesAction::class)
+                            ->executeFlat($record, Yacht::ORC_DOC_TYPE, $orcFiles);
 
                         static::syncRentals($record, $rentals);
                         $optionSync->execute($record, $optionSelections);
