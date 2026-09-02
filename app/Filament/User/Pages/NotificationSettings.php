@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Filament\User\Pages;
 
-use App\Actions\Auth\SendEmailVerificationLinkAction;
 use App\Actions\Notifications\SaveNotificationPreferencesAction;
 use App\Enums\NotificationCategory;
 use App\Enums\NotificationChannel;
 use App\Filament\Concerns\LinksTelegramAccount;
+use App\Filament\Concerns\VerifiesEmail;
 use App\Models\User;
 use App\Services\Notifications\NotificationPreferences;
 use App\Services\SettingsService;
@@ -26,7 +26,6 @@ use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Validation\ValidationException;
 
 /**
  * Центр уведомлений: матрица «категория × канал» и привязка Telegram.
@@ -40,6 +39,7 @@ class NotificationSettings extends Page
 {
     use HasUnsavedDataChangesAlert;
     use LinksTelegramAccount;
+    use VerifiesEmail;
 
     protected string $view = 'filament-panels::pages.page';
 
@@ -179,40 +179,8 @@ class NotificationSettings extends Page
                         default => 'Не подтверждён: '.$user->email,
                     }),
 
-                Actions::make([
-                    Action::make('resendVerification')
-                        ->label('Отправить письмо повторно')
-                        ->icon(Heroicon::OutlinedEnvelope)
-                        ->visible(! $isTechnical && ! $user->hasVerifiedEmail())
-                        ->action(function () {
-                            try {
-                                // Экшен уже троттлит отправки (3 за 10 минут).
-                                app(SendEmailVerificationLinkAction::class)->handle($this->user());
-                            } catch (ValidationException $e) {
-                                Notification::make()
-                                    ->title('Не удалось отправить письмо')
-                                    ->body(collect($e->errors())->flatten()->first())
-                                    ->danger()
-                                    ->send();
-
-                                return null;
-                            }
-
-                            Notification::make()
-                                ->title('Письмо отправлено')
-                                ->body('Перейдите по ссылке из письма, затем вернитесь и обновите страницу.')
-                                ->success()
-                                ->send();
-
-                            return null;
-                        }),
-
-                    Action::make('refreshEmail')
-                        ->label('Проверить подтверждение')
-                        ->color('gray')
-                        ->visible(! $isTechnical && ! $user->hasVerifiedEmail())
-                        ->action(fn () => redirect(static::getUrl())),
-                ])->key('email-actions'),
+                Actions::make($this->emailVerificationActions($user, static::getUrl()))
+                    ->key('email-actions'),
             ]);
     }
 

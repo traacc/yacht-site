@@ -8,21 +8,18 @@ use App\Actions\Auth\RequestPhoneVerificationCallAction;
 use App\Actions\Auth\VerifyPhoneCodeAction;
 use App\Models\PhoneVerificationCode;
 use App\Models\User;
-use App\Support\PhoneNumber;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
-use Filament\Schemas\Components\Actions;
-use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Text;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Блок подтверждения телефона звонком: статус + кнопки «Позвонить / Ввести код».
+ * Подтверждение телефона звонком: статус + кнопки «Позвонить / Ввести код».
  *
  * Звонок поступает на сохранённый в профиле номер, поэтому изменённый, но не
- * сохранённый номер сюда не попадает — об этом сказано в описании секции.
+ * сохранённый номер сюда не попадает — об этом сказано в подсказке поля.
  *
  * @see RequestPhoneVerificationCallAction
  * @see VerifyPhoneCodeAction
@@ -30,101 +27,140 @@ use Illuminate\Validation\ValidationException;
 trait VerifiesPhone
 {
     /**
+     * Статус и кнопки одной строкой — для belowContent() поля «Телефон».
+     *
      * @param  string  $returnUrl  куда вернуть пользователя после подтверждения
+     * @return array<Text|Action>
      */
-    protected function phoneVerificationSection(User $user, string $returnUrl): Section
+    protected function phoneVerificationContent(User $user, string $returnUrl): array
+    {
+        // helperText() пишет в тот же слот belowContent, поэтому подсказка едет здесь же,
+        // иначе поле осталось бы вообще без пояснения.
+        return [
+            $this->phoneVerificationBadge($user),
+            ...$this->phoneVerificationActions($user, $returnUrl),
+            Text::make($this->phoneVerificationHint($user)),
+        ];
+    }
+
+    /** Подсказка под полем: правила подтверждения зависят от текущего статуса. */
+    protected function phoneVerificationHint(User $user): string
+    {
+        if ($user->hasVerifiedPhone()) {
+            return 'При смене номера подтверждение сбрасывается — новый номер нужно подтвердить звонком.';
+        }
+
+        return 'Мы позвоним на сохранённый в профиле номер, отвечать не нужно: код — последние '
+            .PhoneVerificationCode::CODE_LENGTH.' цифры номера, с которого поступит звонок. Новый номер сначала сохраните.';
+    }
+
+    /** Короткий статус для строки под полем; сам номер виден в поле. */
+    protected function phoneVerificationBadge(User $user): Text
     {
         $verified = $user->hasVerifiedPhone();
-        $hasPhone = $user->normalizedPhone() !== null;
+        $pending = $this->pendingPhoneVerification($user);
 
-        $pending = $verified ? null : $user->phoneVerificationCodes()->first();
-        $pending = $pending?->isUsable() === true ? $pending : null;
+        return Text::make(match (true) {
+            $verified => 'Подтверждён '.$user->phone_verified_at->format('d.m.Y H:i'),
+            $user->normalizedPhone() === null => 'Номер не указан',
+            $pending !== null => 'Звонок заказан, код действует до '.$pending->expires_at->format('H:i'),
+            default => 'Не подтверждён',
+        })
+            ->badge()
+            ->color($verified ? 'success' : 'warning')
+            ->icon($verified ? Heroicon::OutlinedCheckBadge : Heroicon::OutlinedExclamationTriangle);
+    }
 
-        return Section::make('Телефон')
-            ->description($verified
-                ? 'Номер подтверждён звонком.'
-                : 'Подтвердите номер звонком: мы позвоним на сохранённый в профиле номер, отвечать не нужно. Код — последние '
-                    .PhoneVerificationCode::CODE_LENGTH.' цифры номера, с которого поступит звонок. Новый номер сначала сохраните.')
-            ->schema([
-                Placeholder::make('phone_status')
-                    ->label('Статус')
-                    ->content(match (true) {
-                        $verified => 'Подтверждён '.$user->phone_verified_at->format('d.m.Y H:i').' — '.(PhoneNumber::format($user->phone) ?? $user->phone),
-                        ! $hasPhone => 'Номер не указан',
-                        $pending !== null => 'Не подтверждён. Звонок заказан, код действует до '.$pending->expires_at->format('H:i'),
-                        default => 'Не подтверждён',
-                    }),
+    /**
+     * @param  string  $returnUrl  куда вернуть пользователя после подтверждения
+     * @return array<Action>
+     */
+    protected function phoneVerificationActions(User $user, string $returnUrl): array
+    {
+        $canVerify = ! $user->hasVerifiedPhone() && $user->normalizedPhone() !== null;
+        $pending = $this->pendingPhoneVerification($user);
 
-                Actions::make([
-                    Action::make('requestPhoneCall')
-                        ->label($pending !== null ? 'Позвонить ещё раз' : 'Позвонить для подтверждения')
-                        ->icon(Heroicon::OutlinedPhoneArrowUpRight)
-                        ->visible(! $verified && $hasPhone)
-                        ->action(function (Action $action) use ($user, $returnUrl) {
-                            try {
-                                app(RequestPhoneVerificationCallAction::class)->handle($user);
-                            } catch (ValidationException $e) {
-                                Notification::make()
-                                    ->title('Не удалось заказать звонок')
-                                    ->body(collect($e->errors())->flatten()->first())
-                                    ->danger()
-                                    ->send();
+        return [
+            Action::make('requestPhoneCall')
+                ->label($pending !== null ? 'Позвонить ещё раз' : 'Позвонить для подтверждения')
+                ->icon(Heroicon::OutlinedPhoneArrowUpRight)
+                ->visible($canVerify)
+                ->action(function (Action $action) use ($user, $returnUrl) {
+                    try {
+                        app(RequestPhoneVerificationCallAction::class)->handle($user);
+                    } catch (ValidationException $e) {
+                        Notification::make()
+                            ->title('Не удалось заказать звонок')
+                            ->body(collect($e->errors())->flatten()->first())
+                            ->danger()
+                            ->send();
 
-                                $action->halt();
+                        $action->halt();
 
-                                return null;
-                            }
+                        return null;
+                    }
 
-                            Notification::make()
-                                ->title('Звонок заказан')
-                                ->body('Дождитесь звонка — отвечать не нужно. Введите последние '
-                                    .PhoneVerificationCode::CODE_LENGTH.' цифры номера, с которого позвонили. Код действует '
-                                    .PhoneVerificationCode::TTL_MINUTES.' мин.')
-                                ->success()
-                                ->send();
+                    Notification::make()
+                        ->title('Звонок заказан')
+                        ->body('Дождитесь звонка — отвечать не нужно. Введите последние '
+                            .PhoneVerificationCode::CODE_LENGTH.' цифры номера, с которого позвонили. Код действует '
+                            .PhoneVerificationCode::TTL_MINUTES.' мин.')
+                        ->success()
+                        ->send();
 
-                            return redirect($returnUrl);
-                        }),
+                    return redirect($returnUrl);
+                }),
 
-                    Action::make('confirmPhoneCode')
-                        ->label('Ввести код')
-                        ->color('gray')
-                        ->visible(! $verified && $hasPhone)
-                        ->modalHeading('Подтверждение телефона')
-                        ->modalSubmitActionLabel('Подтвердить')
-                        ->schema([
-                            TextInput::make('code')
-                                ->label('Последние '.PhoneVerificationCode::CODE_LENGTH.' цифры номера, с которого позвонили')
-                                ->required()
-                                ->numeric()
-                                ->minLength(PhoneVerificationCode::CODE_LENGTH)
-                                ->maxLength(PhoneVerificationCode::CODE_LENGTH)
-                                ->autocomplete('one-time-code')
-                                ->placeholder(str_repeat('0', PhoneVerificationCode::CODE_LENGTH)),
-                        ])
-                        ->action(function (array $data, Action $action) use ($user, $returnUrl) {
-                            try {
-                                app(VerifyPhoneCodeAction::class)->handle($user, (string) $data['code']);
-                            } catch (ValidationException $e) {
-                                Notification::make()
-                                    ->title('Код не принят')
-                                    ->body(collect($e->errors())->flatten()->first())
-                                    ->danger()
-                                    ->send();
+            Action::make('confirmPhoneCode')
+                ->label('Ввести код')
+                ->color('gray')
+                ->visible($canVerify)
+                ->modalHeading('Подтверждение телефона')
+                ->modalSubmitActionLabel('Подтвердить')
+                ->schema([
+                    TextInput::make('code')
+                        ->label('Последние '.PhoneVerificationCode::CODE_LENGTH.' цифры номера, с которого позвонили')
+                        ->required()
+                        ->numeric()
+                        ->minLength(PhoneVerificationCode::CODE_LENGTH)
+                        ->maxLength(PhoneVerificationCode::CODE_LENGTH)
+                        ->autocomplete('one-time-code')
+                        ->placeholder(str_repeat('0', PhoneVerificationCode::CODE_LENGTH)),
+                ])
+                ->action(function (array $data, Action $action) use ($user, $returnUrl) {
+                    try {
+                        app(VerifyPhoneCodeAction::class)->handle($user, (string) $data['code']);
+                    } catch (ValidationException $e) {
+                        Notification::make()
+                            ->title('Код не принят')
+                            ->body(collect($e->errors())->flatten()->first())
+                            ->danger()
+                            ->send();
 
-                                $action->halt();
+                        $action->halt();
 
-                                return null;
-                            }
+                        return null;
+                    }
 
-                            Notification::make()
-                                ->title('Телефон подтверждён')
-                                ->success()
-                                ->send();
+                    Notification::make()
+                        ->title('Телефон подтверждён')
+                        ->success()
+                        ->send();
 
-                            return redirect($returnUrl);
-                        }),
-                ])->key('phone-verification-actions'),
-            ]);
+                    return redirect($returnUrl);
+                }),
+        ];
+    }
+
+    /** Действующий заказанный звонок, если он есть. */
+    private function pendingPhoneVerification(User $user): ?PhoneVerificationCode
+    {
+        if ($user->hasVerifiedPhone()) {
+            return null;
+        }
+
+        $pending = $user->phoneVerificationCodes()->first();
+
+        return $pending?->isUsable() === true ? $pending : null;
     }
 }

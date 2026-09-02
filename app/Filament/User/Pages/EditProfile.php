@@ -5,6 +5,7 @@ namespace App\Filament\User\Pages;
 use App\Actions\Auth\SendEmailVerificationLinkAction;
 use App\Enums\SportCategory;
 use App\Filament\Concerns\LinksTelegramAccount;
+use App\Filament\Concerns\VerifiesEmail;
 use App\Filament\Concerns\VerifiesPhone;
 use App\Models\User;
 use BackedEnum;
@@ -27,6 +28,7 @@ class EditProfile extends BaseEditProfile
 {
     use HasUnsavedDataChangesAlert;
     use LinksTelegramAccount;
+    use VerifiesEmail;
     use VerifiesPhone;
 
     protected static string|BackedEnum|null $navigationIcon = 'profile';
@@ -154,6 +156,8 @@ class EditProfile extends BaseEditProfile
 
     public function form(Schema $schema): Schema
     {
+        $user = $this->profileUser();
+
         return $schema
             ->components([
 
@@ -197,23 +201,25 @@ class EditProfile extends BaseEditProfile
                     ->maxDate(now()->addYears(100))
                     ->displayFormat('d.m.Y')
                     ->native(false),
+                Select::make('sport_category')
+                    ->label('Спортивный разряд')
+                    ->hintIcon('heroicon-o-question-mark-circle', 'б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта.')
+                    ->options(SportCategory::class),
                 TextInput::make('email')
                     ->label('Email')
                     ->email()
                     ->required()
                     ->maxLength(255)
-                    ->unique(ignoreRecord: true),
+                    ->unique(ignoreRecord: true)
+                    ->belowContent($this->emailVerificationContent($user, static::getUrl())),
                 TextInput::make('phone')
                     ->label('Телефон')
                     ->telRegex('/^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/')
                     ->mask('+7 (999) 999-99-99')
                     ->placeholder('+7 (___) ___-__-__')
-                    ->helperText('При смене номера подтверждение сбрасывается — новый номер нужно подтвердить звонком.')
-                    ->maxLength(255),
-                Select::make('sport_category')
-                    ->label('Спортивный разряд')
-                    ->hintIcon('heroicon-o-question-mark-circle', 'б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта.')
-                    ->options(SportCategory::class),
+                    ->maxLength(255)
+                    ->belowContent($this->phoneVerificationContent($user, static::getUrl())),
+
 
                 Textarea::make('about')
                     ->label('О себе')
@@ -222,10 +228,7 @@ class EditProfile extends BaseEditProfile
                     ->maxLength(2000)
                     ->columnSpanFull(),
 
-                $this->phoneVerificationSection($this->profileUser(), static::getUrl())
-                    ->columnSpanFull(),
-
-                $this->telegramLinkSection($this->profileUser(), static::getUrl())
+                $this->telegramLinkSection($user, static::getUrl())
                     ->columnSpanFull(),
 
             ])->columns(2)->extraAttributes(['class' => 'profile_user_block']);
