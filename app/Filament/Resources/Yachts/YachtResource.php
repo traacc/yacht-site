@@ -183,6 +183,13 @@ class YachtResource extends Resource
                     ->label('Место стоянки')
                     ->placeholder('Место стоянки'),
 
+                TextInput::make('orc_cert_url')
+                    ->label('ORC-сертификат')
+                    ->helperText('Ссылка на действующий ORC-сертификат яхты')
+                    ->placeholder('https://...')
+                    ->url()
+                    ->maxLength(255),
+
                 Select::make('approval_status')
                     ->label('Статус одобрения')
                     ->placeholder('Выберите статус')
@@ -380,11 +387,10 @@ class YachtResource extends Resource
                 TextColumn::make('user.name')
                     ->label('Владелец')
                     ->searchable()->sortable(['name'])->toggleable(),
-                TextColumn::make('orc_cert')
+                TextColumn::make('orc_cert_url')
                     ->label('ORC')
-                    ->state(fn ($record) => $record->documents()
-                        ->where('doc_type', 'orc_cert_type')
-                        ->exists())
+                    ->state(fn ($record) => filled($record->orc_cert_url))
+                    ->sortable()
                     ->formatStateUsing(fn ($state) => $state ? 'Есть' : 'Нет')
                     ->color(fn ($state) => $state ? 'success' : 'danger')->toggleable(),
 

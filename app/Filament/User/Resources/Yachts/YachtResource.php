@@ -195,6 +195,9 @@ class YachtResource extends Resource
                 TextInput::make('reg_place')->label('Место регистрации')->placeholder('Введите место регистрации'),
                 TextInput::make('home_region')->label('Регион базирования')->placeholder('Город или область'),
                 TextInput::make('mooring_place')->label('Место стоянки')->placeholder('Название яхт-клуба'),
+                TextInput::make('orc_cert_url')->label('ORC-сертификат')->placeholder('https://...')
+                    ->url()->maxLength(255)
+                    ->hintIcon('heroicon-o-question-mark-circle', 'Ссылка на действующий ORC-сертификат яхты.'),
 
                 Placeholder::make('Опции')->columnSpanFull(),
                 ...app(SyncYachtOptionsAction::class)->formComponents(),
