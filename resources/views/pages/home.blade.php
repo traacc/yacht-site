@@ -113,16 +113,28 @@
 
         <div class="grid md:grid-cols-3 gap-6">
             @forelse($latestNews as $newsItem)
+            @php
+                {{-- Переносы строк (<br>, </p> и т.п.) сохраняем как \n перед strip_tags,
+                     иначе абзацы склеятся в одно слово --}}
+                $newsExcerpt = Str::of($newsItem->content)
+                    ->replaceMatches('/<br\s*\/?>/i', "\n")
+                    ->replaceMatches('#</(p|div|li|h[1-6])>#i', "\n")
+                    ->stripTags()
+                    ->replaceMatches('/[ \t]+/', ' ')
+                    ->replaceMatches('/\n{3,}/', "\n\n")
+                    ->trim()
+                    ->limit(85, '…');
+            @endphp
             <article class="overflow-hidden shadow-xs hover:shadow-md transition-shadow group flex md:flex-col">
                 <div class="overflow-hidden md:h-52 shrink-0">
                     <img src="{{ $newsItem->cover_image_url ? Storage::url($newsItem->cover_image_url) : asset('images/news/news_1.webp') }}"
                          alt="{{ $newsItem->title }}" class="w-full max-w-[150px] md:max-w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                 </div>
                 <div class="md:p-4 p-2 bg-[#F8F8F8]">
-                    <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2 md:h-14">
+                    <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2 min-h-[2.5em] leading-snug line-clamp-2">
                         {{ $newsItem->title }}
                     </h3>
-                    <p class="font-medium text-brand-gray mb-3 text-xs md:text-base">{{ Str::limit(strip_tags($newsItem->content), 85) }}</p>
+                    <p class="font-medium text-brand-gray mb-3 text-xs md:text-base whitespace-pre-line">{{ $newsExcerpt }}</p>
                     <div class="mb-2 text-brand-gray-light text-xs md:text-base">{{ $newsItem->published_at->translatedFormat('j F Y') }}</div>
                     <div class="">
                         <a href="{{ route('news-details', $newsItem) }}" class="text-[#2E325C] font-semibold hover:underline text-xs md:text-lg">Читать далее →</a>
