@@ -662,7 +662,7 @@ x-init="{{-- Deep-link из объявлений биржи «Яхты для с
                             <span>Скачать историю участия</span>
                         </a>
                     </div>
-                    <div class="overflow-y-auto max-h-[180px] relative custom-scroll responsive-table">
+                    <div class="overflow-y-auto relative custom-scroll responsive-table">
                         <table class="w-full border-collapse bg-[#F8F8F8]">
                             <thead>
                                 <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
