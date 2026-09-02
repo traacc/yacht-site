@@ -324,6 +324,118 @@ x-init="{{-- Deep-link из объявлений биржи «Яхты для с
                         </table>
                     </div>
                 </div>
+
+                {{-- Галерея: обложка → экстерьер → интерьер (один список из Yacht::photoGallery()) --}}
+                <div class="mb-8"
+                     x-show="selectedYacht.photos && selectedYacht.photos.length > 0"
+                     x-data="{
+                        group: 'all',
+                        activeIndex: 0,
+                        get groups() {
+                            return [...new Set((selectedYacht.photos || []).map(photo => photo.group))];
+                        },
+                        get photos() {
+                            const photos = selectedYacht.photos || [];
+                            return this.group === 'all' ? photos : photos.filter(photo => photo.group === this.group);
+                        },
+                        selectGroup(group) {
+                            this.group = group;
+                            this.activeIndex = 0;
+                        },
+                        move(step) {
+                            const total = this.photos.length;
+                            if (total === 0) return;
+                            this.activeIndex = (this.activeIndex + step + total) % total;
+                        },
+                     }">
+                    <h3 class="text-3xl a-font mb-6">Фотографии</h3>
+
+                    <div class="flex gap-4 md:gap-8 mb-6 flex-wrap" x-show="groups.length > 1">
+                        <button type="button" @click="selectGroup('all')"
+                                :class="group === 'all' ? 'text-white bg-[#2D92CE]' : 'bg-[#F8F8F8]'"
+                                class="text-lg p-3 font-medium -mb-px transition-colors">Все</button>
+                        <template x-for="name in groups" :key="name">
+                            <button type="button" @click="selectGroup(name)"
+                                    :class="group === name ? 'text-white bg-[#2D92CE]' : 'bg-[#F8F8F8]'"
+                                    class="text-lg p-3 font-medium -mb-px transition-colors" x-text="name"></button>
+                        </template>
+                    </div>
+
+                    <div class="relative mb-4">
+                        <picture>
+                            <source :srcset="photos[activeIndex]?.avif || ''" type="image/avif">
+                            <source :srcset="photos[activeIndex]?.webp || ''" type="image/webp">
+                            <img :src="photos[activeIndex]?.url" :alt="photos[activeIndex]?.name || selectedYacht.name"
+                                 class="w-full aspect-video object-contain cursor-pointer max-h-[400px]"
+                                 @click="openPhotos(photos, activeIndex, selectedYacht.name)">
+                        </picture>
+                        <template x-if="photos.length > 1">
+                            <div>
+                                <button @click="move(-1)"
+                                        class="absolute rounded-full left-2 top-1/2 -translate-y-1/2 bg-brand-blue hover:bg-brand-blue text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors pb-1.5">‹</button>
+                                <button @click="move(1)"
+                                        class="absolute rounded-full right-2 top-1/2 -translate-y-1/2 bg-brand-blue hover:bg-brand-blue text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors pb-1.5">›</button>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="flex gap-2 overflow-x-auto pb-1" x-show="photos.length > 1">
+                        <template x-for="(photo, idx) in photos" :key="photo.url">
+                            <img :src="photo.thumbnail || photo.url" :alt="photo.name" @click="activeIndex = idx"
+                                 :title="photo.group"
+                                 :class="idx === activeIndex ? 'ring-2 ring-[#2D92CE] opacity-100' : 'opacity-60 hover:opacity-100'"
+                                 class="w-20 h-20 object-cover cursor-pointer shrink-0 transition-opacity">
+                        </template>
+                    </div>
+                </div>
+
+                <h3 class="text-3xl a-font mb-6">Параметры яхты</h3>
+                <div class="overflow-y-auto relative custom-scroll mb-8">
+                    <table class="w-full border-collapse bg-[#F8F8F8]">
+                        <thead>
+                            <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
+                                <th class="pt-2 pb-2 text-center font-medium a-font">Параметр</th>
+                                <th class="pt-2 pb-2 text-center font-medium a-font">Значение</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y text-center font-medium">
+                            <template x-for="(p, i) in selectedYacht.params" :key="i">
+                                <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
+                                    <td class="py-3" x-text="p.label"></td>
+                                    <td class="py-3" x-text="p.value"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mb-8" x-show="selectedYacht.options && selectedYacht.options.length > 0">
+                    <h3 class="text-3xl a-font mb-6">Опции яхты</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2 bg-[#F8F8F8] p-6">
+                        <template x-for="(o, i) in selectedYacht.options" :key="i">
+                            <div class="flex">
+                                <span class="font-semibold py-2 w-64" x-text="o.label + ':'"></span>
+                                <span class="py-2" x-text="o.value"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="mb-8" x-show="selectedYacht.suitable_for && selectedYacht.suitable_for.length > 0">
+                    <h3 class="text-3xl a-font">Для чего подходит яхта</h3>
+                    <div class="flex flex-col gap-3 p-6 pl-0">
+                        <template x-for="(item, i) in selectedYacht.suitable_for" :key="i">
+                            <div class="flex items-center gap-3">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="shrink-0" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="3" y="3" width="18" height="18" rx="0" stroke="#2E325C" stroke-width="1"/>
+                                    <path d="M7 12l3 3 7-7" stroke="#2D92CE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <span x-text="item"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
                 {{-- Календарь доступности яхты --}}
                 <h3 class="text-3xl a-font">Доступность</h3>
                 <div class="mt-8 bg-[#F8F8F8] p-4 md:p-6"
@@ -494,116 +606,6 @@ x-init="{{-- Deep-link из объявлений биржи «Яхты для с
                     {{-- Яхта не сдаётся или все даты заняты — вместо календаря только пояснение --}}
                     <p class="text-[#2E325C]" x-show="!hasAvailability"
                        x-text="isRentable ? 'Свободных дат для аренды сейчас нет.' : 'Яхта пока не сдаётся в аренду.'"></p>
-                </div>
-                <h3 class="text-3xl a-font mb-6">Параметры яхты</h3>
-                <div class="overflow-y-auto relative custom-scroll mb-8">
-                    <table class="w-full border-collapse bg-[#F8F8F8]">
-                        <thead>
-                            <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA] sticky top-0 bg-[#F8F8F8]">
-                                <th class="pt-2 pb-2 text-center font-medium a-font">Параметр</th>
-                                <th class="pt-2 pb-2 text-center font-medium a-font">Значение</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y text-center font-medium">
-                            <template x-for="(p, i) in selectedYacht.params" :key="i">
-                                <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
-                                    <td class="py-3" x-text="p.label"></td>
-                                    <td class="py-3" x-text="p.value"></td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="mb-8" x-show="selectedYacht.options && selectedYacht.options.length > 0">
-                    <h3 class="text-3xl a-font mb-6">Опции яхты</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2 bg-[#F8F8F8] p-6">
-                        <template x-for="(o, i) in selectedYacht.options" :key="i">
-                            <div class="flex">
-                                <span class="font-semibold py-2 w-64" x-text="o.label + ':'"></span>
-                                <span class="py-2" x-text="o.value"></span>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                <div class="mb-8" x-show="selectedYacht.suitable_for && selectedYacht.suitable_for.length > 0">
-                    <h3 class="text-3xl a-font">Для чего подходит яхта</h3>
-                    <div class="flex flex-col gap-3 p-6 pl-0">
-                        <template x-for="(item, i) in selectedYacht.suitable_for" :key="i">
-                            <div class="flex items-center gap-3">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="shrink-0" xmlns="http://www.w3.org/2000/svg">
-                                    <rect x="3" y="3" width="18" height="18" rx="0" stroke="#2E325C" stroke-width="1"/>
-                                    <path d="M7 12l3 3 7-7" stroke="#2D92CE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                <span x-text="item"></span>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                {{-- Галерея: обложка → экстерьер → интерьер (один список из Yacht::photoGallery()) --}}
-                <div class="mb-8"
-                     x-show="selectedYacht.photos && selectedYacht.photos.length > 0"
-                     x-data="{
-                        group: 'all',
-                        activeIndex: 0,
-                        get groups() {
-                            return [...new Set((selectedYacht.photos || []).map(photo => photo.group))];
-                        },
-                        get photos() {
-                            const photos = selectedYacht.photos || [];
-                            return this.group === 'all' ? photos : photos.filter(photo => photo.group === this.group);
-                        },
-                        selectGroup(group) {
-                            this.group = group;
-                            this.activeIndex = 0;
-                        },
-                        move(step) {
-                            const total = this.photos.length;
-                            if (total === 0) return;
-                            this.activeIndex = (this.activeIndex + step + total) % total;
-                        },
-                     }">
-                    <h3 class="text-3xl a-font mb-6">Фотографии</h3>
-
-                    <div class="flex gap-4 md:gap-8 mb-6 flex-wrap" x-show="groups.length > 1">
-                        <button type="button" @click="selectGroup('all')"
-                                :class="group === 'all' ? 'text-white bg-[#2D92CE]' : 'bg-[#F8F8F8]'"
-                                class="text-lg p-3 font-medium -mb-px transition-colors">Все</button>
-                        <template x-for="name in groups" :key="name">
-                            <button type="button" @click="selectGroup(name)"
-                                    :class="group === name ? 'text-white bg-[#2D92CE]' : 'bg-[#F8F8F8]'"
-                                    class="text-lg p-3 font-medium -mb-px transition-colors" x-text="name"></button>
-                        </template>
-                    </div>
-
-                    <div class="relative mb-4">
-                        <picture>
-                            <source :srcset="photos[activeIndex]?.avif || ''" type="image/avif">
-                            <source :srcset="photos[activeIndex]?.webp || ''" type="image/webp">
-                            <img :src="photos[activeIndex]?.url" :alt="photos[activeIndex]?.name || selectedYacht.name"
-                                 class="w-full aspect-video object-contain cursor-pointer max-h-[400px]"
-                                 @click="openPhotos(photos, activeIndex, selectedYacht.name)">
-                        </picture>
-                        <template x-if="photos.length > 1">
-                            <div>
-                                <button @click="move(-1)"
-                                        class="absolute rounded-full left-2 top-1/2 -translate-y-1/2 bg-brand-blue hover:bg-brand-blue text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors pb-1.5">‹</button>
-                                <button @click="move(1)"
-                                        class="absolute rounded-full right-2 top-1/2 -translate-y-1/2 bg-brand-blue hover:bg-brand-blue text-white w-10 h-10 flex items-center justify-center text-3xl transition-colors pb-1.5">›</button>
-                            </div>
-                        </template>
-                    </div>
-
-                    <div class="flex gap-2 overflow-x-auto pb-1" x-show="photos.length > 1">
-                        <template x-for="(photo, idx) in photos" :key="photo.url">
-                            <img :src="photo.thumbnail || photo.url" :alt="photo.name" @click="activeIndex = idx"
-                                 :title="photo.group"
-                                 :class="idx === activeIndex ? 'ring-2 ring-[#2D92CE] opacity-100' : 'opacity-60 hover:opacity-100'"
-                                 class="w-20 h-20 object-cover cursor-pointer shrink-0 transition-opacity">
-                        </template>
-                    </div>
                 </div>
 
                 <div class="mb-8" x-show="selectedYacht.documents.length > 0">
