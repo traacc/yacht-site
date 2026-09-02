@@ -65,7 +65,6 @@ use App\Services\SettingsService;
 use App\Services\WeatherService;
 use App\Services\YachtBooking;
 use App\Services\YandexMapService;
-use App\Support\ResponsiveMedia;
 use App\Support\RichContent;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
@@ -949,7 +948,7 @@ Route::get('/teams', function () {
 })->name('teams');
 Route::get('/yachts', function () {
     $yachts = Yacht::with([
-        'user', 'documents', 'regattaEntries.regatta', 'regattaEntries.team', 'rentals', 'optionValues.option',
+        'user', 'documents', 'media', 'regattaEntries.regatta', 'regattaEntries.team', 'rentals', 'optionValues.option',
         'rentalRequests' => fn ($query) => $query->where('status', RentalRequestStatus::Approved)->whereNotNull('desired_date'),
     ])
         ->where('approval_status', 'approved')
@@ -1044,28 +1043,10 @@ Route::get('/yachts', function () {
                     ->map(fn ($date) => $date->format('Y-m-d'));
             })->unique()->values()->toArray()
             : [],
-        'gallery' => $yacht->getMedia('gallery')->map(function ($media) {
-            $urls = ResponsiveMedia::urls($media);
-
-            return [
-                'url' => $urls['src'],
-                'webp' => $urls['webp'] ?? null,
-                'avif' => $urls['avif'] ?? null,
-                'thumbnail' => $media->getUrl('thumb'),
-                'name' => $media->name,
-            ];
-        })->values()->toArray(),
-        'interior_gallery' => $yacht->getMedia('interior_gallery')->map(function ($media) {
-            $urls = ResponsiveMedia::urls($media);
-
-            return [
-                'url' => $urls['src'],
-                'webp' => $urls['webp'] ?? null,
-                'avif' => $urls['avif'] ?? null,
-                'thumbnail' => $media->getUrl('thumb'),
-                'name' => $media->name,
-            ];
-        })->values()->toArray(),
+        // Единый список фотографий: обложка → экстерьер → интерьер
+        // (порядок задаёт Yacht::photoGallery()).
+        'photos' => $yacht->photoGallery(),
+        'cover' => $yacht->coverPhoto(),
         'params' => [
             ['label' => 'Класс',       'value' => $yacht->class ?? 'Carter 30'],
             ['label' => 'Парус №',     'value' => $yacht->vfps_number],

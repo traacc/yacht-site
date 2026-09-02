@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\RentalRequestStatus;
 use App\Models\Concerns\RegistersResponsiveFormats;
 use App\Models\Scopes\OwnedScope;
+use App\Support\ResponsiveMedia;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -26,6 +27,16 @@ class Yacht extends Model implements HasMedia
 
     /** doc_type документа с ORC-сертификатом яхты */
     public const ORC_DOC_TYPE = 'orc_certificate';
+
+    /**
+     * Коллекции фотографий яхты в порядке показа в галерее:
+     * обложка → экстерьер → интерьер.
+     */
+    public const PHOTO_COLLECTIONS = [
+        'cover' => 'Обложка',
+        'gallery' => 'Экстерьер',
+        'interior_gallery' => 'Интерьер',
+    ];
 
     protected $fillable = [
         'name',
@@ -168,6 +179,11 @@ class Yacht extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
+        // Обложка — первое фото яхты: аватарка в списке и первый кадр галереи.
+        $this->addMediaCollection('cover')
+            ->useDisk('public')
+            ->singleFile();
+
         $this->addMediaCollection('gallery')
             ->useDisk('public');
 
@@ -184,6 +200,49 @@ class Yacht extends Model implements HasMedia
             ->nonQueued();
 
         $this->addResponsiveFormatConversions();
+    }
+
+    /**
+     * Все фотографии яхты одним списком: сначала обложка, затем экстерьер,
+     * затем интерьер. Один и тот же массив питает и аватарку в списке яхт,
+     * и галерею в карточке, поэтому порядок задан здесь, а не в шаблоне.
+     *
+     * @return list<array{url: string, webp: string|null, avif: string|null, thumbnail: string, name: string, group: string, collection: string}>
+     */
+    public function photoGallery(): array
+    {
+        $photos = [];
+
+        foreach (self::PHOTO_COLLECTIONS as $collection => $group) {
+            foreach ($this->getMedia($collection) as $media) {
+                $urls = ResponsiveMedia::urls($media);
+
+                $photos[] = [
+                    'url' => $urls['src'],
+                    'webp' => $urls['webp'] ?? null,
+                    'avif' => $urls['avif'] ?? null,
+                    'thumbnail' => $media->hasGeneratedConversion('thumb')
+                        ? $media->getUrl('thumb')
+                        : $urls['src'],
+                    'name' => $media->name,
+                    'group' => $group,
+                    'collection' => $collection,
+                ];
+            }
+        }
+
+        return $photos;
+    }
+
+    /**
+     * Обложка для аватарки в списке: загруженная обложка, а если её нет —
+     * первое фото любой галереи, чтобы строка не осталась без картинки.
+     *
+     * @return array{url: string, webp: string|null, avif: string|null, thumbnail: string, name: string, group: string, collection: string}|null
+     */
+    public function coverPhoto(): ?array
+    {
+        return $this->photoGallery()[0] ?? null;
     }
 
     public function isApproved(): bool

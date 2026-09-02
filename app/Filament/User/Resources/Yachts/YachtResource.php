@@ -221,6 +221,17 @@ class YachtResource extends Resource
                     ->columnSpanFull()
                     ->visible(fn (Get $get): bool => (bool) $get('for_rent')),
 
+                SpatieMediaLibraryFileUpload::make('cover')
+                    ->label('Обложка')
+                    ->helperText('Главное фото яхты: показывается в списке яхт и первым в галерее.')
+                    ->collection('cover')
+                    ->image()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif'])
+                    ->imageEditor()
+                    ->disk('public')
+                    ->visibility('public')
+                    ->maxSize(512)
+                    ->columnSpanFull(),
                 SpatieMediaLibraryFileUpload::make('gallery')
                     ->label('Галерея')
                     ->collection('gallery')
