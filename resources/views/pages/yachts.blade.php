@@ -657,7 +657,8 @@ x-init="{{-- Deep-link из объявлений биржи «Яхты для с
                 <div class="participation mb-8" x-show="selectedYacht.participation.length > 0">
                     <div class="participation-header flex items-center justify-between mb-6">
                         <h5 class="a-font text-lg md:text-3xl">Участие в регатах</h5>
-                        <a href="#" class="text-[#2E325C] text-lg font-semibold gap-2 items-center hidden md:flex">
+                        <a :href="selectedYacht.history_url" target="_blank" rel="noopener"
+                           class="text-[#2E325C] text-lg font-semibold gap-2 items-center hidden md:flex hover:text-[#2D92CE] transition-colors">
                             <img src="{{ asset('images/icons/download.svg') }}" alt="">
                             <span>Скачать историю участия</span>
                         </a>
@@ -683,7 +684,8 @@ x-init="{{-- Deep-link из объявлений биржи «Яхты для с
                                 </template>
                             </tbody>
                         </table>
-                        <a href="#" class="text-[#2E325C] text-lg font-semibold gap-2 block text-center items-center flex md:hidden">
+                        <a :href="selectedYacht.history_url" target="_blank" rel="noopener"
+                           class="text-[#2E325C] text-lg font-semibold gap-2 justify-center py-4 items-center flex md:hidden">
                             <img src="{{ asset('images/icons/download.svg') }}" alt="">
                             <span>Скачать историю участия</span>
                         </a>

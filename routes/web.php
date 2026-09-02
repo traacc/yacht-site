@@ -16,6 +16,7 @@ use App\Actions\RegattaResult\GenerateRegattaResultPdfAction;
 use App\Actions\Service\SubmitServiceRequestAction;
 use App\Actions\Team\GenerateTeamHistoryPdfAction;
 use App\Actions\Voting\CastVoteAction;
+use App\Actions\Yacht\GenerateYachtHistoryPdfAction;
 use App\Actions\YachtRental\SubmitYachtRentalRequestAction;
 use App\Enums\AdvertType;
 use App\Enums\NotificationCategory;
@@ -946,6 +947,9 @@ Route::get('/teams', function () {
 
     return view('pages.teams', compact('documents'));
 })->name('teams');
+Route::get('/yacht/{yacht}/download-history', function (Yacht $yacht) {
+    return app(GenerateYachtHistoryPdfAction::class)->execute($yacht);
+})->name('yacht.history.pdf');
 Route::get('/yachts', function () {
     $yachts = Yacht::with([
         'user', 'documents', 'media', 'regattaEntries.regatta', 'regattaEntries.team', 'rentals', 'optionValues.option',
@@ -1008,6 +1012,7 @@ Route::get('/yachts', function () {
             'regatta_finished' => $entry->regatta?->regatta_status === RegattaStatus::Finished,
         ])->values()->toArray(),
         'participation_count' => $yacht->regattaEntries->count(),
+        'history_url' => route('yacht.history.pdf', $yacht),
         'for_rent' => (bool) $yacht->for_rent,
         'rentals' => $yacht->for_rent
             ? $yacht->rentals->map(fn ($rental) => [
