@@ -91,10 +91,15 @@ final class RequestPhoneVerificationCallAction
         // ещё годный код.
         $this->expirePreviousCodes($user);
 
+        $pincode = (string) $result->pincode();
+
         return PhoneVerificationCode::create([
             'user_id' => $user->getKey(),
             'phone' => $phone,
-            'code_hash' => PhoneVerificationCode::hashCode((string) $result->pincode()),
+            'code_hash' => PhoneVerificationCode::hashCode($pincode),
+            // Сколько цифр просить у пользователя, решает кампания провайдера,
+            // а не константа сайта.
+            'code_length' => mb_strlen($pincode),
             'expires_at' => now()->addMinutes(PhoneVerificationCode::TTL_MINUTES),
             'provider_call_id' => $result->callId(),
         ]);

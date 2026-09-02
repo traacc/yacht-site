@@ -23,7 +23,11 @@ class PhoneVerificationCode extends Model
 {
     use HasUuids, Prunable;
 
-    /** Длина кода: последние цифры номера звонящего (у zvonok.com — 4). */
+    /**
+     * Ожидаемая длина кода по умолчанию: у Flash Call это последние цифры
+     * номера звонящего, обычно четыре. Фактическую длину пришедшего кода
+     * храним в code_length — её задаёт кампания на стороне провайдера.
+     */
     public const CODE_LENGTH = 4;
 
     /** Срок жизни кода. Звонок поступает сразу, ждать доставки не нужно. */
@@ -39,6 +43,7 @@ class PhoneVerificationCode extends Model
         'user_id',
         'phone',
         'code_hash',
+        'code_length',
         'attempts',
         'expires_at',
         'confirmed_at',
@@ -49,6 +54,7 @@ class PhoneVerificationCode extends Model
     {
         return [
             'attempts' => 'integer',
+            'code_length' => 'integer',
             'expires_at' => 'datetime',
             'confirmed_at' => 'datetime',
         ];
@@ -63,6 +69,12 @@ class PhoneVerificationCode extends Model
     public static function hashCode(string $plain): string
     {
         return hash('sha256', $plain);
+    }
+
+    /** Сколько цифр ждать от пользователя: как в звонке, иначе — по умолчанию. */
+    public function expectedLength(): int
+    {
+        return $this->code_length ?: self::CODE_LENGTH;
     }
 
     /** Непогашенные, не истёкшие и не исчерпавшие попытки коды. */

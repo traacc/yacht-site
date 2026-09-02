@@ -51,7 +51,7 @@ trait VerifiesPhone
         }
 
         return 'Мы позвоним на сохранённый в профиле номер, отвечать не нужно: код — последние '
-            .PhoneVerificationCode::CODE_LENGTH.' цифры номера, с которого поступит звонок. Новый номер сначала сохраните.';
+            .$this->phoneCodeLength($user).' цифры номера, с которого поступит звонок. Новый номер сначала сохраните.';
     }
 
     /** Короткий статус для строки под полем; сам номер виден в поле. */
@@ -79,6 +79,7 @@ trait VerifiesPhone
     {
         $canVerify = ! $user->hasVerifiedPhone() && $user->normalizedPhone() !== null;
         $pending = $this->pendingPhoneVerification($user);
+        $codeLength = $this->phoneCodeLength($user);
 
         return [
             Action::make('requestPhoneCall')
@@ -87,7 +88,7 @@ trait VerifiesPhone
                 ->visible($canVerify)
                 ->action(function (Action $action) use ($user, $returnUrl) {
                     try {
-                        app(RequestPhoneVerificationCallAction::class)->handle($user);
+                        $code = app(RequestPhoneVerificationCallAction::class)->handle($user);
                     } catch (ValidationException $e) {
                         Notification::make()
                             ->title('Не удалось заказать звонок')
@@ -103,7 +104,7 @@ trait VerifiesPhone
                     Notification::make()
                         ->title('Звонок заказан')
                         ->body('Дождитесь звонка — отвечать не нужно. Введите последние '
-                            .PhoneVerificationCode::CODE_LENGTH.' цифры номера, с которого позвонили. Код действует '
+                            .$code->expectedLength().' цифры номера, с которого позвонили. Код действует '
                             .PhoneVerificationCode::TTL_MINUTES.' мин.')
                         ->success()
                         ->send();
@@ -118,14 +119,17 @@ trait VerifiesPhone
                 ->modalHeading('Подтверждение телефона')
                 ->modalSubmitActionLabel('Подтвердить')
                 ->schema([
+                    // Поле именно текстовое: ->numeric() вешает NumberStateCast
+                    // с floatval(), и код с ведущим нулём («0421») приезжает
+                    // в действие как «421» — верный код получал «Неверный код».
                     TextInput::make('code')
-                        ->label('Последние '.PhoneVerificationCode::CODE_LENGTH.' цифры номера, с которого позвонили')
+                        ->label('Последние '.$codeLength.' цифры номера, с которого позвонили')
                         ->required()
-                        ->numeric()
-                        ->minLength(PhoneVerificationCode::CODE_LENGTH)
-                        ->maxLength(PhoneVerificationCode::CODE_LENGTH)
+                        ->rule('digits:'.$codeLength)
+                        ->inputMode('numeric')
+                        ->extraInputAttributes(['pattern' => '[0-9]*', 'inputmode' => 'numeric'])
                         ->autocomplete('one-time-code')
-                        ->placeholder(str_repeat('0', PhoneVerificationCode::CODE_LENGTH)),
+                        ->placeholder(str_repeat('0', $codeLength)),
                 ])
                 ->action(function (array $data, Action $action) use ($user, $returnUrl) {
                     try {
@@ -150,6 +154,17 @@ trait VerifiesPhone
                     return redirect($returnUrl);
                 }),
         ];
+    }
+
+    /**
+     * Сколько цифр ждать от пользователя. Длину задаёт кампания Flash Call
+     * на стороне провайдера, поэтому берём её из заказанного звонка,
+     * а до звонка показываем значение по умолчанию.
+     */
+    private function phoneCodeLength(User $user): int
+    {
+        return $this->pendingPhoneVerification($user)?->expectedLength()
+            ?? PhoneVerificationCode::CODE_LENGTH;
     }
 
     /** Действующий заказанный звонок, если он есть. */
