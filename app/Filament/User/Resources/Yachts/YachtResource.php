@@ -43,7 +43,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class YachtResource extends Resource
 {
@@ -203,7 +205,16 @@ class YachtResource extends Resource
                     ->directory('documents')->disk('public')
                     ->acceptedFileTypes($acceptedTypes)->maxSize(20480)->maxFiles($maxFiles)
                     ->downloadable()
-                    ->helperText('Скан или PDF сертификата. Файл будет доступен на публичной странице яхты.'),
+                    ->helperText('Скан или PDF сертификата. Файл будет доступен на публичной странице яхты.')
+                    ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file): string {
+                        // Читаемое имя файла вместо случайного uuid, но с коротким
+                        // суффиксом: все документы лежат в одном каталоге, и без него
+                        // одноимённые сертификаты разных яхт затирали бы друг друга.
+                        $name = Str::of($file->getClientOriginalName())->beforeLast('.')->slug()->take(60);
+
+                        return ($name->isEmpty() ? 'orc-sertifikat' : (string) $name)
+                            .'-'.Str::random(6).'.'.$file->getClientOriginalExtension();
+                    }),
 
                 Placeholder::make('Опции')->columnSpanFull(),
                 ...app(SyncYachtOptionsAction::class)->formComponents(),
@@ -473,7 +484,7 @@ class YachtResource extends Resource
                         app(SyncDocumentFilesAction::class)
                             ->execute($record, $docs);
                         app(SyncDocumentFilesAction::class)
-                            ->executeFlat($record, Yacht::ORC_DOC_TYPE, $orcFiles);
+                            ->executeFlat($record, Yacht::ORC_DOC_TYPE, $orcFiles, Yacht::ORC_DOC_TITLE);
 
                         static::syncRentals($record, $rentals);
                         $optionSync->execute($record, $optionSelections);

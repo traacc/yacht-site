@@ -43,6 +43,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use UnitEnum;
 
 class YachtResource extends Resource
@@ -200,7 +202,16 @@ class YachtResource extends Resource
                     ->acceptedFileTypes($acceptedTypes)
                     ->maxSize(20480)
                     ->maxFiles($maxFiles)
-                    ->downloadable(),
+                    ->downloadable()
+                    ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file): string {
+                        // Читаемое имя файла вместо случайного uuid, но с коротким
+                        // суффиксом: все документы лежат в одном каталоге, и без него
+                        // одноимённые сертификаты разных яхт затирали бы друг друга.
+                        $name = Str::of($file->getClientOriginalName())->beforeLast('.')->slug()->take(60);
+
+                        return ($name->isEmpty() ? 'orc-sertifikat' : (string) $name)
+                            .'-'.Str::random(6).'.'.$file->getClientOriginalExtension();
+                    }),
 
                 Select::make('approval_status')
                     ->label('Статус одобрения')
@@ -506,7 +517,7 @@ class YachtResource extends Resource
                         $sync = app(SyncDocumentFilesAction::class);
                         $sync->execute($record, $requiredDocs);
                         $sync->execute($record, $extraDocs);
-                        $sync->executeFlat($record, Yacht::ORC_DOC_TYPE, $orcFiles);
+                        $sync->executeFlat($record, Yacht::ORC_DOC_TYPE, $orcFiles, Yacht::ORC_DOC_TITLE);
 
                         // Удалить осиротевшие типы, которых больше нет в extra
                         // (ORC исключён: им управляет отдельное поле формы)

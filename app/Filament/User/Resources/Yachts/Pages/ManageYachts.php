@@ -88,7 +88,7 @@ class ManageYachts extends ManageRecords
                     }
 
                     app(SyncDocumentFilesAction::class)->execute($record, $docs);
-                    app(SyncDocumentFilesAction::class)->executeFlat($record, Yacht::ORC_DOC_TYPE, $orcFiles);
+                    app(SyncDocumentFilesAction::class)->executeFlat($record, Yacht::ORC_DOC_TYPE, $orcFiles, Yacht::ORC_DOC_TITLE);
 
                     YachtResource::syncRentals($record, $rentals);
                     $optionSync->execute($record, $optionSelections);

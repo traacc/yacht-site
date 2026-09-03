@@ -28,6 +28,9 @@ class Yacht extends Model implements HasMedia
     /** doc_type документа с ORC-сертификатом яхты */
     public const ORC_DOC_TYPE = 'orc_certificate';
 
+    /** Заголовок документа с ORC-сертификатом (виден в карточке яхты) */
+    public const ORC_DOC_TITLE = 'ORC-сертификат';
+
     /**
      * Коллекции фотографий яхты в порядке показа в галерее:
      * обложка → экстерьер → интерьер.

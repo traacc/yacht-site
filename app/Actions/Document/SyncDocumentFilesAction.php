@@ -6,6 +6,7 @@ namespace App\Actions\Document;
 
 use App\Models\Document;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -24,14 +25,14 @@ final class SyncDocumentFilesAction
     /**
      * Синхронизировать документы для сущности.
      *
-     * @param Model                                                              $documentable Яхта / Заявка
-     * @param array<int, array{doc_type: string, title: string, files: string[]}> $documentsData
+     * @param  Model  $documentable  Яхта / Заявка
+     * @param  array<int, array{doc_type: string, title: string, files: string[]}>  $documentsData
      */
     public function execute(Model $documentable, array $documentsData): void
     {
         foreach ($documentsData as $item) {
-            $docType  = $item['doc_type'] ?? '';
-            $title    = $item['title'] ?? '';
+            $docType = $item['doc_type'] ?? '';
+            $title = $item['title'] ?? '';
             $newFiles = array_values(array_filter((array) ($item['files'] ?? [])));
 
             /** @var \Illuminate\Database\Eloquent\Collection<int, Document> $existing */
@@ -74,12 +75,12 @@ final class SyncDocumentFilesAction
                 }
 
                 $documentable->documents()->create([
-                    'doc_type'        => $docType,
-                    'title'           => $title,
-                    'url'             => $path,
+                    'doc_type' => $docType,
+                    'title' => $title,
+                    'url' => $path,
                     'file_size_bytes' => $size,
-                    'mime_type'       => $mime ?: null,
-                    'sort_order'      => $sortOrder,
+                    'mime_type' => $mime ?: null,
+                    'sort_order' => $sortOrder,
                 ]);
             }
         }
@@ -92,16 +93,15 @@ final class SyncDocumentFilesAction
      * В отличие от execute(), не группирует файлы под одним общим title:
      * подходит для «галерейной» загрузки пачкой (поле other_files в админке регаты).
      *
-     * @param Model    $documentable
-     * @param string   $docType
-     * @param string[] $files       Список url-путей (state поля FileUpload)
+     * @param  string[]  $files  Список url-путей (state поля FileUpload)
+     * @param  ?string  $title  Общий заголовок; null — имя файла (по умолчанию)
      */
-    public function executeFlat(Model $documentable, string $docType, array $files): void
+    public function executeFlat(Model $documentable, string $docType, array $files, ?string $title = null): void
     {
         $newFiles = array_values(array_filter((array) $files));
 
         /** @var \Illuminate\Database\Eloquent\Collection<int, Document> $existing */
-        $existing     = $documentable->documents()->where('doc_type', $docType)->get();
+        $existing = $documentable->documents()->where('doc_type', $docType)->get();
         $existingUrls = $existing->pluck('url')->filter()->values()->toArray();
 
         // Файлы к удалению
@@ -120,7 +120,7 @@ final class SyncDocumentFilesAction
         }
 
         // Файлы к добавлению — каждый как отдельный документ, title = имя файла
-        $toAdd     = array_diff($newFiles, $existingUrls);
+        $toAdd = array_diff($newFiles, $existingUrls);
         $sortOrder = $existing->max('sort_order') ?? 0;
 
         foreach ($toAdd as $path) {
@@ -139,12 +139,12 @@ final class SyncDocumentFilesAction
             }
 
             $documentable->documents()->create([
-                'doc_type'        => $docType,
-                'title'           => basename($path),
-                'url'             => $path,
+                'doc_type' => $docType,
+                'title' => $title ?? basename($path),
+                'url' => $path,
                 'file_size_bytes' => $size,
-                'mime_type'       => $mime ?: null,
-                'sort_order'      => $sortOrder,
+                'mime_type' => $mime ?: null,
+                'sort_order' => $sortOrder,
             ]);
         }
     }
@@ -152,8 +152,6 @@ final class SyncDocumentFilesAction
     /**
      * Загрузить «плоский» список url-файлов одного doc_type для FileUpload-state.
      *
-     * @param Model  $documentable
-     * @param string $docType
      *
      * @return string[]
      */
@@ -175,9 +173,8 @@ final class SyncDocumentFilesAction
      * Вызывается для синхронизации «дополнительных» документов в админке:
      * если админ удалил весь блок extra-документа определённого типа, его записи тоже удаляются.
      *
-     * @param Model    $documentable
-     * @param string[] $excludeDocTypes  Типы обязательных документов (не трогать)
-     * @param string[] $activeDocTypes   doc_type из текущего extra-repeater (оставить)
+     * @param  string[]  $excludeDocTypes  Типы обязательных документов (не трогать)
+     * @param  string[]  $activeDocTypes  doc_type из текущего extra-repeater (оставить)
      */
     public function pruneOrphanedDocTypes(Model $documentable, array $excludeDocTypes, array $activeDocTypes): void
     {
@@ -196,14 +193,12 @@ final class SyncDocumentFilesAction
     /**
      * Загрузить существующие документы в формат Repeater-state.
      *
-     * @param Model                                              $documentable
-     * @param array<int, array{doc_type: string, title: string}> $requiredDocs
-     *
+     * @param  array<int, array{doc_type: string, title: string}>  $requiredDocs
      * @return array<int, array{doc_type: string, title: string, files: string[]}>
      */
     public function load(Model $documentable, array $requiredDocs): array
     {
-        /** @var \Illuminate\Support\Collection<string, \Illuminate\Support\Collection<int, Document>> $grouped */
+        /** @var Collection<string, Collection<int, Document>> $grouped */
         $grouped = $documentable->documents()
             ->orderBy('sort_order')
             ->orderBy('created_at')
@@ -213,7 +208,7 @@ final class SyncDocumentFilesAction
         return array_map(function (array $doc) use ($grouped) {
             $docType = $doc['doc_type'];
 
-            /** @var \Illuminate\Support\Collection<int, Document>|null $docs */
+            /** @var Collection<int, Document>|null $docs */
             $docs = $grouped->get($docType);
 
             $files = $docs
@@ -222,8 +217,8 @@ final class SyncDocumentFilesAction
 
             return [
                 'doc_type' => $docType,
-                'title'    => $doc['title'],
-                'files'    => $files,
+                'title' => $doc['title'],
+                'files' => $files,
             ];
         }, $requiredDocs);
     }
@@ -233,9 +228,7 @@ final class SyncDocumentFilesAction
      *
      * Группирует по doc_type, для каждого типа собирает все url-файлы.
      *
-     * @param Model    $documentable
-     * @param string[] $requiredDocTypes  Ключи обязательных типов (исключить из выборки)
-     *
+     * @param  string[]  $requiredDocTypes  Ключи обязательных типов (исключить из выборки)
      * @return array<int, array{doc_type: string, title: string, files: string[]}>
      */
     public function loadExtra(Model $documentable, array $requiredDocTypes): array
@@ -257,8 +250,8 @@ final class SyncDocumentFilesAction
 
             $result[] = [
                 'doc_type' => $docType,
-                'title'    => $title,
-                'files'    => $files,
+                'title' => $title,
+                'files' => $files,
             ];
         }
 
