@@ -438,7 +438,7 @@ x-init="{{-- Deep-link из объявлений биржи «Яхты для с
 
                 {{-- Календарь доступности яхты --}}
                 <h3 class="text-3xl a-font">Доступность</h3>
-                <div class="mt-8 bg-[#F8F8F8] p-4 md:p-6"
+                <div class="mt-8 bg-[#F8F8F8] p-4 md:p-6 mb-8"
                     x-data="{
                         calMonth: 0,
                         calYear: 2026,
