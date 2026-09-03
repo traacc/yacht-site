@@ -952,6 +952,9 @@ Route::get('/yacht/{yacht}/download-history', function (Yacht $yacht) {
 })->name('yacht.history.pdf');
 Route::get('/yachts', function () {
     $yachts = Yacht::with([
+        // whereHas('regatta') отсекает заявки на удалённые (soft-deleted) регаты:
+        // у них связь возвращает null и в истории участия выводились одни прочерки.
+        'regattaEntries' => fn ($query) => $query->whereHas('regatta'),
         'user', 'documents', 'media', 'regattaEntries.regatta', 'regattaEntries.team', 'rentals', 'optionValues.option',
         'rentalRequests' => fn ($query) => $query->where('status', RentalRequestStatus::Approved)->whereNotNull('desired_date'),
     ])

@@ -16,7 +16,12 @@ final class GenerateYachtHistoryPdfAction
      */
     public function execute(Yacht $yacht): Response
     {
-        $yacht->load(['user', 'regattaEntries.regatta', 'regattaEntries.team']);
+        $yacht->load([
+            // Заявки на удалённые (soft-deleted) регаты пропускаем: связь у них
+            // отдаёт null, и в PDF попадала строка из одних прочерков.
+            'regattaEntries' => fn ($query) => $query->whereHas('regatta'),
+            'user', 'regattaEntries.regatta', 'regattaEntries.team',
+        ]);
 
         // Места берём из итоговых протоколов: связи «яхта → результаты»
         // на модели нет, поэтому выбираем строки напрямую по yacht_id.
