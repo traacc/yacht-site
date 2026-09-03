@@ -1002,8 +1002,8 @@ Route::get('/yachts', function () {
         'documents' => $yacht->documents->map(fn ($doc) => [
             'title' => $doc->title,
             'desc' => $doc->updated_at
-                                ? 'Актуальная редакция от '.$doc->updated_at->format('d F Y')
-                                : '',
+                ? 'Актуальная редакция от '.$doc->updated_at->translatedFormat('j F Y')
+                : '',
             'url' => $doc->url ? Storage::disk('public')->url($doc->url) : '#',
         ])->values()->toArray(),
         'participation' => $yacht->regattaEntries->map(fn ($entry) => [
