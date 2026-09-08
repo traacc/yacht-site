@@ -25,7 +25,7 @@ final class CoverImageDownloaderTest extends TestCase
     public function test_it_stores_the_image_next_to_manual_covers(): void
     {
         Storage::fake('public');
-        $this->fakeImage('image/jpeg', 'binary-jpeg');
+        $this->fakeImage('image/jpeg', self::imageBytes('jpeg'));
 
         $path = $this->store('https://cdn.example.test/cover.jpg');
 
@@ -33,13 +33,13 @@ final class CoverImageDownloaderTest extends TestCase
         self::assertStringStartsWith('news/covers/', $path);
         self::assertStringEndsWith('.jpg', $path);
         Storage::disk('public')->assertExists($path);
-        self::assertSame('binary-jpeg', Storage::disk('public')->get($path));
+        self::assertSame(self::imageBytes('jpeg'), Storage::disk('public')->get($path));
     }
 
     public function test_it_derives_the_extension_from_the_content_type(): void
     {
         Storage::fake('public');
-        $this->fakeImage('image/webp; charset=binary', 'binary-webp');
+        $this->fakeImage('image/webp; charset=binary', self::imageBytes('webp'));
 
         self::assertStringEndsWith('.webp', (string) $this->store('https://cdn.example.test/cover'));
     }
@@ -47,7 +47,7 @@ final class CoverImageDownloaderTest extends TestCase
     public function test_it_sends_the_source_page_as_referer(): void
     {
         Storage::fake('public');
-        $this->fakeImage('image/jpeg', 'binary-jpeg');
+        $this->fakeImage('image/jpeg', self::imageBytes('jpeg'));
 
         app(CoverImageDownloader::class)->store(
             'https://cdn.example.test/cover.jpg',
@@ -60,7 +60,7 @@ final class CoverImageDownloaderTest extends TestCase
     public function test_it_omits_the_referer_when_no_page_is_given(): void
     {
         Storage::fake('public');
-        $this->fakeImage('image/jpeg', 'binary-jpeg');
+        $this->fakeImage('image/jpeg', self::imageBytes('jpeg'));
 
         $this->store('https://cdn.example.test/cover.jpg');
 
@@ -94,6 +94,67 @@ final class CoverImageDownloaderTest extends TestCase
         self::assertNull($this->store(null));
         self::assertNull($this->store('  '));
         Http::assertNothingSent();
+    }
+
+    public function test_it_refuses_a_tracking_pixel(): void
+    {
+        Storage::fake('public');
+        $this->fakeImage('image/gif', self::imageBytes('gif', 1, 1));
+
+        self::assertNull($this->store('https://cdn.example.test/pixel.gif'));
+        self::assertSame([], Storage::disk('public')->allFiles());
+    }
+
+    public function test_it_refuses_an_image_smaller_than_the_threshold(): void
+    {
+        Storage::fake('public');
+        $this->fakeImage('image/png', self::imageBytes('png', 150, 150));
+
+        self::assertNull($this->store('https://cdn.example.test/logo.png'));
+    }
+
+    public function test_it_refuses_bytes_that_are_not_an_image(): void
+    {
+        Storage::fake('public');
+        $this->fakeImage('image/jpeg', 'на самом деле это не картинка');
+
+        self::assertNull($this->store('https://cdn.example.test/broken.jpg'));
+        self::assertSame([], Storage::disk('public')->allFiles());
+    }
+
+    public function test_it_accepts_a_small_engine_generated_preview(): void
+    {
+        Storage::fake('public');
+        // Drupal отдаёт в og:image derivative такого размера — это фото статьи.
+        $this->fakeImage('image/png', self::imageBytes('png', 220, 147));
+
+        self::assertNotNull($this->store('https://cdn.example.test/preview.png'));
+    }
+
+    public function test_it_refuses_a_wide_thin_banner(): void
+    {
+        Storage::fake('public');
+        $this->fakeImage('image/png', self::imageBytes('png', 728, 90));
+
+        self::assertNull($this->store('https://cdn.example.test/banner.png'));
+    }
+
+    /** Настоящие байты картинки: проверка размеров работает только на них. */
+    private static function imageBytes(string $format, int $width = 800, int $height = 600): string
+    {
+        $image = imagecreatetruecolor($width, $height);
+        imagefilledrectangle($image, 0, 0, $width, $height, imagecolorallocate($image, 40, 90, 160));
+
+        ob_start();
+
+        match ($format) {
+            'jpeg' => imagejpeg($image),
+            'png' => imagepng($image),
+            'webp' => imagewebp($image),
+            'gif' => imagegif($image),
+        };
+
+        return (string) ob_get_clean();
     }
 
     private function fakeImage(string $contentType, string $body): void
