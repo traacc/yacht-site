@@ -182,11 +182,13 @@ class AiNewsCandidateResource extends Resource
     {
         return $table
             ->columns([
+                /*
                 ImageColumn::make('image_url')
                     ->label('Превью')
                     ->height(40)
                     ->extraImgAttributes(['loading' => 'lazy'])
                     ->placeholder('—'),
+                */
                 TextColumn::make('status')
                     ->label('Статус')
                     ->badge()
