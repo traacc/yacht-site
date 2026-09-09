@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\RegattaEntries\Pages;
 
-use App\Actions\RegattaEntry\UpdateRegattaEntryRequiredDocumentsAction;
+use App\Actions\RegattaEntry\RecalculateEntryDocumentsCompleteAction;
 use App\Filament\Concerns\OverwritesRegattaEntries;
 use App\Filament\Resources\RegattaEntries\RegattaEntryResource;
 use App\Filament\Resources\RegattaEntryDocumentTypeResource;
@@ -33,15 +33,7 @@ class ManageRegattaEntries extends ManageRecords
      */
     public static function getRequiredDocuments(?string $regattaId = null): array
     {
-        if ($regattaId !== null) {
-            $regatta = Regatta::find($regattaId);
-
-            if ($regatta && ! empty($regatta->entry_required_documents)) {
-                return $regatta->getEntryDocuments();
-            }
-        }
-
-        return app(UpdateRegattaEntryRequiredDocumentsAction::class)->getRequiredList();
+        return app(RecalculateEntryDocumentsCompleteAction::class)->requiredDocuments($regattaId);
     }
 
     protected function getHeaderActions(): array

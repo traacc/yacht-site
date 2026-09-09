@@ -5,15 +5,14 @@ declare(strict_types=1);
 namespace App\Filament\User\Resources\RegattaEntries\Pages;
 
 use App\Actions\Document\SyncDocumentFilesAction;
-use App\Actions\RegattaEntry\UpdateRegattaEntryRequiredDocumentsAction;
+use App\Actions\RegattaEntry\RecalculateEntryDocumentsCompleteAction;
 use App\Enums\RegattaEntrySource;
 use App\Filament\User\Resources\RegattaEntries\RegattaEntryResource;
-use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
-use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Database\Eloquent\Model;
 
 class ManageRegattaEntries extends ManageRecords
 {
@@ -30,30 +29,21 @@ class ManageRegattaEntries extends ManageRecords
      */
     public static function getRequiredDocuments(?string $regattaId = null): array
     {
-        if ($regattaId !== null) {
-            $regatta = Regatta::find($regattaId);
-
-            if ($regatta && ! empty($regatta->entry_required_documents)) {
-                return $regatta->getEntryDocuments();
-            }
-        }
-
-        return app(UpdateRegattaEntryRequiredDocumentsAction::class)->getRequiredList();
+        return app(RecalculateEntryDocumentsCompleteAction::class)->requiredDocuments($regattaId);
     }
 
     protected function getHeaderActions(): array
     {
         return [
             CreateAction::make()
-            ->modalHeading('Подать заявку')
-                ->using(function (array $data, string $model): \Illuminate\Database\Eloquent\Model {
+                ->modalHeading('Подать заявку')
+                ->using(function (array $data, string $model): Model {
                     $docs = $data['required_documents'] ?? [];
                     $crew = $data['crew'] ?? [];
                     unset($data['required_documents'], $data['crew']);
 
                     $data['status'] = 'pending';
                     $data['source'] = RegattaEntrySource::PersonalCabinet->value;
-                    $data['documents_complete'] = RegattaEntryResource::documentsComplete($docs);
 
                     // Проверка дубликата до записи в БД
                     /** @var RegattaEntry $model */
@@ -74,6 +64,7 @@ class ManageRegattaEntries extends ManageRecords
                     /** @var RegattaEntry $record */
                     $record = $model::create($data);
 
+                    // execute() попутно проставит documents_complete по факту сохранённых файлов.
                     app(SyncDocumentFilesAction::class)->execute($record, $docs);
                     RegattaEntryResource::syncCrew($record, $crew);
 

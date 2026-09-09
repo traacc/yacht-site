@@ -512,8 +512,8 @@ class EditRegattaEntryModal extends Component
                 }
 
                 // 3. Документы
+                // documents_complete пересчитает SyncDocumentFilesAction по факту сохранённых файлов.
                 $documentsData = [];
-                $documentsComplete = true;
                 foreach ($this->requiredDocuments() as $doc) {
                     $docType = $doc['doc_type'];
 
@@ -532,11 +532,6 @@ class EditRegattaEntryModal extends Component
                         $files[] = $file->store('documents', 'public');
                     }
 
-                    // Нет ни одного файла по обязательному документу — заявка неполная.
-                    if ($files === [] && ($doc['is_required'] ?? false)) {
-                        $documentsComplete = false;
-                    }
-
                     $documentsData[] = [
                         'doc_type' => $docType,
                         'title' => $doc['title'],
@@ -545,8 +540,6 @@ class EditRegattaEntryModal extends Component
                 }
 
                 $syncDocuments->execute($entry, $documentsData);
-
-                $entry->update(['documents_complete' => $documentsComplete]);
             });
         } catch (\Exception $e) {
             report($e);

@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\ArchivedRegattaEntries\Pages;
 
-use App\Actions\RegattaEntry\UpdateRegattaEntryRequiredDocumentsAction;
+use App\Actions\RegattaEntry\RecalculateEntryDocumentsCompleteAction;
 use App\Filament\Resources\ArchivedRegattaEntries\ArchivedRegattaEntryResource;
-use App\Models\Regatta;
 use Filament\Resources\Pages\ManageRecords;
 
 class ManageArchivedRegattaEntries extends ManageRecords
@@ -23,14 +22,6 @@ class ManageArchivedRegattaEntries extends ManageRecords
      */
     public static function getRequiredDocuments(?string $regattaId = null): array
     {
-        if ($regattaId !== null) {
-            $regatta = Regatta::find($regattaId);
-
-            if ($regatta && ! empty($regatta->entry_required_documents)) {
-                return $regatta->getEntryDocuments();
-            }
-        }
-
-        return app(UpdateRegattaEntryRequiredDocumentsAction::class)->getRequiredList();
+        return app(RecalculateEntryDocumentsCompleteAction::class)->requiredDocuments($regattaId);
     }
 }

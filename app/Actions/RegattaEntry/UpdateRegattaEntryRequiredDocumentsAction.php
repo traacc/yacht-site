@@ -19,6 +19,7 @@ use App\Services\SettingsService;
 final class UpdateRegattaEntryRequiredDocumentsAction
 {
     private const SETTING_KEY = 'regatta_entry.required_documents';
+
     private const SETTING_GROUP = 'regatta_entry';
 
     public function __construct(
@@ -63,8 +64,8 @@ final class UpdateRegattaEntryRequiredDocumentsAction
         return array_values(array_filter(
             array_map(
                 fn (YachtDocumentTypeModel $type) => [
-                    'doc_type'    => $type->key,
-                    'title'       => $type->label,
+                    'doc_type' => $type->key,
+                    'title' => $type->label,
                     'description' => $type->description ?? '',
                     'is_required' => true,
                 ],
@@ -77,7 +78,11 @@ final class UpdateRegattaEntryRequiredDocumentsAction
     /**
      * Сохранить настройки обязательности документов.
      *
-     * @param array<string, bool> $data  Ассоциативный массив key => bool.
+     * Заявки кэшируют полноту документов в RegattaEntry::documents_complete,
+     * поэтому после смены настроек флаг пересчитывается у всех регат, которые
+     * этими настройками пользуются (то есть без собственного списка документов).
+     *
+     * @param  array<string, bool>  $data  Ассоциативный массив key => bool.
      */
     public function save(array $data): void
     {
@@ -88,6 +93,9 @@ final class UpdateRegattaEntryRequiredDocumentsAction
         }
 
         $this->settings->set(self::SETTING_KEY, $sanitized, self::SETTING_GROUP);
+
+        // Резолвим лениво: RecalculateEntryDocumentsCompleteAction зависит от этого класса.
+        app(RecalculateEntryDocumentsCompleteAction::class)->forGlobalDefaults();
     }
 
     /**
@@ -122,7 +130,7 @@ final class UpdateRegattaEntryRequiredDocumentsAction
     {
         return YachtDocumentTypeModel::cachedConfigurable()
             ->map(fn (YachtDocumentTypeModel $t) => [
-                'key'        => $t->key,
+                'key' => $t->key,
                 'is_default' => in_array($t->key, ['orc_certificate', 'ship_ticket', 'insurance'], true),
             ])
             ->all();

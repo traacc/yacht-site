@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Actions\Auth\SendEmailVerificationLinkAction;
 use App\Actions\Payment\StartOnlinePaymentAction;
 use App\Actions\Regatta\SubmitRegattaEntryAction;
+use App\Actions\RegattaEntry\RecalculateEntryDocumentsCompleteAction;
 use App\Enums\CreationSource;
 use App\Enums\PaymentStatus;
 use App\Enums\SportCategory;
@@ -1142,8 +1143,7 @@ class JoinRegattaModal extends Component
             return;
         }
 
-        // Сохраняем загруженные документы и попутно отмечаем нехватку обязательных.
-        $missingRequired = false;
+        // Сохраняем загруженные документы.
         foreach ($this->requiredDocuments() as $doc) {
             $files = $this->documentFiles[$doc['doc_type']] ?? [];
 
@@ -1152,10 +1152,6 @@ class JoinRegattaModal extends Component
             }
 
             $files = array_filter($files);
-
-            if ($files === [] && ($doc['is_required'] ?? false)) {
-                $missingRequired = true;
-            }
 
             foreach ($files as $file) {
                 $path = $file->store('documents', 'public');
@@ -1167,9 +1163,8 @@ class JoinRegattaModal extends Component
             }
         }
 
-        if ($missingRequired) {
-            $entry->update(['documents_complete' => false]);
-        }
+        // Нехватка обязательных документов помечается на заявке (documents_complete).
+        app(RecalculateEntryDocumentsCompleteAction::class)->forEntry($entry);
 
         // Уведомляем администраторов о новой заявке на регату.
         $adminEmails = app(SettingsService::class)->adminNotificationEmails();

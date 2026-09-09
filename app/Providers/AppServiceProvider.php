@@ -6,11 +6,13 @@ use App\Contracts\AiNewsProvider;
 use App\Models\ForeignRegattaDivision;
 use App\Models\News;
 use App\Models\PaymentRegistry;
+use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use App\Models\RegattaResultItem;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\UserQuestion;
+use App\Models\YachtDocumentType;
 use App\Observers\ForeignRegattaDivisionObserver;
 use App\Observers\NewsObserver;
 use App\Observers\PaymentRegistryLogObserver;
@@ -19,9 +21,11 @@ use App\Observers\RegattaEntryFeeObserver;
 use App\Observers\RegattaEntryModerationObserver;
 use App\Observers\RegattaEntryPaymentLinksObserver;
 use App\Observers\RegattaEntryResultObserver;
+use App\Observers\RegattaRequiredDocumentsObserver;
 use App\Observers\RegattaResultItemObserver;
 use App\Observers\TeamMemberObserver;
 use App\Observers\UserQuestionObserver;
+use App\Observers\YachtDocumentTypeDocumentsCompleteObserver;
 use App\Policies\TeamPolicy;
 use App\Services\Ai\OpenAiNewsProvider;
 use App\Services\ImageConverter;
@@ -98,6 +102,8 @@ class AppServiceProvider extends ServiceProvider
         RegattaEntry::observe(RegattaEntryPaymentLinksObserver::class);
         RegattaEntry::observe(RegattaEntryResultObserver::class);
         RegattaEntry::observe(RegattaEntryModerationObserver::class);
+        Regatta::observe(RegattaRequiredDocumentsObserver::class);
+        YachtDocumentType::observe(YachtDocumentTypeDocumentsCompleteObserver::class);
         RegattaResultItem::observe(RegattaResultItemObserver::class);
         // Порядок важен: PaymentRegistryObserver::saving() заполняет
         // денормализованные связи, и только после этого лог-обсервер видит их

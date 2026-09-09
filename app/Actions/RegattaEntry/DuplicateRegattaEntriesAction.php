@@ -29,6 +29,10 @@ final class DuplicateRegattaEntriesAction
     /** Статусы заявок, копируемые по умолчанию. */
     public const DEFAULT_STATUSES = ['pending', 'approved'];
 
+    public function __construct(
+        private readonly RecalculateEntryDocumentsCompleteAction $recalculateDocumentsComplete,
+    ) {}
+
     /**
      * @param  string[]  $statuses  Статусы заявок-источников.
      * @param  string[]  $entryIds  Ограничить конкретными заявками (пусто — все подходящие).
@@ -115,7 +119,6 @@ final class DuplicateRegattaEntriesAction
             'yacht_id' => $withYacht ? $entry->yacht_id : null,
             'status' => $status,
             'source' => RegattaEntrySource::Admin,
-            'documents_complete' => $entry->documents_complete,
             // Оплата сбора всегда сбрасывается: сбор в новой регате не оплачен.
             'fee_paid' => false,
             'submitted_at' => $status === 'approved' ? now() : null,
@@ -142,6 +145,11 @@ final class DuplicateRegattaEntriesAction
                 ]);
             }
         }
+
+        // Список обязательных документов у целевой регаты может отличаться,
+        // а при $withDocuments === false копия остаётся вовсе без файлов —
+        // поэтому флаг считаем заново, а не копируем с исходной заявки.
+        $this->recalculateDocumentsComplete->forEntry($copy);
 
         return $copy;
     }

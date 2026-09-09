@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions\Document;
 
+use App\Actions\RegattaEntry\RecalculateEntryDocumentsCompleteAction;
 use App\Models\Document;
+use App\Models\RegattaEntry;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -22,6 +24,10 @@ use Illuminate\Support\Facades\Storage;
  */
 final class SyncDocumentFilesAction
 {
+    public function __construct(
+        private readonly RecalculateEntryDocumentsCompleteAction $recalculateDocumentsComplete,
+    ) {}
+
     /**
      * Синхронизировать документы для сущности.
      *
@@ -84,6 +90,8 @@ final class SyncDocumentFilesAction
                 ]);
             }
         }
+
+        $this->refreshDocumentsComplete($documentable);
     }
 
     /**
@@ -187,6 +195,18 @@ final class SyncDocumentFilesAction
                 Storage::disk('public')->delete($doc->url);
             }
             $doc->delete();
+        }
+    }
+
+    /**
+     * Заявка на регату кэширует полноту документов в колонке documents_complete —
+     * после любой синхронизации файлов пересчитываем её здесь, чтобы ни одна
+     * форма админки не могла забыть это сделать.
+     */
+    private function refreshDocumentsComplete(Model $documentable): void
+    {
+        if ($documentable instanceof RegattaEntry) {
+            $this->recalculateDocumentsComplete->forEntry($documentable->unsetRelation('documents'));
         }
     }
 

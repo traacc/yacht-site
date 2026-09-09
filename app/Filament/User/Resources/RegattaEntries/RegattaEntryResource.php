@@ -433,9 +433,9 @@ class RegattaEntryResource extends Resource
                             $this->halt();
                         }
 
-                        $data['documents_complete'] = static::documentsComplete($docs);
                         $record->update($data);
 
+                        // execute() попутно пересчитает documents_complete.
                         app(SyncDocumentFilesAction::class)
                             ->execute($record, $docs);
 
@@ -469,26 +469,6 @@ class RegattaEntryResource extends Resource
     /**
      * Определяет читаемую метку для документа в Repeater.
      */
-    /**
-     * Все ли обязательные документы загружены среди элементов repeater'а.
-     *
-     * @param  array<int, array{doc_type?: string, is_required?: bool, files?: array}>  $docs
-     */
-    public static function documentsComplete(array $docs): bool
-    {
-        foreach ($docs as $doc) {
-            if (! ($doc['is_required'] ?? false)) {
-                continue;
-            }
-
-            if (array_filter((array) ($doc['files'] ?? [])) === []) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     public static function resolveDocumentLabel(array $state): ?string
     {
         $docType = $state['doc_type'] ?? null;
