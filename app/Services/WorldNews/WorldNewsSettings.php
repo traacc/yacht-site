@@ -26,6 +26,21 @@ PROMPT;
 Найдите значимые новости парусного спорта, опубликованные с {{from_date}} по {{to_date}} включительно. Учитывайте российские и международные соревнования. Верните не более {{max_items}} разных материалов, самые важные и свежие — первыми. Если надёжных материалов нет, верните пустой массив articles.
 PROMPT;
 
+    public const MINUTES_PER_DAY = 1440;
+
+    /** Интервал запуска задаётся днями, поэтому границы кратны суткам. */
+    public const MIN_INTERVAL_DAYS = 1;
+
+    public const MAX_INTERVAL_DAYS = 30;
+
+    public const DEFAULT_INTERVAL_DAYS = 1;
+
+    public const MIN_INTERVAL_MINUTES = self::MIN_INTERVAL_DAYS * self::MINUTES_PER_DAY;
+
+    public const MAX_INTERVAL_MINUTES = self::MAX_INTERVAL_DAYS * self::MINUTES_PER_DAY;
+
+    public const DEFAULT_INTERVAL_MINUTES = self::DEFAULT_INTERVAL_DAYS * self::MINUTES_PER_DAY;
+
     public function __construct(
         private readonly SettingsService $settings,
         private readonly AiNewsProvider $provider,
@@ -37,7 +52,7 @@ PROMPT;
         return [
             'enabled' => (bool) $this->settings->get('ai_news.enabled', false),
             'auto_publish' => (bool) $this->settings->get('ai_news.auto_publish', false),
-            'interval_minutes' => $this->integer('ai_news.interval_minutes', 360, 15, 10080),
+            'interval_minutes' => $this->integer('ai_news.interval_minutes', self::DEFAULT_INTERVAL_MINUTES, self::MIN_INTERVAL_MINUTES, self::MAX_INTERVAL_MINUTES),
             'lookback_days' => $this->integer('ai_news.lookback_days', 7, 1, 30),
             'max_items' => $this->integer('ai_news.max_items', 5, 1, 10),
             'min_relevance' => $this->integer('ai_news.min_relevance', 70, 0, 100),
@@ -52,7 +67,7 @@ PROMPT;
         $this->settings->setMany([
             'ai_news.enabled' => (bool) ($data['enabled'] ?? false),
             'ai_news.auto_publish' => (bool) ($data['auto_publish'] ?? false),
-            'ai_news.interval_minutes' => max(15, min(10080, (int) ($data['interval_minutes'] ?? 360))),
+            'ai_news.interval_minutes' => max(self::MIN_INTERVAL_MINUTES, min(self::MAX_INTERVAL_MINUTES, (int) ($data['interval_minutes'] ?? self::DEFAULT_INTERVAL_MINUTES))),
             'ai_news.lookback_days' => max(1, min(30, (int) ($data['lookback_days'] ?? 7))),
             'ai_news.max_items' => max(1, min(10, (int) ($data['max_items'] ?? 5))),
             'ai_news.min_relevance' => max(0, min(100, (int) ($data['min_relevance'] ?? 70))),
@@ -61,6 +76,25 @@ PROMPT;
         ], 'ai_news');
 
         $this->settings->forgetGroup('ai_news');
+    }
+
+    /** Интервал хранится в минутах, а настраивается днями. */
+    public function intervalDays(): int
+    {
+        $minutes = (int) $this->all()['interval_minutes'];
+
+        return max(
+            self::MIN_INTERVAL_DAYS,
+            min(self::MAX_INTERVAL_DAYS, (int) ceil($minutes / self::MINUTES_PER_DAY)),
+        );
+    }
+
+    public static function daysToMinutes(int $days): int
+    {
+        return max(
+            self::MIN_INTERVAL_MINUTES,
+            min(self::MAX_INTERVAL_MINUTES, $days * self::MINUTES_PER_DAY),
+        );
     }
 
     public function enabled(): bool

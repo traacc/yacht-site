@@ -55,7 +55,7 @@ class AiNewsSettings extends Page
         $this->form->fill([
             'enabled' => (bool) ($values['enabled'] ?? false),
             'auto_publish' => (bool) ($values['auto_publish'] ?? false),
-            'interval_minutes' => (int) ($values['interval_minutes'] ?? 360),
+            'interval_days' => $settings->intervalDays(),
             'lookback_days' => (int) ($values['lookback_days'] ?? 7),
             'max_items' => (int) ($values['max_items'] ?? 5),
             'min_relevance' => (int) ($values['min_relevance'] ?? 70),
@@ -147,12 +147,12 @@ class AiNewsSettings extends Page
                             ->helperText('Если выключено, найденные материалы ожидают ручной проверки в разделе «AI-новости».')
                             ->default(false),
 
-                        TextInput::make('interval_minutes')
-                            ->label('Интервал запуска, минут')
+                        TextInput::make('interval_days')
+                            ->label('Интервал запуска, дней')
                             ->numeric()
                             ->integer()
-                            ->minValue(15)
-                            ->maxValue(10080)
+                            ->minValue(WorldNewsSettings::MIN_INTERVAL_DAYS)
+                            ->maxValue(WorldNewsSettings::MAX_INTERVAL_DAYS)
                             ->required(),
 
                         TextInput::make('lookback_days')
@@ -221,13 +221,15 @@ class AiNewsSettings extends Page
         $this->validate([
             'data.enabled' => ['required', 'boolean'],
             'data.auto_publish' => ['required', 'boolean'],
-            'data.interval_minutes' => ['required', 'integer', 'min:15', 'max:10080'],
+            'data.interval_days' => ['required', 'integer', 'min:'.WorldNewsSettings::MIN_INTERVAL_DAYS, 'max:'.WorldNewsSettings::MAX_INTERVAL_DAYS],
             'data.lookback_days' => ['required', 'integer', 'min:1', 'max:30'],
             'data.max_items' => ['required', 'integer', 'min:1', 'max:10'],
             'data.min_relevance' => ['required', 'integer', 'between:0,100'],
             'data.system_prompt' => ['required', 'string', 'max:20000'],
             'data.search_prompt' => ['required', 'string', 'max:10000'],
         ]);
+
+        $data['interval_minutes'] = WorldNewsSettings::daysToMinutes((int) $data['interval_days']);
 
         app(WorldNewsSettings::class)->save($data);
 
