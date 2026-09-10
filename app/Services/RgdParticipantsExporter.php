@@ -231,22 +231,13 @@ class RgdParticipantsExporter
         return implode(self::DELIM, $cols);
     }
 
-    /** Разряд в формате .rgd: числовые — «N р», категории — аббревиатурой, б/р — пусто. */
+    /** Разряд в формате .rgd: числовые — «N р», категории — аббревиатурой, без разряда — «б/р». */
     private function rankLabel(mixed $category): string
     {
-        $value = $category instanceof SportCategory
-            ? $category->value
-            : (string) $category;
+        $category = $category instanceof SportCategory
+            ? $category
+            : SportCategory::tryFrom((string) $category);
 
-        return match ($value) {
-            '3' => '3 р',
-            '2' => '2 р',
-            '1' => '1 р',
-            'kms' => 'КМС',
-            'ms' => 'МС',
-            'msmk' => 'МСМК',
-            'zms' => 'ЗМС',
-            default => 'б/р',   // 'no' (б/р) или неизвестно — пусто
-        };
+        return SportCategory::shortLabelOrNone($category);
     }
 }

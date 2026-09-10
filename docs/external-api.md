@@ -152,14 +152,18 @@ GET /api/regattas/{external_id}/participants
         {
           "name": "Харитонов Денис Владимирович",
           "birth_date": "1965-12-13",
-          "sport_category": "kms",
-          "role": "captain"
+          "sport_category": "КМС",
+          "sport_category_code": "kms",
+          "role": "капитан",
+          "role_code": "captain"
         },
         {
           "name": "Пошиваник Александр Дмитриевич",
           "birth_date": "1968-04-29",
-          "sport_category": "kms",
-          "role": "main"
+          "sport_category": "КМС",
+          "sport_category_code": "kms",
+          "role": "основной",
+          "role_code": "main"
         }
       ]
     }
@@ -197,11 +201,17 @@ GET /api/regattas/{external_id}/participants
 |---|---|---|
 | `name` | string | ФИО |
 | `birth_date` | string \| null | Дата рождения, `YYYY-MM-DD` |
-| `sport_category` | string \| null | Спортивный разряд (см. ниже) |
-| `role` | string | `captain` \| `main` \| `reserve` |
+| `sport_category` | string | Разряд подписью: `б/р`, `3 р`, `2 р`, `1 р`, `КМС`, `МС`, `МСМК`, `ЗМС` |
+| `sport_category_code` | string \| null | Код разряда для машинной обработки (см. ниже) |
+| `role` | string | Роль подписью: `капитан` \| `основной` \| `запасной` |
+| `role_code` | string | Код роли: `captain` \| `main` \| `reserve` |
 
-**Значения `sport_category`:** `no` (б/р), `3`, `2`, `1`, `kms` (КМС), `ms` (МС),
-`msmk` (МСМК), `zms` (ЗМС).
+Разряд и роль отдаются подписями по-русски — судейская программа выводит эти
+значения как есть, в том же виде, что и колонки «Рзр»/«Роль» файла `.rgd`.
+Латинские коды остались в полях `*_code`.
+
+**Значения `sport_category_code`:** `no` (б/р), `3`, `2`, `1`, `kms` (КМС), `ms` (МС),
+`msmk` (МСМК), `zms` (ЗМС). Разряд не задан — `null`, при этом `sport_category` = `б/р`.
 
 ---
 

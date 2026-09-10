@@ -24,6 +24,31 @@ enum SportCategory: string implements HasLabel
         return ($category ?? self::No)->getLabel();
     }
 
+    /**
+     * Короткая подпись разряда для судейской программы: формат колонки «Рзр»
+     * судейского .rgd («3 р», «КМС»), он же уходит во внешний JSON-API
+     * (RgdParticipantsExporter, ParticipantResource). Отсутствие разряда
+     * (NULL в БД) неотличимо от явного «без разряда» — в обоих случаях «б/р».
+     */
+    public static function shortLabelOrNone(?self $category): string
+    {
+        return ($category ?? self::No)->getShortLabel();
+    }
+
+    public function getShortLabel(): string
+    {
+        return match ($this) {
+            self::No => 'б/р',
+            self::Third => '3 р',
+            self::Second => '2 р',
+            self::First => '1 р',
+            self::Kms => 'КМС',
+            self::Ms => 'МС',
+            self::Msmk => 'МСМК',
+            self::Zms => 'ЗМС',
+        };
+    }
+
     public function getLabel(): string
     {
         return match ($this) {

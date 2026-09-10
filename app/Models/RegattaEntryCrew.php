@@ -50,6 +50,22 @@ class RegattaEntryCrew extends Pivot
     // Helpers
     // ──────────────────────────────────────────────
 
+    /**
+     * Роль в экипаже по-русски: уходит во внешние выгрузки для судейской
+     * программы (JSON-API, см. ParticipantResource), которая показывает
+     * значение как есть. Неизвестная роль остаётся пустой, чтобы не
+     * придумывать подпись за судью.
+     */
+    public function roleLabel(): string
+    {
+        return match ($this->role) {
+            'captain' => 'капитан',
+            'main' => 'основной',
+            'reserve' => 'запасной',
+            default => '',
+        };
+    }
+
     /** Пользователь за строкой экипажа: напрямую либо через участника команды. */
     public function resolvedUserId(): ?string
     {

@@ -50,12 +50,20 @@ class ParticipantResource extends JsonResource
     {
         $user = $member->teamMember?->user;
         $category = $user?->sport_category;
+        $category = $category instanceof SportCategory
+            ? $category
+            : SportCategory::tryFrom((string) $category);
 
         return [
             'name' => filled($user?->name) ? trim((string) $user->name) : null,
             'birth_date' => $user?->birth_date?->format('Y-m-d'),
-            'sport_category' => $category instanceof SportCategory ? $category->value : $category,
-            'role' => $member->role,
+            // Разряд и роль — подписями по-русски: судейская программа выводит
+            // значения как есть, а латинские коды остаются в *_code для машинной
+            // обработки.
+            'sport_category' => SportCategory::shortLabelOrNone($category),
+            'sport_category_code' => $category?->value,
+            'role' => $member->roleLabel(),
+            'role_code' => $member->role,
         ];
     }
 }

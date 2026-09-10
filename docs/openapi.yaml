@@ -190,13 +190,25 @@ components:
     SportCategory:
       type: string
       description: |
-        Спортивный разряд: `no` — б/р, `3`/`2`/`1` — разряды, `kms` — КМС,
+        Код спортивного разряда: `no` — б/р, `3`/`2`/`1` — разряды, `kms` — КМС,
         `ms` — МС, `msmk` — МСМК, `zms` — ЗМС.
       enum: ['no', '3', '2', '1', kms, ms, msmk, zms]
+
+    SportCategoryLabel:
+      type: string
+      description: |
+        Разряд подписью — в том виде, в каком его показывает судейская программа
+        (колонка «Рзр» файла .rgd). Разряд не задан — `б/р`.
+      enum: ['б/р', '3 р', '2 р', '1 р', 'КМС', 'МС', 'МСМК', 'ЗМС']
 
     CrewRole:
       type: string
       enum: [captain, main, reserve]
+
+    CrewRoleLabel:
+      type: string
+      description: Роль в экипаже подписью — так её показывает судейская программа.
+      enum: ['капитан', 'основной', 'запасной']
 
     Regatta:
       type: object
@@ -305,10 +317,14 @@ components:
           type: [string, 'null']
           format: date
         sport_category:
+          $ref: '#/components/schemas/SportCategoryLabel'
+        sport_category_code:
           oneOf:
             - $ref: '#/components/schemas/SportCategory'
             - type: 'null'
         role:
+          $ref: '#/components/schemas/CrewRoleLabel'
+        role_code:
           $ref: '#/components/schemas/CrewRole'
 
     ImportResultsRequest:
