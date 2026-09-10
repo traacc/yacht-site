@@ -26,6 +26,11 @@ class PasswordResetRequested extends Mailable
     {
         return $this
             ->subject('Запрос на восстановление пароля: '.$this->request->email)
+            // Ответ кнопкой «Ответить» уходит заявителю, а не на служебный ящик.
+            // Именно Reply-To, а не From: письма отправляются с домена сайта, и
+            // подстановка чужого адреса в From не проходит SPF/DKIM — почта
+            // заявителя такое письмо отклонит или положит в спам.
+            ->replyTo($this->request->email, $this->request->requesterName())
             ->markdown('mail.password-reset-requested');
     }
 }
