@@ -412,3 +412,28 @@
   width: 100%;
   justify-content: flex-start;
 }
+
+/* Липкая шапка таблицы: включается классом fi-sticky-thead через
+   ->extraAttributes(['class' => 'fi-sticky-thead']) у Table.
+   Filament вешает overflow-x на .fi-ta-content-ctn, поэтому она уже
+   является скролл-контейнером: даём ей вертикальный скролл (высота
+   ограничивается только у длинных таблиц) и закрепляем thead внутри неё. */
+.fi-sticky-thead .fi-ta-content-ctn {
+    max-height: calc(100dvh - 14rem);
+    overflow-y: auto;
+}
+.fi-sticky-thead .fi-ta-table > thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+/* Фон обязателен: закреплённые ячейки иначе просвечивают строками,
+   а box-shadow заменяет border — при border-collapse рамки sticky-ячеек не рисуются. */
+.fi-sticky-thead .fi-ta-table > thead > tr > th {
+    background-color: #fff;
+    box-shadow: inset 0 -1px 0 var(--color-gray-200, #e5e7eb);
+}
+/* В модалках таблица и так в своём скролле — ограничение высоты только мешает. */
+.fi-modal .fi-sticky-thead .fi-ta-content-ctn {
+    max-height: none;
+}

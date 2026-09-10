@@ -181,6 +181,7 @@ class AiNewsCandidateResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->extraAttributes(['class' => 'fi-sticky-thead'])
             ->columns([
                 /*
                 ImageColumn::make('image_url')
