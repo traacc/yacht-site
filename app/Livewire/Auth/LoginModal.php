@@ -145,9 +145,13 @@ class LoginModal extends Component
         // они свяжутся с пользователем по указанным контактам.
         $adminEmails = app(SettingsService::class)->adminNotificationEmails();
         if ($adminEmails !== []) {
+            // ФИО берём из профиля: в форме восстановления его не спрашивают,
+            // а email может и не принадлежать зарегистрированному пользователю.
+            $userName = User::where('email', $this->email)->value('name');
+
             try {
                 Mail::to($adminEmails)->send(
-                    new PasswordResetRequested($this->email, $this->phone)
+                    new PasswordResetRequested($this->email, $this->phone, $userName)
                 );
             } catch (\Exception $e) {
                 report($e);
