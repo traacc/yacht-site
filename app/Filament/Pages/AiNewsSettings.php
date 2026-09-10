@@ -47,6 +47,12 @@ class AiNewsSettings extends Page
         return auth()->user()?->isAdmin() ?? false;
     }
 
+    // Страница открывается кнопкой из раздела «AI-новости», в меню не показываем.
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public function mount(): void
     {
         $settings = app(WorldNewsSettings::class);
