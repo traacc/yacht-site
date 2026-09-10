@@ -203,9 +203,15 @@ class AiNewsCandidateResource extends Resource
                     ->wrap()
                     ->limit(100),
 
+                TextColumn::make('relevance_score')
+                    ->label('Оценка')
+                    ->numeric(decimalPlaces: 0)
+                    ->suffix('%')
+                    ->sortable(),
+                    
                 TextColumn::make('source_published_at')
                     ->label('Дата источника')
-                    ->dateTime('d.m.Y H:i')
+                    ->dateTime('d.m.Y')
                     ->placeholder('—')
                     ->sortable(),
 
