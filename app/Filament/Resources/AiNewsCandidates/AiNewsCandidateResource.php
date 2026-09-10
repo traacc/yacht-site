@@ -208,7 +208,7 @@ class AiNewsCandidateResource extends Resource
                     ->numeric(decimalPlaces: 0)
                     ->suffix('%')
                     ->sortable(),
-                    
+
                 TextColumn::make('source_published_at')
                     ->label('Дата источника')
                     ->dateTime('d.m.Y')
@@ -218,6 +218,7 @@ class AiNewsCandidateResource extends Resource
             ])
             ->defaultSort('discovered_at', 'desc')
             ->stackedOnMobile()
+            ->recordClasses('ai-news-row-actions-stacked')
             ->filters([
                 SelectFilter::make('status')
                     ->label('Статус')
@@ -316,7 +317,6 @@ class AiNewsCandidateResource extends Resource
                             ->send();
                     }),
 
-                
                 Action::make('refreshImage')
                     ->label('Найти картинку')
                     ->icon(Heroicon::OutlinedPhoto)
@@ -340,7 +340,7 @@ class AiNewsCandidateResource extends Resource
                             ->success()
                             ->send();
                     }),
-                
+
                 EditAction::make()
                     ->label('Редактировать')
                     ->modalHeading('Редактировать AI-кандидат')
