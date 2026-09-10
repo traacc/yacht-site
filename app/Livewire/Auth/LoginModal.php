@@ -3,11 +3,11 @@
 namespace App\Livewire\Auth;
 
 use App\Actions\Auth\SendEmailVerificationLinkAction;
+use App\Actions\Auth\SubmitPasswordResetRequestAction;
 use App\Actions\Notifications\ApplyRegistrationPreferencesAction;
 use App\Enums\CreationSource;
 use App\Enums\NotificationCategory;
 use App\Enums\SportCategory;
-use App\Mail\PasswordResetRequested;
 use App\Mail\UserRegistered;
 use App\Models\User;
 use App\Rules\YandexCaptcha;
@@ -141,22 +141,10 @@ class LoginModal extends Component
             'phone' => 'телефон',
         ]);
 
-        // Отправляем заявку на восстановление пароля администраторам —
-        // они свяжутся с пользователем по указанным контактам.
-        $adminEmails = app(SettingsService::class)->adminNotificationEmails();
-        if ($adminEmails !== []) {
-            // ФИО берём из профиля: в форме восстановления его не спрашивают,
-            // а email может и не принадлежать зарегистрированному пользователю.
-            $userName = User::where('email', $this->email)->value('name');
-
-            try {
-                Mail::to($adminEmails)->send(
-                    new PasswordResetRequested($this->email, $this->phone, $userName)
-                );
-            } catch (\Exception $e) {
-                report($e);
-            }
-        }
+        // Заявка фиксируется в админ-панели (раздел «Обращения») и дублируется
+        // письмом администраторам — они свяжутся с пользователем по контактам
+        // из формы или отправят ссылку на смену пароля прямо из панели.
+        app(SubmitPasswordResetRequestAction::class)->handle($this->email, $this->phone);
 
         $this->resetLinkSent = true;
     }

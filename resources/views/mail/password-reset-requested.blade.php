@@ -5,9 +5,12 @@
 
 | Поле | Значение |
 |------|----------|
-| **Пользователь** | {{ $name ?: 'не найден в базе' }} |
-| **E-mail** | {{ $email }} |
-| **Телефон** | {{ $phone }} |
-| **Дата** | {{ now()->format('d.m.Y H:i') }} |
+| **Пользователь** | {{ $request->requesterName() ?: 'не найден в базе' }} |
+| **E-mail** | {{ $request->email }} |
+| **Телефон** | {{ $request->phone }} |
+| **Дата** | {{ $request->created_at->format('d.m.Y H:i') }} |
 
+<x-mail::button :url="$answerUrl">
+Ответить в админке
+</x-mail::button>
 </x-mail::message>

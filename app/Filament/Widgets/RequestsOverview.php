@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Filament\Widgets;
 
 use App\Enums\RentalRequestStatus;
+use App\Filament\Resources\PasswordResetRequests\PasswordResetRequestResource;
 use App\Filament\Resources\RentalRequests\RentalRequestResource;
 use App\Filament\Resources\RepairRequests\RepairRequestResource;
 use App\Filament\Resources\ServiceRequests\ServiceRequestResource;
+use App\Models\PasswordResetRequest;
 use App\Models\RepairRequest;
 use App\Models\ServiceRequest;
 use App\Models\YachtRentalRequest;
@@ -37,7 +39,8 @@ class RequestsOverview extends BaseWidget
     {
         return AccessControl::allows(ServiceRequestResource::class)
             || AccessControl::allows(RentalRequestResource::class)
-            || AccessControl::allows(RepairRequestResource::class);
+            || AccessControl::allows(RepairRequestResource::class)
+            || AccessControl::allows(PasswordResetRequestResource::class);
     }
 
     protected function getStats(): array
@@ -67,6 +70,14 @@ class RequestsOverview extends BaseWidget
                 'Заявки на ремонт',
                 RepairRequest::query()->pending()->count(),
                 RepairRequestResource::getUrl('index'),
+            );
+        }
+
+        if (AccessControl::allows(PasswordResetRequestResource::class)) {
+            $stats[] = $this->createStat(
+                'Восстановление пароля',
+                PasswordResetRequest::query()->pending()->count(),
+                PasswordResetRequestResource::getUrl('index'),
             );
         }
 
