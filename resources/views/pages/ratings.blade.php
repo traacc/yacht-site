@@ -611,21 +611,25 @@ bgImage="{{ asset('images/bg/results.webp') }}"
 
                                 <template x-if="p.regattas && p.regattas.length > 0">
                                     <div class="divide-y divide-[#EAEAEA]">
+                                        <div class="pb-2 flex items-center gap-4 text-xs text-gray-500">
+                                            <span class="flex-1 min-w-0">Регата</span>
+                                            <span class="w-16 shrink-0 text-center">Место</span>
+                                            <span class="w-16 shrink-0 text-right">Очки</span>
+                                        </div>
                                         <template x-for="(reg, k) in p.regattas" :key="k">
-                                            <div class="py-3 flex items-center justify-between gap-4">
-                                                <div>
+                                            <div class="py-3 flex items-center gap-4">
+                                                <div class="flex-1 min-w-0">
                                                     <div class="font-medium text-[#2E325C] text-sm" x-text="reg.name"></div>
                                                     <div class="text-xs text-gray-500" x-show="reg.date" x-text="reg.date"></div>
                                                 </div>
-                                                <div class="text-right whitespace-nowrap">
-                                                    <div class="font-bold text-[#2D92CE] text-sm" x-text="reg.points"></div>
-                                                    <div class="text-xs text-gray-500" x-show="reg.places && reg.places.length" x-text="reg.places.join(', ') + ' место'"></div>
-                                                </div>
+                                                <span class="w-16 shrink-0 text-center font-medium text-[#2E325C] text-sm whitespace-nowrap" x-text="reg.places && reg.places.length ? reg.places.join(', ') : '—'"></span>
+                                                <span class="w-16 shrink-0 text-right font-bold text-[#2D92CE] text-sm whitespace-nowrap" x-text="reg.points"></span>
                                             </div>
                                         </template>
-                                        <div class="py-3 flex items-center justify-between gap-4">
-                                            <span class="font-semibold text-[#2E325C] text-sm">Всего</span>
-                                            <span class="font-bold text-[#2E325C] text-sm" x-text="p.total_points"></span>
+                                        <div class="py-3 flex items-center gap-4">
+                                            <span class="flex-1 min-w-0 font-semibold text-[#2E325C] text-sm">Всего</span>
+                                            <span class="w-16 shrink-0"></span>
+                                            <span class="w-16 shrink-0 text-right font-bold text-[#2E325C] text-sm whitespace-nowrap" x-text="p.total_points"></span>
                                         </div>
                                     </div>
                                 </template>
