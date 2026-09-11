@@ -142,7 +142,7 @@
                     </div>
                 @endif
 
-                <p class="text-center">Вспомнили пароль? <a class="text-[#2D92CE]" @click="tab = 'login'" href="#">Войти</a></p>
+                <p class="text-center">Знаете пароль? <a class="text-[#2D92CE]" @click="tab = 'login'" href="#">Войти</a></p>
             </form>
 
             <form wire:submit.prevent="register" class="mt-2 md:space-y-2" x-show="tab === 'register'">
