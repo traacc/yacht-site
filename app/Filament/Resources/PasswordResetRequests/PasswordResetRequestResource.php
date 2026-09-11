@@ -99,7 +99,7 @@ class PasswordResetRequestResource extends Resource
                     ->searchable()
                     ->copyable()
                     ->copyMessage('Телефон скопирован'),
-                /*
+                
                 IconColumn::make('answer')
                     ->label('Отвечено')
                     ->boolean()
@@ -109,7 +109,7 @@ class PasswordResetRequestResource extends Resource
                     ->label('Ссылка отправлена')
                     ->boolean()
                     ->state(fn (PasswordResetRequest $record): bool => $record->resetLinkSent()),
-                */
+                
                 TextColumn::make('answeredBy.name')
                     ->label('Ответил')
                     ->placeholder('—')
