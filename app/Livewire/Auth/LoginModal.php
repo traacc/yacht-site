@@ -61,6 +61,15 @@ class LoginModal extends Component
     // Восстановление пароля
     public bool $resetLinkSent = false;
 
+    /** Строка поиска себя среди участников на вкладке восстановления пароля. */
+    public string $resetUserSearch = '';
+
+    /** @var list<array{id: string, name: string}> */
+    public array $resetUserResults = [];
+
+    /** Пользователь, которого заявитель выбрал в списке (необязательно). */
+    public string $resetUserId = '';
+
     /** @var list<string> Категории уведомлений, отмеченные при регистрации. */
     public array $notification_categories = [];
 
@@ -141,12 +150,78 @@ class LoginModal extends Component
             'phone' => 'телефон',
         ]);
 
+        // Выбор в списке необязателен, но присланный id управляем клиентом —
+        // перепроверяем его тем же запросом, по которому ищем.
+        $user = null;
+
+        if ($this->resetUserId !== '') {
+            $user = User::query()->withoutAdministrators()->find($this->resetUserId);
+
+            if ($user === null) {
+                $this->addError('resetUserId', 'Выберите пользователя из списка.');
+
+                return;
+            }
+        }
+
         // Заявка фиксируется в админ-панели (раздел «Обращения») и дублируется
         // письмом администраторам — они свяжутся с пользователем по контактам
         // из формы или отправят ссылку на смену пароля прямо из панели.
-        app(SubmitPasswordResetRequestAction::class)->handle($this->email, $this->phone);
+        app(SubmitPasswordResetRequestAction::class)->handle($this->email, $this->phone, $user);
 
         $this->resetLinkSent = true;
+    }
+
+    /**
+     * Поиск себя в списке участников для заявки на восстановление пароля.
+     *
+     * Ищем на сервере, а не встраиваем список в страницу: модалка есть на каждой
+     * публичной странице, и перечень участников получал бы любой гость. Поэтому
+     * же отдаём только ФИО, не раньше трёх символов и не больше десяти строк.
+     */
+    public function updatedResetUserSearch(): void
+    {
+        // Правка текста после выбора сбрасывает выбор: иначе в заявку ушёл бы
+        // пользователь, которого в поле уже не видно.
+        $this->resetUserId = '';
+
+        $query = trim($this->resetUserSearch);
+
+        if (mb_strlen($query) < 3) {
+            $this->resetUserResults = [];
+
+            return;
+        }
+
+        $this->resetUserResults = User::query()
+            ->withoutAdministrators()
+            ->where('name', 'like', '%'.addcslashes($query, '%_\\').'%')
+            ->orderBy('name')
+            ->limit(10)
+            ->get(['id', 'name'])
+            ->map(static fn (User $user): array => ['id' => (string) $user->id, 'name' => trim((string) $user->name)])
+            ->all();
+    }
+
+    public function selectResetUser(string $userId): void
+    {
+        $user = User::query()->withoutAdministrators()->find($userId);
+
+        if ($user === null) {
+            return;
+        }
+
+        // Присваивание на сервере не вызывает updatedResetUserSearch(),
+        // поэтому выбор не сбрасывается.
+        $this->resetUserId = (string) $user->id;
+        $this->resetUserSearch = trim((string) $user->name);
+        $this->resetUserResults = [];
+        $this->resetErrorBag('resetUserId');
+    }
+
+    public function clearResetUser(): void
+    {
+        $this->reset('resetUserId', 'resetUserSearch', 'resetUserResults');
     }
 
     public function register()

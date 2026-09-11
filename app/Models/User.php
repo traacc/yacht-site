@@ -352,6 +352,17 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     }
 
     /**
+     * Scope: все, кроме администраторов (администратор и админ-разработчик).
+     *
+     * Используется там, где список участников видит посетитель сайта, —
+     * например, при выборе себя в заявке на восстановление пароля.
+     */
+    public function scopeWithoutAdministrators(Builder $query): Builder
+    {
+        return $query->whereNotIn('system_role', [SystemRole::Admin->value, SystemRole::DeveloperAdmin->value]);
+    }
+
+    /**
      * Scope: пользователи, не состоящие ни в одной активной команде.
      */
     public function scopeFreeUsers(Builder $query): Builder

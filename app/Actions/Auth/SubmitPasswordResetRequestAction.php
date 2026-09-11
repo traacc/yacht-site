@@ -7,6 +7,7 @@ namespace App\Actions\Auth;
 use App\Filament\Resources\PasswordResetRequests\PasswordResetRequestResource;
 use App\Mail\PasswordResetRequested;
 use App\Models\PasswordResetRequest;
+use App\Models\User;
 use App\Services\Notifications\AdminRecipients;
 use App\Services\SettingsService;
 use Filament\Actions\Action;
@@ -28,10 +29,13 @@ class SubmitPasswordResetRequestAction
         private readonly SettingsService $settings,
     ) {}
 
-    public function handle(string $email, string $phone): PasswordResetRequest
+    /**
+     * @param  User|null  $user  Пользователь, которого заявитель сам выбрал в списке;
+     *                           без выбора ищем профиль по контактам.
+     */
+    public function handle(string $email, string $phone, ?User $user = null): PasswordResetRequest
     {
-        // ФИО в форме не спрашивают — привязываемся к профилю по контактам.
-        $user = PasswordResetRequest::matchUser($email, $phone);
+        $user ??= PasswordResetRequest::matchUser($email, $phone);
 
         $request = PasswordResetRequest::create([
             'user_id' => $user?->getKey(),

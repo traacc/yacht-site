@@ -115,6 +115,42 @@
                     </div>
                 @else
 
+
+                        {{-- Выбор себя среди участников. Поиск серверный: список участников
+                         в страницу не встраиваем, наружу отдаём только ФИО. --}}
+                    <div class="relative" x-data="{ open: false }" @click.away="open = false">
+                        <input type="text"
+                               wire:model.live.debounce.350ms="resetUserSearch"
+                               @focus="open = true" @input="open = true" @keydown.escape="open = false"
+                               autocomplete="off" data-lpignore="true" data-1p-ignore data-form-type="other"
+                               placeholder="Найдите себя в списке участников (ФИО)"
+                               class="mt-1 block w-full border-0 border-b border-[#EAEAEA] sm:text-sm pr-8 @error('resetUserId') border-red-300 @enderror">
+
+                        @if ($resetUserId !== '')
+                            <button type="button" wire:click="clearResetUser" title="Сбросить выбор"
+                                    class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none text-xl leading-none">&times;</button>
+                        @endif
+
+                        @if ($resetUserId === '' && mb_strlen(trim($resetUserSearch)) >= 3)
+                            <div x-show="open" x-cloak
+                                 class="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                @forelse ($resetUserResults as $resetUser)
+                                    <div wire:key="reset-user-{{ $resetUser['id'] }}"
+                                         wire:click="selectResetUser('{{ $resetUser['id'] }}')"
+                                         @click="open = false"
+                                         class="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100">{{ $resetUser['name'] }}</div>
+                                @empty
+                                    <div class="px-3 py-2 text-sm text-gray-400">Пользователи не найдены</div>
+                                @endforelse
+                            </div>
+                        @endif
+
+                        @error('resetUserId')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @else
+                            <span class="text-xs text-gray-400 mt-1 block">Необязательно — поможет администратору быстрее найти ваш аккаунт.</span>
+                        @enderror
+                    </div>
                     <div>
                         <input type="email" wire:model="email" placeholder="Адрес электронной почты"
                                class="mt-1 block w-full border-0 border-b border-[#EAEAEA] sm:text-sm @error('email') border-red-300 @enderror">
@@ -131,6 +167,7 @@
                             <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                         @enderror
                     </div>
+
 
                     <div class="mt-5 sm:mt-6">
                         <button type="submit"
