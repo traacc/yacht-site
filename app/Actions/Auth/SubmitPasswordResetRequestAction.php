@@ -76,7 +76,8 @@ class SubmitPasswordResetRequestAction
 
         Notification::make()
             ->title('Запрос на восстановление пароля')
-            ->body(($request->requesterName() ?? 'Не найден в базе').' — '.$request->email.', '.$request->phone)
+            ->body(($request->requesterName() ?? 'Не найден в базе').' — '.$request->email.', '.$request->phone
+                .(($accountEmail = $request->differingAccountEmail()) !== null ? '; e-mail аккаунта: '.$accountEmail : ''))
             ->icon('heroicon-o-key')
             ->actions([
                 Action::make('open')

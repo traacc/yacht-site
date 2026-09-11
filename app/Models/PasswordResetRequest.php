@@ -108,6 +108,20 @@ class PasswordResetRequest extends Model
             && mb_strtolower((string) $this->user->email) === mb_strtolower($this->email);
     }
 
+    /**
+     * Действующий email аккаунта, если он отличается от указанного в заявке.
+     *
+     * null — пользователь не найден или адреса совпадают.
+     */
+    public function differingAccountEmail(): ?string
+    {
+        if ($this->user === null || $this->emailMatchesUser()) {
+            return null;
+        }
+
+        return $this->user->email ?: 'не указан';
+    }
+
     public function isAnswered(): bool
     {
         return filled($this->answer);

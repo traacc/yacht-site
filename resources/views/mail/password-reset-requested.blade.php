@@ -7,6 +7,9 @@
 |------|----------|
 | **Пользователь** | {{ $request->requesterName() ?: 'не найден в базе' }} |
 | **E-mail** | {{ $request->email }} |
+@if (($accountEmail = $request->differingAccountEmail()) !== null)
+| **E-mail аккаунта** | {{ $accountEmail }} |
+@endif
 | **Телефон** | {{ $request->phone }} |
 | **Дата** | {{ $request->created_at->format('d.m.Y H:i') }} |
 

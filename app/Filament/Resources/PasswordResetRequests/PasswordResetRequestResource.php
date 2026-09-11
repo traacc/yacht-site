@@ -85,11 +85,6 @@ class PasswordResetRequestResource extends Resource
                     // Заявку может оставить кто угодно: ни email, ни телефон из
                     // формы могут не принадлежать зарегистрированному пользователю.
                     ->placeholder('не найден в базе')
-                    // Найден по телефону, а в профиле другой адрес — админу стоит
-                    // сначала исправить email в профиле, иначе ссылку не отправить.
-                    ->description(fn (PasswordResetRequest $record): ?string => $record->user !== null && ! $record->emailMatchesUser()
-                        ? 'email в профиле: '.($record->user->email ?: 'не указан')
-                        : null)
                     ->searchable()
                     ->wrap(),
 
@@ -98,6 +93,18 @@ class PasswordResetRequestResource extends Resource
                     ->searchable()
                     ->copyable()
                     ->copyMessage('Email скопирован'),
+
+                // Заявитель найден по телефону или выбран в списке, а в аккаунте
+                // другой адрес: ссылку на смену пароля брокер шлёт только на него,
+                // поэтому админу нужно видеть оба и при необходимости исправить профиль.
+                TextColumn::make('account_email')
+                    ->label('E-mail аккаунта')
+                    ->state(fn (PasswordResetRequest $record): ?string => $record->differingAccountEmail())
+                    ->placeholder('—')
+                    ->color('warning')
+                    ->copyable()
+                    ->copyMessage('Email скопирован')
+                    ->toggleable(),
 
                 TextColumn::make('phone')
                     ->label('Телефон')
@@ -147,7 +154,8 @@ class PasswordResetRequestResource extends Resource
                         Placeholder::make('requester')
                             ->label('Заявитель')
                             ->content(fn (PasswordResetRequest $record): string => trim(
-                                ($record->requesterName() ?? 'Не найден в базе').' · '.$record->email.' · '.$record->phone,
+                                ($record->requesterName() ?? 'Не найден в базе').' · '.$record->email.' · '.$record->phone
+                                .(($email = $record->differingAccountEmail()) !== null ? ' · e-mail аккаунта: '.$email : ''),
                             )),
 
                         Textarea::make('answer')
