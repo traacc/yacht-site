@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Actions\Auth\SubmitPasswordResetRequestAction;
 use App\Filament\Resources\PasswordResetRequests\PasswordResetRequestResource;
+use App\Support\PhoneNumber;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -45,7 +46,39 @@ class PasswordResetRequest extends Model
         ];
     }
 
-    /** Пользователь с таким email, если он нашёлся при подаче заявки. */
+    /**
+     * Ищет пользователя, оставившего заявку.
+     *
+     * Сначала по email, затем по телефону: у авторегистрированных участников в
+     * профиле технический адрес, а восстановить пароль они просят с настоящего —
+     * по email их не найти, телефон же в профиле реальный. Номер сравниваем
+     * нормализованным (в БД он в маске, у импортированных — в другом написании)
+     * и только при единственном совпадении, чтобы не привязать заявку к чужому.
+     */
+    public static function matchUser(string $email, ?string $phone): ?User
+    {
+        $user = User::where('email', $email)->first();
+
+        if ($user !== null) {
+            return $user;
+        }
+
+        $digits = PhoneNumber::normalize($phone);
+
+        if ($digits === null) {
+            return null;
+        }
+
+        $ids = User::query()
+            ->whereNotNull('phone')
+            ->pluck('phone', 'id')
+            ->filter(static fn (?string $stored): bool => PhoneNumber::normalize($stored) === $digits)
+            ->keys();
+
+        return $ids->count() === 1 ? User::find($ids->first()) : null;
+    }
+
+    /** Пользователь, найденный при подаче заявки по email или телефону. */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -60,6 +93,19 @@ class PasswordResetRequest extends Model
     public function requesterName(): ?string
     {
         return $this->user?->name;
+    }
+
+    /**
+     * Email заявки совпадает с email в профиле.
+     *
+     * Если заявитель найден по телефону, в профиле может быть другой (например,
+     * технический) адрес — ссылку на смену пароля брокер отправит только на
+     * адрес из профиля, поэтому до его исправления отправлять её бессмысленно.
+     */
+    public function emailMatchesUser(): bool
+    {
+        return $this->user !== null
+            && mb_strtolower((string) $this->user->email) === mb_strtolower($this->email);
     }
 
     public function isAnswered(): bool

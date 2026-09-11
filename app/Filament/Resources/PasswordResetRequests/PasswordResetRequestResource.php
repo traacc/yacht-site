@@ -82,9 +82,14 @@ class PasswordResetRequestResource extends Resource
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Пользователь')
-                    // Заявку может оставить кто угодно: email из формы может не
-                    // принадлежать зарегистрированному пользователю.
+                    // Заявку может оставить кто угодно: ни email, ни телефон из
+                    // формы могут не принадлежать зарегистрированному пользователю.
                     ->placeholder('не найден в базе')
+                    // Найден по телефону, а в профиле другой адрес — админу стоит
+                    // сначала исправить email в профиле, иначе ссылку не отправить.
+                    ->description(fn (PasswordResetRequest $record): ?string => $record->user !== null && ! $record->emailMatchesUser()
+                        ? 'email в профиле: '.($record->user->email ?: 'не указан')
+                        : null)
                     ->searchable()
                     ->wrap(),
 
@@ -99,7 +104,7 @@ class PasswordResetRequestResource extends Resource
                     ->searchable()
                     ->copyable()
                     ->copyMessage('Телефон скопирован'),
-                
+
                 IconColumn::make('answer')
                     ->label('Отвечено')
                     ->boolean()
@@ -109,7 +114,7 @@ class PasswordResetRequestResource extends Resource
                     ->label('Ссылка отправлена')
                     ->boolean()
                     ->state(fn (PasswordResetRequest $record): bool => $record->resetLinkSent()),
-                
+
                 TextColumn::make('answeredBy.name')
                     ->label('Ответил')
                     ->placeholder('—')
@@ -188,9 +193,9 @@ class PasswordResetRequestResource extends Resource
                     ->label('Отправить ссылку')
                     ->icon(Heroicon::OutlinedKey)
                     ->color('success')
-                    // Ссылку шлёт стандартный брокер паролей — он работает только
-                    // с зарегистрированным email.
-                    ->visible(fn (PasswordResetRequest $record): bool => $record->user !== null)
+                    // Ссылку шлёт стандартный брокер паролей — он ищет пользователя
+                    // по email, поэтому email заявки должен совпадать с профилем.
+                    ->visible(fn (PasswordResetRequest $record): bool => $record->emailMatchesUser())
                     ->requiresConfirmation()
                     ->modalHeading('Отправить ссылку на смену пароля?')
                     ->modalDescription(fn (PasswordResetRequest $record): string => 'Письмо со ссылкой уйдёт на '.$record->email.'. Ссылка действует ограниченное время.')
