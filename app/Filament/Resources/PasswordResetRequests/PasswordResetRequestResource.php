@@ -126,6 +126,7 @@ class PasswordResetRequestResource extends Resource
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
+            ->recordClasses('row-actions-stacked')
             ->filters([
                 TernaryFilter::make('processed')
                     ->label('Статус обработки')

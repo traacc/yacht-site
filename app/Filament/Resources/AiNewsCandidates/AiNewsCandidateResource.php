@@ -219,7 +219,7 @@ class AiNewsCandidateResource extends Resource
             ])
             ->defaultSort('discovered_at', 'desc')
             ->stackedOnMobile()
-            ->recordClasses('ai-news-row-actions-stacked')
+            ->recordClasses('row-actions-stacked')
             ->filters([
                 SelectFilter::make('status')
                     ->label('Статус')
