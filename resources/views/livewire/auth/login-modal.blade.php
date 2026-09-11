@@ -147,8 +147,6 @@
 
                         @error('resetUserId')
                             <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
-                        @else
-                            <span class="text-xs text-gray-400 mt-1 block">Необязательно — поможет администратору быстрее найти ваш аккаунт.</span>
                         @enderror
                     </div>
                     <div>
