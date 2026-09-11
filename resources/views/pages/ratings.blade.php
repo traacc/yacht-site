@@ -617,7 +617,10 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                                                     <div class="font-medium text-[#2E325C] text-sm" x-text="reg.name"></div>
                                                     <div class="text-xs text-gray-500" x-show="reg.date" x-text="reg.date"></div>
                                                 </div>
-                                                <span class="font-bold text-[#2D92CE] text-sm whitespace-nowrap" x-text="reg.points"></span>
+                                                <div class="text-right whitespace-nowrap">
+                                                    <div class="font-bold text-[#2D92CE] text-sm" x-text="reg.points"></div>
+                                                    <div class="text-xs text-gray-500" x-show="reg.places && reg.places.length" x-text="reg.places.join(', ') + ' место'"></div>
+                                                </div>
                                             </div>
                                         </template>
                                         <div class="py-3 flex items-center justify-between gap-4">

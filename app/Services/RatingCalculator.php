@@ -72,10 +72,12 @@ class RatingCalculator
                         'name' => $item->regatta_name,
                         'date' => $item->regatta_date,
                         'points' => 0.0,
+                        'places' => [],
                     ];
                 }
 
                 $breakdown[$userId][$item->regatta_id]['points'] += $item->score;
+                $breakdown[$userId][$item->regatta_id]['places'][] = (int) $item->final_position;
             }
         }
 
@@ -97,10 +99,12 @@ class RatingCalculator
                     'name' => $item->regatta_name,
                     'date' => $item->regatta_date,
                     'points' => 0.0,
+                    'places' => [],
                 ];
             }
 
             $breakdown[$item->team_id][$item->regatta_id]['points'] += $item->score;
+            $breakdown[$item->team_id][$item->regatta_id]['places'][] = (int) $item->final_position;
         }
 
         return $this->formatBreakdown($breakdown);
@@ -277,6 +281,8 @@ class RatingCalculator
     /**
      * Приводит карту [entity_id][regatta_id => данные] к списку регат,
      * отсортированному по дате (новые сверху), с форматированием даты и очков.
+     * Мест может быть несколько: команда выставила в регату несколько лодок
+     * или регата разбита на протоколы по классам.
      */
     private function formatBreakdown(array $breakdown): array
     {
@@ -287,6 +293,7 @@ class RatingCalculator
                     'name' => $r['name'],
                     'date' => $r['date'] ? Carbon::parse($r['date'])->format('d.m.Y') : null,
                     'points' => round($r['points'], 3),
+                    'places' => collect($r['places'])->unique()->sort()->values()->all(),
                 ])
                 ->values()
                 ->all(),
