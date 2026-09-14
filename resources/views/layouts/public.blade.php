@@ -75,6 +75,19 @@
     @endif
     <meta name="yandex-verification" content="4bd7f3f3aecedff0" />
     <meta name="google-site-verification" content="A8qH64mGazrMuvqwvvGCQvLR5xkkqBGqa7Unkg39JSs" />
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+        (function(m,e,t,r,i,k,a){
+            m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+            m[i].l=1*new Date();
+            for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+        })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=112575021', 'ym');
+
+        ym(112575021, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/112575021" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
 </head>
 <body class="font-sans bg-white text-[#2E325C] antialiased" x-data="{isRequestModalOpen: false, isQuestionModalOpen: false }">
 
