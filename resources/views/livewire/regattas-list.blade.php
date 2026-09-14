@@ -89,7 +89,9 @@
 
                 <div class="md:px-6 md:pt-6 md:pb-7 p-2 space-y-4">
                     <h2 class="text-brand-navy font-semibold text-sm md:text-lg leading-tight">
-                        {{ $regatta->name }}
+                        <a href="{{ route('competition-details', $regatta) }}" class="hover:underline">
+                            {{ $regatta->name }}
+                        </a>
                     </h2>
                     <x-regatta-external-id :value="$regatta->external_id" class="text-[10px] block" />
 
@@ -100,12 +102,6 @@
                     <div class="flex items-center gap-3 text-gray-600 text-[10px] md:text-base text-sm max-w-4 md:max-w-full">
                         <img src="{{ asset('images/icons/waves.svg') }}" alt=""> {{ $regatta->water_area }}
                     </div>
-
-                    <a href="{{ route('competition-details', $regatta) }}" class="flex items-center gap-2 text-brand-navy font-bold text-sm md:text-lg hover:gap-3 transition-all duration-200 group">
-                        Подробнее  →
-                        <span class="text-brand-navy group-hover:translate-x-1 transition-transform duration-200">
-                        </span>
-                    </a>
                 </div>
 
             </div>
@@ -127,7 +123,6 @@
                         <th class="py-2 a-font text-center text-2xl hidden md:table-cell">Акватория</th>
                         <th class="py-2 a-font text-center text-2xl hidden md:table-cell">Коэфф.</th>
                         <th class="py-2 a-font text-center text-2xl hidden md:table-cell">Статус</th>
-                        <th class="py-2 a-font text-center"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -145,7 +140,7 @@
                     <tr class="border-t {{ $regatta->isFinished() ? 'text-brand-gray-light' : '' }}">
                         <td class="py-2 text-center">{{ $regatta->dateRange() }}</td>
                         <td class="py-2 text-center {{ $regatta->isFinished() ? '' : 'text-brand-navy' }}">
-                            {{ $regatta->name }}
+                            <a href="{{ route('competition-details', $regatta) }}" class="font-semibold hover:underline">{{ $regatta->name }}</a>
                             <x-regatta-external-id :value="$regatta->external_id" class="text-[10px] block" />
                             <div class="md:hidden mt-1">
                                 <span class="{{ $regatta->type->backgroundClass() }} text-white px-3 py-1 inline-block font-semibold text-sm">{{ $regatta->type->getLabel() }}</span>
@@ -179,13 +174,10 @@
                             <div class="{{ $statusBadge[0] }} px-3 py-1 w-full max-w-[200px] inline-block font-semibold">{{ $statusBadge[1] }}</div>
                             @endif
                         </td>
-                        <td class="py-2 text-center">
-                            <a href="{{ route('competition-details', $regatta) }}" class="text-[#2D92CE] font-semibold hover:underline flex items-center gap-3">Подробнее {!! file_get_contents(public_path('images/icons/l-arrow-right.svg')) !!}</a>
-                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="py-8 text-center text-brand-gray-light">Регаты не найдены для выбранного года.</td>
+                        <td colspan="7" class="py-8 text-center text-brand-gray-light">Регаты не найдены для выбранного года.</td>
                     </tr>
                     @endforelse
                 </tbody>
