@@ -140,7 +140,7 @@
                     <tr class="border-t {{ $regatta->isFinished() ? 'text-brand-gray-light' : '' }}">
                         <td class="py-2 text-center">{{ $regatta->dateRange() }}</td>
                         <td class="py-2 text-center {{ $regatta->isFinished() ? '' : 'text-brand-navy' }}">
-                            <a href="{{ route('competition-details', $regatta) }}" class="font-semibold hover:underline">{{ $regatta->name }}</a>
+                            <a href="{{ route('competition-details', $regatta) }}" class="font-semibold hover:underline max-w-55 mx-auto block">{{ $regatta->name }}</a>
                             <x-regatta-external-id :value="$regatta->external_id" class="text-[10px] block" />
                             <div class="md:hidden mt-1">
                                 <span class="{{ $regatta->type->backgroundClass() }} text-white px-3 py-1 inline-block font-semibold text-sm">{{ $regatta->type->getLabel() }}</span>
