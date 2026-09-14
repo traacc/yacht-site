@@ -26,7 +26,7 @@
             </a>
             <a href="{{ route('series-results') }}"
                class="text-brand-blue font-semibold hover:underline whitespace-nowrap">
-                Рейтинг серий →
+                Результаты в сериях →
             </a>
         </div>
     </div>
