@@ -11,6 +11,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\SportCategory;
 use App\Enums\TeamMemberRole;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
+use App\Filament\User\Resources\RegattaEntries\RegattaEntryResource;
 use App\Mail\RegattaEntrySubmitted;
 use App\Mail\SendLoginCredentials;
 use App\Mail\SendRegattaEntryPassword;
@@ -53,6 +54,12 @@ class JoinRegattaModal extends Component
     public bool $submitted = false;
 
     public bool $leftCrew = false;
+
+    /**
+     * Управляющий командой выбрал быструю заявку вместо командной из ЛК.
+     * Пока false — такому пользователю показывается экран выбора.
+     */
+    public bool $quickEntryChosen = false;
 
     /** @var array<string, TemporaryUploadedFile[]> */
     public array $documentFiles = [];
@@ -181,6 +188,7 @@ class JoinRegattaModal extends Component
         $this->submittedEntryId = null;
         $this->verificationEmailSent = false;
         $this->leftCrew = false;
+        $this->quickEntryChosen = false;
         $this->isOpen = true;
         $this->feePaid = false;
         $this->entryPassword = '';
@@ -216,7 +224,7 @@ class JoinRegattaModal extends Component
         $this->isOpen = false;
         $this->reset([
             'regattaId', 'yachtId', 'documentFiles', 'submitted', 'submittedEntryId',
-            'verificationEmailSent', 'leftCrew',
+            'verificationEmailSent', 'leftCrew', 'quickEntryChosen',
             'feePaid', 'entryPassword', 'entryPasswordConfirmation', 'freeYachts',
             'openForJoin', 'joinConditions', 'joinContactEmail',
             'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'guestBirthDate', 'guestSportCategory',
@@ -1405,7 +1413,40 @@ class JoinRegattaModal extends Component
             return $crewEntry->role === 'captain' ? 'in-crew-captain' : 'in-crew';
         }
 
+        if (! $this->quickEntryChosen && $this->managesTeam) {
+            return 'choice';
+        }
+
         return 'form';
+    }
+
+    /**
+     * Пользователь — капитан или администратор хотя бы одной команды:
+     * ему предлагается подать командную заявку через личный кабинет.
+     */
+    #[Computed]
+    public function managesTeam(): bool
+    {
+        $user = Auth::user();
+
+        return $user instanceof User && Team::manageableBy($user)->exists();
+    }
+
+    /**
+     * Ссылка на форму подачи заявки в личном кабинете с предвыбранной регатой.
+     */
+    #[Computed]
+    public function cabinetEntryUrl(): string
+    {
+        return RegattaEntryResource::getUrl(panel: 'user', parameters: array_filter([
+            'action' => 'create',
+            'actionArguments' => $this->regattaId ? ['regatta' => $this->regattaId] : null,
+        ]));
+    }
+
+    public function chooseQuickEntry(): void
+    {
+        $this->quickEntryChosen = true;
     }
 
     public function leaveCrew(): void

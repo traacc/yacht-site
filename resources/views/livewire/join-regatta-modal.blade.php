@@ -1,9 +1,10 @@
 <div x-data="{
         isOpen: @entangle('isOpen'),
-        requireConfirm: @js($this->state === 'guest' || $this->state === 'form'),
         attemptClose() {
             if (! this.isOpen) return;
-            if (this.requireConfirm && ! confirm('Закрыть окно? Введённые данные не будут сохранены.')) return;
+            {{-- Состояние модалки меняется без переинициализации x-data, поэтому форму ищем в DOM --}}
+            const requireConfirm = this.$root.querySelector('[data-confirm-close]') !== null;
+            if (requireConfirm && ! confirm('Закрыть окно? Введённые данные не будут сохранены.')) return;
             this.isOpen = false;
             $wire.closeModal();
         }
@@ -99,6 +100,35 @@
                     Закрыть
                 </button>
             </div>
+        @elseif ($this->state === 'choice')
+            <div class="flex items-center justify-between pb-3 mb-4">
+                <h3 class="text-lg font-medium text-[#2E325C] a-font">Подать заявку</h3>
+                <button @click="attemptClose()" class="text-gray-400 hover:text-gray-500 text-2xl font-bold">&times;</button>
+            </div>
+            <p class="text-gray-600 mb-4">Вы капитан или администратор команды. Выберите, как подать заявку.</p>
+
+            <div class="space-y-3">
+                <div class="border-2 border-[#2D92CE] p-4">
+                    <div class="flex items-center gap-2 mb-1">
+                        <p class="font-medium text-[#2E325C]">Командная заявка в личном кабинете</p>
+                        <span class="bg-[#2D92CE] px-2 py-0.5 text-xs font-semibold text-white">Рекомендуем</span>
+                    </div>
+                    <p class="text-sm text-gray-500 mb-3">Команда и её участники подставятся из профиля, заявкой и документами удобно управлять в личном кабинете.</p>
+                    <a href="{{ $this->cabinetEntryUrl }}"
+                       class="inline-flex w-full justify-center bg-[#2D92CE] px-3 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90">
+                        Перейти в личный кабинет →
+                    </a>
+                </div>
+
+                <div class="border border-gray-200 p-4">
+                    <p class="font-medium text-[#2E325C] mb-1">Быстрая заявка</p>
+                    <p class="text-sm text-gray-500 mb-3">Заполнить форму здесь: команда, яхта и экипаж указываются вручную.</p>
+                    <button type="button" wire:click="chooseQuickEntry" wire:loading.attr="disabled"
+                            class="inline-flex w-full justify-center border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow hover:bg-gray-50 disabled:opacity-50">
+                        Заполнить быструю заявку
+                    </button>
+                </div>
+            </div>
         @elseif ($this->state === 'guest' || $this->state === 'form')
             <div class="flex items-center justify-between pb-3 mb-4">
                 <h3 class="text-lg font-medium text-[#2E325C] a-font">Подать заявку</h3>
@@ -118,7 +148,7 @@
                 <p class="text-sm text-gray-500 mb-4">Выберите или создайте команду и укажите рулевого — рулевым может быть любой зарегистрированный пользователь.</p>
             @endguest
 
-            <form wire:submit.prevent="submitGuest" class="space-y-4">
+            <form wire:submit.prevent="submitGuest" class="space-y-4" data-confirm-close>
                 @error('general')
                     <div class="text-sm text-red-600 bg-red-50 p-3 rounded">{{ $message }}</div>
                 @enderror

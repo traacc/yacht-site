@@ -229,6 +229,29 @@ class Team extends Model implements HasMedia
         });
     }
 
+    /**
+     * Неархивные команды, от имени которых пользователь может подавать заявки:
+     * он их создатель либо активный участник с ролью капитана/администратора.
+     */
+    public function scopeManageableBy(Builder $query, User $user): Builder
+    {
+        $roles = array_map(
+            fn (TeamMemberRole $role): string => $role->value,
+            TeamMemberRole::allowedRolesFor(TeamMemberRole::ACTION_SUBMIT_ENTRY),
+        );
+
+        return $query
+            ->where('is_archived', false)
+            ->where(function (Builder $q) use ($user, $roles) {
+                $q->where('organizer_id', $user->id)
+                    ->orWhereHas('teamMembers', fn (Builder $q) => $q
+                        ->where('user_id', $user->id)
+                        ->where('status', 'active')
+                        ->whereIn('role', $roles)
+                    );
+            });
+    }
+
     public function pruningScope(): Builder
     {
         // Удаляем записи, которые были "мягко удалены" более 7 дней назад
