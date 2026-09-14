@@ -156,7 +156,7 @@
             @if($serie['standings']->isNotEmpty())
                 <div class="border-t border-brand-border px-3 md:px-6 py-6">
                     <h3 class="text-xl md:text-2xl font-semibold a-font text-brand-dark leading-tight mb-4">
-                        Текущий зачёт серии
+                        Текущий зачёт серии «{{ $serie['name'] }}»
                     </h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm md:text-base">
