@@ -10,6 +10,7 @@ use App\Enums\NotificationCategory;
 use App\Enums\SportCategory;
 use App\Mail\UserRegistered;
 use App\Models\User;
+use App\Rules\FullName;
 use App\Rules\YandexCaptcha;
 use App\Services\SettingsService;
 use Illuminate\Support\Facades\Auth;
@@ -227,12 +228,7 @@ class LoginModal extends Component
     public function register()
     {
         $this->validateWithCaptcha('registerCaptchaToken', 'register', [
-            'name' => ['required', 'string', 'max:255', function (string $attribute, mixed $value, \Closure $fail): void {
-                // ФИО должно содержать отчество: «Фамилия Имя Отчество» — минимум три слова.
-                if (count(preg_split('/\s+/', trim((string) $value), -1, PREG_SPLIT_NO_EMPTY)) < 3) {
-                    $fail('Укажите ФИО полностью, включая отчество (Фамилия Имя Отчество).');
-                }
-            }],
+            'name' => ['required', 'string', 'max:255', new FullName],
             /*
             'first_name'            => ['required', 'string', 'max:255'],
             'last_name'             => ['required', 'string', 'max:255'],

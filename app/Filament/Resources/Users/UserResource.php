@@ -14,6 +14,7 @@ use App\Filament\Resources\Users\Pages\ManageUsers;
 use App\Models\PhoneVerificationCode;
 use App\Models\Regatta;
 use App\Models\User;
+use App\Rules\FullName;
 use App\Support\SafeDelete;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -99,6 +100,7 @@ class UserResource extends Resource
                     ->placeholder('ФИО')
                     ->required()
                     ->rules([
+                        new FullName,
                         function (Get $get, ?User $record): \Closure {
                             return function (string $attribute, mixed $value, \Closure $fail) use ($get, $record): void {
                                 $birthDate = $get('birth_date');

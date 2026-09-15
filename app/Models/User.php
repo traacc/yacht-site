@@ -8,6 +8,7 @@ use App\Enums\SystemRole;
 use App\Mail\ResetPasswordMail;
 use App\Mail\VerifyEmailMail;
 use App\Models\Concerns\NormalizesHeicImageColumns;
+use App\Rules\FullName;
 use App\Support\PhoneNumber;
 use Carbon\Carbon;
 use Filament\Models\Contracts\FilamentUser;
@@ -187,13 +188,11 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         });
 
         static::creating(function (self $user) {
-            // Запрещаем создание пользователя без отчества в поле name
-            // (name имеет вид «Фамилия Имя Отчество» — минимум три слова).
-            $nameParts = preg_split('/\s+/', trim((string) $user->name), -1, PREG_SPLIT_NO_EMPTY);
-
-            if (count($nameParts) < 3) {
+            // Запрещаем создание пользователя без фамилии или имени в поле name
+            // (name имеет вид «Фамилия Имя [Отчество]» — минимум два слова).
+            if (! FullName::passes($user->name)) {
                 throw ValidationException::withMessages([
-                    'name' => 'Отчество обязательно: укажите ФИО полностью (Фамилия Имя Отчество)',
+                    'name' => FullName::MESSAGE,
                 ]);
             }
 
