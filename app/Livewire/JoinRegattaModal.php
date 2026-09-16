@@ -35,6 +35,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Renderless;
 use Livewire\Component;
 use Livewire\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
@@ -620,36 +621,23 @@ class JoinRegattaModal extends Component
     }
 
     /**
-     * Реакция на изменение полей слотов: поиск пользователей при вводе в поле слота.
+     * Поиск пользователей для слота экипажа. Текст поля живёт в Alpine и на сервер не синхронизируется:
+     * иначе ответ с устаревшим query затирает символы, набранные во время запроса.
+     *
+     * @return array<int, array<string, mixed>>
      */
-    public function updatedGuestMembers(mixed $value, ?string $key): void
+    #[Renderless]
+    public function searchSlotUsers(int $i, string $query): array
     {
-        if ($key === null || ! str_ends_with($key, '.query')) {
-            return;
-        }
+        $query = trim($query);
 
-        $index = (int) explode('.', $key)[0];
-        $this->searchSlot($index);
-    }
-
-    /** Поиск пользователей для конкретного слота экипажа. */
-    private function searchSlot(int $i): void
-    {
-        if (! isset($this->guestMembers[$i])) {
-            return;
-        }
-
-        $query = trim($this->guestMembers[$i]['query'] ?? '');
-
-        if ($query === '') {
-            $this->guestMembers[$i]['results'] = [];
-
-            return;
+        if (! isset($this->guestMembers[$i]) || $query === '') {
+            return [];
         }
 
         $excludeIds = $this->excludedMemberUserIds($i);
 
-        $this->guestMembers[$i]['results'] = User::where(function ($q) use ($query) {
+        return User::where(function ($q) use ($query) {
             $q->where('name', 'like', "%{$query}%")
                 ->orWhere('email', 'like', "%{$query}%");
         })
@@ -692,13 +680,13 @@ class JoinRegattaModal extends Component
     }
 
     /** Начать ввод нового (незарегистрированного) участника в слот. */
-    public function startSlotNew(int $i): void
+    public function startSlotNew(int $i, ?string $name = null): void
     {
         if (! isset($this->guestMembers[$i])) {
             return;
         }
 
-        $name = trim($this->guestMembers[$i]['query'] ?? '');
+        $name = trim((string) ($name ?? $this->guestMembers[$i]['query'] ?? ''));
         $this->guestMembers[$i]['mode'] = 'new';
         $this->guestMembers[$i]['newName'] = $name;
         $this->guestMembers[$i]['newBirthDate'] = '';

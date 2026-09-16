@@ -546,10 +546,24 @@
                             <div wire:key="member-slot-{{ $i }}"
                                  x-data="{
                                      open: false,
-                                     query: @entangle('guestMembers.' . $i . '.query'),
-                                     results: @entangle('guestMembers.' . $i . '.results'),
-                                     selectUser(userId) { this.open = false; $wire.selectSlotUser({{ $i }}, userId); },
-                                     addNew() { this.open = false; $wire.startSlotNew({{ $i }}); },
+                                     query: '',
+                                     results: [],
+                                     loading: false,
+                                     searchSeq: 0,
+                                     async search() {
+                                         const seq = ++this.searchSeq;
+                                         const q = this.query.trim();
+                                         if (q === '') { this.results = []; this.loading = false; return; }
+                                         this.loading = true;
+                                         const found = await $wire.searchSlotUsers({{ $i }}, q);
+                                         if (seq !== this.searchSeq) return;
+                                         this.results = found ?? [];
+                                         this.loading = false;
+                                     },
+                                     reset() { this.searchSeq++; this.query = ''; this.results = []; this.loading = false; },
+                                     selectUser(userId) { this.open = false; $wire.selectSlotUser({{ $i }}, userId).then(() => this.reset()); },
+                                     addNew() { this.open = false; $wire.startSlotNew({{ $i }}, this.query).then(() => this.reset()); },
+                                     commit() { if (this.query.trim() === '') return; $wire.commitSlot({{ $i }}, this.query).then(() => this.reset()); },
                                  }" x-on:click.away="open = false">
                                 <div class="flex items-start gap-2">
                                     <span class="text-xs text-gray-400 w-5 pt-2.5 shrink-0 text-right">{{ $i + 1 }}.</span>
@@ -628,14 +642,15 @@
                                             {{-- Поиск: выбрать существующего или добавить нового --}}
                                             <div class="relative">
                                                 <input type="text"
-                                                       wire:model.live.debounce.350ms="guestMembers.{{ $i }}.query"
+                                                       x-model="query"
+                                                       x-on:input.debounce.350ms="search()"
                                                        autocomplete="off" data-lpignore="true" data-1p-ignore data-form-type="other"
                                                        x-on:focus="open = true" x-on:click="open = true"
-                                                       x-on:blur="$wire.commitSlot({{ $i }}, $event.target.value)"
+                                                       x-on:blur="commit()"
                                                        placeholder="Поиск по имени..."
                                                        class="w-full border border-gray-200 bg-[#F8F8F8] rounded px-3 py-2 text-sm focus:border-[#2D92CE] focus:outline-none">
 
-                                                <div wire:loading wire:target="guestMembers.{{ $i }}.query" class="absolute right-3 top-2.5 text-gray-400 text-xs">
+                                                <div x-show="loading" x-cloak class="absolute right-3 top-2.5 text-gray-400 text-xs">
                                                     Поиск...
                                                 </div>
 
