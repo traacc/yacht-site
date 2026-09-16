@@ -6,13 +6,13 @@ namespace App\Notifications;
 
 use App\Enums\NotificationCategory;
 use App\Filament\Resources\CrewJoinRequests\CrewJoinRequestResource;
-use App\Filament\User\Resources\RegattaEntries\RegattaEntryResource;
+use App\Filament\User\Resources\CrewJoinRequests\CrewJoinRequestResource as UserCrewJoinRequestResource;
 use Illuminate\Support\Str;
 
 /**
  * Кто-то хочет попасть в экипаж — уведомление автору заявки и администрации.
  *
- * Различаются только ссылкой «Открыть»: автор идёт в свои заявки в ЛК,
+ * Различаются только ссылкой «Открыть»: автор идёт в отклики в ЛК,
  * администратор — в раздел откликов админ-панели (@see forAdmin()).
  */
 final class CrewJoinRequestSubmittedNotification extends UserNotification
@@ -70,7 +70,7 @@ final class CrewJoinRequestSubmittedNotification extends UserNotification
         // Панель указываем явно: уведомление уходит из очереди, где текущей панели нет.
         return $this->admin
             ? CrewJoinRequestResource::getUrl(panel: 'admin')
-            : RegattaEntryResource::getUrl(panel: 'user');
+            : UserCrewJoinRequestResource::getUrl(panel: 'user');
     }
 
     public function icon(): string

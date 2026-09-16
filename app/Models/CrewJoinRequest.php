@@ -72,6 +72,20 @@ class CrewJoinRequest extends Model
         return $query->where('status', CrewJoinRequestStatus::Pending);
     }
 
+    /**
+     * Отклики, по которым пользователь решает за экипаж: он автор заявки
+     * либо капитан/администратор её команды.
+     */
+    public function scopeResolvableBy(Builder $query, User $user): Builder
+    {
+        return $query->whereHas('regattaEntry', fn (Builder $q) => $q
+            ->where(fn (Builder $q) => $q
+                ->where('user_id', $user->id)
+                ->orWhereHas('team', fn (Builder $q) => $q->manageableBy($user))
+            )
+        );
+    }
+
     // ──────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────
