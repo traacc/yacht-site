@@ -38,12 +38,12 @@ class CrewJoinRequestResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return 'Отклик в экипаж';
+        return 'Заявки в экипаж';
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'Отклики в экипаж';
+        return 'Заявки в экипаж';
     }
 
     public static function canCreate(): bool
