@@ -168,18 +168,18 @@
    class="main">
     <section class="md:py-12 py-4 reggata-list px-2 2xl:px-0">
         <div class="container mx-auto">
-            <div class="flex justify-between mb-6 flex-col md:flex-row">
-                <h2 class="section-title a-font text-3xl md:text-5xl mb-4 md:mb-0">Галерея</h2>
-                <div class="controls flex gap-4">
-                    <div class="calendar-icon">
-                        <select x-model="selectedYear" class="border-[#C6C6C6] focus:outline-hidden h-full focus:ring-2 text-[#2E325C] pl-5 min-w-[140px]" name="year" id="">
+            <div class="flex justify-between mb-6 flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
+                <h2 class="section-title a-font text-3xl md:text-5xl">Галерея</h2>
+                <div class="controls grid grid-cols-1 sm:grid-cols-2 lg:flex gap-3 lg:gap-4 w-full lg:w-auto">
+                    <div class="calendar-icon w-full lg:w-auto min-w-0">
+                        <select x-model="selectedYear" class="border-[#C6C6C6] focus:outline-hidden h-full focus:ring-2 text-[#2E325C] pl-5 w-full lg:w-auto lg:min-w-[140px] py-2 lg:py-0" name="year" id="">
                             @foreach($years as $year)
                                 <option value="{{ $year }}">{{ $year }}</option>
                             @endforeach
                         </select>
                     </div>
 
-                    <select x-model="selectedWater" name="team_filter" id="team_filter" class="team_filter">
+                    <select x-model="selectedWater" name="team_filter" id="team_filter" class="team_filter w-full min-w-0 lg:w-auto lg:max-w-[220px] py-2 lg:py-0">
                         <option value="">Все акватории</option>
                         @foreach($waterAreas as $wa)
                             <option value="{{ $wa }}">{{ $wa }}</option>
@@ -187,7 +187,7 @@
                     </select>
 
                     @if($regattas->isNotEmpty())
-                    <select x-model="selectedRegatta" @change="onRegattaChange()" name="regatta_filter" id="regatta_filter" class="team_filter">
+                    <select x-model="selectedRegatta" @change="onRegattaChange()" name="regatta_filter" id="regatta_filter" class="team_filter w-full min-w-0 lg:w-auto lg:max-w-[280px] py-2 lg:py-0 sm:col-span-2 lg:col-auto">
                         <option value="">Все регаты</option>
                         @foreach($regattas as $regatta)
                             <option value="{{ $regatta->id }}">{{ $regatta->name }}{{ isset($regattaYears[$regatta->id]) ? ' ('.$regattaYears[$regatta->id].')' : '' }}</option>
@@ -199,9 +199,9 @@
 
             {{-- Табы «Фотографии / Видео» над списком. Управляют тем, на какую вкладку
                  откроется модальное окно при клике по карточке галереи. --}}
-            <div class="flex gap-4 font-medium text-lg">
-                <button @click="listTab = 'photo'" :class="listTab === 'photo' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="p-4 text-center">Фотографии</button>
-                <button @click="listTab = 'video'" :class="listTab === 'video' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="p-4 text-center">Видео</button>
+            <div class="flex gap-2 md:gap-4 font-medium text-base md:text-lg">
+                <button @click="listTab = 'photo'" :class="listTab === 'photo' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="px-4 py-3 md:p-4 text-center">Фотографии</button>
+                <button @click="listTab = 'video'" :class="listTab === 'video' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="px-4 py-3 md:p-4 text-center">Видео</button>
             </div>
         </div>
     </section>
@@ -209,9 +209,9 @@
     @foreach($galleries as $year => $items)
     {{-- ★ В режиме «Видео» скрываем год целиком, если в нём нет ни одного альбома с видео --}}
     <section x-show="selectedYear == '{{ $year }}' && (selectedWater === '' || selectedWater === '{{ $items->first()?->water_area }}') && (listTab === 'photo' || {{ $items->contains(fn ($g) => $g->videoLinks->isNotEmpty()) ? 'true' : 'false' }})">
-        <div class="container mx-auto pb-12 mb-4 border-b border-b-[#EAEAEA]">
-            <h2 class="section-title a-font text-5xl">{{ $year }}</h2>
-            <div class="grid md:grid-cols-3 gap-6 mt-6">
+        <div class="container mx-auto pb-8 md:pb-12 mb-4 border-b border-b-[#EAEAEA]">
+            <h2 class="section-title a-font text-3xl md:text-5xl">{{ $year }}</h2>
+            <div class="grid md:grid-cols-3 gap-4 md:gap-6 mt-6">
                 @foreach($items as $gallery)
                 @php
                     // Данные альбома для модалки. Дублируются в JS, чтобы открытие
@@ -265,10 +265,10 @@
                              class="absolute w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105">
                     @endif
                     <div class="bg-[#2E325C] opacity-30 absolute z-15 w-full h-full transition-transform duration-500 group-hover:scale-105"></div>
-                    <div class="info relative z-20 p-6 pt-56 text-white">
-                        <h4 class="title a-font text-2xl mb-1">{{ $gallery->regatta?->name ?? $gallery->name ?? $gallery->date?->isoFormat('D MMMM') }}</h4>
+                    <div class="info relative z-20 p-4 md:p-6 pt-44 md:pt-56 text-white">
+                        <h4 class="title a-font text-xl md:text-2xl mb-1">{{ $gallery->regatta?->name ?? $gallery->name ?? $gallery->date?->isoFormat('D MMMM') }}</h4>
                         @if($gallery->regatta)
-                            <p class="text-lg mb-3 opacity-90">{{ $gallery->name }}</p>
+                            <p class="text-base md:text-lg mb-3 opacity-90">{{ $gallery->name }}</p>
                         @endif
                         <p class="mb-3 flex gap-3">{!! file_get_contents(public_path('images/icons/calendar.svg')) !!} {{ $gallery->regatta?->dateRange() ?? $gallery->date?->isoFormat('D MMMM') }}</p>
                         <p class="flex gap-3">{!! file_get_contents(public_path('images/icons/waves.svg')) !!} {{ $gallery->water_area }}</p>
@@ -282,30 +282,34 @@
 
     <div x-show="gallery_modal_open"
         x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 team-modal">
+        {{-- Блокировка прокрутки фона: одним классом на <html>, а не x-trap.noscroll —
+             модалка и лайтбокс переключаются одновременно, и два x-trap снимали
+             блокировку друг у друга (страница оставалась залипшей). --}}
+        x-effect="document.documentElement.classList.toggle('overflow-hidden', gallery_modal_open || lightbox_open)"
+        class="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-4 bg-black/50 team-modal">
         <!-- Модальное окно для подробной информации о галерее -->
-        <div @click.away="closeAlbum()"  class="relative p-6 max-w-[1200px] w-full max-h-[80vh] overflow-y-auto bg-white gap-6"
+        <div @click.away="closeAlbum()"  class="relative p-4 md:p-6 max-w-[1200px] w-full max-h-[90vh] md:max-h-[80vh] overflow-y-auto bg-white gap-6"
             x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95"
             x-transition:enter-end="opacity-100 scale-100"
         >
-            <div class="flex justify-between mb-4">
-                <h3 class="text-3xl a-font" x-text="activeGallery?.name ?? ''"></h3>
-                <div class="flex items-center gap-3">
+            <div class="flex items-start justify-between gap-3 mb-4">
+                <h3 class="text-2xl md:text-3xl a-font min-w-0 break-words" x-text="activeGallery?.name ?? ''"></h3>
+                <div class="flex items-center gap-3 shrink-0">
                     {{-- Кнопка «Поделиться»: нативный share на мобильных, копирование ссылки на десктопе --}}
                     <button @click="shareAlbum()"
                             class="inline-flex items-center gap-2 text-[#2D92CE] hover:text-[#247fb3] transition-colors"
                             :title="copied ? 'Ссылка скопирована' : 'Поделиться альбомом'">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-                        <span class="text-sm" x-text="copied ? 'Ссылка скопирована' : 'Поделиться'"></span>
+                        <span class="text-sm hidden sm:inline" x-text="copied ? 'Ссылка скопирована' : 'Поделиться'"></span>
                     </button>
                     <button @click="closeAlbum()" class="text-2xl font-bold">&times;</button>
                 </div>
             </div>
-            <p class="text-lg mb-6" x-text="(activeGallery?.date_short ?? '') + ' · ' + (activeGallery?.water_area ?? '')"></p>
-            <div class="flex gap-4 font-medium text-lg mb-6">
-                <button @click="activeTab = 'photo'" :class="activeTab === 'photo' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="p-4 text-center">Фотографии</button>
-                <button @click="activeTab = 'video'" :class="activeTab === 'video' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="p-4 text-center">Видео</button>
+            <p class="text-base md:text-lg mb-4 md:mb-6" x-text="(activeGallery?.date_short ?? '') + ' · ' + (activeGallery?.water_area ?? '')"></p>
+            <div class="flex gap-2 md:gap-4 font-medium text-base md:text-lg mb-4 md:mb-6">
+                <button @click="activeTab = 'photo'" :class="activeTab === 'photo' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="px-4 py-3 md:p-4 text-center">Фотографии</button>
+                <button @click="activeTab = 'video'" :class="activeTab === 'video' ? 'bg-[#2D92CE] text-white' : 'bg-[#F8F8F8] text-[#2E325C]'" class="px-4 py-3 md:p-4 text-center">Видео</button>
             </div>
             {{-- ★ ИЗМЕНЕНО: таб «Видео» теперь использует video_links из БД с embed-блоками.
                  x-if, а не x-show: при уходе с вкладки или закрытии модалки iframe
@@ -345,13 +349,13 @@
                         Скачать все фото
                     </a>
                 </div>
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
                     <template x-for="(item, idx) in activeGallery?.images_responsive ?? []" :key="idx">
-                        <div class="card bg-[#F8F8F8]"  @click="lightbox_open = true; gallery_modal_open = false; activeImage = item.src; lbImages = activeGallery?.images ?? []">
-                            <picture>
+                        <div class="card bg-[#F8F8F8] aspect-square overflow-hidden cursor-pointer"  @click="lightbox_open = true; gallery_modal_open = false; activeImage = item.src; lbImages = activeGallery?.images ?? []">
+                            <picture class="block w-full h-full">
                                 <template x-if="item.avif"><source :srcset="item.avif" type="image/avif"></template>
                                 <template x-if="item.webp"><source :srcset="item.webp" type="image/webp"></template>
-                                <img class="h-full object-cover" :src="item.src" alt="">
+                                <img class="w-full h-full object-cover" :src="item.src" alt="" loading="lazy">
                             </picture>
                         </div>
                     </template>
@@ -361,7 +365,7 @@
     </div>
     <div x-show="lightbox_open"
         x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
         @keydown.left.window="prevImage()"
         @keydown.right.window="nextImage()"
         x-trap.noscroll="lightbox_open"
@@ -374,7 +378,9 @@
             x-transition:enter-end="opacity-100 scale-100"
         >
             <!-- Кнопка закрытия -->
-            <button @click="lightbox_open = false; gallery_modal_open = true" class="absolute -top-10 right-2 md:-top-10 md:-right-4 text-white text-3xl z-50 hover:opacity-70">&times;</button>
+            <button @click="lightbox_open = false; gallery_modal_open = true"
+                aria-label="Закрыть"
+                class="absolute -top-12 right-2 md:-top-10 md:-right-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white text-3xl leading-none hover:opacity-70">&times;</button>
 
             <!-- Контейнер с изображением и стрелками -->
             <div class="relative flex items-center justify-center">
@@ -390,7 +396,7 @@
                     x-transition:enter="transition ease-out duration-300"
                     x-transition:enter-start="scale-90 opacity-0"
                     x-transition:enter-end="scale-100 opacity-100"
-                    class="w-[90vw] md:w-[75vw] h-[40vh] md:h-[60vh] object-contain"
+                    class="w-full md:w-[75vw] max-h-[60vh] object-contain"
                     alt="Full size">
 
                 <!-- Стрелка вперёд -->
