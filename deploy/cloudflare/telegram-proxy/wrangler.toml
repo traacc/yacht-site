@@ -1,0 +1,9 @@
+name = "tg-proxy"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+# *.workers.dev из РФ часто недоступен — привяжите свой домен:
+# routes = [{ pattern = "tg.example.com", custom_domain = true }]
+
+# Секрет задаётся отдельно, не в этом файле:
+#   npx wrangler secret put PROXY_SECRET

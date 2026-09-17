@@ -55,6 +55,11 @@ return [
         // Прокси для обхода блокировки API, например:
         //   socks5://user:pass@host:1080  или  http://host:3128
         'proxy' => env('TELEGRAM_PROXY'),
+        // Базовый URL Bot API. Для обхода блокировки — адрес Cloudflare Worker,
+        // который пересылает запросы в api.telegram.org (deploy/cloudflare/telegram-proxy).
+        'api_url' => rtrim((string) env('TELEGRAM_API_URL', 'https://api.telegram.org'), '/'),
+        // Общий секрет с Worker (его PROXY_SECRET), уходит в заголовке X-Proxy-Secret.
+        'api_secret' => env('TELEGRAM_API_SECRET'),
         // Имя бота без @ — нужно для deep-link привязки (t.me/<bot>?start=<токен>).
         // Если не задано, определяется через getMe и кешируется на сутки.
         'bot_username' => env('TELEGRAM_BOT_USERNAME'),

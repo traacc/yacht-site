@@ -165,12 +165,18 @@ class TelegramService
             $request->withOptions(['proxy' => $this->proxy()]);
         }
 
+        $apiSecret = config('services.telegram.api_secret');
+
+        if (! empty($apiSecret)) {
+            $request->withHeaders(['X-Proxy-Secret' => $apiSecret]);
+        }
+
         return $request;
     }
 
     private function endpoint(string $method): string
     {
-        return "https://api.telegram.org/bot{$this->token()}/{$method}";
+        return config('services.telegram.api_url', 'https://api.telegram.org')."/bot{$this->token()}/{$method}";
     }
 
     /**
