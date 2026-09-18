@@ -199,7 +199,7 @@
                             @endif
                         </dl>
 
-                        @if ($advert->hasContacts())
+                        @if (false)
                             <div class="border-t border-[#EAEAEA] pt-4 mb-4">
                                 <div class="text-sm font-semibold text-[#2E325C] mb-3">Контакты</div>
                                 <ul class="space-y-2 text-sm">
