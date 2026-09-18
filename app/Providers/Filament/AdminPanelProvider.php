@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\EditProfile;
+use App\Filament\Widgets\AdvertsOverview;
 use App\Filament\Widgets\RequestsOverview;
 use App\Filament\Widgets\StatsOverview;
 use App\Filament\Widgets\UpcomingBirthdaysWidget;
@@ -93,6 +94,7 @@ class AdminPanelProvider extends PanelProvider
                 UpcomingBirthdaysWidget::class,
                 StatsOverview::class,
                 RequestsOverview::class,
+                AdvertsOverview::class,
                 UpcomingRegattas::class,
             ])
             ->middleware([

@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class UpcomingRegattas extends TableWidget
 {
-    protected static ?int $sort = 4;
+    protected static ?int $sort = 5;
 
     protected static ?string $heading = 'Ближайшие регаты';
 
