@@ -187,10 +187,12 @@
                                     <dd class="font-medium text-right">{{ $advert->city }}</dd>
                                 </div>
                             @endif
+                            @if (false)
                             <div class="flex justify-between gap-4">
                                 <dt class="text-brand-gray-light">Автор</dt>
                                 <dd class="font-medium text-right">{{ $advert->author?->name ?? '—' }}</dd>
                             </div>
+                            @endif
                             @if ($advert->published_at)
                                 <div class="flex justify-between gap-4">
                                     <dt class="text-brand-gray-light">Опубликовано</dt>
