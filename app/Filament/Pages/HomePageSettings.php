@@ -7,6 +7,7 @@ namespace App\Filament\Pages;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Services\ImageConverter;
 use App\Services\SettingsService;
+use App\Services\VideoConverter;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
@@ -29,6 +30,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use UnitEnum;
 
@@ -225,7 +227,7 @@ class HomePageSettings extends Page
                         FileUpload::make('hero_media')
                             ->label('Фон (изображение, видео или слайд-шоу)')
                             ->helperText('Один файл — статичный фон (видео зацикливается). Несколько файлов — слайд-шоу: изображения и видео можно смешивать, изображение показывается 5 секунд, видео — до конца ролика. Порядок задаётся перетаскиванием; область просмотра настраивается по первому файлу и применяется ко всем.')
-                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif', 'video/mp4', 'video/webm'])
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif', 'video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v'])
                             ->multiple()
                             ->reorderable()
                             ->disk('public')
@@ -462,15 +464,25 @@ class HomePageSettings extends Page
         $settings->set('home.gallery_sort', $data['gallery_sort'] ?? 'manual', 'home');
 
         // Hero-фон: нормализуем к списку путей.
-        // HEIC сперва декодируем в webp через Imagick, затем общий toWebp (jpg/png → webp; видео не трогаем).
+        // HEIC сперва декодируем в webp через Imagick, затем общий toWebp (jpg/png → webp).
+        // Видео (mov/HEVC и т.п.) приводим к mp4 H.264 через ffmpeg — синхронно, ролики фона короткие.
+        $videoConverter = app(VideoConverter::class);
         $heroMedia = collect((array) ($data['hero_media'] ?? []))
             ->flatten()
             ->filter(fn ($v) => is_string($v) && $v !== '')
-            ->map(fn (string $path) => $converter->toWebp($converter->normalizeHeicToWebp($path, 'public'), 'public'))
+            ->map(fn (string $path) => SettingsService::isVideoPath($path)
+                ? $videoConverter->toWebMp4($path, 'public')
+                : $converter->toWebp($converter->normalizeHeicToWebp($path, 'public'), 'public'))
             ->values()
             ->all();
 
         $settings->set('home.hero_media', $heroMedia, 'home');
+
+        // Конвертеры заменяют файл (исходник удаляется) — подставляем новые пути в форму,
+        // иначе повторное сохранение без перезагрузки записало бы путь к удалённому файлу.
+        $this->data['hero_media'] = collect($heroMedia)
+            ->mapWithKeys(fn (string $path) => [(string) Str::uuid() => $path])
+            ->all();
 
         // Hero-viewport: crop-прямоугольник (доли изображения) + высота блока.
         // Применяется вживую, сам файл не меняется.
