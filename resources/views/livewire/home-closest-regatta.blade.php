@@ -37,15 +37,51 @@
             }
         }));
 
-        Alpine.data('heroSlideshow', (count, interval = 5000) => ({
+        // Слайд-шоу hero: изображение держится interval мс, видео — до конца ролика.
+        // Если ролик не запустился (автоплей запрещён, ошибка сети) — переходим дальше по таймеру.
+        Alpine.data('heroSlideshow', (types, interval = 5000) => ({
             current: 0,
-            count: count,
+            timer: null,
             init() {
-                if (this.count <= 1) return;
-                setInterval(() => {
-                    this.current = (this.current + 1) % this.count;
-                }, interval);
-            }
+                if (types.length > 1) this.show(0);
+            },
+            show(i) {
+                clearTimeout(this.timer);
+                this.$root.querySelectorAll('video').forEach((v) => {
+                    if (+v.dataset.slide !== i) v.pause();
+                });
+                this.current = i;
+
+                if (types[i] !== 'video') {
+                    this.timer = setTimeout(() => this.next(), interval);
+                    return;
+                }
+
+                const video = this.$root.querySelector(`video[data-slide="${i}"]`);
+                // Битый ролик пропускаем сразу (если остались рабочие слайды), чтобы не показывать пустоту.
+                if (video.error) {
+                    const alive = [...this.$root.children].some((el) => ! el.error);
+                    if (alive) this.next();
+                    return;
+                }
+                video.currentTime = 0;
+                Promise.resolve(video.play())
+                    .then(() => {
+                        // Страховка от зависшего ролика: ended может не прийти (сеть, фоновая вкладка).
+                        if (this.current === i && Number.isFinite(video.duration)) {
+                            this.timer = setTimeout(() => this.next(), video.duration * 1000 + 5000);
+                        }
+                    })
+                    .catch(() => {
+                        if (this.current === i) this.timer = setTimeout(() => this.next(), interval);
+                    });
+            },
+            next() {
+                this.show((this.current + 1) % types.length);
+            },
+            ended(i) {
+                if (this.current === i) this.next();
+            },
         }));
     });
 </script>   
@@ -68,14 +104,27 @@
 @elseif(($heroMedia ?? null) && $heroMedia['type'] === 'image')
     <img style="{{ $heroStyle }}" src="{{ $heroMedia['url'] }}" alt="">
 @elseif(($heroMedia ?? null) && $heroMedia['type'] === 'slideshow')
-    <div x-data="heroSlideshow({{ count($heroMedia['slides']) }})"
+    <div x-data="heroSlideshow(@js(array_column($heroMedia['slides'], 'type')))"
          class="absolute inset-0 w-full">
+        {{-- Первый слайд виден сразу, до инициализации Alpine --}}
         @foreach($heroMedia['slides'] as $i => $slide)
-            <img class="opacity-0 transition-opacity duration-1000 ease-in-out"
-                 style="{{ $heroStyle }}"
-                 :class="{ 'opacity-100': current === {{ $i }} }"
-                 src="{{ $slide }}" alt=""
-                 @if($i > 0) loading="lazy" @endif>
+            @if($slide['type'] === 'video')
+                <video class="transition-opacity duration-1000 ease-in-out {{ $i === 0 ? 'opacity-100' : 'opacity-0' }}"
+                       style="{{ $heroStyle }}"
+                       :class="{ 'opacity-100': current === {{ $i }}, 'opacity-0': current !== {{ $i }} }"
+                       data-slide="{{ $i }}"
+                       muted playsinline
+                       @if($i === 0) autoplay preload="auto" @else preload="metadata" @endif
+                       x-on:ended="ended({{ $i }})"
+                       x-on:error="ended({{ $i }})"
+                       src="{{ $slide['url'] }}"></video>
+            @else
+                <img class="transition-opacity duration-1000 ease-in-out {{ $i === 0 ? 'opacity-100' : 'opacity-0' }}"
+                     style="{{ $heroStyle }}"
+                     :class="{ 'opacity-100': current === {{ $i }}, 'opacity-0': current !== {{ $i }} }"
+                     src="{{ $slide['url'] }}" alt=""
+                     @if($i > 0) loading="lazy" @endif>
+            @endif
         @endforeach
     </div>
 @else

@@ -218,65 +218,48 @@ class SettingsService
      * Возвращает данные о фоновом медиа для hero-блока главной страницы.
      *
      * Режимы:
-     *  - один файл  → одиночный фон ('video' или 'image', как раньше);
-     *  - несколько изображений → слайд-шоу ('slideshow' со списком URL);
-     *  - видео среди набора игнорируются для слайд-шоу (слайды только из изображений).
+     *  - один файл  → одиночный фон ('video' — зациклено, или 'image');
+     *  - несколько файлов → слайд-шоу ('slideshow'); изображения и видео можно смешивать:
+     *    изображение показывается по таймеру, видео — до конца ролика.
      *
-     * @return array{type: 'video'|'image', url: string}|array{type: 'slideshow', slides: list<string>}|null
-     *                                                                                                       Данные медиа, либо null если ничего не загружено.
+     * @return array{type: 'video'|'image', url: string}|array{type: 'slideshow', slides: list<array{type: 'video'|'image', url: string}>}|null
+     *                                                                                                                                          Данные медиа, либо null если ничего не загружено.
      */
     public function getHeroMedia(): ?array
     {
-        $paths = collect((array) $this->get('home.hero_media', []))
+        $slides = collect((array) $this->get('home.hero_media', []))
             ->flatten()
             ->filter(fn ($v) => is_string($v) && $v !== '')
+            ->map(fn (string $path) => [
+                'type' => self::isVideoPath($path) ? 'video' : 'image',
+                'url' => Storage::disk('public')->url($path),
+            ])
             ->values();
 
-        if ($paths->isEmpty()) {
+        if ($slides->isEmpty()) {
             return null;
         }
 
-        $videoExtensions = ['mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v'];
-        $isVideo = fn (string $path): bool => in_array(
-            strtolower((string) pathinfo($path, PATHINFO_EXTENSION)),
-            $videoExtensions,
-            true,
-        );
-        $url = fn (string $path): string => Storage::disk('public')->url($path);
-
-        // Одиночный файл — прежнее поведение (image или video).
-        if ($paths->count() === 1) {
-            $path = (string) $paths->first();
-
-            return [
-                'url' => $url($path),
-                'type' => $isVideo($path) ? 'video' : 'image',
-            ];
-        }
-
-        // Несколько файлов — слайд-шоу только из изображений.
-        $slides = $paths->reject($isVideo)->map($url)->values();
-
-        // Изображений не осталось (загружены только видео) — берём первое как одиночный фон.
-        if ($slides->isEmpty()) {
-            return [
-                'url' => $url((string) $paths->first()),
-                'type' => 'video',
-            ];
-        }
-
-        // Единственное изображение — обычный одиночный фон.
         if ($slides->count() === 1) {
-            return [
-                'url' => (string) $slides->first(),
-                'type' => 'image',
-            ];
+            return $slides->first();
         }
 
         return [
             'type' => 'slideshow',
             'slides' => $slides->all(),
         ];
+    }
+
+    /**
+     * Является ли файл видео (по расширению) — для hero-фона.
+     */
+    public static function isVideoPath(string $path): bool
+    {
+        return in_array(
+            strtolower((string) pathinfo($path, PATHINFO_EXTENSION)),
+            ['mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v'],
+            true,
+        );
     }
 
     /**

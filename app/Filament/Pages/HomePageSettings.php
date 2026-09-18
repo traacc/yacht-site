@@ -110,26 +110,31 @@ class HomePageSettings extends Page
     }
 
     /**
-     * URL изображения для превью области просмотра (viewport-контрол).
+     * Медиа для превью области просмотра (viewport-контрол).
      *
+     * Берётся первый файл набора — изображение или видео (для видео контрол
+     * показывает первый кадр), т.к. рамка применяется ко всем слайдам.
      * Читает ТЕКУЩЕЕ состояние формы, поэтому превью обновляется сразу после
      * загрузки — ещё до сохранения: для только что загруженного файла берётся
      * временный URL Livewire, для уже сохранённого — публичный URL с диска.
-     * Видео и пустое состояние → дефолтный фон (зум/позиция всё равно работают).
+     * Пустое состояние → дефолтный фон.
+     *
+     * @return array{url: string, type: 'image'|'video'}
      */
-    public function heroPreviewUrl(): string
+    public function heroPreview(): array
     {
-        $videoExtensions = ['mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v'];
-
         foreach ((array) ($this->data['hero_media'] ?? []) as $file) {
             // Свежая загрузка — временный файл Livewire.
             if ($file instanceof TemporaryUploadedFile) {
-                if (str_starts_with((string) $file->getMimeType(), 'image/')) {
-                    try {
-                        return $file->temporaryUrl();
-                    } catch (\Throwable) {
-                        // temporaryUrl недоступен (напр. не-превьюабельный тип) — пропускаем.
-                    }
+                $mime = (string) $file->getMimeType();
+
+                try {
+                    return [
+                        'url' => $file->temporaryUrl(),
+                        'type' => str_starts_with($mime, 'video/') ? 'video' : 'image',
+                    ];
+                } catch (\Throwable) {
+                    // temporaryUrl недоступен (тип не из livewire.preview_mimes, напр. webm) — пропускаем.
                 }
 
                 continue;
@@ -137,14 +142,14 @@ class HomePageSettings extends Page
 
             // Уже сохранённый файл — путь на публичном диске.
             if (is_string($file) && $file !== '') {
-                $ext = strtolower((string) pathinfo($file, PATHINFO_EXTENSION));
-                if (! in_array($ext, $videoExtensions, true)) {
-                    return Storage::disk('public')->url($file);
-                }
+                return [
+                    'url' => Storage::disk('public')->url($file),
+                    'type' => SettingsService::isVideoPath($file) ? 'video' : 'image',
+                ];
             }
         }
 
-        return asset('/images/bg/bg_hero.webp');
+        return ['url' => asset('/images/bg/bg_hero.webp'), 'type' => 'image'];
     }
 
     // ──────────────────────────────────────────────
@@ -215,11 +220,11 @@ class HomePageSettings extends Page
 
                 // ── Hero-фон главной страницы ─────────────────
                 Section::make('Фон главной страницы (Hero)')
-                    ->description('Загрузите изображение или видео для фона верхнего блока главной страницы. Если ничего не загружено — используется видео по умолчанию.')
+                    ->description('Загрузите изображение или видео для фона верхнего блока главной страницы. Если ничего не загружено — используется изображение по умолчанию.')
                     ->schema([
                         FileUpload::make('hero_media')
                             ->label('Фон (изображение, видео или слайд-шоу)')
-                            ->helperText('Один файл — статичный фон (изображение или видео). Загрузите несколько изображений — они будут показываться как автоматическое слайд-шоу. Порядок задаётся перетаскиванием.')
+                            ->helperText('Один файл — статичный фон (видео зацикливается). Несколько файлов — слайд-шоу: изображения и видео можно смешивать, изображение показывается 5 секунд, видео — до конца ролика. Порядок задаётся перетаскиванием; область просмотра настраивается по первому файлу и применяется ко всем.')
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif', 'video/mp4', 'video/webm'])
                             ->multiple()
                             ->reorderable()

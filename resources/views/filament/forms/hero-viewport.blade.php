@@ -7,9 +7,12 @@
     $cropHPath  = $prefix . '.hero_crop_h';
     $heightPath = $prefix . '.hero_height';
 
-    // URL превью вычисляем на этапе рендера (состояние формы уже заполнено),
-    // поэтому и уже сохранённое, и только что загруженное изображение показываются корректно.
-    $imageUrl = $getLivewire()->heroPreviewUrl();
+    // Превью вычисляем на этапе рендера (состояние формы уже заполнено),
+    // поэтому и уже сохранённый, и только что загруженный файл показываются корректно.
+    // Для видео показывается первый кадр — рамка применяется ко всем слайдам одинаково.
+    $preview  = $getLivewire()->heroPreview();
+    $imageUrl = $preview['url'];
+    $isVideo  = $preview['type'] === 'video';
 
     // Стили заданы инлайном намеренно: этот blade не входит в @source темы Filament,
     // поэтому произвольные Tailwind-классы здесь не собираются.
@@ -45,8 +48,10 @@
 
             onImgLoad() {
                 const img = this.$refs.img;
-                if (! img || ! img.naturalWidth) return;
-                this.imgAspect = img.naturalWidth / img.naturalHeight;
+                const w = img ? (img.naturalWidth || img.videoWidth) : 0;
+                const h = img ? (img.naturalHeight || img.videoHeight) : 0;
+                if (! w || ! h) return;
+                this.imgAspect = w / h;
                 if (Number(this.cropW) >= 0.999 && Number(this.cropH) >= 0.999) {
                     const ch = Math.min(1, 768 * this.imgAspect / 1920);
                     this.cropH = ch;
@@ -126,7 +131,7 @@
                 this.applyHeight();
             },
         }"
-        x-init="$nextTick(() => { const i = $refs.img; if (i && i.complete && i.naturalWidth) onImgLoad(); })"
+        x-init="$nextTick(() => { const i = $refs.img; if (i && ((i.complete && i.naturalWidth) || i.readyState >= 1)) onImgLoad(); })"
         x-on:mousemove.window="onMove($event)"
         x-on:mouseup.window="endDrag()"
         x-on:touchmove.window.passive="onMove($event)"
@@ -138,7 +143,15 @@
             x-ref="stage"
             style="position:relative; width:100%; overflow:hidden; border-radius:8px; border:1px solid rgba(120,120,120,0.35); background:rgba(120,120,120,0.08); user-select:none; touch-action:none;"
         >
-            @if($imageUrl)
+            @if($imageUrl && $isVideo)
+                <video
+                    x-ref="img"
+                    x-on:loadedmetadata="onImgLoad()"
+                    src="{{ $imageUrl }}#t=0.1"
+                    muted playsinline preload="metadata"
+                    style="display:block; width:100%; height:auto; pointer-events:none; user-select:none;"
+                ></video>
+            @elseif($imageUrl)
                 <img
                     x-ref="img"
                     x-on:load="onImgLoad()"
@@ -146,6 +159,9 @@
                     alt=""
                     style="display:block; width:100%; height:auto; pointer-events:none; user-select:none;"
                 >
+            @endif
+
+            @if($imageUrl)
 
                 {{-- Рамка viewport: тело тянем (move), маркеры по краям — изменяют размер. --}}
                 <div
