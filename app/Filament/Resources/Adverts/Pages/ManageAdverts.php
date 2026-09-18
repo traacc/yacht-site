@@ -20,7 +20,7 @@ class ManageAdverts extends ManageRecords
             Action::make('categories')
                 ->label('Категории')
                 ->icon('heroicon-o-tag')
-                ->color('gray')
+                ->color('white')
                 ->url(AdvertCategoryResource::getUrl(panel: 'admin')),
         ];
     }
