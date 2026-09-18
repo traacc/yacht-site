@@ -112,17 +112,21 @@ enum AdvertType: string
     public function kinds(): array
     {
         return match ($this) {
-            self::Skippers, self::Sails => [AdvertKind::Offer, AdvertKind::Request],
+            self::Skippers => [AdvertKind::Offer, AdvertKind::Request],
+            self::Sails => [AdvertKind::Sale, AdvertKind::Rent, AdvertKind::Request],
             default => [],
         };
     }
 
-    /** Подпись вида под конкретную доску: «Продам или сдам» ≠ «Предлагаю услуги». */
+    /** Подпись вида под конкретную доску: «Продам» ≠ «Предлагаю услуги». */
     public function kindLabel(AdvertKind $kind): string
     {
-        return match ($this) {
-            self::Skippers => $kind === AdvertKind::Offer ? 'Предлагаю услуги' : 'Хочу в экипаж',
-            self::Sails => $kind === AdvertKind::Offer ? 'Продам или сдам' : 'Ищу парус',
+        return match (true) {
+            $this === self::Skippers && $kind === AdvertKind::Offer => 'Предлагаю услуги',
+            $this === self::Skippers && $kind === AdvertKind::Request => 'Хочу в экипаж',
+            $this === self::Sails && $kind === AdvertKind::Sale => 'Продам',
+            $this === self::Sails && $kind === AdvertKind::Rent => 'Сдам в аренду',
+            $this === self::Sails && $kind === AdvertKind::Request => 'Ищу парус',
             default => $kind->label(),
         };
     }
@@ -176,21 +180,36 @@ enum AdvertType: string
     /**
      * Единицы цены на выбор; пустой список — цена просто в рублях.
      *
+     * У парусов единицу задаёт вид: продажа — за всё, аренда — в сутки;
+     * выбирать приходится только в запросе, где ищут и купить, и арендовать.
+     *
      * @return list<AdvertPriceUnit>
      */
-    public function priceUnits(): array
+    public function priceUnits(?AdvertKind $kind = null): array
     {
         return match ($this) {
             self::Skippers => [AdvertPriceUnit::PerHour, AdvertPriceUnit::PerDay],
-            self::Sails => [AdvertPriceUnit::Total, AdvertPriceUnit::PerDay],
+            self::Sails => match ($kind) {
+                AdvertKind::Sale => [AdvertPriceUnit::Total],
+                AdvertKind::Rent => [AdvertPriceUnit::PerDay],
+                default => [AdvertPriceUnit::Total, AdvertPriceUnit::PerDay],
+            },
             default => [],
         };
     }
 
-    /** Залог — только там, где вещь сдают в аренду. */
-    public function usesDeposit(): bool
+    /** Единица цены, если вид оставляет ровно одну, — тогда её не спрашиваем. */
+    public function fixedPriceUnit(?AdvertKind $kind = null): ?AdvertPriceUnit
     {
-        return $this === self::Sails;
+        $units = $this->priceUnits($kind);
+
+        return count($units) === 1 ? $units[0] : null;
+    }
+
+    /** Залог — только там, где вещь сдают в аренду; при продаже паруса его нет. */
+    public function usesDeposit(?AdvertKind $kind = null): bool
+    {
+        return $this === self::Sails && $kind !== AdvertKind::Sale;
     }
 
     /** Даты «Когда»: на какой период человек свободен или ищет. */

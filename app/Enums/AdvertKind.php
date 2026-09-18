@@ -9,18 +9,25 @@ namespace App\Enums;
  *
  * Дуальность есть не у всех досок (@see AdvertType::kinds()): «Экипажи для
  * соревнований» и «Яхты для соревнований» односторонние, там колонка остаётся
- * пустой. Подписи под конкретную биржу даёт AdvertType::kindLabel() — «Продам
- * или сдам» на парусах и «Предлагаю услуги» у шкиперов это один и тот же Offer.
+ * пустой. Подписи под конкретную биржу даёт AdvertType::kindLabel().
+ *
+ * На бирже парусов предложение разделено на продажу и аренду (Sale / Rent):
+ * от этого зависят единица цены и залог. Остальные дуальные доски пользуются
+ * общим Offer.
  */
 enum AdvertKind: string
 {
     case Offer = 'offer';
+    case Sale = 'sale';
+    case Rent = 'rent';
     case Request = 'request';
 
     public function label(): string
     {
         return match ($this) {
             self::Offer => 'Предложение',
+            self::Sale => 'Продажа',
+            self::Rent => 'Аренда',
             self::Request => 'Запрос',
         };
     }

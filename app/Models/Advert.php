@@ -86,6 +86,28 @@ class Advert extends Model implements HasMedia
         ];
     }
 
+    /**
+     * Единица цены и залог следуют из вида объявления.
+     *
+     * При продаже или аренде паруса единица одна, и форма её не спрашивает, —
+     * проставляем здесь. Залог без аренды смысла не имеет и стирается, чтобы
+     * не пережить смену вида при правке.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Advert $advert): void {
+            if ($advert->type === null) {
+                return;
+            }
+
+            $advert->price_unit = $advert->type->fixedPriceUnit($advert->kind) ?? $advert->price_unit;
+
+            if (! $advert->type->usesDeposit($advert->kind) || ! ($advert->price_unit?->isRental() ?? false)) {
+                $advert->deposit = null;
+            }
+        });
+    }
+
     // ──────────────────────────────────────────────
     // Media
     // ──────────────────────────────────────────────
@@ -256,7 +278,7 @@ class Advert extends Model implements HasMedia
         return $this->deposit === null ? null : self::formatMoney($this->deposit);
     }
 
-    /** Подпись вида объявления под свою доску: «Продам или сдам», «Ищу парус»… */
+    /** Подпись вида объявления под свою доску: «Продам», «Сдам в аренду», «Ищу парус»… */
     public function kindLabel(): ?string
     {
         return $this->kind === null ? null : $this->type->kindLabel($this->kind);

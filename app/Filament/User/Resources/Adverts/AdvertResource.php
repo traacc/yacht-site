@@ -29,6 +29,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
@@ -92,8 +93,16 @@ class AdvertResource extends Resource
                         ->label('Вид объявления')
                         ->options(fn (Get $get): array => static::typeFrom($get('type'))?->kindOptions() ?? [])
                         ->required()
-                        // Живое поле: у биржи парусов от вида зависит лимит фото.
+                        // Живое поле: у биржи парусов от вида зависят лимит фото,
+                        // единица цены и залог.
                         ->live()
+                        ->afterStateUpdated(function (Get $get, Set $set, mixed $state): void {
+                            $unit = static::typeFrom($get('type'))?->fixedPriceUnit(static::kindFrom($state));
+
+                            if ($unit !== null) {
+                                $set('price_unit', $unit->value);
+                            }
+                        })
                         ->visible(fn (Get $get): bool => (static::typeFrom($get('type'))?->kinds() ?? []) !== []),
 
                     Select::make('advert_category_id')
@@ -185,13 +194,15 @@ class AdvertResource extends Resource
                 ->schema([
                     Select::make('price_unit')
                         ->label('Единица цены')
-                        ->options(fn (Get $get): array => collect(static::typeFrom($get('type'))?->priceUnits() ?? [])
+                        ->options(fn (Get $get): array => collect(static::priceUnits($get))
                             ->mapWithKeys(fn (AdvertPriceUnit $unit): array => [$unit->value => $unit->label()])
                             ->all())
                         ->required()
                         // Живое поле: залог показываем только при аренде.
                         ->live()
-                        ->visible(fn (Get $get): bool => (static::typeFrom($get('type'))?->priceUnits() ?? []) !== []),
+                        // Если вид оставляет одну единицу (продажа / аренда паруса),
+                        // спрашивать нечего: её проставляет сама модель при сохранении.
+                        ->visible(fn (Get $get): bool => count(static::priceUnits($get)) > 1),
 
                     TextInput::make('price')
                         ->label('Цена, ₽')
@@ -215,11 +226,16 @@ class AdvertResource extends Resource
                         ->minValue(0)
                         ->maxValue(999999999)
                         ->visible(function (Get $get): bool {
-                            if (! (static::typeFrom($get('type'))?->usesDeposit() ?? false)) {
+                            $type = static::typeFrom($get('type'));
+                            $kind = static::kindFrom($get('kind'));
+
+                            if (! ($type?->usesDeposit($kind) ?? false)) {
                                 return false;
                             }
 
-                            return static::priceUnitFrom($get('price_unit'))?->isRental() ?? false;
+                            $unit = $type->fixedPriceUnit($kind) ?? static::priceUnitFrom($get('price_unit'));
+
+                            return $unit?->isRental() ?? false;
                         }),
 
                     DatePicker::make('date_from')
@@ -463,6 +479,12 @@ class AdvertResource extends Resource
     private static function typeFrom(mixed $state): ?AdvertType
     {
         return static::enumFrom($state, AdvertType::class);
+    }
+
+    /** @return list<AdvertPriceUnit> единицы цены, допустимые при выбранных разделе и виде */
+    private static function priceUnits(Get $get): array
+    {
+        return static::typeFrom($get('type'))?->priceUnits(static::kindFrom($get('kind'))) ?? [];
     }
 
     private static function kindFrom(mixed $state): ?AdvertKind
