@@ -199,20 +199,60 @@
                             @endif
                         </dl>
 
-                        @if (false)
-                            <div class="border-t border-[#EAEAEA] pt-4 mb-4">
+                        @if ($advert->hasContacts())
+                            {{-- Контактов нет в HTML: подгружаются POST-запросом по клику, чтобы их не собирали парсеры. --}}
+                            <div class="border-t border-[#EAEAEA] pt-4 mb-4"
+                                 x-data="{
+                                     contacts: null,
+                                     loading: false,
+                                     error: null,
+                                     async reveal() {
+                                         if (this.loading) return;
+                                         this.loading = true;
+                                         this.error = null;
+                                         try {
+                                             const response = await fetch({{ Js::from(route('adverts.contacts', $advert)) }}, {
+                                                 method: 'POST',
+                                                 headers: {
+                                                     'Accept': 'application/json',
+                                                     'X-CSRF-TOKEN': {{ Js::from(csrf_token()) }},
+                                                     'X-Requested-With': 'XMLHttpRequest',
+                                                 },
+                                             });
+                                             if (!response.ok) {
+                                                 throw new Error(response.status === 429 ? 'Слишком много запросов, попробуйте через минуту.' : 'Не удалось загрузить контакты.');
+                                             }
+                                             this.contacts = (await response.json()).contacts;
+                                         } catch (e) {
+                                             this.error = e.message;
+                                         } finally {
+                                             this.loading = false;
+                                         }
+                                     },
+                                 }">
                                 <div class="text-sm font-semibold text-[#2E325C] mb-3">Контакты</div>
-                                <ul class="space-y-2 text-sm">
-                                    @if ($advert->contact_phone)
-                                        <li><a href="tel:{{ preg_replace('/[^\d+]/', '', $advert->contact_phone) }}" class="text-[#2D92CE] hover:underline">{{ $advert->contact_phone }}</a></li>
-                                    @endif
-                                    @if ($advert->contact_telegram)
-                                        <li><a href="https://t.me/{{ ltrim($advert->contact_telegram, '@') }}" target="_blank" rel="noopener" class="text-[#2D92CE] hover:underline">{{ $advert->contact_telegram }}</a></li>
-                                    @endif
-                                    @if ($advert->contact_email)
-                                        <li><a href="mailto:{{ $advert->contact_email }}" class="text-[#2D92CE] hover:underline break-all">{{ $advert->contact_email }}</a></li>
-                                    @endif
-                                </ul>
+
+                                <template x-if="contacts === null">
+                                    <button type="button" @click="reveal()" :disabled="loading"
+                                            class="text-sm text-[#2D92CE] font-semibold hover:underline disabled:opacity-50">
+                                        <span x-text="loading ? 'Загрузка…' : 'Показать контакты'">Показать контакты</span>
+                                    </button>
+                                </template>
+
+                                <template x-if="contacts !== null">
+                                    <ul class="space-y-2 text-sm">
+                                        <template x-for="contact in contacts" :key="contact.href">
+                                            <li>
+                                                <a :href="contact.href" x-text="contact.label"
+                                                   :target="contact.external ? '_blank' : null"
+                                                   :rel="contact.external ? 'noopener' : null"
+                                                   class="text-[#2D92CE] hover:underline break-all"></a>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </template>
+
+                                <p x-show="error" x-text="error" class="mt-2 text-xs text-red-700"></p>
                             </div>
                         @endif
 

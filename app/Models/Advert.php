@@ -334,6 +334,40 @@ class Advert extends Model implements HasMedia
     }
 
     /**
+     * Контакты для показа по клику: в HTML страницы их нет, отдаются отдельным запросом.
+     *
+     * @return list<array{label: string, href: string, external: bool}>
+     */
+    public function publicContacts(): array
+    {
+        $contacts = [];
+
+        if (filled($this->contact_phone)) {
+            $contacts[] = [
+                'label' => $this->contact_phone,
+                'href' => 'tel:'.preg_replace('/[^\d+]/', '', $this->contact_phone),
+                'external' => false,
+            ];
+        }
+        if (filled($this->contact_telegram)) {
+            $contacts[] = [
+                'label' => $this->contact_telegram,
+                'href' => 'https://t.me/'.ltrim($this->contact_telegram, '@'),
+                'external' => true,
+            ];
+        }
+        if (filled($this->contact_email)) {
+            $contacts[] = [
+                'label' => $this->contact_email,
+                'href' => 'mailto:'.$this->contact_email,
+                'external' => false,
+            ];
+        }
+
+        return $contacts;
+    }
+
+    /**
      * Фотографии с адаптивными форматами.
      *
      * @return list<array{src: string, webp: string|null, avif: string|null}>

@@ -428,6 +428,14 @@ foreach (AdvertType::competitionBoards() as $competitionBoard) {
     )->name($competitionBoard->itemRouteName());
 }
 
+/** «Показать контакты»: отдаёт контакты автора только по клику (POST + CSRF + throttle), чтобы их не собирали парсеры. */
+Route::post('/adverts/{advert}/contacts', function (Advert $advert) {
+    abort_unless($advert->isVisible() && $advert->hasContacts(), 404);
+
+    return response()->json(['contacts' => $advert->publicContacts()])
+        ->header('X-Robots-Tag', 'noindex');
+})->middleware('throttle:20,1')->name('adverts.contacts');
+
 /** «Написать автору» / «Отправить запрос»: заводит личную переписку и ведёт в неё. */
 Route::post('/adverts/{advert}/contact', function (Advert $advert, Request $request) {
     try {
