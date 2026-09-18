@@ -117,7 +117,7 @@ class AdvertResource extends Resource
             TextEntry::make('yacht_name')
                 ->label('Яхта')
                 ->state(fn (Advert $record): ?string => $record->yachtLabel())
-                ->placeholder('—'),
+                ->visible(fn (Advert $record): bool => filled($record->yachtLabel())),
             TextEntry::make('regattas.name')
                 ->label('Регаты')
                 ->badge()
