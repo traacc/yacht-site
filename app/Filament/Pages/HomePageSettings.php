@@ -206,7 +206,7 @@ class HomePageSettings extends Page
 
                         FileUpload::make('banner_media')
                             ->label('Картинка или видео')
-                            ->helperText('Показывается над текстом баннера. Видео проигрывается без звука и зацикливается.')
+                            ->helperText('Показывается над текстом баннера. Видео зацикливается и стартует без звука (так требуют браузеры для автозапуска) — посетитель включает звук кнопкой на видео.')
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v'])
                             ->disk('public')
                             ->directory('home/banner')
@@ -523,7 +523,7 @@ class HomePageSettings extends Page
         $settings->set('home.banner_button_url', trim((string) ($data['banner_button_url'] ?? '')) ?: null, 'home');
         $settings->set('home.banner_media_url', trim((string) ($data['banner_media_url'] ?? '')) ?: null, 'home');
 
-        // Медиа баннера: видео → mp4 H.264, изображение → webp (HEIC декодируем заранее).
+        // Медиа баннера: видео → mp4 H.264 со звуком, изображение → webp (HEIC декодируем заранее).
         // GIF не трогаем, чтобы не потерять анимацию.
         $bannerMedia = collect((array) ($data['banner_media'] ?? []))
             ->flatten()
@@ -531,7 +531,7 @@ class HomePageSettings extends Page
 
         if (is_string($bannerMedia)) {
             $bannerMedia = match (true) {
-                SettingsService::isVideoPath($bannerMedia) => $videoConverter->toWebMp4($bannerMedia, 'public'),
+                SettingsService::isVideoPath($bannerMedia) => $videoConverter->toWebMp4($bannerMedia, 'public', keepAudio: true),
                 str_ends_with(strtolower($bannerMedia), '.gif') => $bannerMedia,
                 default => $converter->toWebp($converter->normalizeHeicToWebp($bannerMedia, 'public'), 'public'),
             };

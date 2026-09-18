@@ -39,10 +39,11 @@ class VideoConverter
      * - webm, изображения и прочее возвращаются без изменений;
      * - при недоступности ffmpeg или ошибке исходный путь сохраняется (graceful fallback).
      *
-     * Звук удаляется: видео используется как беззвучный фон.
+     * По умолчанию звук удаляется (видео — беззвучный фон); с $keepAudio первая
+     * звуковая дорожка сохраняется и кодируется в AAC (понимают все браузеры).
      * Возвращает путь к итоговому файлу (новый .mp4 либо исходный).
      */
-    public function toWebMp4(?string $path, string $disk = 'public'): ?string
+    public function toWebMp4(?string $path, string $disk = 'public', bool $keepAudio = false): ?string
     {
         if ($path === null || $path === '') {
             return $path;
@@ -75,14 +76,19 @@ class VideoConverter
         $targetPath = $this->targetPath($path, $storage);
         $target = $storage->path($targetPath);
 
+        // «?» — дорожка необязательна: ролик без звука тоже сконвертируется.
+        $audio = $keepAudio
+            ? ['-map', '0:a:0?', '-c:a', 'aac', '-b:a', '128k']
+            : ['-an'];
+
         $command = $codec === 'h264'
             // H.264 — только перепаковка контейнера, это секунды.
             ? ['ffmpeg', '-y', '-i', $source, '-map', '0:v:0', '-c:v', 'copy',
-                '-an', '-movflags', '+faststart', $target]
+                ...$audio, '-movflags', '+faststart', $target]
             : ['ffmpeg', '-y', '-i', $source, '-map', '0:v:0',
                 '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-pix_fmt', 'yuv420p',
                 '-vf', "scale='min(".self::MAX_WIDTH.",iw)':-2",
-                '-an', '-movflags', '+faststart', $target];
+                ...$audio, '-movflags', '+faststart', $target];
 
         set_time_limit(self::TIMEOUT + 60);
 

@@ -20,6 +20,7 @@
 @if ($bannerEnabled && ($bannerTitle || $bannerText || $bannerMedia))
 <div x-data="{
         isOpen: false,
+        muted: true,
         init() {
             if (!sessionStorage.getItem('capture_window_shown')) {
                 setTimeout(() => { this.isOpen = true; }, 10000);
@@ -30,6 +31,14 @@
                 if (!video) return;
                 open ? video.play().catch(() => {}) : video.pause();
             });
+        },
+        // Автозапуск со звуком браузеры блокируют — звук включается по клику посетителя.
+        toggleSound() {
+            const video = this.$refs.bannerVideo;
+            if (!video) return;
+            this.muted = !this.muted;
+            video.muted = this.muted;
+            if (!this.muted) video.play().catch(() => {});
         },
         markShown() {
             sessionStorage.setItem('capture_window_shown', '1');
@@ -75,21 +84,40 @@
                 @php
                     $mediaTag = $bannerMediaUrl ? 'a' : 'div';
                 @endphp
-                <{{ $mediaTag }}
-                    @if ($bannerMediaUrl) href="{{ $bannerMediaUrl }}" @click="markShown()" @endif
-                    class="block relative z-10 mt-6 mb-6 mx-auto w-fit max-w-full">
+                <div class="relative z-10 mt-6 mb-6 mx-auto w-fit max-w-full">
+                    <{{ $mediaTag }}
+                        @if ($bannerMediaUrl) href="{{ $bannerMediaUrl }}" @click="markShown()" @endif
+                        class="block">
+                        @if ($bannerMedia['type'] === 'video')
+                            <video x-ref="bannerVideo"
+                                   src="{{ $bannerMedia['url'] }}"
+                                   class="block max-w-full max-h-[60vh] mx-auto"
+                                   muted loop playsinline preload="none"></video>
+                        @else
+                            <img src="{{ $bannerMedia['url'] }}"
+                                 alt="{{ $bannerTitle ?? '' }}"
+                                 class="block max-w-full max-h-[60vh] mx-auto"
+                                 loading="lazy">
+                        @endif
+                    </{{ $mediaTag }}>
+
+                    {{-- Кнопка звука — вне ссылки, чтобы клик по ней не уводил со страницы. --}}
                     @if ($bannerMedia['type'] === 'video')
-                        <video x-ref="bannerVideo"
-                               src="{{ $bannerMedia['url'] }}"
-                               class="block max-w-full max-h-[60vh] mx-auto"
-                               muted loop playsinline preload="none"></video>
-                    @else
-                        <img src="{{ $bannerMedia['url'] }}"
-                             alt="{{ $bannerTitle ?? '' }}"
-                             class="block max-w-full max-h-[60vh] mx-auto"
-                             loading="lazy">
+                        <button type="button"
+                                @click="toggleSound()"
+                                :aria-label="muted ? 'Включить звук' : 'Выключить звук'"
+                                class="absolute right-3 bottom-3 flex items-center justify-center w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors">
+                            <svg x-show="muted" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5 6 9H2v6h4l5 4V5Z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m23 9-6 6m0-6 6 6"/>
+                            </svg>
+                            <svg x-show="!muted" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5 6 9H2v6h4l5 4V5Z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>
+                            </svg>
+                        </button>
                     @endif
-                </{{ $mediaTag }}>
+                </div>
             @endif
 
             <div class="max-w-[562px] relative z-10 mx-auto">
