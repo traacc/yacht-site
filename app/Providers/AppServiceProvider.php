@@ -32,9 +32,12 @@ use App\Services\ImageConverter;
 use App\Services\Notifications\NotificationPreferences;
 use App\Services\PaymentRegistryLogger;
 use App\Services\ServiceContent;
+use App\Support\UploadFormats;
 use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Text;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -130,6 +133,19 @@ class AppServiceProvider extends ServiceProvider
         Action::configureUsing(function (Action $action) {
             $action->closeModalByClickingAway(false);
             $action->closeModalByEscaping(false);
+        });
+
+        // Подпись с допустимыми форматами под заголовком каждого поля загрузки
+        // изображений/видео. Слот aboveContent, а не helperText: helperText()
+        // в самих полях перезаписал бы belowContent. Считается при рендере, так что
+        // acceptedFileTypes(), заданные после make(), уже учтены. Наследуется
+        // SpatieMediaLibraryFileUpload.
+        FileUpload::configureUsing(function (FileUpload $component): void {
+            $component->aboveContent(static function (FileUpload $component): ?Text {
+                $label = UploadFormats::label($component->getAcceptedFileTypes());
+
+                return $label === null ? null : Text::make($label);
+            });
         });
 
         // HEIC/HEIF нельзя хранить как оригинал в Spatie Media Library: Imagick не умеет

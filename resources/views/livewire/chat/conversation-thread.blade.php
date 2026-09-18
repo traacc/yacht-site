@@ -162,7 +162,7 @@
             <form wire:submit="send" class="flex items-end gap-2">
                 <label
                     class="shrink-0 cursor-pointer border border-gray-300 px-3 py-2 text-gray-500 transition-colors hover:bg-gray-100"
-                    title="Прикрепить файлы (до {{ \App\Actions\Chat\SendChatMessageAction::MAX_ATTACHMENTS }})"
+                    title="Прикрепить файлы (до {{ \App\Actions\Chat\SendChatMessageAction::MAX_ATTACHMENTS }}). Форматы: JPG, PNG, WEBP, HEIC, HEIF, PDF"
                 >
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M18.4 12.6 12 19a4.2 4.2 0 0 1-6-6l7.1-7.1a2.8 2.8 0 0 1 4 4l-7.1 7.1a1.4 1.4 0 0 1-2-2l6.4-6.4"/>
