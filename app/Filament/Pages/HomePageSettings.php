@@ -108,6 +108,8 @@ class HomePageSettings extends Page
             'banner_text' => $settings->get('home.banner_text', ''),
             'banner_button_text' => $settings->get('home.banner_button_text', ''),
             'banner_button_url' => $settings->get('home.banner_button_url', ''),
+            'banner_media' => $settings->get('home.banner_media'),
+            'banner_media_url' => $settings->get('home.banner_media_url', ''),
         ]);
     }
 
@@ -201,6 +203,25 @@ class HomePageSettings extends Page
                             ->maxLength(1000)
                             ->visible(fn ($get) => (bool) $get('banner_enabled'))
                             ->rules(['nullable', 'string', 'max:1000']),
+
+                        FileUpload::make('banner_media')
+                            ->label('Картинка или видео')
+                            ->helperText('Показывается над текстом баннера. Видео проигрывается без звука и зацикливается.')
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v'])
+                            ->disk('public')
+                            ->directory('home/banner')
+                            ->visibility('public')
+                            ->visible(fn ($get) => (bool) $get('banner_enabled'))
+                            ->columnSpanFull(),
+
+                        TextInput::make('banner_media_url')
+                            ->label('Ссылка при клике на картинку/видео')
+                            ->helperText('Если не заполнено — используется ссылка на кнопке.')
+                            ->placeholder('https://example.com')
+                            ->url()
+                            ->maxLength(2048)
+                            ->visible(fn ($get) => (bool) $get('banner_enabled') && filled($get('banner_media')))
+                            ->rules(['nullable', 'url', 'max:2048']),
 
                         Grid::make(2)
                             ->visible(fn ($get) => (bool) $get('banner_enabled'))
@@ -412,6 +433,7 @@ class HomePageSettings extends Page
             'data.banner_text' => ['nullable', 'string', 'max:1000'],
             'data.banner_button_text' => ['nullable', 'string', 'max:255'],
             'data.banner_button_url' => ['nullable', 'url', 'max:2048'],
+            'data.banner_media_url' => ['nullable', 'url', 'max:2048'],
         ]);
 
         /** @var SettingsService $settings */
@@ -499,6 +521,25 @@ class HomePageSettings extends Page
         $settings->set('home.banner_text', trim((string) ($data['banner_text'] ?? '')) ?: null, 'home');
         $settings->set('home.banner_button_text', trim((string) ($data['banner_button_text'] ?? '')) ?: null, 'home');
         $settings->set('home.banner_button_url', trim((string) ($data['banner_button_url'] ?? '')) ?: null, 'home');
+        $settings->set('home.banner_media_url', trim((string) ($data['banner_media_url'] ?? '')) ?: null, 'home');
+
+        // Медиа баннера: видео → mp4 H.264, изображение → webp (HEIC декодируем заранее).
+        // GIF не трогаем, чтобы не потерять анимацию.
+        $bannerMedia = collect((array) ($data['banner_media'] ?? []))
+            ->flatten()
+            ->first(fn ($v) => is_string($v) && $v !== '');
+
+        if (is_string($bannerMedia)) {
+            $bannerMedia = match (true) {
+                SettingsService::isVideoPath($bannerMedia) => $videoConverter->toWebMp4($bannerMedia, 'public'),
+                str_ends_with(strtolower($bannerMedia), '.gif') => $bannerMedia,
+                default => $converter->toWebp($converter->normalizeHeicToWebp($bannerMedia, 'public'), 'public'),
+            };
+        }
+
+        $settings->set('home.banner_media', $bannerMedia ?: null, 'home');
+        // Конвертер мог заменить файл — обновляем путь в форме (см. hero_media выше).
+        $this->data['banner_media'] = $bannerMedia ? [(string) Str::uuid() => $bannerMedia] : [];
 
         $settings->forgetGroup('home');
 

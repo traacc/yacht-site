@@ -6,15 +6,33 @@
     $bannerText = $settings->get('home.banner_text');
     $bannerButtonText = $settings->get('home.banner_button_text');
     $bannerButtonUrl = $settings->get('home.banner_button_url');
+    $bannerMediaPath = $settings->get('home.banner_media');
+    $bannerMedia = is_string($bannerMediaPath) && $bannerMediaPath !== ''
+        ? [
+            'url' => \Illuminate\Support\Facades\Storage::disk('public')->url($bannerMediaPath),
+            'type' => \App\Services\SettingsService::isVideoPath($bannerMediaPath) ? 'video' : 'image',
+        ]
+        : null;
+    // Клик по медиа ведёт на отдельную ссылку, а если её нет — на ссылку кнопки.
+    $bannerMediaUrl = $settings->get('home.banner_media_url') ?: $bannerButtonUrl;
 @endphp
 
-@if ($bannerEnabled && ($bannerTitle || $bannerText))
+@if ($bannerEnabled && ($bannerTitle || $bannerText || $bannerMedia))
 <div x-data="{
         isOpen: false,
         init() {
             if (!sessionStorage.getItem('capture_window_shown')) {
                 setTimeout(() => { this.isOpen = true; }, 10000);
             }
+            // Видео грузим и запускаем только при показе баннера.
+            this.$watch('isOpen', (open) => {
+                const video = this.$refs.bannerVideo;
+                if (!video) return;
+                open ? video.play().catch(() => {}) : video.pause();
+            });
+        },
+        markShown() {
+            sessionStorage.setItem('capture_window_shown', '1');
         },
         closeModal() {
             this.isOpen = false;
@@ -53,6 +71,27 @@
 
             <button @click="closeModal()" class="text-2xl text-[#2E325C] absolute right-5 top-5 font-bold z-30">{!! file_get_contents(public_path('images/icons/close.svg')) !!}</button>
 
+            @if ($bannerMedia)
+                @php
+                    $mediaTag = $bannerMediaUrl ? 'a' : 'div';
+                @endphp
+                <{{ $mediaTag }}
+                    @if ($bannerMediaUrl) href="{{ $bannerMediaUrl }}" @click="markShown()" @endif
+                    class="block relative z-10 mt-6 mb-6 mx-auto w-fit max-w-full">
+                    @if ($bannerMedia['type'] === 'video')
+                        <video x-ref="bannerVideo"
+                               src="{{ $bannerMedia['url'] }}"
+                               class="block max-w-full max-h-[60vh] mx-auto"
+                               muted loop playsinline preload="none"></video>
+                    @else
+                        <img src="{{ $bannerMedia['url'] }}"
+                             alt="{{ $bannerTitle ?? '' }}"
+                             class="block max-w-full max-h-[60vh] mx-auto"
+                             loading="lazy">
+                    @endif
+                </{{ $mediaTag }}>
+            @endif
+
             <div class="max-w-[562px] relative z-10 mx-auto">
                 <div class="mt-3 text-center w-full">
                     @if ($bannerTitle)
@@ -68,7 +107,7 @@
                     @endif
 
                     @if ($bannerButtonText && $bannerButtonUrl)
-                        <a href="{{ $bannerButtonUrl }}"
+                        <a href="{{ $bannerButtonUrl }}" @click="markShown()"
                            class="inline-block bg-[#2D92CE] hover:bg-[#2E325C] transition-colors text-white text-lg font-medium px-8 py-3 rounded">
                             {{ $bannerButtonText }}
                         </a>
