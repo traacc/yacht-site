@@ -17,6 +17,8 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class StatsOverview extends BaseWidget
 {
+    protected static ?int $sort = 1;
+
     // На мобильных — 1 колонка, на планшетах — 3, на десктопах — 5
     protected array|int|null $columns = [
         'default' => 1,

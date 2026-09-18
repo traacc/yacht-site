@@ -10,6 +10,8 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class UpcomingBirthdaysWidget extends BaseWidget
 {
+    protected static ?int $sort = 3;
+
     protected static ?string $heading = 'Ближайшие дни рождения';
 
     protected int|string|array $columnSpan = 'full';

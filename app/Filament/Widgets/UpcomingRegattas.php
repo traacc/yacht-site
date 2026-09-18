@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class UpcomingRegattas extends TableWidget
 {
+    protected static ?int $sort = 4;
+
     protected static ?string $heading = 'Ближайшие регаты';
 
     protected int|string|array $columnSpan = 'full';
