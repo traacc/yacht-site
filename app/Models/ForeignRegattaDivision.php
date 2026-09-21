@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\CharterPriceUnit;
+use App\Enums\Currency;
 use App\Enums\DownwindSail;
 use App\Enums\FleetDivisionType;
 use App\Models\Concerns\HasCaptionedGallery;
@@ -49,6 +50,7 @@ class ForeignRegattaDivision extends Model implements HasMedia
         'charter_fee',
         'deposit',
         'price_note',
+        'currency',
         'yachts_count',
         'sort_order',
     ];
@@ -68,6 +70,7 @@ class ForeignRegattaDivision extends Model implements HasMedia
             'price_unit' => CharterPriceUnit::class,
             'charter_fee' => 'integer',
             'deposit' => 'integer',
+            'currency' => Currency::class,
             'yachts_count' => 'integer',
             'sort_order' => 'integer',
         ];
@@ -113,6 +116,12 @@ class ForeignRegattaDivision extends Model implements HasMedia
     // ──────────────────────────────────────────────
     // Представление
     // ──────────────────────────────────────────────
+
+    /** Валюта цен дивизиона: своя, иначе валюта регаты, иначе рубли. */
+    public function priceCurrency(): Currency
+    {
+        return Currency::fromNullable($this->currency ?? $this->regatta?->currency);
+    }
 
     /** Наследуют ли лодки дивизиона его характеристики. */
     public function sharesSpec(): bool

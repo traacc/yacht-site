@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\CharterPriceUnit;
 use App\Enums\CharterYachtStatus;
+use App\Enums\Currency;
 use App\Enums\DownwindSail;
 use App\Enums\ParticipationOption;
 use App\Enums\ServiceType;
@@ -53,6 +54,7 @@ class ForeignRegattaYacht extends Model implements HasMedia
         'charter_fee',
         'deposit',
         'price_note',
+        'currency',
         'skipper_name',
         'skipper_note',
         'free_seats',
@@ -78,6 +80,7 @@ class ForeignRegattaYacht extends Model implements HasMedia
             'deposit' => 'integer',
             'free_seats' => 'integer',
             'seat_price' => 'integer',
+            'currency' => Currency::class,
             'status' => CharterYachtStatus::class,
             'sort_order' => 'integer',
         ];
@@ -196,6 +199,21 @@ class ForeignRegattaYacht extends Model implements HasMedia
     public function effectivePriceNote(): ?string
     {
         return $this->spec('price_note');
+    }
+
+    /**
+     * Валюта цен лодки: своя, иначе дивизиона-флота, иначе регаты.
+     *
+     * Наследуется вместе с ценой: у восьми лодок одного дивизиона валюта
+     * задаётся там же, где сумма, а у списка конкретных лодок — на регате.
+     */
+    public function effectiveCurrency(): Currency
+    {
+        $own = $this->spec('currency');
+
+        return $own instanceof Currency
+            ? $own
+            : Currency::fromNullable($this->regatta?->currency);
     }
 
     /**
@@ -376,6 +394,6 @@ class ForeignRegattaYacht extends Model implements HasMedia
 
     private function formatPrice(int $value): string
     {
-        return number_format((float) $value, 0, ',', ' ').' ₽';
+        return $this->effectiveCurrency()->format($value);
     }
 }

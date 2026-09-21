@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Contracts\ServiceOptionProvider;
 use App\Contracts\ServiceSubject;
+use App\Enums\Currency;
 use App\Enums\ParticipationOption;
 use App\Models\Concerns\HasCaptionedGallery;
 use App\Models\Concerns\RegistersResponsiveFormats;
@@ -53,6 +54,7 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
         'price_per_seat',
         'price_per_cabin',
         'price_note',
+        'currency',
         'video_links',
         'is_published',
         'sort_order',
@@ -66,6 +68,7 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
             'participation_options' => 'array',
             'price_per_seat' => 'integer',
             'price_per_cabin' => 'integer',
+            'currency' => Currency::class,
             'video_links' => 'array',
             'is_published' => 'boolean',
             'sort_order' => 'integer',
@@ -117,13 +120,18 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     /** Дивизионы флота: «флот одинаковых лодок» и «список конкретных лодок». */
     public function divisions(): HasMany
     {
-        return $this->hasMany(ForeignRegattaDivision::class)->ordered();
+        // chaperone: дивизион спрашивает регату о валюте цен
+        // (@see ForeignRegattaDivision::priceCurrency()) — обратная связь
+        // проставляется сразу, без запроса на каждую запись.
+        return $this->hasMany(ForeignRegattaDivision::class)->chaperone('regatta')->ordered();
     }
 
     /** Чартерный флот регаты: список «яхт под аренду» из ТЗ. */
     public function charterYachts(): HasMany
     {
-        return $this->hasMany(ForeignRegattaYacht::class)->ordered();
+        // chaperone — по той же причине, что и у дивизионов:
+        // @see ForeignRegattaYacht::effectiveCurrency().
+        return $this->hasMany(ForeignRegattaYacht::class)->chaperone('regatta')->ordered();
     }
 
     /** Заявки на участие — для счётчика в админке. */
@@ -441,8 +449,14 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
             : $this->formatPrice($this->price_per_cabin).' за двухместную каюту';
     }
 
+    /** Валюта цен регаты: пусто в БД — рубли. */
+    public function priceCurrency(): Currency
+    {
+        return Currency::fromNullable($this->currency);
+    }
+
     private function formatPrice(int $value): string
     {
-        return number_format((float) $value, 0, ',', ' ').' ₽';
+        return $this->priceCurrency()->format($value);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\ForeignRegattas;
 
 use App\Enums\CharterPriceUnit;
+use App\Enums\Currency;
 use App\Enums\DownwindSail;
 use App\Enums\FleetDivisionType;
 use App\Enums\ParticipationOption;
@@ -178,17 +179,25 @@ class ForeignRegattaResource extends Resource
                             ->columns(3)
                             ->columnSpanFull(),
 
+                        Select::make('currency')
+                            ->label('Валюта')
+                            ->helperText('Валюта цен регаты. У дивизионов и лодок валюта своя.')
+                            ->options(Currency::options())
+                            ->default(Currency::default()->value)
+                            ->live()
+                            ->columnSpanFull(),
+
                         TextInput::make('price_per_seat')
                             ->label('Цена места в двухместной каюте')
                             ->numeric()
                             ->minValue(0)
-                            ->suffix('₽'),
+                            ->suffix(fn (Get $get): string => self::currencySymbol($get)),
 
                         TextInput::make('price_per_cabin')
                             ->label('Цена двухместной каюты')
                             ->numeric()
                             ->minValue(0)
-                            ->suffix('₽'),
+                            ->suffix(fn (Get $get): string => self::currencySymbol($get)),
 
                         Textarea::make('fleet_note')
                             ->label('Флот (текстом)')
@@ -356,6 +365,25 @@ class ForeignRegattaResource extends Resource
     }
 
     /**
+     * Знак валюты для полей суммы по состоянию формы.
+     *
+     * Запись в этот момент ещё не сохранена, поэтому валюту берём из состояния:
+     * выигрывает первый заполненный путь, пусто везде — рубли.
+     */
+    private static function currencySymbol(Get $get, string ...$paths): string
+    {
+        foreach ($paths === [] ? ['currency'] : $paths as $path) {
+            $state = $get($path);
+
+            if ($state instanceof Currency || (is_string($state) && $state !== '')) {
+                return Currency::fromNullable($state)->symbol();
+            }
+        }
+
+        return Currency::default()->symbol();
+    }
+
+    /**
      * Поля дивизиона.
      *
      * Спецификация показывается только у дивизиона-флота: у списка конкретных
@@ -366,6 +394,10 @@ class ForeignRegattaResource extends Resource
     private static function divisionFields(): array
     {
         $isFleet = fn (Get $get): bool => $get('type') === FleetDivisionType::Fleet->value;
+
+        // Знак валюты внутри репитера: своя валюта дивизиона, иначе валюта регаты
+        // уровнем выше (`../../`).
+        $divisionCurrency = fn (Get $get): string => self::currencySymbol($get, 'currency', '../../currency');
 
         return [
             Select::make('type')
@@ -422,7 +454,7 @@ class ForeignRegattaResource extends Resource
                 ->label('Стоимость')
                 ->numeric()
                 ->minValue(0)
-                ->suffix('₽')
+                ->suffix($divisionCurrency)
                 ->required($isFleet)
                 ->visible($isFleet),
 
@@ -432,18 +464,25 @@ class ForeignRegattaResource extends Resource
                 ->default(CharterPriceUnit::Regatta->value)
                 ->visible($isFleet),
 
+            Select::make('currency')
+                ->label('Валюта')
+                ->helperText('Пусто — валюта регаты. Лодки дивизиона наследуют её вместе с ценой.')
+                ->options(Currency::options())
+                ->live()
+                ->visible($isFleet),
+
             TextInput::make('charter_fee')
                 ->label('Сборы чартерной компании')
                 ->numeric()
                 ->minValue(0)
-                ->suffix('₽')
+                ->suffix($divisionCurrency)
                 ->visible($isFleet),
 
             TextInput::make('deposit')
                 ->label('Депозит')
                 ->numeric()
                 ->minValue(0)
-                ->suffix('₽')
+                ->suffix($divisionCurrency)
                 ->visible($isFleet),
 
             TextInput::make('price_note')

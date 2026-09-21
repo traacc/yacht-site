@@ -6,6 +6,7 @@ namespace App\Filament\Resources\ForeignRegattaYachts;
 
 use App\Enums\CharterPriceUnit;
 use App\Enums\CharterYachtStatus;
+use App\Enums\Currency;
 use App\Enums\DownwindSail;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\ForeignRegattaYachts\Pages\ManageForeignRegattaYachts;
@@ -148,12 +149,18 @@ class ForeignRegattaYachtResource extends Resource
                             ->label('Стоимость')
                             ->numeric()
                             ->minValue(0)
-                            ->suffix('₽')
+                            ->suffix(fn (Get $get): string => self::currencySymbol($get))
                             ->required(fn (Get $get): bool => ! self::inheritsSpec($get)),
 
                         Select::make('price_unit')
                             ->label('За что цена')
                             ->options(CharterPriceUnit::options()),
+
+                        Select::make('currency')
+                            ->label('Валюта')
+                            ->helperText('Пусто — валюта дивизиона-флота, а если и там пусто — валюта регаты.')
+                            ->options(Currency::options())
+                            ->live(),
 
                         Select::make('status')
                             ->label('Занятость')
@@ -166,13 +173,13 @@ class ForeignRegattaYachtResource extends Resource
                             ->label('Сборы чартерной компании')
                             ->numeric()
                             ->minValue(0)
-                            ->suffix('₽'),
+                            ->suffix(fn (Get $get): string => self::currencySymbol($get)),
 
                         TextInput::make('deposit')
                             ->label('Депозит')
                             ->numeric()
                             ->minValue(0)
-                            ->suffix('₽'),
+                            ->suffix(fn (Get $get): string => self::currencySymbol($get)),
 
                         TextInput::make('price_note')
                             ->label('Примечание к стоимости')
@@ -199,7 +206,7 @@ class ForeignRegattaYachtResource extends Resource
                             ->label('Стоимость места')
                             ->numeric()
                             ->minValue(0)
-                            ->suffix('₽'),
+                            ->suffix(fn (Get $get): string => self::currencySymbol($get)),
 
                         TextInput::make('skipper_note')
                             ->label('О шкипере')
@@ -379,6 +386,29 @@ class ForeignRegattaYachtResource extends Resource
             ->all();
     }
 
+    /**
+     * Знак валюты в суффиксах полей суммы: свой выбор, иначе валюта дивизиона.
+     *
+     * Повторяет ForeignRegattaYacht::effectiveCurrency(), но по состоянию формы:
+     * запись в этот момент ещё не сохранена.
+     */
+    private static function currencySymbol(Get $get): string
+    {
+        $own = $get('currency');
+
+        if ($own instanceof Currency || (is_string($own) && $own !== '')) {
+            return Currency::fromNullable($own)->symbol();
+        }
+
+        $division = self::division($get);
+
+        if ($division?->sharesSpec()) {
+            return $division->priceCurrency()->symbol();
+        }
+
+        return Currency::fromNullable(self::regatta($get)?->currency)->symbol();
+    }
+
     /** Берёт ли лодка характеристики у дивизиона — тогда свои поля необязательны. */
     private static function inheritsSpec(Get $get): bool
     {
@@ -398,11 +428,20 @@ class ForeignRegattaYachtResource extends Resource
             trim((string) $division->model),
             $division->cabins === null ? null : $division->cabins.' кают',
             $division->year === null ? null : (string) $division->year,
-            $division->price === null ? null : number_format((float) $division->price, 0, ',', ' ').' ₽',
+            $division->price === null ? null : $division->priceCurrency()->format($division->price),
         ]);
 
         return 'Пустые поля берутся из дивизиона «'.$division->title().'»'
             .($spec === [] ? '.' : ': '.implode(', ', $spec).'.');
+    }
+
+    private static function regatta(Get $get): ?ForeignRegatta
+    {
+        $regattaId = $get('foreign_regatta_id');
+
+        return blank($regattaId)
+            ? null
+            : ForeignRegatta::query()->find($regattaId);
     }
 
     private static function division(Get $get): ?ForeignRegattaDivision
