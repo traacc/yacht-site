@@ -42,7 +42,7 @@
          class="px-3 py-3 relative overflow-y-auto max-h-[90vh] bg-white w-full max-w-[720px] z-30 top-1/2 left-1/2 -translate-1/2">
         <div class="p-3.5 md:p-4">
             <div class="flex items-start justify-between gap-4 mb-3">
-                <h3 class="a-font text-2xl md:text-3xl text-[#2E325C]">{{ $yacht->title() }}</h3>
+                <h3 class="a-font text-2xl md:text-3xl text-[#2E325C]">{{ $yacht->shortTitle() }}</h3>
                 <button type="button" @click="details = false"
                         class="text-gray-400 hover:text-gray-500 text-2xl font-bold leading-none">&times;</button>
             </div>

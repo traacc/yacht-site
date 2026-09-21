@@ -13,6 +13,11 @@
     поэтому все карточки такого дивизиона выглядят одинаково — кроме шкипера и
     свободных мест, которые у каждой лодки свои.
 
+    С ценами наоборот: унаследованные здесь не печатаются — общие цены
+    дивизиона стоят один раз над списком лодок, и повторять их в каждой
+    карточке значит спорить с самим собой. В карточке остаются только свои
+    (@see App\Models\ForeignRegattaYacht::ownPriceLabels()).
+
     Кнопки выводятся из данных, а не задаются отдельно: со шкипером лодка
     продаёт места и каюты, без шкипера — сдаётся целиком
     (@see components/foreign-yacht-cta).
@@ -31,6 +36,11 @@
         $yacht->effectiveDownwindSail()?->label(),
     ]));
 
+    // Только свои цены: общие цены дивизиона-флота уже напечатаны над списком
+    // лодок (@see App\Models\ForeignRegattaYacht::ownPriceLabels()).
+    $prices = $yacht->ownPriceLabels();
+    $hasPrices = count(array_filter([$prices['charter'], $prices['fee'], $prices['deposit'], $prices['note']])) > 0;
+
     $hasOffers = $requestEvent !== null && count($yacht->offeredParticipations()) > 0;
 @endphp
 
@@ -44,34 +54,36 @@
                 @if (! empty($cover['webp']))
                     <source srcset="{{ $cover['webp'] }}" type="image/webp">
                 @endif
-                <img src="{{ $cover['src'] }}" alt="{{ $yacht->title() }}" loading="lazy"
+                <img src="{{ $cover['src'] }}" alt="{{ $yacht->shortTitle() }}" loading="lazy"
                      class="w-full h-48 object-cover">
             </picture>
         </button>
     @endif
 
     <div class="p-5 flex flex-col grow">
-        <h3 class="a-font text-xl text-[#2E325C] mb-1">{{ $yacht->title() }}</h3>
+        <h3 class="a-font text-xl text-[#2E325C] mb-1">{{ $yacht->shortTitle() }}</h3>
 
         @if (count($specs) > 0)
             <div class="text-brand-gray-light text-sm mb-3">{{ implode(' · ', $specs) }}</div>
         @endif
 
         {{-- ===== Стоимость чартера ===== --}}
-        <div class="text-sm space-y-1 mb-3">
-            @if ($yacht->priceLabel())
-                <div class="text-[#2E325C] font-semibold">{{ $yacht->priceLabel() }}</div>
-            @endif
-            @if ($yacht->charterFeeLabel())
-                <div class="text-brand-gray-light">Сборы чартерной компании — {{ $yacht->charterFeeLabel() }}</div>
-            @endif
-            @if ($yacht->depositLabel())
-                <div class="text-brand-gray-light">Депозит — {{ $yacht->depositLabel() }}</div>
-            @endif
-            @if ($yacht->effectivePriceNote())
-                <div class="text-brand-gray-light text-xs">{{ $yacht->effectivePriceNote() }}</div>
-            @endif
-        </div>
+        @if ($hasPrices)
+            <div class="text-sm space-y-1 mb-3">
+                @if ($prices['charter'])
+                    <div class="text-[#2E325C] font-semibold">{{ $prices['charter'] }}</div>
+                @endif
+                @if ($prices['fee'])
+                    <div class="text-brand-gray-light">Сборы чартерной компании — {{ $prices['fee'] }}</div>
+                @endif
+                @if ($prices['deposit'])
+                    <div class="text-brand-gray-light">Депозит — {{ $prices['deposit'] }}</div>
+                @endif
+                @if ($prices['note'])
+                    <div class="text-brand-gray-light text-xs">{{ $prices['note'] }}</div>
+                @endif
+            </div>
+        @endif
 
         {{-- ===== Шкипер и места ===== --}}
         @if ($yacht->hasSkipper())
@@ -83,10 +95,10 @@
 
                 @if ($yacht->sellsSeats())
                     <div class="text-brand-gray-light mt-2">
-                        {{ ucfirst($yacht->freeSeatsLabel()) }}@if ($yacht->seatPriceLabel()) по {{ $yacht->seatPriceLabel() }}@endif
+                        {{ ucfirst($yacht->freeSeatsLabel()) }}@if ($prices['seat']) по {{ $prices['seat'] }}@endif
                     </div>
-                    @if ($yacht->sellsCabins())
-                        <div class="text-brand-gray-light mt-1">Каюта целиком — {{ $yacht->cabinPriceLabel() }}</div>
+                    @if ($yacht->sellsCabins() && $prices['cabin'])
+                        <div class="text-brand-gray-light mt-1">Каюта целиком — {{ $prices['cabin'] }}</div>
                     @endif
                     @if ($yacht->seat_note)
                         <div class="text-brand-gray-light text-xs mt-1">{{ $yacht->seat_note }}</div>

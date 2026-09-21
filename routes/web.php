@@ -621,7 +621,9 @@ Route::get('/services/foreign-regattas', function () use ($servicePage) {
 
     return view('pages.services.foreign-regattas', $servicePage(ServiceType::ForeignRegatta, [
         'upcoming' => ForeignRegatta::published()->upcoming()->ordered()
-            ->with(['charterYachts', 'media'])
+            // Дивизион нужен цене «от»: у лодки из флота цены общие и лежат там
+            // (@see ForeignRegatta::priceFromLabel()).
+            ->with(['charterYachts.division', 'media'])
             ->get(),
         // Прошедшие регаты остаются на витрине: они и есть подтверждение опыта.
         'past' => ForeignRegatta::published()->past()->recentFirst()->with('media')->get(),
@@ -644,7 +646,7 @@ Route::get('/services/foreign-regattas/{regatta}', function (ForeignRegatta $reg
         'type' => ServiceType::ForeignRegatta,
         'others' => ForeignRegatta::published()->upcoming()->ordered()
             ->whereKeyNot($regatta->getKey())
-            ->with(['charterYachts', 'media'])
+            ->with(['charterYachts.division', 'media'])
             ->take(3)
             ->get(),
     ]);

@@ -454,6 +454,67 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
         );
     }
 
+    /**
+     * «от 150 000 ₽ за место» — самое дешёвое предложение регаты для витрины.
+     *
+     * Считается по флоту, а не по полям регаты: цены живут у дивизионов и
+     * лодок, и отдельная цифра на регате с ними расходится. Поля регаты
+     * остаются запасным вариантом — для регат, флот которых ещё не заведён.
+     *
+     * Варианты перебираются от самого доступного входа к самому дорогому:
+     * место, каюта, яхта целиком.
+     */
+    public function priceFromLabel(): ?string
+    {
+        $offers = [
+            ['yachts' => $this->yachtsSellingSeats(), 'price' => fn (ForeignRegattaYacht $yacht): ?int => $yacht->effectiveSeatPrice(), 'unit' => 'за место'],
+            ['yachts' => $this->yachtsSellingCabins(), 'price' => fn (ForeignRegattaYacht $yacht): ?int => $yacht->effectiveCabinPrice(), 'unit' => 'за каюту'],
+            ['yachts' => $this->yachtsForWholeCharter(), 'price' => fn (ForeignRegattaYacht $yacht): ?int => $yacht->effectivePrice(), 'unit' => 'за яхту целиком'],
+        ];
+
+        foreach ($offers as $offer) {
+            $cheapest = $this->cheapestOffer($offer['yachts'], $offer['price']);
+
+            if ($cheapest !== null) {
+                return 'от '.$cheapest['currency']->format($cheapest['amount']).' '.$offer['unit'];
+            }
+        }
+
+        $own = $this->seatPriceLabel() ?? $this->cabinPriceLabel();
+
+        return $own === null ? null : 'от '.$own;
+    }
+
+    /**
+     * Самое дешёвое предложение набора лодок.
+     *
+     * Цены разных валют не сравниваются: берутся предложения в валюте регаты,
+     * а если таких нет — в самой распространённой валюте флота.
+     *
+     * @param  Collection<int, ForeignRegattaYacht>  $yachts
+     * @param  callable(ForeignRegattaYacht): ?int  $price
+     * @return array{amount: int, currency: Currency}|null
+     */
+    private function cheapestOffer(Collection $yachts, callable $price): ?array
+    {
+        $offers = $yachts
+            ->map(fn (ForeignRegattaYacht $yacht): array => [
+                'amount' => $price($yacht),
+                'currency' => $yacht->effectiveCurrency(),
+            ])
+            ->filter(fn (array $offer): bool => $offer['amount'] !== null)
+            ->groupBy(fn (array $offer): string => $offer['currency']->value);
+
+        if ($offers->isEmpty()) {
+            return null;
+        }
+
+        $group = $offers->get($this->priceCurrency()->value)
+            ?? $offers->sortByDesc(fn (Collection $group): int => $group->count())->first();
+
+        return $group->sortBy('amount')->first();
+    }
+
     public function seatPriceLabel(): ?string
     {
         return $this->price_per_seat === null

@@ -328,8 +328,22 @@ class ForeignRegattaYacht extends Model implements HasMedia
     // Представление
     // ──────────────────────────────────────────────
 
-    /** «Bavaria 46 «Nika», 2018» — подпись для витрины и выпадающего списка заявки. */
+    /** «Bavaria 46 «Nika», 2018» — подпись для выпадающего списка заявки и админки. */
     public function title(): string
+    {
+        $year = $this->effectiveYear();
+
+        return $year === null ? $this->shortTitle() : $this->shortTitle().', '.$year;
+    }
+
+    /**
+     * «Bavaria 46 «Nika»» — заголовок карточки лодки, без года.
+     *
+     * Год на витрине печатается строкой характеристик под заголовком, поэтому
+     * в самом заголовке он был бы дублем. В списках заявки и админки, где
+     * характеристик рядом нет, год нужен — там используется title().
+     */
+    public function shortTitle(): string
     {
         $title = trim((string) $this->effectiveModel());
 
@@ -338,13 +352,41 @@ class ForeignRegattaYacht extends Model implements HasMedia
             $title = $title === '' ? $name : $title.' «'.$name.'»';
         }
 
-        if ($title === '') {
-            $title = 'Яхта';
-        }
+        return $title === '' ? 'Яхта' : $title;
+    }
 
-        $year = $this->effectiveYear();
+    /** Берёт ли лодка цены у дивизиона-флота, а не несёт свои. */
+    public function inheritsPrices(): bool
+    {
+        return $this->division?->sharesSpec() === true;
+    }
 
-        return $year === null ? $title : $title.', '.$year;
+    /**
+     * Цены, заданные у самой лодки, — без унаследованных от дивизиона.
+     *
+     * Общие цены дивизиона-флота витрина печатает один раз над списком лодок
+     * (@see ForeignRegattaDivision::priceLabels()), поэтому в карточке остаются
+     * только собственные переопределения лодки: иначе одна и та же сумма стоит
+     * и в шапке дивизиона, и в каждой его карточке.
+     *
+     * @return array{charter: ?string, fee: ?string, deposit: ?string, seat: ?string, cabin: ?string, note: ?string}
+     */
+    public function ownPriceLabels(): array
+    {
+        $own = function (string $attribute): bool {
+            $value = $this->getAttribute($attribute);
+
+            return ! $this->inheritsPrices() || ($value !== null && $value !== '');
+        };
+
+        return [
+            'charter' => $own('price') ? $this->priceLabel() : null,
+            'fee' => $own('charter_fee') ? $this->charterFeeLabel() : null,
+            'deposit' => $own('deposit') ? $this->depositLabel() : null,
+            'seat' => $own('seat_price') ? $this->seatPriceLabel() : null,
+            'cabin' => $own('cabin_price') ? $this->cabinPriceLabel() : null,
+            'note' => $own('price_note') ? $this->effectivePriceNote() : null,
+        ];
     }
 
     public function priceLabel(): ?string

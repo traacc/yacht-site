@@ -15,6 +15,7 @@
     $cover = $regatta->getFirstMedia('cover');
     $place = $regatta->placeLabel();
     $duration = $regatta->durationLabel();
+    $priceFrom = $past ? null : $regatta->priceFromLabel();
 @endphp
 
 <a href="{{ $regatta->publicUrl() }}"
@@ -46,8 +47,10 @@
         @endif
 
         @unless ($past)
-            @if ($regatta->seatPriceLabel())
-                <div class="text-[#2E325C] font-semibold text-sm mb-2">от {{ $regatta->seatPriceLabel() }}</div>
+            {{-- Цена считается по флоту: отдельное поле регаты разошлось бы
+                 с ценами дивизионов и лодок (@see ForeignRegatta::priceFromLabel). --}}
+            @if ($priceFrom)
+                <div class="text-[#2E325C] font-semibold text-sm mb-2">{{ $priceFrom }}</div>
             @endif
 
             {{-- Что осталось во флоте: лодки под чартер целиком и места в экипажи. --}}

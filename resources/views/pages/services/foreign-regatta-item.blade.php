@@ -5,10 +5,6 @@
     $place = $regatta->placeLabel();
     $duration = $regatta->durationLabel();
     $participation = $regatta->participationOptions();
-    $prices = array_filter([
-        $regatta->seatPriceLabel(),
-        $regatta->cabinPriceLabel(),
-    ]);
     $fleetGroups = $regatta->fleetGroups();
     $freeYachts = $regatta->yachtsForWholeCharter()->count();
     $freeSeats = $regatta->freeCrewSeats();
@@ -62,17 +58,13 @@
                         </div>
                     @endif
 
-                    @if (count($prices) > 0)
+                    {{-- Сумм здесь нет: цены живут у дивизионов и лодок ниже, а
+                         вторая цифра наверху с ними расходилась. Остаётся общая
+                         оговорка про то, что в цену не входит. --}}
+                    @if ($regatta->price_note)
                         <div class="border border-[#C6C6C6] p-6">
                             <h2 class="a-font text-xl mb-2 text-[#2E325C]">Стоимость</h2>
-                            <ul class="text-brand-gray-light space-y-1">
-                                @foreach ($prices as $price)
-                                    <li>{{ $price }}</li>
-                                @endforeach
-                            </ul>
-                            @if ($regatta->price_note)
-                                <p class="text-sm text-brand-gray-light mt-3">{{ $regatta->price_note }}</p>
-                            @endif
+                            <p class="text-brand-gray-light">{{ $regatta->price_note }}</p>
                         </div>
                     @endif
                 </div>
