@@ -17,11 +17,17 @@ final class PublishAiNewsCandidateAction
 {
     public function __construct(private readonly CoverImageDownloader $covers) {}
 
-    public function handle(AiNewsCandidate $candidate, ?string $authorId = null): News
+    /**
+     * @param  string|null  $coverPath  Готовая обложка на диске public: картинка,
+     *                                  которую модератор подставил вместо найденной
+     *                                  на странице источника. Если не передана —
+     *                                  качаем ту, что нашёл ArticleImageExtractor.
+     */
+    public function handle(AiNewsCandidate $candidate, ?string $authorId = null, ?string $coverPath = null): News
     {
         // Обложку качаем до транзакции: HTTP-запрос под lockForUpdate держал бы
         // строку заблокированной всё время скачивания.
-        $coverPath = $candidate->canBePublished()
+        $coverPath ??= $candidate->canBePublished()
             ? $this->covers->store($candidate->image_url, $candidate->source_url)
             : null;
 

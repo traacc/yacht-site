@@ -19,6 +19,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Textarea;
@@ -123,15 +124,7 @@ class AiNewsCandidateResource extends Resource
 
                         Placeholder::make('image_preview')
                             ->label('Как выглядит превью')
-                            ->content(fn (?AiNewsCandidate $record): HtmlString => new HtmlString(
-                                $record?->image_url
-                                    ? sprintf(
-                                        '<img src="%s" alt="" style="max-height:220px;border-radius:8px" '
-                                        .'onerror="this.replaceWith(document.createTextNode(\'Картинка недоступна\'))">',
-                                        e($record->image_url),
-                                    )
-                                    : 'Картинка не найдена',
-                            ))
+                            ->content(fn (?AiNewsCandidate $record): HtmlString => self::coverPreview($record))
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
@@ -272,12 +265,47 @@ class AiNewsCandidateResource extends Resource
                     ->icon(Heroicon::OutlinedCheckCircle)
                     ->color('success')
                     ->visible(fn (AiNewsCandidate $record): bool => $record->canBePublished())
-                    ->requiresConfirmation()
                     ->modalHeading('Опубликовать новость?')
                     ->modalDescription('Будет создана обычная новость сайта с отредактированным содержимым кандидата.')
                     ->modalSubmitActionLabel('Опубликовать')
-                    ->action(function (AiNewsCandidate $record): void {
-                        app(PublishAiNewsCandidateAction::class)->handle($record, auth()->id());
+                    ->schema([
+                        Placeholder::make('found_cover')
+                            ->label('Найдено на странице источника')
+                            ->content(fn (AiNewsCandidate $record): HtmlString => self::coverPreview($record))
+                            ->columnSpanFull(),
+
+                        // Файл кладём сразу в news/covers: там же лежат обложки,
+                        // загруженные руками в NewsResource, и туда же качает
+                        // картинку CoverImageDownloader — путь подходит в
+                        // News::$cover_image_url без переноса.
+                        FileUpload::make('cover')
+                            ->label('Своя обложка')
+                            ->helperText('Заменит картинку выше. Если оставить пустым, обложкой станет найденная картинка — а чтобы опубликовать вообще без обложки, очистите поле «Превью-картинка» в редактировании кандидата.')
+                            ->image()
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif'])
+                            ->disk('public')
+                            ->directory('news/covers')
+                            ->visibility('public')
+                            ->imageEditor()
+                            ->imageEditorViewportWidth(1920)
+                            ->imageEditorViewportHeight(840)
+                            ->imageEditorAspectRatios([
+                                '16:7',
+                                '16:9',
+                                '4:3',
+                                '1:1',
+                                null,
+                            ])
+                            ->columnSpanFull(),
+                    ])
+                    ->action(function (AiNewsCandidate $record, array $data): void {
+                        $cover = $data['cover'] ?? null;
+
+                        app(PublishAiNewsCandidateAction::class)->handle(
+                            $record,
+                            auth()->id(),
+                            is_string($cover) && $cover !== '' ? $cover : null,
+                        );
                         $record->refresh();
 
                         Notification::make()
@@ -410,6 +438,27 @@ class AiNewsCandidateResource extends Resource
                             ->send();
                     }),
             ]);
+    }
+
+    /**
+     * Превью картинки, найденной на странице источника.
+     *
+     * Картинка тянется с чужого домена и к моменту показа может отваливаться
+     * (протухшая ссылка, hotlink-защита), поэтому битый <img> подменяем текстом:
+     * иначе модератор видит иконку сломанного изображения и не понимает,
+     * пусто поле или ссылка не открывается.
+     */
+    private static function coverPreview(?AiNewsCandidate $record): HtmlString
+    {
+        if ($record?->image_url === null) {
+            return new HtmlString('Картинка не найдена');
+        }
+
+        return new HtmlString(sprintf(
+            '<img src="%s" alt="" style="max-height:220px;border-radius:8px" '
+            .'onerror="this.replaceWith(document.createTextNode(\'Картинка недоступна\'))">',
+            e($record->image_url),
+        ));
     }
 
     public static function getPages(): array
