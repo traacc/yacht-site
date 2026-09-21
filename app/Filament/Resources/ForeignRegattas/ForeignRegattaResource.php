@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace App\Filament\Resources\ForeignRegattas;
 
 use App\Enums\CharterPriceUnit;
+use App\Enums\CharterYachtStatus;
 use App\Enums\Currency;
 use App\Enums\DownwindSail;
 use App\Enums\FleetDivisionType;
 use App\Enums\ParticipationOption;
 use App\Filament\Concerns\RestrictsAccessByRole;
+use App\Filament\Resources\CharterYachtModels\CharterYachtModelResource;
 use App\Filament\Resources\ForeignRegattas\Pages\ManageForeignRegattas;
 use App\Filament\Resources\ForeignRegattaYachts\ForeignRegattaYachtResource;
+use App\Models\CharterYachtModel;
 use App\Models\ForeignRegatta;
 use App\Models\Season;
 use BackedEnum;
@@ -394,6 +397,12 @@ class ForeignRegattaResource extends Resource
     private static function divisionFields(): array
     {
         $isFleet = fn (Get $get): bool => $get('type') === FleetDivisionType::Fleet->value;
+        $isList = fn (Get $get): bool => ! $isFleet($get);
+
+        // Модель из справочника заменяет ручной ввод характеристик: своя
+        // строка «модель» остаётся только у дивизионов, заведённых до
+        // справочника (@see App\Models\ForeignRegattaDivision::effectiveModel()).
+        $hasCatalogModel = fn (Get $get): bool => filled($get('yacht_model_id'));
 
         // Знак валюты внутри репитера: своя валюта дивизиона, иначе валюта регаты
         // уровнем выше (`../../`).
@@ -414,20 +423,38 @@ class ForeignRegattaResource extends Resource
                 ->helperText('Необязательно — станет заголовком группы яхт на странице регаты.')
                 ->maxLength(255),
 
+            // Монотипный дивизион собран из одной модели: описание, галерея и
+            // характеристики берутся из справочника, здесь остаются цены и
+            // количество лодок.
+            Select::make('yacht_model_id')
+                ->label('Модель из справочника')
+                ->helperText('Нет нужной — заведите кнопкой «+», она попадёт в общий справочник и будет доступна другим регатам.')
+                ->options(fn (): array => self::yachtModelOptions())
+                ->searchable()
+                ->preload()
+                ->live()
+                ->createOptionForm(CharterYachtModelResource::fields(withGallery: false))
+                ->createOptionUsing(fn (array $data): string => (string) CharterYachtModel::create($data)->getKey())
+                ->required(fn (Get $get): bool => $isFleet($get) && ! filled($get('model')))
+                ->visible($isFleet)
+                ->columnSpan(2),
+
             TextInput::make('yachts_count')
                 ->label('Количество яхт в дивизионе')
-                ->helperText('Столько карточек яхт появится в разделе «Услуги: Флот регат» — там укажете шкиперов и свободные места.')
+                ->helperText('Столько карточек яхт появится в разделе «Услуги: Флот регат» — там укажете названия, годы, шкиперов и свободные места.')
                 ->numeric()
                 ->minValue(1)
                 ->maxValue(200)
                 ->required($isFleet)
                 ->visible($isFleet),
 
+            // Поля ниже — для дивизионов, заведённых до справочника: пока у них
+            // модель записана строкой, они правятся по-старому.
             TextInput::make('model')
-                ->label('Модель лодки')
+                ->label('Модель лодки (без справочника)')
                 ->placeholder('Bavaria 46')
-                ->required($isFleet)
-                ->visible($isFleet)
+                ->required(fn (Get $get): bool => $isFleet($get) && ! $hasCatalogModel($get))
+                ->visible(fn (Get $get): bool => $isFleet($get) && ! $hasCatalogModel($get))
                 ->maxLength(255),
 
             TextInput::make('cabins')
@@ -435,8 +462,8 @@ class ForeignRegattaResource extends Resource
                 ->numeric()
                 ->minValue(1)
                 ->maxValue(20)
-                ->required($isFleet)
-                ->visible($isFleet),
+                ->required(fn (Get $get): bool => $isFleet($get) && ! $hasCatalogModel($get))
+                ->visible(fn (Get $get): bool => $isFleet($get) && ! $hasCatalogModel($get)),
 
             TextInput::make('year')
                 ->label('Год выпуска')
@@ -448,7 +475,7 @@ class ForeignRegattaResource extends Resource
             Select::make('downwind_sail')
                 ->label('Спинакер / геннакер')
                 ->options(DownwindSail::options())
-                ->visible($isFleet),
+                ->visible(fn (Get $get): bool => $isFleet($get) && ! $hasCatalogModel($get)),
 
             TextInput::make('price')
                 ->label('Стоимость яхты целиком')
@@ -515,6 +542,7 @@ class ForeignRegattaResource extends Resource
                 ->label(fn (Get $get): string => $isFleet($get) ? 'Описание лодки' : 'Описание дивизиона')
                 ->rows(3)
                 ->maxLength(2000)
+                ->visible(fn (Get $get): bool => $isList($get) || ! $hasCatalogModel($get))
                 ->columnSpanFull(),
 
             SpatieMediaLibraryFileUpload::make('gallery')
@@ -532,8 +560,150 @@ class ForeignRegattaResource extends Resource
                 ->visibility('public')
                 ->maxSize(10240)
                 ->panelLayout('grid')
+                ->visible(fn (Get $get): bool => $isList($get) || ! $hasCatalogModel($get))
+                ->columnSpanFull(),
+
+            // Кнопка «Добавить яхту» — прямо в дивизионе, чтобы не уходить в
+            // отдельный раздел. Только для списка разных лодок: у монотипа
+            // строки заводит наблюдатель по `yachts_count`, и репитер стёр бы
+            // их как «отсутствующие в состоянии формы»
+            // (@see App\Observers\ForeignRegattaDivisionObserver).
+            Repeater::make('yachts')
+                ->label('Яхты дивизиона')
+                ->relationship()
+                ->addActionLabel('Добавить яхту в дивизион')
+                ->reorderable()
+                ->orderColumn('sort_order')
+                ->collapsible()
+                ->collapsed()
+                ->defaultItems(0)
+                ->itemLabel(fn (array $state): ?string => self::yachtItemLabel($state))
+                ->schema(self::divisionYachtFields())
+                ->columns(3)
+                ->visible($isList)
                 ->columnSpanFull(),
         ];
+    }
+
+    /**
+     * Поля лодки внутри дивизиона.
+     *
+     * Здесь только то, без чего лодку не опубликуешь: модель, название, год,
+     * цены трёх вариантов, места и занятость. Галерея, описание, сборы, депозит
+     * и заметки правятся в разделе «Услуги: Флот регат» — иначе форма регаты
+     * превращается в простыню.
+     *
+     * @return list<Component>
+     */
+    private static function divisionYachtFields(): array
+    {
+        return [
+            Select::make('yacht_model_id')
+                ->label('Модель из справочника')
+                ->helperText('Нет нужной — заведите кнопкой «+».')
+                ->options(fn (): array => self::yachtModelOptions())
+                ->searchable()
+                ->preload()
+                ->live()
+                ->createOptionForm(CharterYachtModelResource::fields(withGallery: false))
+                ->createOptionUsing(fn (array $data): string => (string) CharterYachtModel::create($data)->getKey())
+                ->required(fn (Get $get): bool => ! filled($get('model')))
+                ->columnSpan(2),
+
+            TextInput::make('name')
+                ->label('Название лодки')
+                ->placeholder('Nika')
+                ->maxLength(255),
+
+            TextInput::make('model')
+                ->label('Модель (без справочника)')
+                ->visible(fn (Get $get): bool => ! filled($get('yacht_model_id')))
+                ->maxLength(255),
+
+            TextInput::make('year')
+                ->label('Год выпуска')
+                ->numeric()
+                ->minValue(1900)
+                ->maxValue((int) now()->addYear()->format('Y')),
+
+            Select::make('status')
+                ->label('Занятость')
+                ->helperText('Занятая лодка исчезает из всех вариантов разом.')
+                ->options(CharterYachtStatus::options())
+                ->default(CharterYachtStatus::Free->value)
+                ->required(),
+
+            TextInput::make('price')
+                ->label('Стоимость яхты целиком')
+                ->numeric()
+                ->minValue(0),
+
+            Select::make('price_unit')
+                ->label('За что цена')
+                ->options(CharterPriceUnit::options())
+                ->default(CharterPriceUnit::Regatta->value),
+
+            Select::make('currency')
+                ->label('Валюта')
+                ->helperText('Пусто — валюта регаты.')
+                ->options(Currency::options()),
+
+            TextInput::make('free_seats')
+                ->label('Свободных мест')
+                ->numeric()
+                ->minValue(0)
+                ->maxValue(50),
+
+            TextInput::make('seat_price')
+                ->label('Стоимость места')
+                ->numeric()
+                ->minValue(0),
+
+            TextInput::make('cabin_price')
+                ->label('Стоимость каюты')
+                ->numeric()
+                ->minValue(0),
+
+            TextInput::make('skipper_name')
+                ->label('Шкипер')
+                ->placeholder('Необязательно')
+                ->maxLength(255)
+                ->columnSpan(3),
+        ];
+    }
+
+    /** @param  array<string, mixed>  $state */
+    private static function yachtItemLabel(array $state): ?string
+    {
+        $model = trim((string) ($state['model'] ?? ''));
+
+        if ($model === '' && filled($state['yacht_model_id'] ?? null)) {
+            $model = (string) (CharterYachtModel::query()
+                ->whereKey($state['yacht_model_id'])
+                ->value('name') ?? '');
+        }
+
+        $name = trim((string) ($state['name'] ?? ''));
+
+        $label = trim($model.($name === '' ? '' : ' «'.$name.'»'));
+
+        return $label === '' ? null : $label;
+    }
+
+    /**
+     * Модели справочника для выпадающего списка.
+     *
+     * @return array<string, string>
+     */
+    private static function yachtModelOptions(): array
+    {
+        return CharterYachtModel::query()
+            ->ordered()
+            ->get()
+            ->mapWithKeys(fn (CharterYachtModel $model): array => [
+                (string) $model->getKey() => $model->label(),
+            ])
+            ->all();
     }
 
     /** @param  array<string, mixed>  $state */

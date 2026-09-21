@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Actions\Service\AssignCharterYachtModelCountry;
 use App\Actions\Service\SyncFleetDivisionYachts;
 use App\Models\ForeignRegattaDivision;
 use App\Models\ForeignRegattaYacht;
@@ -20,10 +21,18 @@ use App\Models\ForeignRegattaYacht;
  */
 class ForeignRegattaDivisionObserver
 {
-    public function __construct(private readonly SyncFleetDivisionYachts $sync) {}
+    public function __construct(
+        private readonly SyncFleetDivisionYachts $sync,
+        private readonly AssignCharterYachtModelCountry $assignCountry,
+    ) {}
 
     public function saved(ForeignRegattaDivision $division): void
     {
+        // Страна базирования модели — от регаты, где её завели впервые.
+        if ($division->yacht_model_id !== null) {
+            $this->assignCountry->handle($division->yachtModel, $division->regatta?->country);
+        }
+
         // restore() сохраняет модель до события `restored`, и в этот момент все
         // лодки дивизиона ещё в корзине: синхронизация насчитала бы ноль живых
         // и завела бы новые поверх тех, что сейчас вернутся.

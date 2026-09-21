@@ -9,7 +9,9 @@ use App\Enums\CharterYachtStatus;
 use App\Enums\Currency;
 use App\Enums\DownwindSail;
 use App\Filament\Concerns\RestrictsAccessByRole;
+use App\Filament\Resources\CharterYachtModels\CharterYachtModelResource;
 use App\Filament\Resources\ForeignRegattaYachts\Pages\ManageForeignRegattaYachts;
+use App\Models\CharterYachtModel;
 use App\Models\ForeignRegatta;
 use App\Models\ForeignRegattaDivision;
 use App\Models\ForeignRegattaYacht;
@@ -107,15 +109,32 @@ class ForeignRegattaYachtResource extends Resource
                             ->live()
                             ->nullable(),
 
+                        Select::make('yacht_model_id')
+                            ->label('Модель из справочника')
+                            ->helperText('Описание, фотографии и каюты возьмутся отсюда. Нет нужной модели — заведите кнопкой «+».')
+                            ->options(fn (): array => CharterYachtModel::query()
+                                ->ordered()
+                                ->get()
+                                ->mapWithKeys(fn (CharterYachtModel $model): array => [
+                                    (string) $model->getKey() => $model->label(),
+                                ])
+                                ->all())
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->createOptionForm(CharterYachtModelResource::fields(withGallery: false))
+                            ->createOptionUsing(fn (array $data): string => (string) CharterYachtModel::create($data)->getKey()),
+
                         TextInput::make('name')
                             ->label('Название лодки')
                             ->placeholder('Nika')
                             ->maxLength(255),
 
                         TextInput::make('model')
-                            ->label('Модель')
+                            ->label('Модель (без справочника)')
                             ->placeholder('Bavaria 46')
-                            ->required(fn (Get $get): bool => ! self::inheritsSpec($get))
+                            ->required(fn (Get $get): bool => ! self::inheritsSpec($get) && ! filled($get('yacht_model_id')))
+                            ->visible(fn (Get $get): bool => ! filled($get('yacht_model_id')))
                             ->maxLength(255),
 
                         TextInput::make('cabins')
@@ -123,7 +142,8 @@ class ForeignRegattaYachtResource extends Resource
                             ->numeric()
                             ->minValue(1)
                             ->maxValue(20)
-                            ->required(fn (Get $get): bool => ! self::inheritsSpec($get)),
+                            ->required(fn (Get $get): bool => ! self::inheritsSpec($get) && ! filled($get('yacht_model_id')))
+                            ->visible(fn (Get $get): bool => ! filled($get('yacht_model_id'))),
 
                         TextInput::make('year')
                             ->label('Год выпуска')
@@ -230,7 +250,7 @@ class ForeignRegattaYachtResource extends Resource
                     ->columns(3),
 
                 Section::make('Описание и фотографии')
-                    ->description('Пусто — на карточке покажется описание и галерея дивизиона.')
+                    ->description('Пусто — на карточке покажется описание и галерея дивизиона, а если и там пусто — модели из справочника.')
                     ->schema([
                         Textarea::make('description')
                             ->label('Описание лодки')

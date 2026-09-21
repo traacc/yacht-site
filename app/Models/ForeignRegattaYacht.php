@@ -44,6 +44,7 @@ class ForeignRegattaYacht extends Model implements HasMedia
     protected $fillable = [
         'foreign_regatta_id',
         'division_id',
+        'yacht_model_id',
         'model',
         'name',
         'year',
@@ -117,6 +118,12 @@ class ForeignRegattaYacht extends Model implements HasMedia
         return $this->belongsTo(ForeignRegattaDivision::class, 'division_id');
     }
 
+    /** Модель из общего справочника: описание, фотографии, каюты, парус. */
+    public function yachtModel(): BelongsTo
+    {
+        return $this->belongsTo(CharterYachtModel::class, 'yacht_model_id');
+    }
+
     // ──────────────────────────────────────────────
     // Скоупы
     // ──────────────────────────────────────────────
@@ -136,10 +143,13 @@ class ForeignRegattaYacht extends Model implements HasMedia
     // ──────────────────────────────────────────────
 
     /**
-     * Значение характеристики: своё, а если не задано — из дивизиона-флота.
+     * Значение характеристики: своё, иначе из дивизиона-флота, иначе из
+     * справочника моделей.
      *
-     * У дивизиона-списка своей спецификации нет, поэтому наследовать нечего:
-     * там пустое поле так и остаётся пустым.
+     * Три уровня, потому что заполнять одно и то же трижды никто не станет:
+     * общее для всех лодок модели лежит в справочнике, общее для дивизиона —
+     * на дивизионе (там же цены), своё — здесь. У дивизиона-списка
+     * промежуточного уровня нет: он ничего не наследует лодкам.
      */
     private function spec(string $attribute): mixed
     {
@@ -151,7 +161,51 @@ class ForeignRegattaYacht extends Model implements HasMedia
 
         $division = $this->division;
 
-        return $division?->sharesSpec() ? $division->getAttribute($attribute) : null;
+        if ($division?->sharesSpec()) {
+            $inherited = $division->getAttribute($attribute);
+
+            if ($inherited !== null && $inherited !== '') {
+                return $inherited;
+            }
+        }
+
+        return $this->catalogSpec($attribute);
+    }
+
+    /**
+     * То же значение из справочника: своя модель, а у лодки монотипного
+     * дивизиона — модель дивизиона.
+     *
+     * Цен и года в справочнике нет (@see CharterYachtModel), поэтому отвечает
+     * он только за то, что у всех лодок модели одинаково.
+     */
+    private function catalogSpec(string $attribute): mixed
+    {
+        $catalog = $this->catalogModel();
+
+        if ($catalog === null) {
+            return null;
+        }
+
+        return match ($attribute) {
+            'model' => $catalog->name,
+            'description' => $catalog->description,
+            'cabins' => $catalog->cabins,
+            'downwind_sail' => $catalog->downwind_sail,
+            default => null,
+        };
+    }
+
+    /** Запись справочника, из которой лодка берёт характеристики. */
+    public function catalogModel(): ?CharterYachtModel
+    {
+        if ($this->yachtModel !== null) {
+            return $this->yachtModel;
+        }
+
+        $division = $this->division;
+
+        return $division?->sharesSpec() ? $division->yachtModel : null;
     }
 
     public function effectiveModel(): ?string
@@ -232,7 +286,8 @@ class ForeignRegattaYacht extends Model implements HasMedia
     }
 
     /**
-     * Фотографии лодки, а если своих нет — фотографии дивизиона-флота.
+     * Фотографии лодки, а если своих нет — дивизиона-флота, а затем модели
+     * из справочника.
      *
      * @return list<array{src: string, webp: string|null, avif: string|null, caption: string}>
      */
@@ -246,7 +301,15 @@ class ForeignRegattaYacht extends Model implements HasMedia
 
         $division = $this->division;
 
-        return $division?->sharesSpec() ? $division->galleryPhotos() : [];
+        if ($division?->sharesSpec()) {
+            $inherited = $division->galleryPhotos();
+
+            if ($inherited !== []) {
+                return $inherited;
+            }
+        }
+
+        return $this->catalogModel()?->galleryPhotos() ?? [];
     }
 
     // ──────────────────────────────────────────────

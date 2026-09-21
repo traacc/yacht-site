@@ -40,6 +40,7 @@ class ForeignRegattaDivision extends Model implements HasMedia
         'foreign_regatta_id',
         'type',
         'name',
+        'yacht_model_id',
         'model',
         'description',
         'year',
@@ -108,6 +109,18 @@ class ForeignRegattaDivision extends Model implements HasMedia
         return $this->hasMany(ForeignRegattaYacht::class, 'division_id')->ordered();
     }
 
+    /**
+     * Модель из справочника — для монотипного дивизиона.
+     *
+     * По ТЗ в таком дивизионе «вводятся только модели яхт с описанием и
+     * галереей»: характеристики берутся отсюда, а на самом дивизионе остаются
+     * цены и количество лодок.
+     */
+    public function yachtModel(): BelongsTo
+    {
+        return $this->belongsTo(CharterYachtModel::class, 'yacht_model_id');
+    }
+
     // ──────────────────────────────────────────────
     // Скоупы
     // ──────────────────────────────────────────────
@@ -131,6 +144,51 @@ class ForeignRegattaDivision extends Model implements HasMedia
     public function sharesSpec(): bool
     {
         return $this->type->sharesSpec();
+    }
+
+    /**
+     * Характеристики дивизиона: свои, а чего нет — из модели справочника.
+     *
+     * Своё поле остаётся приоритетом ради дивизионов, заведённых до появления
+     * справочника: у них модель записана строкой.
+     */
+    public function effectiveModel(): ?string
+    {
+        return $this->firstFilled($this->model, $this->yachtModel?->name);
+    }
+
+    public function effectiveDescription(): ?string
+    {
+        return $this->firstFilled($this->description, $this->yachtModel?->description);
+    }
+
+    public function effectiveCabins(): ?int
+    {
+        return $this->cabins ?? $this->yachtModel?->cabins;
+    }
+
+    public function effectiveDownwindSail(): ?DownwindSail
+    {
+        return $this->downwind_sail ?? $this->yachtModel?->downwind_sail;
+    }
+
+    /**
+     * Фотографии дивизиона, а если своих нет — фотографии модели.
+     *
+     * @return list<array{src: string, webp: string|null, avif: string|null, caption: string}>
+     */
+    public function effectivePhotos(): array
+    {
+        $own = $this->galleryPhotos();
+
+        return $own !== [] ? $own : ($this->yachtModel?->galleryPhotos() ?? []);
+    }
+
+    private function firstFilled(?string $own, ?string $fallback): ?string
+    {
+        $own = trim((string) $own);
+
+        return $own !== '' ? $own : $fallback;
     }
 
     /**
@@ -182,7 +240,7 @@ class ForeignRegattaDivision extends Model implements HasMedia
             return $name;
         }
 
-        $model = trim((string) $this->model);
+        $model = trim((string) $this->effectiveModel());
 
         return $model !== '' ? $model : 'Дивизион';
     }
@@ -195,7 +253,7 @@ class ForeignRegattaDivision extends Model implements HasMedia
         }
 
         $count = (int) ($this->yachts_count ?? 0);
-        $model = trim((string) $this->model);
+        $model = trim((string) $this->effectiveModel());
 
         if ($count < 1) {
             return $model === '' ? null : $model;

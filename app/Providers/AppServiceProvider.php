@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Contracts\AiNewsProvider;
 use App\Models\ForeignRegattaDivision;
+use App\Models\ForeignRegattaYacht;
 use App\Models\News;
 use App\Models\PaymentRegistry;
 use App\Models\Regatta;
@@ -14,6 +15,7 @@ use App\Models\TeamMember;
 use App\Models\UserQuestion;
 use App\Models\YachtDocumentType;
 use App\Observers\ForeignRegattaDivisionObserver;
+use App\Observers\ForeignRegattaYachtObserver;
 use App\Observers\NewsObserver;
 use App\Observers\PaymentRegistryLogObserver;
 use App\Observers\PaymentRegistryObserver;
@@ -116,6 +118,8 @@ class AppServiceProvider extends ServiceProvider
         UserQuestion::observe(UserQuestionObserver::class);
         // Заводит лодки дивизиона-флота под заявленное количество.
         ForeignRegattaDivision::observe(ForeignRegattaDivisionObserver::class);
+        // Проставляет модели справочника страну по первой регате.
+        ForeignRegattaYacht::observe(ForeignRegattaYachtObserver::class);
 
         Notification::configureUsing(function (Notification $notification): void {
             $notification->duration(6000); // 2000 мс = 2 секунды
