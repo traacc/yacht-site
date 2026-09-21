@@ -298,11 +298,13 @@ class ForeignRegattaYachtResource extends Resource
 
                 // Что увидит посетитель на карточке этой лодки: правило кнопки
                 // выводится из шкипера, мест и занятости — не из отдельного поля.
+                /*
                 TextColumn::make('cta')
                     ->label('Кнопка на сайте')
                     ->state(fn (ForeignRegattaYacht $record): string => $record->ctaLabel() ?? 'нет')
                     ->badge()
                     ->color(fn (ForeignRegattaYacht $record): string => $record->ctaLabel() === null ? 'gray' : 'success'),
+                */
             ])
             ->defaultGroup('regatta.title')
             ->groups([
