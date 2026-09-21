@@ -576,6 +576,14 @@ enum ServiceType: string
                     'options' => [],
                     'visible_when' => ['participation', ParticipationOption::Seat->value],
                 ],
+                // Каюту продают те же лодки со шкипером, но только те, где
+                // задана её цена, — поэтому список свой, а не общий с местами.
+                'cabin_yacht' => [
+                    'label' => 'Яхта (каюта)',
+                    'type' => 'select',
+                    'options' => [],
+                    'visible_when' => ['participation', ParticipationOption::Cabin->value],
+                ],
             ],
 
             self::GiftCertificate => [

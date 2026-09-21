@@ -26,6 +26,33 @@ enum ParticipationOption: string
         };
     }
 
+    /** Подпись кнопки у лодки: рядом с ней встаёт цена варианта. */
+    public function shortLabel(): string
+    {
+        return match ($this) {
+            self::Seat => 'Место',
+            self::Cabin => 'Каюта',
+            self::Yacht => 'Яхта целиком',
+        };
+    }
+
+    /**
+     * Поле заявки, в которое кнопка подставляет выбранную лодку.
+     *
+     * Полей три, а не одно: списки лодок под варианты разные — целиком сдаются
+     * свободные лодки без шкипера, места и каюты продают лодки со шкипером.
+     *
+     * @see ServiceType::declaredPayloadFields()
+     */
+    public function payloadField(): string
+    {
+        return match ($this) {
+            self::Seat => 'crew_yacht',
+            self::Cabin => 'cabin_yacht',
+            self::Yacht => 'charter_yacht',
+        };
+    }
+
     /** @return array<string, string> value => label, для Select и чекбоксов. */
     public static function options(): array
     {

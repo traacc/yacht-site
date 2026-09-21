@@ -223,9 +223,9 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     /**
      * Варианты участия — объявленные регатой, яхты — те, что ещё предлагаются.
      *
-     * Списка яхт два, потому что вопросы разные: под «яхту целиком» подходят
+     * Списков яхт три, потому что вопросы разные: под «яхту целиком» подходят
      * свободные лодки без шкипера, под «место» — лодки со шкипером, у которых
-     * остались места.
+     * остались места, под «каюту» — те же лодки с заданной ценой каюты.
      *
      * @return array<string, array<string, string>>
      */
@@ -252,6 +252,14 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
                         .', '.$yacht->freeSeatsLabel(),
                 ])
                 ->all(),
+
+            'cabin_yacht' => $this->yachtsSellingCabins()
+                ->mapWithKeys(fn (ForeignRegattaYacht $yacht): array => [
+                    (string) $yacht->getKey() => $yacht->title()
+                        .' — шкипер '.$yacht->skipper_name
+                        .($yacht->cabinPriceLabel() === null ? '' : ', каюта '.$yacht->cabinPriceLabel()),
+                ])
+                ->all(),
         ];
     }
 
@@ -265,7 +273,7 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
             return ParticipationOption::tryFrom($value)?->label();
         }
 
-        if ($field !== 'charter_yacht' && $field !== 'crew_yacht') {
+        if (! in_array($field, ['charter_yacht', 'crew_yacht', 'cabin_yacht'], strict: true)) {
             return null;
         }
 
@@ -357,8 +365,7 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     private function participationOfferedByFleet(): Collection
     {
         return $this->charterYachts
-            ->map(fn (ForeignRegattaYacht $yacht): ?ParticipationOption => $yacht->offeredParticipation())
-            ->filter()
+            ->flatMap(fn (ForeignRegattaYacht $yacht): array => $yacht->offeredParticipations())
             ->unique()
             ->values();
     }
@@ -424,6 +431,18 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     {
         return $this->charterYachts->filter(
             fn (ForeignRegattaYacht $yacht): bool => $yacht->sellsSeats(),
+        )->values();
+    }
+
+    /**
+     * Лодки, которые продают каюты: места остались и цена каюты задана.
+     *
+     * @return Collection<int, ForeignRegattaYacht>
+     */
+    public function yachtsSellingCabins(): Collection
+    {
+        return $this->charterYachts->filter(
+            fn (ForeignRegattaYacht $yacht): bool => $yacht->sellsCabins(),
         )->values();
     }
 

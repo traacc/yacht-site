@@ -216,7 +216,7 @@ class ForeignRegattaResource extends Resource
                     ->columns(2),
 
                 Section::make('Флот регаты')
-                    ->description('Флот объявляется дивизионами. «Флот одинаковых яхт» — характеристики задаются здесь один раз, лодки создаются автоматически по количеству. «Список конкретных яхт» — дивизион только группирует, характеристики вводятся у каждой лодки. Шкиперов, свободные места и занятость по каждой лодке правьте в разделе «Услуги: Флот регат».')
+                    ->description('Флот объявляется дивизионами. «Флот одинаковых яхт» — характеристики и цены (место, каюта, яхта целиком) задаются здесь один раз, лодки создаются автоматически по количеству. «Список конкретных яхт» — здесь только единое описание и галерея дивизиона, а характеристики и цены вводятся у каждой лодки. Шкиперов, свободные места и занятость по каждой лодке правьте в разделе «Услуги: Флот регат».')
                     ->schema([
                         Repeater::make('divisions')
                             ->label('Дивизионы')
@@ -451,7 +451,7 @@ class ForeignRegattaResource extends Resource
                 ->visible($isFleet),
 
             TextInput::make('price')
-                ->label('Стоимость')
+                ->label('Стоимость яхты целиком')
                 ->numeric()
                 ->minValue(0)
                 ->suffix($divisionCurrency)
@@ -462,6 +462,22 @@ class ForeignRegattaResource extends Resource
                 ->label('За что цена')
                 ->options(CharterPriceUnit::options())
                 ->default(CharterPriceUnit::Regatta->value)
+                ->visible($isFleet),
+
+            TextInput::make('seat_price')
+                ->label('Стоимость места в каюте')
+                ->helperText('Кнопка «Место» появится у лодок дивизиона со шкипером и свободными местами.')
+                ->numeric()
+                ->minValue(0)
+                ->suffix($divisionCurrency)
+                ->visible($isFleet),
+
+            TextInput::make('cabin_price')
+                ->label('Стоимость двухместной каюты')
+                ->helperText('Пусто — каюты по этому дивизиону не продаются.')
+                ->numeric()
+                ->minValue(0)
+                ->suffix($divisionCurrency)
                 ->visible($isFleet),
 
             Select::make('currency')
@@ -492,16 +508,20 @@ class ForeignRegattaResource extends Resource
                 ->visible($isFleet)
                 ->columnSpan(2),
 
+            // Описание и галерея есть у обоих типов: у флота одинаковых лодок
+            // они наследуются карточками лодок, у списка конкретных — это
+            // единое описание дивизиона над таблицей яхт.
             Textarea::make('description')
-                ->label('Описание лодки')
+                ->label(fn (Get $get): string => $isFleet($get) ? 'Описание лодки' : 'Описание дивизиона')
                 ->rows(3)
                 ->maxLength(2000)
-                ->visible($isFleet)
                 ->columnSpanFull(),
 
             SpatieMediaLibraryFileUpload::make('gallery')
-                ->label('Фотографии лодки')
-                ->helperText('Общая галерея для всех лодок дивизиона.')
+                ->label(fn (Get $get): string => $isFleet($get) ? 'Фотографии лодки' : 'Фотографии дивизиона')
+                ->helperText(fn (Get $get): string => $isFleet($get)
+                    ? 'Общая галерея для всех лодок дивизиона.'
+                    : 'Общая галерея дивизиона: у каждой лодки своя галерея заводится в разделе «Услуги: Флот регат».')
                 ->collection('gallery')
                 ->multiple()
                 ->reorderable()
@@ -512,7 +532,6 @@ class ForeignRegattaResource extends Resource
                 ->visibility('public')
                 ->maxSize(10240)
                 ->panelLayout('grid')
-                ->visible($isFleet)
                 ->columnSpanFull(),
         ];
     }

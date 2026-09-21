@@ -109,21 +109,65 @@
                         </p>
 
                         @foreach ($fleetGroups as $group)
-                            <div class="mb-8">
-                                @if ($group['division'])
-                                    <h3 class="a-font text-xl md:text-2xl text-[#2E325C] mb-1">{{ $group['division']->title() }}</h3>
-                                    @if ($group['division']->summaryLabel())
-                                        <div class="text-brand-gray-light text-sm mb-4">{{ $group['division']->summaryLabel() }}</div>
-                                    @else
-                                        <div class="mb-4"></div>
+                            @php
+                                $division = $group['division'];
+                                $divisionDescription = trim((string) $division?->description);
+                                $divisionPrices = $division?->priceLabels() ?? [];
+                                // Небольшой флот нагляднее карточками, длинный
+                                // список разных лодок читается только таблицей.
+                                $asTable = $group['yachts']->count() > 3;
+                                // Галерея дивизиона: у флота одинаковых лодок её
+                                // и так показывает каждая карточка — дублировать
+                                // незачем, а в таблице фотографий нет.
+                                $divisionPhotos = $division !== null && ($asTable || ! $division->sharesSpec())
+                                    ? $division->galleryPhotos()
+                                    : [];
+                            @endphp
+
+                            <div class="mb-10">
+                                @if ($division)
+                                    <h3 class="a-font text-xl md:text-2xl text-[#2E325C] mb-1">{{ $division->title() }}</h3>
+
+                                    @if ($division->summaryLabel())
+                                        <div class="text-brand-gray-light text-sm mb-3">{{ $division->summaryLabel() }}</div>
                                     @endif
+
+                                    @if ($divisionDescription !== '')
+                                        <p class="text-brand-gray whitespace-pre-line mb-3">{{ $divisionDescription }}</p>
+                                    @endif
+
+                                    @if (count($divisionPrices) > 0)
+                                        <ul class="flex flex-wrap gap-x-6 gap-y-1 text-sm mb-3">
+                                            @foreach ($divisionPrices as $term => $value)
+                                                <li class="text-brand-gray-light">
+                                                    {{ $term }} — <span class="text-[#2E325C] font-semibold">{{ $value }}</span>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+
+                                    @if ($division->price_note)
+                                        <p class="text-brand-gray-light text-xs mb-3">{{ $division->price_note }}</p>
+                                    @endif
+
+                                    @if (count($divisionPhotos) > 0)
+                                        <div class="mb-5">
+                                            <x-photo-gallery :photos="$divisionPhotos" />
+                                        </div>
+                                    @endif
+
+                                    <div class="mb-4"></div>
                                 @endif
 
-                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    @foreach ($group['yachts'] as $yacht)
-                                        <x-foreign-yacht-card :yacht="$yacht" :request-event="$fleetRequestEvent" />
-                                    @endforeach
-                                </div>
+                                @if ($asTable)
+                                    <x-foreign-fleet-table :yachts="$group['yachts']" :request-event="$fleetRequestEvent" />
+                                @else
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        @foreach ($group['yachts'] as $yacht)
+                                            <x-foreign-yacht-card :yacht="$yacht" :request-event="$fleetRequestEvent" />
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
                         @endforeach
 

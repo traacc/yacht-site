@@ -164,7 +164,7 @@ class ForeignRegattaYachtResource extends Resource
 
                         Select::make('status')
                             ->label('Занятость')
-                            ->helperText('Лодка без шкипера сдаётся целиком — кнопка «Хочу эту яхту» горит, пока она свободна.')
+                            ->helperText('Лодка без шкипера сдаётся целиком — кнопка «Яхта целиком» горит, пока она свободна.')
                             ->options(CharterYachtStatus::options())
                             ->default(CharterYachtStatus::Free->value)
                             ->required(),
@@ -188,7 +188,7 @@ class ForeignRegattaYachtResource extends Resource
                     ->columns(3),
 
                 Section::make('Шкипер и места в экипаже')
-                    ->description('Шкипер указан — лодка идёт со своим капитаном и продаёт места: на витрине появляется кнопка «Хочу в экипаж». Шкипера нет — лодка сдаётся целиком.')
+                    ->description('Шкипер указан — лодка идёт со своим капитаном и продаёт места и каюты: на витрине появляются кнопки «Место» и «Каюта» (последняя — если задана цена каюты). Шкипера нет — лодка сдаётся целиком.')
                     ->schema([
                         TextInput::make('skipper_name')
                             ->label('Шкипер')
@@ -204,6 +204,14 @@ class ForeignRegattaYachtResource extends Resource
 
                         TextInput::make('seat_price')
                             ->label('Стоимость места')
+                            ->helperText('Пусто — берётся у дивизиона-флота.')
+                            ->numeric()
+                            ->minValue(0)
+                            ->suffix(fn (Get $get): string => self::currencySymbol($get)),
+
+                        TextInput::make('cabin_price')
+                            ->label('Стоимость двухместной каюты')
+                            ->helperText('Заполнено — у лодки появится отдельная кнопка «Каюта».')
                             ->numeric()
                             ->minValue(0)
                             ->suffix(fn (Get $get): string => self::currencySymbol($get)),
@@ -296,14 +304,17 @@ class ForeignRegattaYachtResource extends Resource
                     ->formatStateUsing(fn (CharterYachtStatus $state): string => $state->label())
                     ->color(fn (CharterYachtStatus $state): string => $state->color()),
 
-                // Что увидит посетитель на карточке этой лодки: правило кнопки
-                // выводится из шкипера, мест и занятости — не из отдельного поля.
+                // Что увидит посетитель на карточке этой лодки: набор кнопок
+                // выводится из шкипера, мест, цен и занятости — не из отдельного поля.
                 /*
                 TextColumn::make('cta')
-                    ->label('Кнопка на сайте')
-                    ->state(fn (ForeignRegattaYacht $record): string => $record->ctaLabel() ?? 'нет')
+                    ->label('Кнопки на сайте')
+                    ->state(fn (ForeignRegattaYacht $record): array => array_map(
+                        fn (ParticipationOption $option): string => $option->shortLabel(),
+                        $record->offeredParticipations(),
+                    ))
                     ->badge()
-                    ->color(fn (ForeignRegattaYacht $record): string => $record->ctaLabel() === null ? 'gray' : 'success'),
+                    ->placeholder('нет'),
                 */
             ])
             ->defaultGroup('regatta.title')

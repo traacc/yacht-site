@@ -9,7 +9,6 @@ use App\Enums\CharterYachtStatus;
 use App\Enums\Currency;
 use App\Enums\DownwindSail;
 use App\Enums\ParticipationOption;
-use App\Enums\ServiceType;
 use App\Models\Concerns\HasCaptionedGallery;
 use App\Models\Concerns\RegistersResponsiveFormats;
 use App\Support\Plural;
@@ -59,6 +58,7 @@ class ForeignRegattaYacht extends Model implements HasMedia
         'skipper_note',
         'free_seats',
         'seat_price',
+        'cabin_price',
         'seat_note',
         'status',
         'sort_order',
@@ -80,6 +80,7 @@ class ForeignRegattaYacht extends Model implements HasMedia
             'deposit' => 'integer',
             'free_seats' => 'integer',
             'seat_price' => 'integer',
+            'cabin_price' => 'integer',
             'currency' => Currency::class,
             'status' => CharterYachtStatus::class,
             'sort_order' => 'integer',
@@ -186,6 +187,18 @@ class ForeignRegattaYacht extends Model implements HasMedia
         return $this->spec('price_unit');
     }
 
+    /** Цена места: своя, а у лодки из флота — общая цена дивизиона. */
+    public function effectiveSeatPrice(): ?int
+    {
+        return $this->spec('seat_price');
+    }
+
+    /** Цена каюты: своя, а у лодки из флота — общая цена дивизиона. */
+    public function effectiveCabinPrice(): ?int
+    {
+        return $this->spec('cabin_price');
+    }
+
     public function effectiveCharterFee(): ?int
     {
         return $this->spec('charter_fee');
@@ -266,41 +279,48 @@ class ForeignRegattaYacht extends Model implements HasMedia
         return ! $this->hasSkipper() && $this->isAvailable();
     }
 
-    /**
-     * Вариант участия, который заявка получит по кнопке на карточке лодки.
-     *
-     * null — кнопки нет: у лодки со шкипером кончились места, а лодка без
-     * шкипера уже забронирована.
-     */
-    public function offeredParticipation(): ?ParticipationOption
+    /** Продаются ли на лодке каюты: места есть, и цена каюты задана. */
+    public function sellsCabins(): bool
     {
-        return match (true) {
-            $this->sellsSeats() => ParticipationOption::Seat,
-            $this->offersWholeCharter() => ParticipationOption::Yacht,
-            default => null,
-        };
-    }
-
-    public function ctaLabel(): ?string
-    {
-        return match ($this->offeredParticipation()) {
-            ParticipationOption::Seat => 'Хочу в экипаж',
-            ParticipationOption::Yacht => 'Хочу эту яхту',
-            default => null,
-        };
+        return $this->sellsSeats() && $this->effectiveCabinPrice() !== null;
     }
 
     /**
-     * Поле формы заявки, в которое подставляется эта лодка.
+     * Варианты участия, которые предлагаются по этой лодке.
      *
-     * @see ServiceType::declaredPayloadFields()
+     * Их может быть несколько: лодка со шкипером продаёт и отдельные места, и
+     * каюты целиком — на витрине это отдельные кнопки с ценой каждого варианта.
+     * Пустой список — предлагать нечего: у лодки со шкипером кончились места,
+     * а лодка без шкипера уже забронирована.
+     *
+     * @return list<ParticipationOption>
      */
-    public function ctaPayloadField(): ?string
+    public function offeredParticipations(): array
     {
-        return match ($this->offeredParticipation()) {
-            ParticipationOption::Seat => 'crew_yacht',
-            ParticipationOption::Yacht => 'charter_yacht',
-            default => null,
+        return array_values(array_filter([
+            $this->sellsSeats() ? ParticipationOption::Seat : null,
+            $this->sellsCabins() ? ParticipationOption::Cabin : null,
+            $this->offersWholeCharter() ? ParticipationOption::Yacht : null,
+        ]));
+    }
+
+    public function offers(ParticipationOption $option): bool
+    {
+        return in_array($option, $this->offeredParticipations(), strict: true);
+    }
+
+    /**
+     * Цена варианта участия по этой лодке — подпись на кнопке заявки.
+     *
+     * Цены может не быть: «яхта целиком» и «место» предлагаются и без неё,
+     * тогда на кнопке остаётся один вариант участия.
+     */
+    public function participationPriceLabel(ParticipationOption $option): ?string
+    {
+        return match ($option) {
+            ParticipationOption::Seat => $this->seatPriceLabel(),
+            ParticipationOption::Cabin => $this->cabinPriceLabel(),
+            ParticipationOption::Yacht => $this->priceLabel(),
         };
     }
 
@@ -364,7 +384,16 @@ class ForeignRegattaYacht extends Model implements HasMedia
 
     public function seatPriceLabel(): ?string
     {
-        return $this->seat_price === null ? null : $this->formatPrice($this->seat_price);
+        $price = $this->effectiveSeatPrice();
+
+        return $price === null ? null : $this->formatPrice($price);
+    }
+
+    public function cabinPriceLabel(): ?string
+    {
+        $price = $this->effectiveCabinPrice();
+
+        return $price === null ? null : $this->formatPrice($price);
     }
 
     public function freeSeatsLabel(): ?string
@@ -386,6 +415,7 @@ class ForeignRegattaYacht extends Model implements HasMedia
         return ! $this->hasSkipper()
             && $this->free_seats === null
             && $this->seat_price === null
+            && $this->cabin_price === null
             && $this->status === CharterYachtStatus::Free
             && trim((string) $this->model) === ''
             && trim((string) $this->description) === ''

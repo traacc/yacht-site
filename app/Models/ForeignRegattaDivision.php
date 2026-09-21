@@ -47,6 +47,8 @@ class ForeignRegattaDivision extends Model implements HasMedia
         'downwind_sail',
         'price',
         'price_unit',
+        'seat_price',
+        'cabin_price',
         'charter_fee',
         'deposit',
         'price_note',
@@ -68,6 +70,8 @@ class ForeignRegattaDivision extends Model implements HasMedia
             'downwind_sail' => DownwindSail::class,
             'price' => 'integer',
             'price_unit' => CharterPriceUnit::class,
+            'seat_price' => 'integer',
+            'cabin_price' => 'integer',
             'charter_fee' => 'integer',
             'deposit' => 'integer',
             'currency' => Currency::class,
@@ -127,6 +131,46 @@ class ForeignRegattaDivision extends Model implements HasMedia
     public function sharesSpec(): bool
     {
         return $this->type->sharesSpec();
+    }
+
+    /**
+     * Цены дивизиона для блока над списком лодок: «за что» => «сколько».
+     *
+     * У дивизиона-списка цен нет — там они свои у каждой лодки, и блок над
+     * списком остаётся без строки стоимости.
+     *
+     * @return array<string, string>
+     */
+    public function priceLabels(): array
+    {
+        if (! $this->sharesSpec()) {
+            return [];
+        }
+
+        $unit = $this->price_unit?->label();
+
+        return array_filter([
+            'Яхта целиком' => $this->price === null
+                ? null
+                : $this->formatPrice($this->price).($unit === null ? '' : ' '.$unit),
+            'Место в двухместной каюте' => $this->seat_price === null
+                ? null
+                : $this->formatPrice($this->seat_price),
+            'Двухместная каюта' => $this->cabin_price === null
+                ? null
+                : $this->formatPrice($this->cabin_price),
+            'Сборы чартерной компании' => $this->charter_fee === null
+                ? null
+                : $this->formatPrice($this->charter_fee),
+            'Депозит' => $this->deposit === null
+                ? null
+                : $this->formatPrice($this->deposit),
+        ], fn (?string $value): bool => $value !== null);
+    }
+
+    private function formatPrice(int $value): string
+    {
+        return $this->priceCurrency()->format($value);
     }
 
     /** Заголовок секции на витрине: название, а без него — модель лодок. */
