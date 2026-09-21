@@ -30,10 +30,10 @@
                         <article class="overflow-hidden shadow-xs hover:shadow-md transition-shadow group flex md:flex-col">
                             <div class="overflow-hidden md:h-52 shrink-0">
                                 @if($item->cover_image_url)
-                                <img src="{{ $item->cover_image_url ? Storage::url($item->cover_image_url) : asset('images/news/news_1.webp') }}"
+                                <img src="{{ Storage::url($item->cover_image_url) }}"
                                     alt="{{ $item->title }}" style="object-position: {{ $item->cover_object_position ?? 'center' }}" class="w-full max-w-[150px] md:max-w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                                 @else
-                                    <div class="w-full max-w-[150px] bg-gray-400 md:max-w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"></div>
+                                    <x-news-cover-placeholder class="w-full max-w-[150px] md:max-w-full h-full" />
                                 @endif
                             </div>
                             <div class="md:p-4 p-2 bg-[#F8F8F8]">

@@ -15,12 +15,16 @@
 
 <article class="group flex flex-col bg-[#F8F8F8] overflow-hidden shadow-xs hover:shadow-md transition-shadow">
     <a href="{{ route('world-news-details', $news) }}" class="block overflow-hidden h-52 shrink-0">
-        <img
-            class="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105"
-            style="object-position: {{ $news->cover_object_position ?? 'center' }}"
-            src="{{ $news->cover_image_url ? Storage::url($news->cover_image_url) : asset('images/gallery.webp') }}"
-            alt="{{ $news->title }}"
-        >
+        @if ($news->cover_image_url)
+            <img
+                class="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105"
+                style="object-position: {{ $news->cover_object_position ?? 'center' }}"
+                src="{{ Storage::url($news->cover_image_url) }}"
+                alt="{{ $news->title }}"
+            >
+        @else
+            <x-news-cover-placeholder class="w-full h-52" />
+        @endif
     </a>
 
     <div class="p-4 flex flex-col grow">
