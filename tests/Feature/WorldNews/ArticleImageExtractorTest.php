@@ -239,6 +239,18 @@ final class ArticleImageExtractorTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_it_requests_a_compressed_page(): void
+    {
+        // Без Accept-Encoding Guzzle сжатие не просит, и статья новостного
+        // портала тянется целиком — на медленном ответе запрос не укладывается
+        // в таймаут, и новость остаётся без обложки.
+        $this->fakePage('<html><head><meta property="og:image" content="https://cdn.example.test/cover.jpg"></head></html>');
+
+        $this->extract('https://news.example.test/article');
+
+        Http::assertSent(static fn ($request): bool => $request->hasHeader('Accept-Encoding', 'gzip'));
+    }
+
     private function fakePage(string $html): void
     {
         Http::preventStrayRequests();

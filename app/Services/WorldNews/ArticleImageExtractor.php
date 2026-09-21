@@ -7,6 +7,7 @@ namespace App\Services\WorldNews;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
@@ -44,22 +45,32 @@ final class ArticleImageExtractor
     public function extract(string $pageUrl): ?string
     {
         if ($this->urls->canonicalize($pageUrl) === null) {
+            Log::warning('ArticleImageExtractor: некорректный адрес страницы.', ['url' => $pageUrl]);
+
             return null;
         }
 
         $html = $this->fetch($pageUrl);
 
         if ($html === null) {
+            // Причина уже записана в fetch() либо в PublicUrlFetcher.
             return null;
         }
 
-        foreach ($this->candidates($html) as $candidate) {
+        $candidates = $this->candidates($html);
+
+        foreach ($candidates as $candidate) {
             $absolute = $this->absolutize($pageUrl, $candidate);
 
             if ($absolute !== null) {
                 return $absolute;
             }
         }
+
+        Log::warning('ArticleImageExtractor: пригодной картинки в разметке нет.', [
+            'url' => $pageUrl,
+            'candidates' => count($candidates),
+        ]);
 
         return null;
     }
@@ -72,15 +83,31 @@ final class ArticleImageExtractor
                 // Без внятного User-Agent часть новостных сайтов отдаёт заглушку.
                 'User-Agent' => 'Mozilla/5.0 (compatible; YachtAssociationBot/1.0)',
                 'Accept' => 'text/html,application/xhtml+xml',
+                // Без явного Accept-Encoding Guzzle сжатие не запрашивает, и
+                // страница новостного портала тянется целиком: у g1.globo.com
+                // это 1.3 МБ вместо 250 КБ и 7-23 с вместо 3 с — на медленном
+                // ответе запрос не укладывался в таймаут, и новость
+                // оставалась без обложки.
+                'Accept-Encoding' => 'gzip',
             ],
-            timeout: (int) config('services.openai.news_image_timeout', 15),
+            timeout: (int) config('services.openai.news_image_timeout', 30),
         );
 
         if ($response === null || $response->failed()) {
+            Log::warning('ArticleImageExtractor: страница источника не загрузилась.', [
+                'url' => $pageUrl,
+                'status' => $response?->status(),
+            ]);
+
             return null;
         }
 
         if (! str_contains(strtolower($response->header('Content-Type')), 'html')) {
+            Log::warning('ArticleImageExtractor: источник отдал не HTML.', [
+                'url' => $pageUrl,
+                'content_type' => $response->header('Content-Type'),
+            ]);
+
             return null;
         }
 

@@ -6,6 +6,7 @@ namespace App\Services\WorldNews;
 
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
@@ -53,6 +54,10 @@ final class PublicUrlFetcher
             $address = $this->publicAddress($current);
 
             if ($address === null) {
+                Log::warning('PublicUrlFetcher: адрес не прошёл проверку на публичность.', [
+                    'url' => $current,
+                ]);
+
                 return null;
             }
 
@@ -63,7 +68,14 @@ final class PublicUrlFetcher
                     ->withoutRedirecting()
                     ->withOptions(['curl' => [CURLOPT_RESOLVE => [$address['pin']]]])
                     ->get($current);
-            } catch (Throwable) {
+            } catch (Throwable $exception) {
+                // Чаще всего это таймаут: без записи в лог отказ выглядит
+                // как «на странице просто нет картинки».
+                Log::warning('PublicUrlFetcher: запрос не удался.', [
+                    'url' => $current,
+                    'error' => $exception->getMessage(),
+                ]);
+
                 return null;
             }
 
