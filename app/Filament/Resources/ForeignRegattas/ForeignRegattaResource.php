@@ -570,8 +570,10 @@ class ForeignRegattaResource extends Resource
             // (@see App\Observers\ForeignRegattaDivisionObserver).
             Repeater::make('yachts')
                 ->label('Яхты дивизиона')
+                ->helperText('Лодки разные, но цены и условия обычно повторяются: заполните первую и заводите остальные кнопкой «Дублировать» — останется сменить модель, название и то, что и правда отличается.')
                 ->relationship()
                 ->addActionLabel('Добавить яхту в дивизион')
+                ->cloneable()
                 ->reorderable()
                 ->orderColumn('sort_order')
                 ->collapsible()
@@ -597,6 +599,12 @@ class ForeignRegattaResource extends Resource
      */
     private static function divisionYachtFields(): array
     {
+        // Знак валюты у лодки списка: своя валюта, иначе валюта регаты
+        // (`../../../../` — четыре уровня вверх: поле, лодка, репитер лодок,
+        // дивизион). Валюта дивизиона пропущена намеренно: список ничего лодкам
+        // не наследует (@see App\Models\ForeignRegattaYacht::spec()).
+        $yachtCurrency = fn (Get $get): string => self::currencySymbol($get, 'currency', '../../../../currency');
+
         return [
             Select::make('yacht_model_id')
                 ->label('Модель из справочника')
@@ -635,8 +643,10 @@ class ForeignRegattaResource extends Resource
 
             TextInput::make('price')
                 ->label('Стоимость яхты целиком')
+                ->helperText('Пусто — лодка целиком не сдаётся.')
                 ->numeric()
-                ->minValue(0),
+                ->minValue(0)
+                ->suffix($yachtCurrency),
 
             Select::make('price_unit')
                 ->label('За что цена')
@@ -646,10 +656,12 @@ class ForeignRegattaResource extends Resource
             Select::make('currency')
                 ->label('Валюта')
                 ->helperText('Пусто — валюта регаты.')
-                ->options(Currency::options()),
+                ->options(Currency::options())
+                ->live(),
 
             TextInput::make('free_seats')
                 ->label('Свободных мест')
+                ->helperText('Без свободных мест места и каюты не продаются.')
                 ->numeric()
                 ->minValue(0)
                 ->maxValue(50),
@@ -657,12 +669,14 @@ class ForeignRegattaResource extends Resource
             TextInput::make('seat_price')
                 ->label('Стоимость места')
                 ->numeric()
-                ->minValue(0),
+                ->minValue(0)
+                ->suffix($yachtCurrency),
 
             TextInput::make('cabin_price')
-                ->label('Стоимость каюты')
+                ->label('Стоимость двухместной каюты')
                 ->numeric()
-                ->minValue(0),
+                ->minValue(0)
+                ->suffix($yachtCurrency),
 
             TextInput::make('skipper_name')
                 ->label('Шкипер')
@@ -687,7 +701,28 @@ class ForeignRegattaResource extends Resource
 
         $label = trim($model.($name === '' ? '' : ' «'.$name.'»'));
 
-        return $label === '' ? null : $label;
+        if ($label === '') {
+            return null;
+        }
+
+        $year = trim((string) ($state['year'] ?? ''));
+
+        if ($year !== '') {
+            $label .= ', '.$year;
+        }
+
+        // Занятость видно в свёрнутом списке: иначе, чтобы понять, что лодка
+        // уже взята, пришлось бы раскрывать каждую.
+        $status = $state['status'] ?? null;
+        $status = $status instanceof CharterYachtStatus
+            ? $status
+            : CharterYachtStatus::tryFrom((string) $status);
+
+        if ($status !== null && ! $status->isAvailable()) {
+            $label .= ' — '.mb_strtolower($status->label());
+        }
+
+        return $label;
     }
 
     /**
