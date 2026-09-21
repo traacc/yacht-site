@@ -70,10 +70,17 @@
                     <td class="block md:table-cell md:p-3 text-brand-gray-light">
                         @if ($yacht->hasSkipper())
                             <div class="text-[#2E325C]">Шкипер — {{ $yacht->skipper_name }}</div>
-                            <div>{{ $yacht->sellsSeats() ? ucfirst($yacht->freeSeatsLabel()) : 'Мест в экипаже нет' }}</div>
                         @else
                             <div>Без шкипера</div>
+                        @endif
+
+                        @if (! $yacht->isAvailable())
                             <div>{{ $yacht->status->label() }}</div>
+                        @elseif ($yacht->sellsSeats() || $yacht->sellsCabins())
+                            <div>{{ ucfirst($yacht->freeSeatsLabel()) }}</div>
+                        @else
+                            {{-- Места могут быть свободны, но без цены не продаются. --}}
+                            <div>Мест в продаже нет</div>
                         @endif
                     </td>
 

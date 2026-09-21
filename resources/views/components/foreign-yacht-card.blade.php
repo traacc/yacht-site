@@ -18,8 +18,8 @@
     карточке значит спорить с самим собой. В карточке остаются только свои
     (@see App\Models\ForeignRegattaYacht::ownPriceLabels()).
 
-    Кнопки выводятся из данных, а не задаются отдельно: со шкипером лодка
-    продаёт места и каюты, без шкипера — сдаётся целиком
+    Кнопки выводятся из заполненных цен, а не задаются отдельно: одна лодка
+    может одновременно продавать места, каюты и себя целиком
     (@see components/foreign-yacht-cta).
 
     Длинный список разных лодок показывается таблицей, а не карточками
@@ -85,26 +85,35 @@
             </div>
         @endif
 
-        {{-- ===== Шкипер и места ===== --}}
-        @if ($yacht->hasSkipper())
+        {{-- ===== Шкипер и места =====
+             Места продаются и без шкипера, а шкипер бывает и у лодки, которую
+             берут целиком, — поэтому блок показывается по любому из поводов. --}}
+        @if ($yacht->hasSkipper() || $yacht->sellsSeats() || $yacht->sellsCabins())
             <div class="text-sm border-t border-[#EAEAEA] pt-3 mb-3">
-                <div class="text-[#2E325C]">Шкипер — {{ $yacht->skipper_name }}</div>
-                @if ($yacht->skipper_note)
-                    <div class="text-brand-gray-light text-xs mt-1">{{ $yacht->skipper_note }}</div>
+                @if ($yacht->hasSkipper())
+                    <div class="text-[#2E325C]">Шкипер — {{ $yacht->skipper_name }}</div>
+                    @if ($yacht->skipper_note)
+                        <div class="text-brand-gray-light text-xs mt-1">{{ $yacht->skipper_note }}</div>
+                    @endif
                 @endif
 
                 @if ($yacht->sellsSeats())
                     <div class="text-brand-gray-light mt-2">
                         {{ ucfirst($yacht->freeSeatsLabel()) }}@if ($prices['seat']) по {{ $prices['seat'] }}@endif
                     </div>
-                    @if ($yacht->sellsCabins() && $prices['cabin'])
-                        <div class="text-brand-gray-light mt-1">Каюта целиком — {{ $prices['cabin'] }}</div>
-                    @endif
-                    @if ($yacht->seat_note)
-                        <div class="text-brand-gray-light text-xs mt-1">{{ $yacht->seat_note }}</div>
-                    @endif
-                @else
-                    <div class="text-brand-gray-light mt-2">Мест в экипаже нет</div>
+                @elseif ($yacht->sellsCabins())
+                    <div class="text-brand-gray-light mt-2">{{ ucfirst($yacht->freeSeatsLabel()) }}</div>
+                @elseif ($yacht->hasSkipper())
+                    {{-- Места могут быть свободны, но без цены не продаются. --}}
+                    <div class="text-brand-gray-light mt-2">Мест в продаже нет</div>
+                @endif
+
+                @if ($yacht->sellsCabins() && $prices['cabin'])
+                    <div class="text-brand-gray-light mt-1">Каюта целиком — {{ $prices['cabin'] }}</div>
+                @endif
+
+                @if ($yacht->seat_note && ($yacht->sellsSeats() || $yacht->sellsCabins()))
+                    <div class="text-brand-gray-light text-xs mt-1">{{ $yacht->seat_note }}</div>
                 @endif
             </div>
         @endif

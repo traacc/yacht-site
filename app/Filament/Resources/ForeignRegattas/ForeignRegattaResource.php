@@ -466,7 +466,7 @@ class ForeignRegattaResource extends Resource
 
             TextInput::make('seat_price')
                 ->label('Стоимость места в каюте')
-                ->helperText('Кнопка «Место» появится у лодок дивизиона со шкипером и свободными местами.')
+                ->helperText('Кнопка «Место» появится у тех лодок дивизиона, где указаны свободные места.')
                 ->numeric()
                 ->minValue(0)
                 ->suffix($divisionCurrency)
@@ -474,7 +474,7 @@ class ForeignRegattaResource extends Resource
 
             TextInput::make('cabin_price')
                 ->label('Стоимость двухместной каюты')
-                ->helperText('Пусто — каюты по этому дивизиону не продаются.')
+                ->helperText('Пусто — каюты по этому дивизиону не продаются. Кнопка «Каюта» появится у лодок со свободными местами.')
                 ->numeric()
                 ->minValue(0)
                 ->suffix($divisionCurrency)

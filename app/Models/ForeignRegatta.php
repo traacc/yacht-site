@@ -224,8 +224,9 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
      * Варианты участия — объявленные регатой, яхты — те, что ещё предлагаются.
      *
      * Списков яхт три, потому что вопросы разные: под «яхту целиком» подходят
-     * свободные лодки без шкипера, под «место» — лодки со шкипером, у которых
-     * остались места, под «каюту» — те же лодки с заданной ценой каюты.
+     * лодки с ценой чартера, под «место» — лодки со свободными местами и ценой
+     * места, под «каюту» — они же с заданной ценой каюты. Одна лодка попадает
+     * в несколько списков: варианты не исключают друг друга.
      *
      * @return array<string, array<string, string>>
      */
@@ -245,19 +246,22 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
                 ])
                 ->all(),
 
+            // Шкипер в подписи — только если он есть: места продаёт и лодка
+            // без капитана, если владелец набирает экипаж сам.
             'crew_yacht' => $this->yachtsSellingSeats()
                 ->mapWithKeys(fn (ForeignRegattaYacht $yacht): array => [
                     (string) $yacht->getKey() => $yacht->title()
-                        .' — шкипер '.$yacht->skipper_name
-                        .', '.$yacht->freeSeatsLabel(),
+                        .' — место '.$yacht->seatPriceLabel()
+                        .', '.$yacht->freeSeatsLabel()
+                        .($yacht->hasSkipper() ? ', шкипер '.$yacht->skipper_name : ''),
                 ])
                 ->all(),
 
             'cabin_yacht' => $this->yachtsSellingCabins()
                 ->mapWithKeys(fn (ForeignRegattaYacht $yacht): array => [
                     (string) $yacht->getKey() => $yacht->title()
-                        .' — шкипер '.$yacht->skipper_name
-                        .($yacht->cabinPriceLabel() === null ? '' : ', каюта '.$yacht->cabinPriceLabel()),
+                        .' — каюта '.$yacht->cabinPriceLabel()
+                        .($yacht->hasSkipper() ? ', шкипер '.$yacht->skipper_name : ''),
                 ])
                 ->all(),
         ];
@@ -357,8 +361,9 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
      *
      * Кнопка на карточке лодки подставляет вариант участия в заявку, а форма
      * принимает только объявленные варианты. Поэтому лодка со свободными
-     * местами объявляет «место», а свободная лодка без шкипера — «яхту
-     * целиком», даже если галочку в форме регаты забыли поставить.
+     * местами объявляет «место», лодка с ценой каюты — «каюту», а лодка с ценой
+     * чартера — «яхту целиком», даже если галочку в форме регаты забыли
+     * поставить.
      *
      * @return Collection<int, ParticipationOption>
      */
@@ -411,7 +416,7 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     }
 
     /**
-     * Лодки, которые сдаются целиком: шкипера нет, статус свободный.
+     * Лодки, которые сдаются целиком: задана цена чартера, статус свободный.
      *
      * @return Collection<int, ForeignRegattaYacht>
      */
@@ -423,7 +428,7 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     }
 
     /**
-     * Лодки, которые набирают экипаж: шкипер есть, места остались.
+     * Лодки, которые набирают экипаж: места остались и задана их цена.
      *
      * @return Collection<int, ForeignRegattaYacht>
      */
@@ -435,7 +440,7 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     }
 
     /**
-     * Лодки, которые продают каюты: места остались и цена каюты задана.
+     * Лодки, которые продают каюты: места остались и задана цена каюты.
      *
      * @return Collection<int, ForeignRegattaYacht>
      */

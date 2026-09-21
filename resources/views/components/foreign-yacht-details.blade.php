@@ -31,7 +31,9 @@
         'Каюты' => $yacht->cabinsLabel(),
         'Парус полных курсов' => $yacht->effectiveDownwindSail()?->label(),
         'Шкипер' => $yacht->hasSkipper() ? $yacht->skipper_name : null,
-        'Свободных мест' => $yacht->sellsSeats() ? (string) $yacht->freeSeats() : null,
+        'Свободных мест' => $yacht->sellsSeats() || $yacht->sellsCabins()
+            ? (string) $yacht->freeSeats()
+            : null,
     ], fn (?string $value): bool => $value !== null && $value !== '');
 @endphp
 

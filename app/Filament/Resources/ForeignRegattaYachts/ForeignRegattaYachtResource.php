@@ -143,7 +143,7 @@ class ForeignRegattaYachtResource extends Resource
                     ->columns(3),
 
                 Section::make('Стоимость чартера')
-                    ->description('Цена лодки целиком. Пустые поля берутся у дивизиона-флота.')
+                    ->description('Цена лодки целиком: заполнена — на витрине горит кнопка «Яхта целиком», пусто — этот вариант по лодке не предлагается. Пустые поля берутся у дивизиона-флота.')
                     ->schema([
                         TextInput::make('price')
                             ->label('Стоимость')
@@ -164,7 +164,7 @@ class ForeignRegattaYachtResource extends Resource
 
                         Select::make('status')
                             ->label('Занятость')
-                            ->helperText('Лодка без шкипера сдаётся целиком — кнопка «Яхта целиком» горит, пока она свободна.')
+                            ->helperText('Занятая лодка исчезает из всех вариантов разом — и из мест, и из кают, и из чартера целиком.')
                             ->options(CharterYachtStatus::options())
                             ->default(CharterYachtStatus::Free->value)
                             ->required(),
@@ -188,7 +188,7 @@ class ForeignRegattaYachtResource extends Resource
                     ->columns(3),
 
                 Section::make('Шкипер и места в экипаже')
-                    ->description('Шкипер указан — лодка идёт со своим капитаном и продаёт места и каюты: на витрине появляются кнопки «Место» и «Каюта» (последняя — если задана цена каюты). Шкипера нет — лодка сдаётся целиком.')
+                    ->description('Места и каюты продаются, пока есть свободные места и заполнены их цены. Шкипер на это не влияет: лодка может одновременно набирать экипаж и сдаваться целиком — на витрине это три отдельные кнопки. Шкипер просто показывается на карточке.')
                     ->schema([
                         TextInput::make('skipper_name')
                             ->label('Шкипер')
@@ -197,21 +197,21 @@ class ForeignRegattaYachtResource extends Resource
 
                         TextInput::make('free_seats')
                             ->label('Свободных мест')
-                            ->helperText('0 или пусто — кнопка «Хочу в экипаж» не горит.')
+                            ->helperText('0 или пусто — ни места, ни каюты по лодке не продаются.')
                             ->numeric()
                             ->minValue(0)
                             ->maxValue(50),
 
                         TextInput::make('seat_price')
                             ->label('Стоимость места')
-                            ->helperText('Пусто — берётся у дивизиона-флота.')
+                            ->helperText('Пусто здесь и у дивизиона-флота — кнопка «Место» не горит.')
                             ->numeric()
                             ->minValue(0)
                             ->suffix(fn (Get $get): string => self::currencySymbol($get)),
 
                         TextInput::make('cabin_price')
                             ->label('Стоимость двухместной каюты')
-                            ->helperText('Заполнено — у лодки появится отдельная кнопка «Каюта».')
+                            ->helperText('Заполнено (здесь или у дивизиона-флота) и есть свободные места — у лодки появится отдельная кнопка «Каюта».')
                             ->numeric()
                             ->minValue(0)
                             ->suffix(fn (Get $get): string => self::currencySymbol($get)),
@@ -288,7 +288,9 @@ class ForeignRegattaYachtResource extends Resource
 
                 TextColumn::make('free_seats')
                     ->label('Мест')
-                    ->state(fn (ForeignRegattaYacht $record): string => $record->hasSkipper()
+                    // Места продаются и без шкипера, поэтому колонка смотрит
+                    // на сами места, а не на капитана.
+                    ->state(fn (ForeignRegattaYacht $record): string => $record->freeSeats() > 0
                         ? (string) $record->freeSeats()
                         : '—')
                     ->sortable(),
