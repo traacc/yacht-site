@@ -69,7 +69,16 @@ class HomePageSettings extends Page
         /** @var SettingsService $settings */
         $settings = app(SettingsService::class);
 
-        $sponsors = $settings->get('home.sponsors', []);
+        // Партнёры, сохранённые до появления переключателя «Опубликовано»,
+        // не содержат ключа is_published — считаем их опубликованными.
+        $sponsors = collect((array) $settings->get('home.sponsors', []))
+            ->filter(fn ($s) => is_array($s))
+            ->map(fn (array $s) => [
+                ...$s,
+                'is_published' => (bool) ($s['is_published'] ?? true),
+            ])
+            ->values()
+            ->all();
 
         // Нормализуем gallery_photos в индексированный массив строк
         $rawPhotos = $settings->get('home.gallery_photos', []);
@@ -297,6 +306,12 @@ class HomePageSettings extends Page
                             ->collapsible()
                             ->defaultItems(0)
                             ->schema([
+                                Toggle::make('is_published')
+                                    ->label('Опубликовано')
+                                    ->helperText('Выключите, чтобы скрыть партнёра на главной странице, не удаляя его из списка.')
+                                    ->default(true)
+                                    ->columnSpanFull(),
+
                                 FileUpload::make('logo')
                                     ->label('Логотип')
                                     ->image()
@@ -463,6 +478,7 @@ class HomePageSettings extends Page
                     'name' => trim((string) ($item['name'] ?? '')) ?: null,
                     'url' => trim((string) ($item['url'] ?? '')) ?: null,
                     'description' => $hasContent ? $description : null,
+                    'is_published' => (bool) ($item['is_published'] ?? true),
                 ];
             })
             ->filter(fn (array $item) => ! empty($item['logo']))

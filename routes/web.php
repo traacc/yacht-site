@@ -109,8 +109,9 @@ Route::get('/', function () {
     $faq = Faq::active()->ordered()->get();
 
     // Партнёры ассоциации (логотипы из настроек главной)
+    // Записи без ключа is_published сохранены до появления переключателя — они опубликованы.
     $sponsors = collect((array) app(SettingsService::class)->get('home.sponsors', []))
-        ->filter(fn ($s) => is_array($s) && ! empty($s['logo']))
+        ->filter(fn ($s) => is_array($s) && ! empty($s['logo']) && ($s['is_published'] ?? true))
         ->map(fn (array $s) => [
             'logo' => Storage::disk('public')->url($s['logo']),
             'name' => $s['name'] ?? null,
