@@ -438,3 +438,11 @@
 .fi-modal .fi-sticky-thead .fi-ta-content-ctn {
     max-height: none;
 }
+
+/* Пикер без подсветки сегодняшней даты (дата окончания регаты).
+   Селектор повторяет вендорный, иначе проигрывает по специфичности. */
+:is(.fi-no-today-highlight.fi-fo-date-time-picker, .fi-no-today-highlight .fi-fo-date-time-picker)
+  .fi-fo-date-time-picker-calendar
+  .fi-fo-date-time-picker-calendar-day.fi-fo-date-time-picker-calendar-day-today:not(.fi-focused):not(.fi-selected):not(.fi-disabled) {
+  @apply text-gray-950 dark:text-white;
+}

@@ -42,6 +42,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
@@ -77,6 +78,25 @@ class RegattaResource extends Resource
     protected static ?int $navigationSort = 1;
 
     protected static string|UnitEnum|null $navigationGroup = 'Регаты';
+
+    /**
+     * При создании регаты подставляет дату окончания = дата начала + 1 день.
+     * Дату окончания, введённую вручную, не трогает: перезаписывается только
+     * пустое значение или то, что было подставлено от предыдущей даты начала.
+     */
+    protected static function fillEndDateFromStart(?string $state, ?string $old, Get $get, Set $set, string $operation): void
+    {
+        if ($operation !== 'create' || blank($state)) {
+            return;
+        }
+
+        $end = $get('date_end');
+        $autoFilled = filled($old) && $end === Carbon::parse($old)->addDay()->toDateString();
+
+        if (blank($end) || $autoFilled) {
+            $set('date_end', Carbon::parse($state)->addDay()->toDateString());
+        }
+    }
 
     public static function getModelLabel(): string
     {
@@ -185,11 +205,14 @@ class RegattaResource extends Resource
                                     ->label('Дата начала')
                                     ->displayFormat('d.m.Y')
                                     ->native(false)
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(static::fillEndDateFromStart(...))
                                     ->required(),
                                 DatePicker::make('date_end')
                                     ->label('Дата окончания')
                                     ->displayFormat('d.m.Y')
                                     ->native(false)
+                                    ->extraAttributes(['class' => 'fi-no-today-highlight'])
                                     ->required(),
                                 TimePicker::make('time_start')
                                     ->label('Время начала')
@@ -235,6 +258,8 @@ class RegattaResource extends Resource
                     ->native(false)
                     ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100))
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(static::fillEndDateFromStart(...))
                     // В режиме серии даты задаются в этапах.
                     ->hidden(fn (Get $get): bool => (bool) $get('create_as_series'))
                     ->required(fn (Get $get): bool => ! (bool) $get('create_as_series')),
@@ -244,6 +269,8 @@ class RegattaResource extends Resource
                     ->maxDate(now()->addYears(100))
                     ->displayFormat('d.m.Y')
                     ->native(false)
+                    // Подсветка «сегодня» путает при выборе даты окончания.
+                    ->extraAttributes(['class' => 'fi-no-today-highlight'])
                     ->hidden(fn (Get $get): bool => (bool) $get('create_as_series'))
                     ->required(fn (Get $get): bool => ! (bool) $get('create_as_series')),
 
