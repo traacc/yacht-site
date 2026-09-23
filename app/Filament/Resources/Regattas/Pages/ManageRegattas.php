@@ -141,8 +141,6 @@ class ManageRegattas extends ManageRecords
                         $data['name'] = self::seriesStageName($data['name'] ?? '', 1);
                         $data['date_start'] = $firstStage['date_start'] ?? null;
                         $data['date_end'] = $firstStage['date_end'] ?? null;
-                        $data['time_start'] = $firstStage['time_start'] ?? null;
-                        $data['time_end'] = $firstStage['time_end'] ?? null;
                     }
 
                     /** @var Regatta $record */
@@ -177,8 +175,6 @@ class ManageRegattas extends ManageRecords
                             'name' => self::seriesStageName($baseName, $offset + 2),
                             'date_start' => $stage['date_start'] ?? null,
                             'date_end' => $stage['date_end'] ?? null,
-                            'time_start' => $stage['time_start'] ?? null,
-                            'time_end' => $stage['time_end'] ?? null,
                         ]);
 
                         self::shiftScheduleEvents($replica, $stageOneDay, $stage['date_start'] ?? null);

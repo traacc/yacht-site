@@ -80,6 +80,23 @@ class RegattaResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Регаты';
 
     /**
+     * Название серии по умолчанию повторяет название регаты: подставляется,
+     * пока его не отредактировали вручную (пусто или совпадает с прежним названием).
+     */
+    protected static function syncSeriesNameFromName(?string $state, ?string $old, Get $get, Set $set, string $operation): void
+    {
+        if ($operation !== 'create') {
+            return;
+        }
+
+        $seriesName = $get('series_name');
+
+        if (blank($seriesName) || $seriesName === trim((string) $old)) {
+            $set('series_name', trim((string) $state));
+        }
+    }
+
+    /**
      * При создании регаты подставляет дату окончания = дата начала + 1 день.
      * Дату окончания, введённую вручную, не трогает: перезаписывается только
      * пустое значение или то, что было подставлено от предыдущей даты начала.
@@ -127,6 +144,8 @@ class RegattaResource extends Resource
                 Textarea::make('name')
                     ->label('Название')
                     ->placeholder('Введите название регаты')
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(static::syncSeriesNameFromName(...))
                     ->required(),
                 Select::make('type')
                     ->label('Тип соревнования')
@@ -169,61 +188,6 @@ class RegattaResource extends Resource
                     ])
                     ->createOptionUsing(fn (array $data): string => Season::create($data)->id)
                     ->required(),
-                // ── Создание серии из этапов ──────────────
-                // Альтернативный способ: заполнить регату-«шаблон» один раз
-                // и задать список дат — по каждой дате создаётся регата серии
-                // с данными из этой формы. Доступно только при создании.
-                Section::make('Создать как серию')
-                    ->description('Заполните данные регаты один раз и добавьте даты этапов — по каждому этапу будет создана отдельная регата серии с этими данными.')
-                    ->columnSpanFull()
-                    ->collapsible()
-                    // Серии глобальны, админ-разработчик ими управлять не может —
-                    // он создаёт только одиночные регаты.
-                    ->hidden(fn (string $operation): bool => $operation !== 'create' || static::hidesSeries())
-                    ->schema([
-                        Toggle::make('create_as_series')
-                            ->label('Создать серию из этапов')
-                            ->helperText('Вместо одной регаты будет создано несколько — по одной на каждый этап. Остальные поля формы копируются в каждый этап.')
-                            ->live()
-                            ->default(false),
-                        TextInput::make('series_name')
-                            ->label('Название серии')
-                            ->placeholder('Например: Кубок весны 2026')
-                            ->visible(fn (Get $get): bool => (bool) $get('create_as_series'))
-                            ->required(fn (Get $get): bool => (bool) $get('create_as_series')),
-                        Repeater::make('series_stages')
-                            ->label('Этапы серии')
-                            ->helperText('Каждый этап станет отдельной регатой. Название формируется автоматически: «<название> — Этап N». Расписание сдвигается на смещение дат этапа.')
-                            ->visible(fn (Get $get): bool => (bool) $get('create_as_series'))
-                            ->defaultItems(2)
-                            ->minItems(2)
-                            ->addActionLabel('Добавить этап')
-                            ->columns(2)
-                            ->itemLabel(fn (array $state, int $index): string => 'Этап '.($index + 1))
-                            ->schema([
-                                DatePicker::make('date_start')
-                                    ->label('Дата начала')
-                                    ->displayFormat('d.m.Y')
-                                    ->native(false)
-                                    ->live(onBlur: true)
-                                    ->afterStateUpdated(static::fillEndDateFromStart(...))
-                                    ->required(),
-                                DatePicker::make('date_end')
-                                    ->label('Дата окончания')
-                                    ->displayFormat('d.m.Y')
-                                    ->native(false)
-                                    ->extraAttributes(['class' => 'fi-no-today-highlight'])
-                                    ->required(),
-                                TimePicker::make('time_start')
-                                    ->label('Время начала')
-                                    ->displayFormat('H:i')
-                                    ->seconds(false),
-                                TimePicker::make('time_end')
-                                    ->label('Время окончания')
-                                    ->displayFormat('H:i')
-                                    ->seconds(false),
-                            ]),
-                    ]),
                 Select::make('series_id')
                     ->label('Серия')
                     ->relationship('series', 'name')
@@ -382,6 +346,60 @@ class RegattaResource extends Resource
                     ->label('Призы')
                     ->placeholder('Описание призового фонда')
                     ->columnSpanFull(),
+
+                // ── Создание серии из этапов ──────────────
+                // Альтернативный способ: заполнить регату-«шаблон» один раз
+                // и задать список дат — по каждой дате создаётся регата серии
+                // с данными из этой формы. Доступно только при создании.
+                Section::make('Создать как серию')
+                    ->description('Заполните данные регаты один раз и добавьте даты этапов — по каждому этапу будет создана отдельная регата серии с этими данными.')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    // Серии глобальны, админ-разработчик ими управлять не может —
+                    // он создаёт только одиночные регаты.
+                    ->hidden(fn (string $operation): bool => $operation !== 'create' || static::hidesSeries())
+                    ->schema([
+                        Toggle::make('create_as_series')
+                            ->label('Создать серию из этапов')
+                            ->helperText('Вместо одной регаты будет создано несколько — по одной на каждый этап. Остальные поля формы копируются в каждый этап.')
+                            ->live()
+                            ->afterStateUpdated(function (bool $state, Get $get, Set $set): void {
+                                if ($state && blank($get('series_name'))) {
+                                    $set('series_name', trim((string) $get('name')));
+                                }
+                            })
+                            ->default(false),
+                        TextInput::make('series_name')
+                            ->label('Название серии')
+                            ->placeholder('Например: Кубок весны 2026')
+                            ->helperText('По умолчанию совпадает с названием регаты.')
+                            ->visible(fn (Get $get): bool => (bool) $get('create_as_series'))
+                            ->required(fn (Get $get): bool => (bool) $get('create_as_series')),
+                        Repeater::make('series_stages')
+                            ->label('Этапы серии')
+                            ->helperText('Каждый этап станет отдельной регатой. Название формируется автоматически: «<название> — Этап N». Расписание сдвигается на смещение дат этапа.')
+                            ->visible(fn (Get $get): bool => (bool) $get('create_as_series'))
+                            ->defaultItems(2)
+                            ->minItems(2)
+                            ->addActionLabel('Добавить этап')
+                            ->columns(2)
+                            ->itemLabel(fn (array $state, int $index): string => 'Этап '.($index + 1))
+                            ->schema([
+                                DatePicker::make('date_start')
+                                    ->label('Дата начала')
+                                    ->displayFormat('d.m.Y')
+                                    ->native(false)
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(static::fillEndDateFromStart(...))
+                                    ->required(),
+                                DatePicker::make('date_end')
+                                    ->label('Дата окончания')
+                                    ->displayFormat('d.m.Y')
+                                    ->native(false)
+                                    ->extraAttributes(['class' => 'fi-no-today-highlight'])
+                                    ->required(),
+                            ]),
+                    ]),
 
                 // ── Сборы за участие ──────────────────────
                 Section::make('Сборы за участие')
