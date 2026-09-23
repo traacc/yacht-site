@@ -195,7 +195,8 @@ class PressMentionResource extends Resource
                     ->label('Порядок')
                     ->sortable(),
             ])
-            ->defaultSort('sort_order')
+            // Как на сайте: sort_order, при равном — свежие сверху.
+            ->defaultSort(fn (Builder $query): Builder => $query->recentFirst())
             ->reorderable('sort_order')
             ->stackedOnMobile()
             ->filters([
