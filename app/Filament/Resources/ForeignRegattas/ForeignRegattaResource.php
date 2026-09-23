@@ -462,7 +462,6 @@ class ForeignRegattaResource extends Resource
                 ->numeric()
                 ->minValue(1)
                 ->maxValue(20)
-                ->required(fn (Get $get): bool => $isFleet($get) && ! $hasCatalogModel($get))
                 ->visible(fn (Get $get): bool => $isFleet($get) && ! $hasCatalogModel($get)),
 
             TextInput::make('year')
@@ -479,10 +478,10 @@ class ForeignRegattaResource extends Resource
 
             TextInput::make('price')
                 ->label('Стоимость яхты целиком')
+                ->helperText('Пусто — лодки дивизиона целиком не сдаются, продаются только места и каюты.')
                 ->numeric()
                 ->minValue(0)
                 ->suffix($divisionCurrency)
-                ->required($isFleet)
                 ->visible($isFleet),
 
             Select::make('price_unit')
@@ -635,11 +634,16 @@ class ForeignRegattaResource extends Resource
                 ->maxValue((int) now()->addYear()->format('Y')),
 
             Select::make('status')
-                ->label('Занятость')
-                ->helperText('Занятая лодка исчезает из всех вариантов разом.')
+                ->label('Занятость (целиком)')
+                ->helperText('Только про чартер целиком: места и каюты продаются и у занятой лодки.')
                 ->options(CharterYachtStatus::options())
                 ->default(CharterYachtStatus::Free->value)
                 ->required(),
+
+            Toggle::make('is_hidden')
+                ->label('Не показывать на сайте')
+                ->helperText('Убирает лодку со страницы регаты со всеми вариантами.')
+                ->default(false),
 
             TextInput::make('price')
                 ->label('Стоимость яхты целиком')
@@ -723,6 +727,34 @@ class ForeignRegattaResource extends Resource
         }
 
         return $label;
+    }
+
+    /**
+     * Предупреждает про лодки, по которым на витрине нечего показать.
+     *
+     * Сохранить это не мешает: флот заводят раньше, чем приходят цены. Но если
+     * после сохранения у лодки не горит ни одна кнопка
+     * (@see App\Models\ForeignRegattaYacht::offeredParticipations()), админ
+     * должен узнать об этом здесь, а не от посетителя.
+     */
+    public static function warnAboutSilentFleet(ForeignRegatta $record): void
+    {
+        $silent = $record->load('charterYachts.division')
+            ->visibleCharterYachts()
+            ->filter(fn ($yacht): bool => $yacht->offeredParticipations() === [])
+            ->map(fn ($yacht): string => $yacht->title());
+
+        if ($silent->isEmpty()) {
+            return;
+        }
+
+        Notification::make()
+            ->warning()
+            ->title('Часть флота не видна на витрине')
+            ->body('Ни одной кнопки не горит: '.$silent->take(5)->implode(', ')
+                .($silent->count() > 5 ? ' и ещё '.($silent->count() - 5) : '')
+                .'. Проверьте цены, свободные места и занятость.')
+            ->send();
     }
 
     /**
@@ -817,7 +849,8 @@ class ForeignRegattaResource extends Resource
             ->emptyStateHeading('Зарубежных регат пока нет')
             ->emptyStateDescription('Добавьте регату — она появится на странице «Регаты за рубежом» и в календаре сезона.')
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->after(fn (ForeignRegatta $record) => self::warnAboutSilentFleet($record)),
                 // Лодки правятся отдельным ресурсом: у каждой своя галерея,
                 // шкипер и места, и их бывает несколько десятков.
                 Action::make('fleet')

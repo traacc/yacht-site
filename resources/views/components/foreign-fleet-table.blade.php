@@ -74,13 +74,17 @@
                             <div>Без шкипера</div>
                         @endif
 
-                        @if (! $yacht->isAvailable())
-                            <div>{{ $yacht->status->label() }}</div>
-                        @elseif ($yacht->sellsSeats() || $yacht->sellsCabins())
+                        @if ($yacht->sellsSeats() || $yacht->sellsCabins())
                             <div>{{ ucfirst($yacht->freeSeatsLabel()) }}</div>
                         @else
                             {{-- Места могут быть свободны, но без цены не продаются. --}}
                             <div>Мест в продаже нет</div>
+                        @endif
+
+                        {{-- Занятость — только про лодку целиком: места у неё
+                             могут продаваться и дальше. --}}
+                        @if (! $yacht->isAvailable())
+                            <div>Целиком — {{ mb_strtolower($yacht->status->label()) }}</div>
                         @endif
                     </td>
 

@@ -369,7 +369,7 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
      */
     private function participationOfferedByFleet(): Collection
     {
-        return $this->charterYachts
+        return $this->visibleCharterYachts()
             ->flatMap(fn (ForeignRegattaYacht $yacht): array => $yacht->offeredParticipations())
             ->unique()
             ->values();
@@ -380,10 +380,26 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
         return in_array($option, $this->participationOptions(), strict: true);
     }
 
+    /**
+     * Лодки, которые вообще показываются на витрине.
+     *
+     * Снятая флагом лодка не должна ни попадать в таблицу флота, ни считаться в
+     * счётчиках, ни предлагаться в заявке
+     * (@see ForeignRegattaYacht::isPublished()).
+     *
+     * @return Collection<int, ForeignRegattaYacht>
+     */
+    public function visibleCharterYachts(): Collection
+    {
+        return $this->charterYachts->filter(
+            fn (ForeignRegattaYacht $yacht): bool => $yacht->isPublished(),
+        )->values();
+    }
+
     /** Показывать ли флот на странице регаты. */
     public function showsCharterFleet(): bool
     {
-        return $this->charterYachts->isNotEmpty();
+        return $this->visibleCharterYachts()->isNotEmpty();
     }
 
     /**
@@ -396,7 +412,7 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
      */
     public function fleetGroups(): Collection
     {
-        $byDivision = $this->charterYachts->groupBy('division_id');
+        $byDivision = $this->visibleCharterYachts()->groupBy('division_id');
 
         $groups = $this->divisions
             ->map(fn (ForeignRegattaDivision $division): array => [
@@ -422,7 +438,7 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
      */
     public function yachtsForWholeCharter(): Collection
     {
-        return $this->charterYachts->filter(
+        return $this->visibleCharterYachts()->filter(
             fn (ForeignRegattaYacht $yacht): bool => $yacht->offersWholeCharter(),
         )->values();
     }
@@ -434,7 +450,7 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
      */
     public function yachtsSellingSeats(): Collection
     {
-        return $this->charterYachts->filter(
+        return $this->visibleCharterYachts()->filter(
             fn (ForeignRegattaYacht $yacht): bool => $yacht->sellsSeats(),
         )->values();
     }
@@ -446,7 +462,7 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
      */
     public function yachtsSellingCabins(): Collection
     {
-        return $this->charterYachts->filter(
+        return $this->visibleCharterYachts()->filter(
             fn (ForeignRegattaYacht $yacht): bool => $yacht->sellsCabins(),
         )->values();
     }

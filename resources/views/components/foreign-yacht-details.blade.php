@@ -31,6 +31,8 @@
         'Каюты' => $yacht->cabinsLabel(),
         'Парус полных курсов' => $yacht->effectiveDownwindSail()?->label(),
         'Шкипер' => $yacht->hasSkipper() ? $yacht->skipper_name : null,
+        // Занятость — про лодку целиком; места у неё могут продаваться дальше.
+        'Яхта целиком' => $yacht->isAvailable() ? null : $yacht->status->label(),
         'Свободных мест' => $yacht->sellsSeats() || $yacht->sellsCabins()
             ? (string) $yacht->freeSeats()
             : null,

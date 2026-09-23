@@ -40,8 +40,6 @@
     // лодок (@see App\Models\ForeignRegattaYacht::ownPriceLabels()).
     $prices = $yacht->ownPriceLabels();
     $hasPrices = count(array_filter([$prices['charter'], $prices['fee'], $prices['deposit'], $prices['note']])) > 0;
-
-    $hasOffers = $requestEvent !== null && count($yacht->offeredParticipations()) > 0;
 @endphp
 
 <div x-data="{ details: false }" class="border border-[#C6C6C6] flex flex-col">
@@ -122,10 +120,10 @@
             <x-foreign-yacht-cta :yacht="$yacht" :request-event="$requestEvent" />
 
             <div class="flex flex-wrap items-center gap-3">
-                @unless ($hasOffers)
-                    @unless ($yacht->hasSkipper())
-                        <span class="inline-block text-xs px-2 py-1 bg-gray-200 text-brand-gray-light">{{ $yacht->status->label() }}</span>
-                    @endunless
+                {{-- Занятость показывается сама по себе: она про лодку целиком,
+                     а места у неё могут продаваться и дальше. --}}
+                @unless ($yacht->isAvailable())
+                    <span class="inline-block text-xs px-2 py-1 bg-gray-200 text-brand-gray-light">Целиком — {{ mb_strtolower($yacht->status->label()) }}</span>
                 @endunless
 
                 @if ($description !== '' || count($photos) > 1)

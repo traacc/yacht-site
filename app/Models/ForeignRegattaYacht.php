@@ -64,6 +64,7 @@ class ForeignRegattaYacht extends Model implements HasMedia
         'cabin_price',
         'seat_note',
         'status',
+        'is_hidden',
         'sort_order',
     ];
 
@@ -86,6 +87,7 @@ class ForeignRegattaYacht extends Model implements HasMedia
             'cabin_price' => 'integer',
             'currency' => Currency::class,
             'status' => CharterYachtStatus::class,
+            'is_hidden' => 'boolean',
             'sort_order' => 'integer',
         ];
     }
@@ -131,6 +133,12 @@ class ForeignRegattaYacht extends Model implements HasMedia
     public function scopeAvailable(Builder $query): Builder
     {
         return $query->where('status', CharterYachtStatus::Free->value);
+    }
+
+    /** Лодки, не снятые с витрины. */
+    public function scopePublished(Builder $query): Builder
+    {
+        return $query->where('is_hidden', false);
     }
 
     public function scopeOrdered(Builder $query): Builder
@@ -327,15 +335,28 @@ class ForeignRegattaYacht extends Model implements HasMedia
         return max(0, (int) $this->free_seats);
     }
 
+    /**
+     * Свободна ли лодка под чартер целиком.
+     *
+     * Занятость — только про всю лодку: её забрали одним куском. Мест в экипаже
+     * это не касается, поэтому «целиком занята, но в экипаж ещё берём» —
+     * обычное состояние, а не противоречие.
+     */
     public function isAvailable(): bool
     {
         return $this->status->isAvailable();
     }
 
+    /** Показывается ли лодка на витрине вообще. */
+    public function isPublished(): bool
+    {
+        return ! $this->is_hidden;
+    }
+
     /** Остались места и задана их цена — можно проситься в экипаж. */
     public function sellsSeats(): bool
     {
-        return $this->isAvailable()
+        return $this->isPublished()
             && $this->freeSeats() > 0
             && $this->effectiveSeatPrice() !== null;
     }
@@ -343,7 +364,7 @@ class ForeignRegattaYacht extends Model implements HasMedia
     /** Остались места и задана цена каюты — продаётся каюта целиком. */
     public function sellsCabins(): bool
     {
-        return $this->isAvailable()
+        return $this->isPublished()
             && $this->freeSeats() > 0
             && $this->effectiveCabinPrice() !== null;
     }
@@ -351,13 +372,15 @@ class ForeignRegattaYacht extends Model implements HasMedia
     /**
      * Сдаётся ли лодка целиком: задана цена чартера и лодка свободна.
      *
-     * Шкипер не мешает — лодку берут и с ним. Забронированную лодку из всех
-     * вариантов убирает статус, а не обнуление цен: занятость ставится один раз
-     * и гасит места, каюты и чартер разом.
+     * Шкипер не мешает — лодку берут и с ним. Снять лодку со всех вариантов
+     * разом можно флагом «не показывать на сайте»: занятость для этого не
+     * годится, она про чартер целиком.
      */
     public function offersWholeCharter(): bool
     {
-        return $this->isAvailable() && $this->effectivePrice() !== null;
+        return $this->isPublished()
+            && $this->isAvailable()
+            && $this->effectivePrice() !== null;
     }
 
     /**
@@ -365,8 +388,8 @@ class ForeignRegattaYacht extends Model implements HasMedia
      *
      * Их может быть до трёх сразу: одна и та же лодка продаёт отдельные места,
      * каюты и себя целиком — на витрине это отдельные кнопки с ценой каждого
-     * варианта. Пустой список — предлагать нечего: лодка занята, места кончились
-     * или цены не заведены.
+     * варианта. Пустой список — предлагать нечего: лодка снята с витрины, места
+     * кончились, чартер занят или цены не заведены.
      *
      * @return list<ParticipationOption>
      */
@@ -530,6 +553,7 @@ class ForeignRegattaYacht extends Model implements HasMedia
     public function isUntouchedStub(): bool
     {
         return ! $this->hasSkipper()
+            && ! $this->is_hidden
             && $this->free_seats === null
             && $this->seat_price === null
             && $this->cabin_price === null

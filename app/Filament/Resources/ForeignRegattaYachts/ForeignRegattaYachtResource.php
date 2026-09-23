@@ -8,6 +8,7 @@ use App\Enums\CharterPriceUnit;
 use App\Enums\CharterYachtStatus;
 use App\Enums\Currency;
 use App\Enums\DownwindSail;
+use App\Enums\FleetDivisionType;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\CharterYachtModels\CharterYachtModelResource;
 use App\Filament\Resources\ForeignRegattaYachts\Pages\ManageForeignRegattaYachts;
@@ -22,12 +23,14 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -139,10 +142,10 @@ class ForeignRegattaYachtResource extends Resource
 
                         TextInput::make('cabins')
                             ->label('Кают')
+                            ->helperText('Необязательно — просто не попадёт в характеристики на витрине.')
                             ->numeric()
                             ->minValue(1)
                             ->maxValue(20)
-                            ->required(fn (Get $get): bool => ! self::inheritsSpec($get) && ! filled($get('yacht_model_id')))
                             ->visible(fn (Get $get): bool => ! filled($get('yacht_model_id'))),
 
                         TextInput::make('year')
@@ -163,14 +166,14 @@ class ForeignRegattaYachtResource extends Resource
                     ->columns(3),
 
                 Section::make('Стоимость чартера')
-                    ->description('Цена лодки целиком: заполнена — на витрине горит кнопка «Яхта целиком», пусто — этот вариант по лодке не предлагается. Пустые поля берутся у дивизиона-флота.')
+                    ->description('Цена лодки целиком: заполнена — на витрине горит кнопка «Яхта целиком», пусто — лодка целиком не сдаётся и предлагаются только места и каюты. Пустые поля берутся у дивизиона-флота.')
                     ->schema([
                         TextInput::make('price')
-                            ->label('Стоимость')
+                            ->label('Стоимость яхты целиком')
+                            ->helperText('Пусто — лодка целиком не сдаётся.')
                             ->numeric()
                             ->minValue(0)
-                            ->suffix(fn (Get $get): string => self::currencySymbol($get))
-                            ->required(fn (Get $get): bool => ! self::inheritsSpec($get)),
+                            ->suffix(fn (Get $get): string => self::currencySymbol($get)),
 
                         Select::make('price_unit')
                             ->label('За что цена')
@@ -183,11 +186,16 @@ class ForeignRegattaYachtResource extends Resource
                             ->live(),
 
                         Select::make('status')
-                            ->label('Занятость')
-                            ->helperText('Занятая лодка исчезает из всех вариантов разом — и из мест, и из кают, и из чартера целиком.')
+                            ->label('Занятость (целиком)')
+                            ->helperText('Только про чартер целиком: занятая лодка продолжает продавать места и каюты, пока они есть.')
                             ->options(CharterYachtStatus::options())
                             ->default(CharterYachtStatus::Free->value)
                             ->required(),
+
+                        Toggle::make('is_hidden')
+                            ->label('Не показывать на сайте')
+                            ->helperText('Убирает лодку со страницы регаты целиком — со всеми вариантами.')
+                            ->default(false),
 
                         TextInput::make('charter_fee')
                             ->label('Сборы чартерной компании')
@@ -321,10 +329,18 @@ class ForeignRegattaYachtResource extends Resource
                     ->placeholder('—'),
 
                 TextColumn::make('status')
-                    ->label('Занятость')
+                    ->label('Целиком')
                     ->badge()
                     ->formatStateUsing(fn (CharterYachtStatus $state): string => $state->label())
                     ->color(fn (CharterYachtStatus $state): string => $state->color()),
+
+                IconColumn::make('is_hidden')
+                    ->label('Скрыта')
+                    ->boolean()
+                    ->trueIcon(Heroicon::OutlinedEyeSlash)
+                    ->falseIcon(Heroicon::OutlinedEye)
+                    ->trueColor('danger')
+                    ->falseColor('gray'),
 
                 // Что увидит посетитель на карточке этой лодки: набор кнопок
                 // выводится из шкипера, мест, цен и занятости — не из отдельного поля.
@@ -358,25 +374,40 @@ class ForeignRegattaYachtResource extends Resource
                     ->label('Занятость')
                     ->options(CharterYachtStatus::options()),
 
+                // Фильтры повторяют правила витрины: вариант предлагается, если
+                // заполнена его цена — своя или унаследованная от монотипного
+                // дивизиона (@see ForeignRegattaYacht::offeredParticipations()).
                 Filter::make('selling_seats')
-                    ->label('Набирают экипаж')
+                    ->label('Продают места')
                     ->query(fn (Builder $query): Builder => $query
-                        ->whereNotNull('skipper_name')
-                        ->where('skipper_name', '!=', '')
-                        ->where('free_seats', '>', 0)),
+                        ->where('is_hidden', false)
+                        ->where('free_seats', '>', 0)
+                        ->where(fn (Builder $inner) => $inner
+                            ->whereNotNull('seat_price')
+                            ->orWhereHas('division', fn (Builder $division) => $division
+                                ->where('type', FleetDivisionType::Fleet->value)
+                                ->whereNotNull('seat_price')))),
 
                 Filter::make('whole_charter')
                     ->label('Сдаются целиком')
                     ->query(fn (Builder $query): Builder => $query
+                        ->where('is_hidden', false)
+                        ->where('status', CharterYachtStatus::Free->value)
                         ->where(fn (Builder $inner) => $inner
-                            ->whereNull('skipper_name')
-                            ->orWhere('skipper_name', ''))
-                        ->where('status', CharterYachtStatus::Free->value)),
+                            ->whereNotNull('price')
+                            ->orWhereHas('division', fn (Builder $division) => $division
+                                ->where('type', FleetDivisionType::Fleet->value)
+                                ->whereNotNull('price')))),
+
+                Filter::make('hidden')
+                    ->label('Сняты с витрины')
+                    ->query(fn (Builder $query): Builder => $query->where('is_hidden', true)),
             ])
             ->emptyStateHeading('Лодок пока нет')
             ->emptyStateDescription('Добавьте дивизион в форме регаты — лодки флота создадутся сами, либо заведите лодку здесь вручную.')
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->after(fn (ForeignRegattaYacht $record) => self::warnIfNothingOffered($record)),
                 DeleteAction::make()
                     ->requiresConfirmation()
                     ->successNotification(
@@ -448,6 +479,30 @@ class ForeignRegattaYachtResource extends Resource
     private static function inheritsSpec(Get $get): bool
     {
         return self::division($get)?->sharesSpec() ?? false;
+    }
+
+    /**
+     * Предупреждает, что по лодке нечего предложить.
+     *
+     * Именно предупреждает, а не запрещает сохранить: флот заводят задолго до
+     * того, как чартер пришлёт цены, и блокировать ввод из-за пустого поля
+     * нельзя. Но лодка без единой цены не покажет на витрине ни одной кнопки
+     * (@see ForeignRegattaYacht::offeredParticipations()), и знать об этом
+     * админ должен сразу.
+     */
+    public static function warnIfNothingOffered(ForeignRegattaYacht $record): void
+    {
+        $record->refresh()->load('division');
+
+        if (! $record->isPublished() || $record->offeredParticipations() !== []) {
+            return;
+        }
+
+        Notification::make()
+            ->warning()
+            ->title('По лодке нечего предложить')
+            ->body($record->title().': ни один вариант не горит на витрине. Проверьте цены (за яхту целиком, за место, за каюту), свободные места и занятость.')
+            ->send();
     }
 
     /** Что именно унаследуется — одной строкой в описании секции. */
