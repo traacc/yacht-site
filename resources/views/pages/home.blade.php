@@ -59,7 +59,7 @@
   </style>
 
 <div class="mx-auto container">
-<livewire:regattas-calendar :show-selector="false" />
+<livewire:regattas-calendar continuous />
 
 </div>
 

@@ -16,6 +16,12 @@ class RegattasCalendar extends Component
     /** Показывать ли селект выбора года */
     public bool $showSelector = true;
 
+    /**
+     * Сплошная лента через все сезоны вместо одного года (главная):
+     * селектор года в этом режиме не показывается.
+     */
+    public bool $continuous = false;
+
     public function mount(?int $year = null): void
     {
         // Если год передан явно — используем его, иначе текущий год
@@ -51,7 +57,11 @@ class RegattasCalendar extends Component
     #[Computed]
     public function months(): array
     {
-        return app(SeasonCalendar::class)->months($this->year);
+        $calendar = app(SeasonCalendar::class);
+
+        return $this->continuous
+            ? $calendar->timeline()
+            : $calendar->months($this->year);
     }
 
     /**

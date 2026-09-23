@@ -43,30 +43,86 @@ final class SeasonCalendar
     /**
      * Двенадцать месяцев года с событиями каждого.
      *
-     * @return list<array{name: string, is_current: bool, events: list<array<string, mixed>>}>
+     * @return list<array{name: string, year: int|null, is_current: bool, events: list<array<string, mixed>>}>
      */
     public function months(?int $year = null): array
     {
-        $events = $this->regattaEvents($year)
-            ->concat($this->foreignRegattaEvents($year))
-            ->sortBy('sort_date')
-            ->groupBy('month');
+        $events = $this->events($year)->groupBy('month');
 
         $currentMonth = (int) now()->format('n');
 
         $months = [];
 
         foreach (self::MONTH_NAMES as $number => $name) {
-            $months[] = [
-                'name' => $name,
-                'is_current' => $number === $currentMonth,
-                'events' => $events->has($number)
-                    ? $events->get($number)->values()->all()
-                    : [],
-            ];
+            $months[] = $this->month($name, $year, $number === $currentMonth, $events->get($number));
         }
 
         return $months;
+    }
+
+    /**
+     * Сплошная лента месяцев через все сезоны — для главной, где календарь
+     * листается без переключателя года.
+     *
+     * Лента тянется от первого до последнего года, в котором есть регаты
+     * (текущий год входит всегда, чтобы было с чего начать), без разрывов
+     * между годами. Пустые сезоны по краям в неё не попадают: иначе главная
+     * открывалась бы на сотне месяцев с «Нет регат». Месяц события берётся
+     * по дате начала, а не по сезону, — карточка «Январь 2027» показывает
+     * ровно январь 2027-го.
+     *
+     * @return list<array{name: string, year: int|null, is_current: bool, events: list<array<string, mixed>>}>
+     */
+    public function timeline(): array
+    {
+        $events = $this->events(null);
+
+        $currentYear = (int) now()->format('Y');
+        $currentMonth = (int) now()->format('n');
+
+        $years = $events->pluck('year')->push($currentYear);
+        $byMonth = $events->groupBy(fn (array $event): string => $event['year'].'-'.$event['month']);
+
+        $months = [];
+
+        foreach (range($years->min(), $years->max()) as $year) {
+            foreach (self::MONTH_NAMES as $number => $name) {
+                $months[] = $this->month(
+                    $name,
+                    $year,
+                    $year === $currentYear && $number === $currentMonth,
+                    $byMonth->get($year.'-'.$number),
+                );
+            }
+        }
+
+        return $months;
+    }
+
+    /**
+     * События обоих источников, отсортированные по дате начала.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function events(?int $year): Collection
+    {
+        return $this->regattaEvents($year)
+            ->concat($this->foreignRegattaEvents($year))
+            ->sortBy('sort_date');
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>|null  $events
+     * @return array{name: string, year: int|null, is_current: bool, events: list<array<string, mixed>>}
+     */
+    private function month(string $name, ?int $year, bool $isCurrent, ?Collection $events): array
+    {
+        return [
+            'name' => $name,
+            'year' => $year,
+            'is_current' => $isCurrent,
+            'events' => $events ? $events->values()->all() : [],
+        ];
     }
 
     /** @return Collection<int, array<string, mixed>> */
@@ -78,6 +134,7 @@ final class SeasonCalendar
             ->orderBy('date_start')
             ->get()
             ->map(fn (Regatta $regatta): array => [
+                'year' => (int) $regatta->date_start->format('Y'),
                 'month' => (int) $regatta->date_start->format('n'),
                 'sort_date' => $regatta->date_start->toDateString(),
                 'id' => $regatta->id,
@@ -117,6 +174,7 @@ final class SeasonCalendar
             ->orderBy('date_start')
             ->get()
             ->map(fn (ForeignRegatta $regatta): array => [
+                'year' => (int) $regatta->date_start->format('Y'),
                 'month' => (int) $regatta->date_start->format('n'),
                 'sort_date' => $regatta->date_start->toDateString(),
                 'id' => $regatta->id,

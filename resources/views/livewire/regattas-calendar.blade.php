@@ -2,7 +2,11 @@
 {{-- ВАЖНО: у Livewire-компонента должен быть ОДИН корневой элемент.
      <style> и <script> держим ВНУТРИ корневого <div>, иначе Livewire
      примет за корень первый тег (<style>) и не будет обновлять календарь. --}}
-<div x-data="regattaCalendar()" data-current-month="{{ now()->format('n') - 1 }}" class="py-12 bg-brand-light">
+{{-- Стартовая карточка — текущий месяц; в сплошной ленте он где-то в
+     середине, поэтому индекс считаем по данным, а не по номеру месяца. --}}
+<div x-data="regattaCalendar({{ count($months) }})"
+     data-current-month="{{ collect($months)->search(fn (array $month): bool => $month['is_current']) ?: 0 }}"
+     class="py-12 bg-brand-light">
     <style>
         .slides   { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         .page-dot { transition: width 0.3s ease, background-color 0.3s ease; }
@@ -12,7 +16,7 @@
     </style>
     <div class="">
         <div class="flex md:items-center justify-between mb-6 flex-col lg:flex-row gap-y-3">
-            <h2 class="section-title a-font mb-4 md:mb-0">Календарь регат сезона</h2>
+            <h2 class="section-title a-font mb-4 md:mb-0">{{ $continuous ? 'Календарь регат' : 'Календарь регат сезона' }}</h2>
             <div class="flex items-center gap-4 flex-col md:flex-row">
                 {{-- Кнопка скачивания PDF --}}
                 <a
@@ -52,18 +56,17 @@
                         class="px-3 py-1.5 text-xs md:text-sm cursor-pointer transition-colors">Состоявшиеся</button>
                 </div>
                 {{-- Выбор года --}}
-                    @if ($showSelector)
-                <div class="calendar-icon w-full md:w-auto">
-                
-                    <div class="calendar-icon">
-                        <x-custom-select
-                            name="season_year"
-                            :options="$years"
-                            wire:model.live="year"
-                        />
+                @if ($showSelector && ! $continuous)
+                    <div class="calendar-icon w-full md:w-auto">
+                        <div class="calendar-icon">
+                            <x-custom-select
+                                name="season_year"
+                                :options="$years"
+                                wire:model.live="year"
+                            />
+                        </div>
                     </div>
-                    @endif
-                </div>
+                @endif
             </div>
         </div>
 
@@ -93,6 +96,9 @@
                             <h3 class="text-[#2E325C] font-medium text-2xl pb-4 mb-3 a-font border-b
                                 {{ $month['is_current'] ? 'text-[#2D92CE] border-b-[#2D92CE]/30' : 'border-b-[#EAEAEA]' }}">
                                 {{ $month['name'] }}
+                                @if ($continuous)
+                                    <span class="text-base text-brand-gray-light">{{ $month['year'] }}</span>
+                                @endif
                             </h3>
                             <div class="space-y-3">
                                 @foreach ($month['events'] as $event)
@@ -179,7 +185,7 @@
         </div>
 
         {{-- Точки-пагинация --}}
-        <div class="flex justify-center gap-1.5 mt-5">
+        <div class="flex flex-wrap justify-center gap-1.5 mt-5">
             <template x-for="(_, idx) in Array.from({ length: maxOffset + 1 })" :key="idx">
                 <button
                     class="page-dot h-1.5 rounded-full border-0 cursor-pointer"
@@ -193,8 +199,9 @@
 
     {{-- Alpine-логика слайдера --}}
     <script>
-function regattaCalendar() {
+function regattaCalendar(total = 12) {
     return {
+        total,
         visible: 5,
         gap: 16,
         offset: 0,
@@ -240,7 +247,7 @@ function regattaCalendar() {
         },
 
         get maxOffset() {
-            return Math.max(0, 12 - this.visible);
+            return Math.max(0, this.total - this.visible);
         },
 
         prev() { if (this.offset > 0) this.offset--; },
