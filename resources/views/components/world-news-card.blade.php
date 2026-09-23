@@ -11,6 +11,11 @@
     $sourceDate = $sourcePublishedAt
         ? \Illuminate\Support\Carbon::parse($sourcePublishedAt)->translatedFormat('j F Y')
         : null;
+
+    // Абзацы и <br> превращаем в переводы строк до strip_tags, иначе текст слипается
+    $excerpt = preg_replace('~<br\s*/?>|</(p|div|li|h[1-6]|blockquote)>~i', "\n", (string) $news->content);
+    $excerpt = html_entity_decode(strip_tags($excerpt), ENT_QUOTES | ENT_HTML5);
+    $excerpt = trim(preg_replace("/[ \t]*\n\s*/", "\n", $excerpt));
 @endphp
 
 <article class="group flex flex-col bg-[#F8F8F8] overflow-hidden shadow-xs hover:shadow-md transition-shadow">
@@ -36,9 +41,7 @@
             <a href="{{ route('world-news-details', $news) }}" class="hover:underline">{{ $news->title }}</a>
         </h3>
 
-        <p class="text-brand-gray font-medium text-sm mb-4">
-            {{ Str::limit(strip_tags($news->content), 140) }}
-        </p>
+        <p class="text-brand-gray font-medium text-sm mb-4 whitespace-pre-line">{{ Str::limit($excerpt, 140) }}</p>
 
         <div class="mt-auto flex flex-wrap gap-4 items-center">
             <a href="{{ route('world-news-details', $news) }}"
