@@ -5,9 +5,12 @@ namespace App\Filament\Widgets;
 use App\Enums\RegattaStatus;
 use App\Filament\Resources\Regattas\RegattaResource;
 use App\Models\Regatta;
+use App\Models\Season;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,6 +22,9 @@ class UpcomingRegattas extends TableWidget
     protected static ?string $heading = 'Ближайшие регаты';
 
     protected int|string|array $columnSpan = 'full';
+
+    /** Значение фильтра «Сезон»: текущий сезон и все последующие. */
+    private const CURRENT_AND_NEXT = 'current_and_next';
 
     public function table(Table $table): Table
     {
@@ -52,8 +58,34 @@ class UpcomingRegattas extends TableWidget
                     ->searchable()->label('Акватория')->columnSpanFull(),
             ])->emptyStateHeading('Пока нет ближайших регат')->stackedOnMobile()
             ->filters([
-                //
-            ])
+                SelectFilter::make('season')
+                    ->label('Сезон')
+                    ->options(fn (): array => [self::CURRENT_AND_NEXT => 'Текущий и последующие']
+                        + Season::query()
+                            ->where('year', '>=', self::currentYear())
+                            ->orderBy('year')
+                            ->pluck('year', 'id')
+                            ->all())
+                    ->default(fn (): string => Season::current()?->id ?? self::CURRENT_AND_NEXT)
+                    ->selectablePlaceholder(false)
+                    ->query(function (Builder $query, array $data): Builder {
+                        $value = $data['value'] ?? null;
+
+                        if (blank($value)) {
+                            return $query;
+                        }
+
+                        if ($value === self::CURRENT_AND_NEXT) {
+                            return $query->whereHas(
+                                'season',
+                                fn (Builder $q) => $q->where('year', '>=', self::currentYear()),
+                            );
+                        }
+
+                        return $query->where('season_id', $value);
+                    }),
+            ], layout: FiltersLayout::AboveContent)
+            ->deferFilters(false)
             ->headerActions([
                 Action::make('view_all')
                     ->label('Все соревнования') // Текст ссылки
@@ -70,5 +102,11 @@ class UpcomingRegattas extends TableWidget
                     //
                 ]),
             ]);
+    }
+
+    /** Год текущего сезона; если сезон на сегодня не заведён — календарный год. */
+    private static function currentYear(): int
+    {
+        return Season::current()?->year ?? now()->year;
     }
 }
