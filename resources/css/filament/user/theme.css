@@ -257,6 +257,13 @@
 .fi-grid-col .fi-fo-field-content-col .fi-input-wrp, .fi-grid-col .fi-fo-field-content-col .fi-input-wrp input{
   background-color: #F8F8F8;
 }
+/* Секция сама серая (#F8F8F8): серое поле на ней сливается с фоном, поэтому
+   внутри секции поля белые. Исключение — элементы повторителя: карточка
+   элемента белая, и поля на ней остаются серыми. */
+.fi-section .fi-fo-field-content-col .fi-input-wrp:not(.fi-fo-repeater-item .fi-input-wrp),
+.fi-section .fi-fo-field-content-col .fi-input-wrp:not(.fi-fo-repeater-item .fi-input-wrp) :is(input, .fi-input-wrp-content-ctn) {
+  background-color: #FFFFFF;
+}
 .fi-input-wrp-content-ctn {
   border-radius: 0px;
   box-shadow: none;
