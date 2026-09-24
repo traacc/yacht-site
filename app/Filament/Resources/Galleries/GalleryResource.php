@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Galleries;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\Galleries\Pages\ManageGalleries;
 use App\Models\Gallery;
+use App\Models\Regatta;
 use App\Models\Season;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -26,6 +27,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 // ★ ДОБАВЛЕНО: SpatieMediaLibraryImageColumn для отображения обложки в таблице
 use Filament\Support\Icons\Heroicon;
@@ -105,11 +108,25 @@ class GalleryResource extends Resource
                             ->native(false)
                             ->required(),
                     ])
-                    ->createOptionUsing(fn (array $data): string => Season::create($data)->id),
+                    ->createOptionUsing(fn (array $data): string => Season::create($data)->id)
+                    ->live()
+                    // Регата из другого сезона после смены сезона уже не подходит — сбрасываем.
+                    ->afterStateUpdated(function (Get $get, Set $set, $state): void {
+                        $regattaId = $get('regatta_id');
 
+                        if (filled($regattaId) && filled($state)
+                            && ! Regatta::whereKey($regattaId)->where('season_id', $state)->exists()) {
+                            $set('regatta_id', null);
+                        }
+                    }),
+
+                // Пока сезон не выбран — доступны все регаты, иначе только регаты этого сезона.
                 Select::make('regatta_id')
                     ->label('Регата')
-                    ->relationship('regatta', 'name')
+                    ->relationship('regatta', 'name',
+                        modifyQueryUsing: fn (Builder $query, Get $get) => $query
+                            ->when($get('season_id'), fn (Builder $query, $seasonId) => $query->where('season_id', $seasonId))
+                            ->orderByDesc('date_start'), )
                     ->searchable()
                     ->preload(),
 
