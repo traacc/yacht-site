@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\RegattaStatus;
 use App\Filament\Resources\Regattas\RegattaResource;
 use App\Models\Regatta;
 use Filament\Actions\Action;
@@ -22,7 +23,17 @@ class UpcomingRegattas extends TableWidget
     public function table(Table $table): Table
     {
         return $table
-            ->query(fn (): Builder => Regatta::query()->visibleForUser())
+            // Идущие сейчас и будущие регаты; сортировку задаём через defaultSort,
+            // чтобы orderBy в запросе не перебивал сортировку по колонке «Дата».
+            ->query(fn (): Builder => Regatta::query()
+                ->visibleForUser()
+                ->whereNotIn('regatta_status', [
+                    RegattaStatus::Cancelled,
+                    RegattaStatus::Postponed,
+                    RegattaStatus::Finished,
+                ])
+                ->whereRaw('COALESCE(date_end, date_start) >= ?', [today()->toDateString()]))
+            ->defaultSort('dateRange')
 
             ->columns([
                 TextColumn::make('name')
@@ -36,7 +47,7 @@ class UpcomingRegattas extends TableWidget
                 TextColumn::make('dateRange')
                     ->label('Дата')
                     ->getStateUsing(fn (Regatta $record): string => $record->dateRange())
-                    ->sortable(query: fn (Builder $q, string $dir) => $q->orderBy('date_start', $dir)),
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('date_start', $direction)),
                 TextColumn::make('water_area')
                     ->searchable()->label('Акватория')->columnSpanFull(),
             ])->emptyStateHeading('Пока нет ближайших регат')->stackedOnMobile()
