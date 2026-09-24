@@ -91,7 +91,8 @@ class Advert extends Model implements HasMedia
      *
      * При продаже или аренде паруса единица одна, и форма её не спрашивает, —
      * проставляем здесь. Залог без аренды смысла не имеет и стирается, чтобы
-     * не пережить смену вида при правке.
+     * не пережить смену вида при правке. Так же стирается яхта, если вид её
+     * не предполагает (шкипер, предлагающий услуги).
      */
     protected static function booted(): void
     {
@@ -104,6 +105,11 @@ class Advert extends Model implements HasMedia
 
             if (! $advert->type->usesDeposit($advert->kind) || ! ($advert->price_unit?->isRental() ?? false)) {
                 $advert->deposit = null;
+            }
+
+            if (! $advert->type->usesYacht() && ! $advert->type->usesYachtReference($advert->kind)) {
+                $advert->yacht_id = null;
+                $advert->yacht_name = null;
             }
         });
     }
@@ -282,6 +288,17 @@ class Advert extends Model implements HasMedia
     public function kindLabel(): ?string
     {
         return $this->kind === null ? null : $this->type->kindLabel($this->kind);
+    }
+
+    /** Статус для людей: закрытое объявление — «Продано» или «Неактуально» по доске. */
+    public function statusLabel(): string
+    {
+        return $this->isSold() ? $this->closedLabel() : $this->status->label();
+    }
+
+    public function closedLabel(): string
+    {
+        return $this->type->closedLabel($this->kind);
     }
 
     /** «Когда»: период объявления. */

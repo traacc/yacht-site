@@ -114,19 +114,19 @@ class AdvertResource extends Resource
                         ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->usesCategories() ?? false),
 
                     Select::make('position')
-                        ->label('Позиция')
+                        ->label(fn (Get $get): string => static::typeFrom($get('type'))?->positionLabel(static::kindFrom($get('kind'))) ?? 'Позиция')
                         ->options(AdvertPosition::options())
                         ->required()
                         ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->usesPosition() ?? false),
 
                     Select::make('sport_category')
-                        ->label('Спортивный разряд')
+                        ->label(fn (Get $get): string => static::typeFrom($get('type'))?->sportCategoryLabel(static::kindFrom($get('kind'))) ?? 'Спортивный разряд')
                         ->hintIcon('heroicon-o-question-mark-circle', 'б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта.')
                         ->options(SportCategory::class)
                         ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->usesSportCategory() ?? false),
 
                     Select::make('yacht_id')
-                        ->label('Яхта')
+                        ->label(fn (Get $get): string => static::typeFrom($get('type')) === AdvertType::Skippers ? 'На какую яхту' : 'Яхта')
                         ->helperText(fn (Get $get): string => (static::typeFrom($get('type'))?->usesYacht() ?? false)
                             ? 'Выберите одну из своих зарегистрированных яхт.'
                             : 'Необязательно: яхта из реестра Ассоциации.')
@@ -137,25 +137,30 @@ class AdvertResource extends Resource
                         ->visible(function (Get $get): bool {
                             $type = static::typeFrom($get('type'));
 
-                            return ($type?->usesYacht() ?? false) || ($type?->usesYachtReference() ?? false);
+                            return ($type?->usesYacht() ?? false)
+                                || ($type?->usesYachtReference(static::kindFrom($get('kind'))) ?? false);
                         }),
 
                     TextInput::make('yacht_name')
                         ->label('Яхта не из реестра')
                         ->helperText('Заполните, если нужной лодки нет в списке выше.')
                         ->maxLength(255)
-                        ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->usesYachtReference() ?? false),
+                        ->visible(fn (Get $get): bool => static::typeFrom($get('type'))
+                            ?->usesYachtReference(static::kindFrom($get('kind'))) ?? false),
 
                     TextInput::make('title')
                         ->label('Заголовок')
-                        ->placeholder('Например: Комплект парусов Carter 30')
+                        ->placeholder(fn (Get $get): string => static::typeFrom($get('type'))
+                            ?->titlePlaceholder(static::kindFrom($get('kind'))) ?? 'Например: Комплект парусов Carter 30')
                         ->required()
                         ->maxLength(255)
                         ->columnSpanFull(),
 
                     Textarea::make('description')
                         ->label(fn (Get $get): string => static::typeFrom($get('type'))?->descriptionLabel() ?? 'Описание')
-                        ->placeholder('Опишите товар: состояние, комплектность, причину продажи')
+                        // Подсказка под доску: у услуги нет «состояния и комплектности».
+                        ->placeholder(fn (Get $get): string => static::typeFrom($get('type'))
+                            ?->descriptionPlaceholder(static::kindFrom($get('kind'))) ?? 'Опишите товар: состояние, комплектность, причину продажи')
                         ->required()
                         ->rows(6)
                         ->maxLength(5000)
@@ -190,7 +195,7 @@ class AdvertResource extends Resource
                 ])
                 ->columns(2),
 
-            Section::make('Цена и местонахождение')
+            Section::make(fn (Get $get): string => static::typeFrom($get('type'))?->priceSectionLabel() ?? 'Цена и местонахождение')
                 ->schema([
                     Select::make('price_unit')
                         ->label('Единица цены')
@@ -205,7 +210,7 @@ class AdvertResource extends Resource
                         ->visible(fn (Get $get): bool => count(static::priceUnits($get)) > 1),
 
                     TextInput::make('price')
-                        ->label('Цена, ₽')
+                        ->label(fn (Get $get): string => static::typeFrom($get('type'))?->priceLabel(static::kindFrom($get('kind'))) ?? 'Цена, ₽')
                         ->numeric()
                         ->minValue(0)
                         ->maxValue(999999999)
@@ -239,13 +244,13 @@ class AdvertResource extends Resource
                         }),
 
                     DatePicker::make('date_from')
-                        ->label('Свободен с')
+                        ->label(fn (Get $get): string => static::dateLabels($get)[0])
                         ->native(false)
                         ->displayFormat('d.m.Y')
                         ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->usesDates() ?? false),
 
                     DatePicker::make('date_to')
-                        ->label('Свободен по')
+                        ->label(fn (Get $get): string => static::dateLabels($get)[1])
                         ->native(false)
                         ->displayFormat('d.m.Y')
                         ->afterOrEqual('date_from')
@@ -304,8 +309,13 @@ class AdvertResource extends Resource
                         // У парусов лимит зависит от вида: предложение 10, запрос 5.
                         ->maxFiles(fn (Get $get): int => static::typeFrom($get('type'))
                             ?->maxPhotos(static::kindFrom($get('kind'))) ?? 10)
-                        ->helperText(fn (Get $get): string => 'Не более '.(static::typeFrom($get('type'))
-                            ?->maxPhotos(static::kindFrom($get('kind'))) ?? 10).' фотографий.')
+                        ->helperText(function (Get $get): string {
+                            $type = static::typeFrom($get('type'));
+                            $kind = static::kindFrom($get('kind'));
+                            $limit = 'Не более '.($type?->maxPhotos($kind) ?? 10).' фотографий.';
+
+                            return trim(($type?->photosHint($kind) ?? '').' '.$limit);
+                        })
                         ->panelLayout('grid')
                         ->columnSpanFull(),
                 ]),
@@ -335,7 +345,7 @@ class AdvertResource extends Resource
                 TextColumn::make('status')
                     ->label('Статус')
                     ->badge()
-                    ->formatStateUsing(fn (AdvertStatus $state): string => $state->label())
+                    ->formatStateUsing(fn (Advert $record): string => $record->statusLabel())
                     ->color(fn (AdvertStatus $state): string => $state->color())
                     ->description(fn (Advert $record): ?string => $record->rejection_reason),
                 TextColumn::make('created_at')
@@ -378,20 +388,21 @@ class AdvertResource extends Resource
                             ->send();
                     }),
 
+                // «Продано» у товаров, «Неактуально» у услуг и запросов (@see AdvertType::closedLabel()).
                 Action::make('markSold')
-                    ->label('Продано')
+                    ->label(fn (Advert $record): string => $record->closedLabel())
                     ->icon('heroicon-o-check-badge')
                     ->color('info')
                     ->requiresConfirmation()
-                    ->modalHeading('Отметить как проданное?')
-                    ->modalDescription('Объявление останется на сайте с пометкой «Продано».')
+                    ->modalHeading(fn (Advert $record): string => 'Отметить как «'.$record->closedLabel().'»?')
+                    ->modalDescription(fn (Advert $record): string => 'Объявление останется на сайте с пометкой «'.$record->closedLabel().'».')
                     ->visible(fn (Advert $record): bool => $record->isPublished())
                     ->action(function (Advert $record): void {
                         $record->markSold();
 
                         Notification::make()
                             ->success()
-                            ->title('Объявление отмечено как проданное')
+                            ->title('Объявление отмечено как «'.$record->closedLabel().'»')
                             ->send();
                     }),
 
@@ -485,6 +496,12 @@ class AdvertResource extends Resource
     private static function priceUnits(Get $get): array
     {
         return static::typeFrom($get('type'))?->priceUnits(static::kindFrom($get('kind'))) ?? [];
+    }
+
+    /** @return array{0: string, 1: string} подписи дат «с» и «по» */
+    private static function dateLabels(Get $get): array
+    {
+        return static::typeFrom($get('type'))?->dateLabels(static::kindFrom($get('kind'))) ?? ['Свободен с', 'Свободен по'];
     }
 
     private static function kindFrom(mixed $state): ?AdvertKind

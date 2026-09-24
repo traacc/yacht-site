@@ -16,7 +16,7 @@
 
         @if ($advert->isSold())
             <span class="absolute top-2 left-2 bg-[#2E325C] text-white text-xs font-semibold px-3 py-1">
-                Продано
+                {{ $advert->closedLabel() }}
             </span>
         @endif
 

@@ -123,7 +123,7 @@ enum AdvertType: string
     {
         return match (true) {
             $this === self::Skippers && $kind === AdvertKind::Offer => 'Предлагаю услуги',
-            $this === self::Skippers && $kind === AdvertKind::Request => 'Хочу в экипаж',
+            $this === self::Skippers && $kind === AdvertKind::Request => 'Ищу в экипаж',
             $this === self::Sails && $kind === AdvertKind::Sale => 'Продам',
             $this === self::Sails && $kind === AdvertKind::Rent => 'Сдам в аренду',
             $this === self::Sails && $kind === AdvertKind::Request => 'Ищу парус',
@@ -159,10 +159,17 @@ enum AdvertType: string
     /**
      * «На какую яхту» — необязательная ссылка с тройственной семантикой:
      * яхта из реестра, свободный текст (`yacht_name`) или ничего.
+     *
+     * На бирже шкиперов лодка есть только у капитана, который ищет людей в
+     * экипаж: рулевой или матрос, предлагающий услуги, приходит без неё.
      */
-    public function usesYachtReference(): bool
+    public function usesYachtReference(?AdvertKind $kind = null): bool
     {
-        return $this === self::Skippers || $this === self::Crews;
+        return match ($this) {
+            self::Skippers => $kind === AdvertKind::Request,
+            self::Crews => true,
+            default => false,
+        };
     }
 
     /** Позиция в экипаже: рулевой / матрос / любая. */
@@ -239,6 +246,104 @@ enum AdvertType: string
         return match ($this) {
             self::Crews => 'Описание экипажа',
             default => 'Описание',
+        };
+    }
+
+    // ──────────────────────────────────────────────
+    // Подписи формы: товар ≠ услуга
+    // ──────────────────────────────────────────────
+
+    /** Пример заголовка в форме подачи. */
+    public function titlePlaceholder(?AdvertKind $kind = null): string
+    {
+        return match (true) {
+            $this === self::Skippers && $kind === AdvertKind::Request => 'Например: Ищу матроса на летний сезон',
+            $this === self::Skippers => 'Например: Рулевой, КМС, 10 лет в гонках',
+            $this === self::Crews => 'Например: Экипаж из 6 человек ищет лодку на сезон',
+            $this === self::CompetitionYachts => 'Например: Набираю экипаж на Кубок Carter 30',
+            $this === self::YachtSale => 'Например: Carter 30, готова к сезону',
+            $this === self::Sails && $kind === AdvertKind::Request => 'Например: Ищу грот на Carter 30',
+            default => 'Например: Комплект парусов Carter 30',
+        };
+    }
+
+    /** Подсказка в описании: у услуги нет «состояния и комплектности». */
+    public function descriptionPlaceholder(?AdvertKind $kind = null): string
+    {
+        return match (true) {
+            $this === self::Skippers && $kind === AdvertKind::Request => 'Кого ищете, на какие регаты или походы, требования к опыту, условия',
+            $this === self::Skippers => 'Опыт, регаты и результаты, квалификация и права, на каких лодках ходили',
+            $this === self::Crews => 'Состав экипажа, опыт, результаты на регатах',
+            $this === self::CompetitionYachts => 'Какой экипаж нужен, условия участия, требования к опыту',
+            $this === self::Sails && $kind === AdvertKind::Request => 'Какой парус ищете: тип, размеры, для какой лодки',
+            default => 'Опишите товар: состояние, комплектность, причину продажи',
+        };
+    }
+
+    /** Заголовок секции с ценой. */
+    public function priceSectionLabel(): string
+    {
+        return match ($this) {
+            self::Skippers, self::Crews => 'Стоимость, даты и город',
+            default => 'Цена и местонахождение',
+        };
+    }
+
+    public function priceLabel(?AdvertKind $kind = null): string
+    {
+        return match (true) {
+            $this === self::Skippers && $kind === AdvertKind::Request => 'Оплата, ₽',
+            $this === self::Skippers, $this === self::Crews => 'Стоимость услуг, ₽',
+            default => 'Цена, ₽',
+        };
+    }
+
+    /**
+     * Подписи дат «Когда».
+     *
+     * @return array{0: string, 1: string} [с, по]
+     */
+    public function dateLabels(?AdvertKind $kind = null): array
+    {
+        return match (true) {
+            $this === self::Skippers && $kind === AdvertKind::Request => ['Нужен с', 'Нужен по'],
+            $this === self::Crews => ['Свободны с', 'Свободны по'],
+            default => ['Свободен с', 'Свободен по'],
+        };
+    }
+
+    public function positionLabel(?AdvertKind $kind = null): string
+    {
+        return $this === self::Skippers && $kind === AdvertKind::Request ? 'Кого ищете' : 'Позиция';
+    }
+
+    public function sportCategoryLabel(?AdvertKind $kind = null): string
+    {
+        return $this === self::Skippers && $kind === AdvertKind::Request ? 'Разряд не ниже' : 'Спортивный разряд';
+    }
+
+    /** Что снимать; null — подсказки нет. */
+    public function photosHint(?AdvertKind $kind = null): ?string
+    {
+        return match (true) {
+            $this === self::Skippers && $kind === AdvertKind::Request => 'Фото яхты и экипажа.',
+            $this === self::Skippers => 'Ваше фото, фото с регат.',
+            default => null,
+        };
+    }
+
+    /**
+     * Подпись закрытого автором объявления (статус Sold).
+     *
+     * «Продано» уместно только там, где вещь продают; услуги, запросы и аренда
+     * просто становятся неактуальными.
+     */
+    public function closedLabel(?AdvertKind $kind = null): string
+    {
+        return match (true) {
+            $this === self::Marketplace, $this === self::YachtSale => 'Продано',
+            $this === self::Sails && $kind === AdvertKind::Sale => 'Продано',
+            default => 'Неактуально',
         };
     }
 

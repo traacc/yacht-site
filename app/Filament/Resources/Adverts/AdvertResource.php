@@ -81,7 +81,7 @@ class AdvertResource extends Resource
             TextEntry::make('status')
                 ->label('Статус')
                 ->badge()
-                ->formatStateUsing(fn (AdvertStatus $state): string => $state->label())
+                ->formatStateUsing(fn (Advert $record): string => $record->statusLabel())
                 ->color(fn (AdvertStatus $state): string => $state->color()),
             TextEntry::make('author.name')
                 ->label('Автор'),
@@ -197,7 +197,7 @@ class AdvertResource extends Resource
                 TextColumn::make('status')
                     ->label('Статус')
                     ->badge()
-                    ->formatStateUsing(fn (AdvertStatus $state): string => $state->label())
+                    ->formatStateUsing(fn (Advert $record): string => $record->statusLabel())
                     ->color(fn (AdvertStatus $state): string => $state->color()),
                 TextColumn::make('created_at')
                     ->label('Подано')
