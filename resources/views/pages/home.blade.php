@@ -276,6 +276,7 @@
                     <div
                         class="shrink-0 overflow-hidden cursor-pointer group"
                         :style="`width: ${cardWidth}px; height: ${cardHeight}px`"
+                        @click="openLightbox(idx)"
                     >
                         <img :src="img" alt="" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
                     </div>
@@ -296,6 +297,81 @@
         </div>
 
         <a href="{{ route('gallery') }}" class="text-[#2E325C] text-center block mt-6 text-sm font-semibold hover:underline md:hidden">Все галерея →</a>
+    </div>
+
+    {{-- Лайтбокс — та же разметка, что на странице галереи (pages/gallery.blade.php) --}}
+    <div x-show="lightboxOpen"
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+        @keydown.left.window="lightboxOpen && prevImage()"
+        @keydown.right.window="lightboxOpen && nextImage()"
+        @keydown.escape.window="lightboxOpen = false"
+        x-trap.noscroll="lightboxOpen"
+        @touchstart.passive="lbTouchStartX = $event.touches[0].clientX"
+        @touchend.passive="Math.abs($event.changedTouches[0].clientX - lbTouchStartX) > 50 && ($event.changedTouches[0].clientX > lbTouchStartX ? prevImage() : nextImage())"
+        >
+        <div @click.away="lightboxOpen = false" class="relative w-full max-w-[1200px] max-h-[90vh] px-2 md:px-0"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+        >
+            <button @click="lightboxOpen = false"
+                aria-label="Закрыть"
+                class="absolute -top-12 right-2 md:-top-10 md:-right-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white text-3xl leading-none hover:opacity-70">&times;</button>
+
+            <div class="relative flex items-center justify-center">
+                <button @click="prevImage()"
+                    aria-label="Предыдущее"
+                    class="absolute left-1 md:-left-6 z-50 p-2 md:p-3 text-white bg-[#2D92CE]/80 hover:bg-[#2D92CE] rounded-full transition-all">
+                    <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+
+                <img :src="images[activeIndex]"
+                    x-show="lightboxOpen"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="scale-90 opacity-0"
+                    x-transition:enter-end="scale-100 opacity-100"
+                    class="w-full md:w-[75vw] max-h-[60vh] object-contain"
+                    alt="Full size">
+
+                <button @click="nextImage()"
+                    aria-label="Следующее"
+                    class="absolute right-1 md:-right-6 z-50 p-2 md:p-3 text-white bg-[#2D92CE]/80 hover:bg-[#2D92CE] rounded-full transition-all">
+                    <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+            </div>
+
+            {{-- Превью (миниатюры) --}}
+            <div class="relative flex items-center">
+                <button @click="thumbScroll(-1)"
+                    x-show="images.length > 1"
+                    aria-label="Прокрутить миниатюры влево"
+                    class="absolute -left-4 z-50 p-1.5 text-white bg-[#2D92CE]/80 hover:bg-[#2D92CE] rounded-full transition-all hidden md:block">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+
+                <div x-ref="thumbStrip"
+                    class="flex gap-2 md:gap-4 overflow-x-auto mt-4 justify-start md:justify-center px-1 pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory">
+                    <template x-for="(img, idx) in images" :key="idx">
+                        <div class="thumb-item cursor-pointer shadow-hover transition-all shrink-0 max-w-[60px] md:max-w-[100px] aspect-square snap-center"
+                            :class="activeIndex === idx ? 'ring-2 ring-[#2D92CE]' : ''"
+                            :aria-current="activeIndex === idx ? 'true' : undefined"
+                            @click="activeIndex = idx; $nextTick(() => scrollToThumb())">
+                            <img :src="img"
+                                class="object-cover h-full w-full"
+                                alt="Preview">
+                        </div>
+                    </template>
+                </div>
+
+                <button @click="thumbScroll(1)"
+                    x-show="images.length > 1"
+                    aria-label="Прокрутить миниатюры вправо"
+                    class="absolute -right-4 z-50 p-1.5 text-white bg-[#2D92CE]/80 hover:bg-[#2D92CE] rounded-full transition-all hidden md:block">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -322,6 +398,11 @@ function gallerySlider() {
         touchStartX: 0,
         touchDeltaX: 0,
         dragging: false,
+
+        // Лайтбокс
+        lightboxOpen: false,
+        activeIndex: 0,
+        lbTouchStartX: 0,
 
         get maxIndex() {
             return Math.max(0, this.images.length - Math.floor(this.visible));
@@ -376,6 +457,32 @@ function gallerySlider() {
             if (this.touchDeltaX < -threshold) this.next();
             else if (this.touchDeltaX > threshold) this.prev();
             this.touchDeltaX = 0;
+        },
+
+        // Лайтбокс
+        openLightbox(idx) {
+            this.activeIndex = idx;
+            this.lightboxOpen = true;
+            this.$nextTick(() => this.scrollToThumb());
+        },
+        prevImage() {
+            if (this.images.length === 0) return;
+            this.activeIndex = (this.activeIndex - 1 + this.images.length) % this.images.length;
+            this.$nextTick(() => this.scrollToThumb());
+        },
+        nextImage() {
+            if (this.images.length === 0) return;
+            this.activeIndex = (this.activeIndex + 1) % this.images.length;
+            this.$nextTick(() => this.scrollToThumb());
+        },
+        scrollToThumb() {
+            const activeThumb = this.$refs.thumbStrip?.querySelector('.thumb-item[aria-current]');
+            if (activeThumb) {
+                activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        },
+        thumbScroll(dir) {
+            this.$refs.thumbStrip?.scrollBy({ left: dir * 200, behavior: 'smooth' });
         },
     };
 }
