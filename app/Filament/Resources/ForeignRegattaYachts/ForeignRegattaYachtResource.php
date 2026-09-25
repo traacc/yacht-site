@@ -179,12 +179,6 @@ class ForeignRegattaYachtResource extends Resource
                             ->label('За что цена')
                             ->options(CharterPriceUnit::options()),
 
-                        Select::make('currency')
-                            ->label('Валюта')
-                            ->helperText('Пусто — валюта дивизиона-флота, а если и там пусто — валюта регаты.')
-                            ->options(Currency::options())
-                            ->live(),
-
                         Select::make('status')
                             ->label('Занятость (целиком)')
                             ->helperText('Только про чартер целиком: занятая лодка продолжает продавать места и каюты, пока они есть.')
@@ -453,25 +447,13 @@ class ForeignRegattaYachtResource extends Resource
     }
 
     /**
-     * Знак валюты в суффиксах полей суммы: свой выбор, иначе валюта дивизиона.
+     * Знак валюты в суффиксах полей суммы.
      *
-     * Повторяет ForeignRegattaYacht::effectiveCurrency(), но по состоянию формы:
+     * Валюта одна на регату, поэтому берётся у выбранной в форме регаты:
      * запись в этот момент ещё не сохранена.
      */
     private static function currencySymbol(Get $get): string
     {
-        $own = $get('currency');
-
-        if ($own instanceof Currency || (is_string($own) && $own !== '')) {
-            return Currency::fromNullable($own)->symbol();
-        }
-
-        $division = self::division($get);
-
-        if ($division?->sharesSpec()) {
-            return $division->priceCurrency()->symbol();
-        }
-
         return Currency::fromNullable(self::regatta($get)?->currency)->symbol();
     }
 

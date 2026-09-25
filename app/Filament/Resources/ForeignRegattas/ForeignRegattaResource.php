@@ -184,7 +184,7 @@ class ForeignRegattaResource extends Resource
 
                         Select::make('currency')
                             ->label('Валюта')
-                            ->helperText('Валюта цен регаты. У дивизионов и лодок валюта своя.')
+                            ->helperText('Одна на все цены регаты: и в дивизионах, и у каждой лодки.')
                             ->options(Currency::options())
                             ->default(Currency::default()->value)
                             ->live()
@@ -370,8 +370,8 @@ class ForeignRegattaResource extends Resource
     /**
      * Знак валюты для полей суммы по состоянию формы.
      *
-     * Запись в этот момент ещё не сохранена, поэтому валюту берём из состояния:
-     * выигрывает первый заполненный путь, пусто везде — рубли.
+     * Запись в этот момент ещё не сохранена, поэтому валюту регаты берём из
+     * состояния формы; путь до неё зависит от вложенности репитера.
      */
     private static function currencySymbol(Get $get, string ...$paths): string
     {
@@ -404,9 +404,9 @@ class ForeignRegattaResource extends Resource
         // справочника (@see App\Models\ForeignRegattaDivision::effectiveModel()).
         $hasCatalogModel = fn (Get $get): bool => filled($get('yacht_model_id'));
 
-        // Знак валюты внутри репитера: своя валюта дивизиона, иначе валюта регаты
-        // уровнем выше (`../../`).
-        $divisionCurrency = fn (Get $get): string => self::currencySymbol($get, 'currency', '../../currency');
+        // Знак валюты внутри репитера: она одна на регату и лежит уровнем
+        // выше (`../../`).
+        $divisionCurrency = fn (Get $get): string => self::currencySymbol($get, '../../currency');
 
         return [
             Select::make('type')
@@ -506,13 +506,6 @@ class ForeignRegattaResource extends Resource
                 ->suffix($divisionCurrency)
                 ->visible($isFleet),
 
-            Select::make('currency')
-                ->label('Валюта')
-                ->helperText('Пусто — валюта регаты. Лодки дивизиона наследуют её вместе с ценой.')
-                ->options(Currency::options())
-                ->live()
-                ->visible($isFleet),
-
             TextInput::make('charter_fee')
                 ->label('Сборы чартерной компании')
                 ->numeric()
@@ -598,11 +591,10 @@ class ForeignRegattaResource extends Resource
      */
     private static function divisionYachtFields(): array
     {
-        // Знак валюты у лодки списка: своя валюта, иначе валюта регаты
-        // (`../../../../` — четыре уровня вверх: поле, лодка, репитер лодок,
-        // дивизион). Валюта дивизиона пропущена намеренно: список ничего лодкам
-        // не наследует (@see App\Models\ForeignRegattaYacht::spec()).
-        $yachtCurrency = fn (Get $get): string => self::currencySymbol($get, 'currency', '../../../../currency');
+        // Знак валюты: она одна на регату, а лодка лежит в репитере внутри
+        // репитера — до неё четыре уровня вверх (поле, лодка, репитер лодок,
+        // дивизион).
+        $yachtCurrency = fn (Get $get): string => self::currencySymbol($get, '../../../../currency');
 
         return [
             Select::make('yacht_model_id')
@@ -656,12 +648,6 @@ class ForeignRegattaResource extends Resource
                 ->label('За что цена')
                 ->options(CharterPriceUnit::options())
                 ->default(CharterPriceUnit::Regatta->value),
-
-            Select::make('currency')
-                ->label('Валюта')
-                ->helperText('Пусто — валюта регаты.')
-                ->options(Currency::options())
-                ->live(),
 
             TextInput::make('free_seats')
                 ->label('Свободных мест')

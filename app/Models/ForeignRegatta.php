@@ -497,7 +497,7 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
             $cheapest = $this->cheapestOffer($offer['yachts'], $offer['price']);
 
             if ($cheapest !== null) {
-                return 'от '.$cheapest['currency']->format($cheapest['amount']).' '.$offer['unit'];
+                return 'от '.$this->priceCurrency()->format($cheapest).' '.$offer['unit'];
             }
         }
 
@@ -507,33 +507,20 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     }
 
     /**
-     * Самое дешёвое предложение набора лодок.
+     * Самая низкая цена набора лодок.
      *
-     * Цены разных валют не сравниваются: берутся предложения в валюте регаты,
-     * а если таких нет — в самой распространённой валюте флота.
+     * Сравнивать суммы можно напрямую: валюта у регаты одна и на дивизионы с
+     * лодками не делится (@see ForeignRegattaYacht::effectiveCurrency()).
      *
      * @param  Collection<int, ForeignRegattaYacht>  $yachts
      * @param  callable(ForeignRegattaYacht): ?int  $price
-     * @return array{amount: int, currency: Currency}|null
      */
-    private function cheapestOffer(Collection $yachts, callable $price): ?array
+    private function cheapestOffer(Collection $yachts, callable $price): ?int
     {
-        $offers = $yachts
-            ->map(fn (ForeignRegattaYacht $yacht): array => [
-                'amount' => $price($yacht),
-                'currency' => $yacht->effectiveCurrency(),
-            ])
-            ->filter(fn (array $offer): bool => $offer['amount'] !== null)
-            ->groupBy(fn (array $offer): string => $offer['currency']->value);
-
-        if ($offers->isEmpty()) {
-            return null;
-        }
-
-        $group = $offers->get($this->priceCurrency()->value)
-            ?? $offers->sortByDesc(fn (Collection $group): int => $group->count())->first();
-
-        return $group->sortBy('amount')->first();
+        return $yachts
+            ->map($price)
+            ->filter(fn (?int $amount): bool => $amount !== null)
+            ->min();
     }
 
     public function seatPriceLabel(): ?string

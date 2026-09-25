@@ -56,7 +56,6 @@ class ForeignRegattaYacht extends Model implements HasMedia
         'charter_fee',
         'deposit',
         'price_note',
-        'currency',
         'skipper_name',
         'skipper_note',
         'free_seats',
@@ -85,7 +84,6 @@ class ForeignRegattaYacht extends Model implements HasMedia
             'free_seats' => 'integer',
             'seat_price' => 'integer',
             'cabin_price' => 'integer',
-            'currency' => Currency::class,
             'status' => CharterYachtStatus::class,
             'is_hidden' => 'boolean',
             'sort_order' => 'integer',
@@ -278,19 +276,10 @@ class ForeignRegattaYacht extends Model implements HasMedia
         return $this->spec('price_note');
     }
 
-    /**
-     * Валюта цен лодки: своя, иначе дивизиона-флота, иначе регаты.
-     *
-     * Наследуется вместе с ценой: у восьми лодок одного дивизиона валюта
-     * задаётся там же, где сумма, а у списка конкретных лодок — на регате.
-     */
+    /** Валюта цен: одна на всю регату, у лодки и дивизиона своей нет. */
     public function effectiveCurrency(): Currency
     {
-        $own = $this->spec('currency');
-
-        return $own instanceof Currency
-            ? $own
-            : Currency::fromNullable($this->regatta?->currency);
+        return Currency::fromNullable($this->regatta?->currency);
     }
 
     /**

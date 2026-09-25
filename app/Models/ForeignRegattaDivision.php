@@ -53,7 +53,6 @@ class ForeignRegattaDivision extends Model implements HasMedia
         'charter_fee',
         'deposit',
         'price_note',
-        'currency',
         'yachts_count',
         'sort_order',
     ];
@@ -75,7 +74,6 @@ class ForeignRegattaDivision extends Model implements HasMedia
             'cabin_price' => 'integer',
             'charter_fee' => 'integer',
             'deposit' => 'integer',
-            'currency' => Currency::class,
             'yachts_count' => 'integer',
             'sort_order' => 'integer',
         ];
@@ -134,10 +132,10 @@ class ForeignRegattaDivision extends Model implements HasMedia
     // Представление
     // ──────────────────────────────────────────────
 
-    /** Валюта цен дивизиона: своя, иначе валюта регаты, иначе рубли. */
+    /** Валюта цен: одна на всю регату, у дивизиона своей нет. */
     public function priceCurrency(): Currency
     {
-        return Currency::fromNullable($this->currency ?? $this->regatta?->currency);
+        return Currency::fromNullable($this->regatta?->currency);
     }
 
     /** Наследуют ли лодки дивизиона его характеристики. */
