@@ -1,4 +1,6 @@
-<x-public-layout>
+<x-public-layout :title="$news->title . ' — новости ассоциации'"
+    :description="Str::limit(strip_tags($news->content), 160)"
+    :og-image="$news->cover_image_url ? asset('storage/' . $news->cover_image_url) : null">
 <x-breadcrumbs_page :title="$news->title">
 </x-breadcrumbs_page>
 <main class="main">

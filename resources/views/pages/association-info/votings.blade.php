@@ -1,4 +1,4 @@
-<x-public-layout>
+<x-public-layout title="Голосования CarterPro - решения членов ассоциации" description="Активные и завершённые голосования членов ассоциации: вопросы, варианты ответов и итоги">
 <x-breadcrumbs_page title="Голосования Ассоциации">
 </x-breadcrumbs_page>
 <x-hero-section title="Голосования Ассоциации"
