@@ -160,6 +160,11 @@ class ForeignRegattaYachtResource extends Resource
                             ->label('Спинакер / геннакер')
                             ->options(DownwindSail::options()),
 
+                        TextInput::make('base_marina')
+                            ->label('База (марина)')
+                            ->placeholder('Marina Kaštela')
+                            ->maxLength(255),
+
                         TextInput::make('sort_order')
                             ->label('Порядок')
                             ->numeric()
@@ -201,6 +206,18 @@ class ForeignRegattaYachtResource extends Resource
 
                         TextInput::make('deposit')
                             ->label('Депозит')
+                            ->numeric()
+                            ->minValue(0)
+                            ->suffix(fn (Get $get): string => self::currencySymbol($get)),
+
+                        TextInput::make('downwind_sail_price')
+                            ->label('Аренда спинакера / геннакера')
+                            ->numeric()
+                            ->minValue(0)
+                            ->suffix(fn (Get $get): string => self::currencySymbol($get)),
+
+                        TextInput::make('downwind_sail_deposit')
+                            ->label('Депозит за спинакер / геннакер')
                             ->numeric()
                             ->minValue(0)
                             ->suffix(fn (Get $get): string => self::currencySymbol($get)),

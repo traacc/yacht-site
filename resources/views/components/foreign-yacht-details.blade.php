@@ -8,8 +8,8 @@
 {{--
     Модалка «Подробнее» по лодке: характеристики, цены, галерея и кнопки заявки.
 
-    Общая для карточки лодки и строки таблицы флота, поэтому видимостью не
-    управляет — открывается из переменной `details` родительского x-data.
+    Видимостью не управляет — открывается из переменной `details` x-data строки
+    таблицы флота (@see components/foreign-fleet-table).
 --}}
 @php
     $photos = $yacht->effectivePhotos();
@@ -37,6 +37,9 @@
         'Депозит' => $yacht->depositLabel(),
         'Каюты' => $yacht->cabinsLabel(),
         'Парус полных курсов' => $yacht->effectiveDownwindSail()?->label(),
+        'Аренда паруса' => $yacht->downwindSailPriceLabel(),
+        'Депозит за парус' => $yacht->downwindSailDepositLabel(),
+        'База' => $yacht->effectiveBaseMarina(),
         'Шкипер' => $yacht->hasSkipper() ? $yacht->skipper_name : null,
         // Занятость — про лодку целиком; места у неё могут продаваться дальше.
         'Яхта целиком' => $yacht->isAvailable() ? null : $yacht->status->label(),

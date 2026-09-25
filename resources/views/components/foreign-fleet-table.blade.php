@@ -6,101 +6,167 @@
 ])
 
 {{--
-    Флот дивизиона таблицей: модель, название, состояние и кнопки вариантов цен.
+    Флот дивизиона таблицей — по образцу «Данные яхт для публикации»: модель,
+    название, год, каюты, шкипер, база, цена и сопутствующие платежи, занятость.
 
-    Карточками хорош небольшой флот, а полтора десятка разных лодок читаются
-    только списком — по ТЗ посетитель сравнивает лодки и цены глазами и жмёт
-    кнопку нужного варианта прямо в строке.
+    Цена печатается только у того, что ещё можно взять: у свободной лодки —
+    чартер целиком, у лодки, где остались места, — цены мест. У занятой цены нет.
 
-    Подробности лодки (описание, галерея, полный набор цен) открываются той же
-    модалкой, что и с карточки (@see components/foreign-yacht-details).
+    Занятость у свободной лодки и у лодки с местами кликабельна: открывает
+    карточку лодки (@see components/foreign-yacht-details) с описанием,
+    галереей и кнопками заявки. Отдельной колонки кнопок нет — строка и так
+    широкая, а выбор варианта живёт в карточке.
 
-    На узком экране таблица раскладывается в стопку (`block md:table-cell`):
-    горизонтальная прокрутка увела бы кнопки заявки за край, а именно они здесь
-    главное. Разметка при этом одна — дублировать строки карточками нельзя,
-    иначе у каждой лодки окажется по две модалки.
+    На узком экране строки раскладываются в стопку с подписями у значений:
+    горизонтальная прокрутка на 13 колонок уводила бы занятость за край.
 --}}
+@php
+    $cell = 'flex justify-between gap-4 py-0.5 lg:table-cell lg:p-3 lg:align-top';
+    $label = 'lg:hidden text-brand-gray-light';
+@endphp
 
 <div {{ $attributes->merge(['class' => 'overflow-x-auto border border-[#C6C6C6]']) }}>
-    <table class="w-full text-sm md:min-w-[720px]">
-        <thead class="hidden md:table-header-group">
-            <tr class="bg-[#F8F8F8] text-[#2E325C] text-left">
+    <table class="w-full text-sm">
+        <thead class="hidden lg:table-header-group">
+            <tr class="bg-[#F8F8F8] text-[#2E325C] text-left align-bottom">
+                <th class="p-3 font-semibold">№</th>
                 <th class="p-3 font-semibold">Модель</th>
                 <th class="p-3 font-semibold">Название</th>
-                <th class="p-3 font-semibold">Характеристики</th>
-                <th class="p-3 font-semibold">Экипаж</th>
-                <th class="p-3 font-semibold">Варианты</th>
+                <th class="p-3 font-semibold">Год</th>
+                <th class="p-3 font-semibold">Кают</th>
+                <th class="p-3 font-semibold">Шкипер</th>
+                <th class="p-3 font-semibold">База</th>
+                <th class="p-3 font-semibold">Цена</th>
+                <th class="p-3 font-semibold" x-data="{ hint: false }">
+                    <span class="relative inline-flex items-center gap-1">
+                        Сборы чартерной
+                        <button type="button" @click="hint = ! hint" @click.outside="hint = false"
+                                class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-[#2D92CE] text-[#2D92CE] text-[10px] leading-none"
+                                aria-label="Что входит в сборы">?</button>
+                        <span x-show="hint" x-cloak
+                              class="absolute top-full left-0 mt-1 z-10 w-48 bg-white border border-[#C6C6C6] p-2 text-xs font-normal text-brand-gray shadow">
+                            Уборка, transit log, страховка на регату (race insurance).
+                        </span>
+                    </span>
+                </th>
+                <th class="p-3 font-semibold">Депозит за яхту</th>
+                <th class="p-3 font-semibold">Аренда спинакера/ геннакера</th>
+                <th class="p-3 font-semibold">Депозит за спинакер/ геннакер</th>
+                <th class="p-3 font-semibold">Занятость</th>
             </tr>
         </thead>
 
-        <tbody class="block md:table-row-group">
+        <tbody class="block lg:table-row-group">
             @foreach ($yachts as $yacht)
                 @php
-                    $photos = $yacht->effectivePhotos();
-                    $description = trim((string) $yacht->effectiveDescription());
-                    $hasDetails = $description !== '' || count($photos) > 0;
+                    $availability = $yacht->availability();
+                    $sail = $yacht->effectiveDownwindSail();
 
-                    $specs = array_values(array_filter([
-                        $yacht->cabinsLabel(),
-                        $yacht->effectiveYear() ? $yacht->effectiveYear().' г.' : null,
-                        $yacht->effectiveDownwindSail()?->label(),
-                    ]));
+                    // Цена только у того, что ещё можно взять.
+                    $prices = match ($availability) {
+                        \App\Enums\FleetYachtAvailability::Free => array_filter([$yacht->priceLabel()]),
+                        \App\Enums\FleetYachtAvailability::SeatsLeft => collect(\App\Enums\ParticipationOption::cases())
+                            ->filter(fn ($option) => $option->isSeatLike() && $yacht->hasVacancy($option))
+                            ->map(fn ($option) => ($price = $yacht->participationPriceLabel($option))
+                                ? $option->shortLabel().' — '.$price
+                                : null)
+                            ->filter()
+                            ->all(),
+                        default => [],
+                    };
 
-                    $offers = $requestEvent === null ? [] : $yacht->offeredParticipations();
-
-                    $seatRows = collect(\App\Enums\ParticipationOption::cases())
-                        ->filter(fn ($option) => $option->isSeatLike() && $yacht->countsOccupancy($option))
-                        ->map(fn ($option) => $option->shortLabel().' — '.$yacht->occupancyShortLabel($option))
-                        ->all();
+                    $badge = match ($availability) {
+                        \App\Enums\FleetYachtAvailability::Free => 'bg-[#2D92CE] text-white hover:bg-[#0074CC]',
+                        \App\Enums\FleetYachtAvailability::SeatsLeft => 'border border-[#2D92CE] text-[#2D92CE] hover:bg-[#2D92CE] hover:text-white',
+                        \App\Enums\FleetYachtAvailability::Taken => 'bg-gray-200 text-brand-gray-light',
+                    };
                 @endphp
 
                 <tr x-data="{ details: false }"
-                    class="block md:table-row border-t border-[#EAEAEA] p-4 md:p-0 md:align-top">
-                    <td class="block md:table-cell md:p-3 text-[#2E325C] font-semibold">{{ $yacht->effectiveModel() ?: '—' }}</td>
+                    class="block lg:table-row border-t border-[#EAEAEA] first:border-t-0 lg:first:border-t p-4 lg:p-0">
+                    <td class="hidden lg:table-cell lg:p-3 lg:align-top text-brand-gray-light">{{ $loop->iteration }}</td>
 
-                    <td class="block md:table-cell md:p-3">
+                    {{-- На телефоне модель с названием — заголовок строки. --}}
+                    <td class="block lg:table-cell lg:p-3 lg:align-top text-[#2E325C] font-semibold text-base lg:text-sm">
+                        <span class="lg:hidden text-brand-gray-light font-normal">{{ $loop->iteration }}.</span>
+                        {{ $yacht->effectiveModel() ?: '—' }}
                         @if ($yacht->name)
-                            <div class="text-[#2E325C]">{{ $yacht->name }}</div>
-                        @endif
-                        @if ($hasDetails)
-                            <button type="button" @click="details = true"
-                                    class="text-[#2D92CE] font-semibold text-xs hover:underline mt-1">Подробнее</button>
+                            <span class="lg:hidden font-normal">«{{ $yacht->name }}»</span>
                         @endif
                     </td>
 
-                    <td class="block md:table-cell md:p-3 text-brand-gray-light">
-                        {{ count($specs) > 0 ? implode(' · ', $specs) : '—' }}
-                    </td>
+                    <td class="hidden lg:table-cell lg:p-3 lg:align-top text-[#2E325C]">{{ $yacht->name ?: '—' }}</td>
 
-                    <td class="block md:table-cell md:p-3 text-brand-gray-light">
+                    <td class="{{ $cell }}"><span class="{{ $label }}">Год</span>{{ $yacht->effectiveYear() ?? '—' }}</td>
+
+                    <td class="{{ $cell }}"><span class="{{ $label }}">Кают</span>{{ $yacht->effectiveCabins() ?? '—' }}</td>
+
+                    <td class="{{ $cell }}">
+                        <span class="{{ $label }}">Шкипер</span>
                         @if ($yacht->hasSkipper())
-                            <div class="text-[#2E325C]">Шкипер — {{ $yacht->skipper_name }}</div>
+                            <span class="font-bold text-[#2E325C]">{{ $yacht->skipper_name }}</span>
                         @else
-                            <div>Без шкипера</div>
-                        @endif
-
-                        @forelse ($seatRows as $row)
-                            <div>{{ $row }} занято</div>
-                        @empty
-                            {{-- Мест не объявлено — предлагать по типам нечего. --}}
-                            <div>Мест в продаже нет</div>
-                        @endforelse
-
-                        {{-- Занятость — только про лодку целиком: места у неё
-                             могут продаваться и дальше. --}}
-                        @if (! $yacht->isAvailable())
-                            <div>Целиком — {{ mb_strtolower($yacht->status->label()) }}</div>
+                            <span class="text-brand-gray-light">—</span>
                         @endif
                     </td>
 
-                    <td class="block md:table-cell md:p-3 mt-3 md:mt-0">
-                        @if (count($offers) > 0)
-                            <x-foreign-yacht-cta :seller="$yacht" :request-event="$requestEvent" compact />
+                    <td class="{{ $cell }}"><span class="{{ $label }}">База</span>{{ $yacht->effectiveBaseMarina() ?: '—' }}</td>
+
+                    <td class="{{ $cell }}">
+                        <span class="{{ $label }}">Цена</span>
+                        @if (count($prices) > 0)
+                            <span class="text-right lg:text-left">
+                                @foreach ($prices as $price)
+                                    <span class="block text-[#2E325C] font-semibold whitespace-nowrap">{{ $price }}</span>
+                                @endforeach
+                            </span>
                         @else
-                            <span class="text-brand-gray-light hidden md:inline">—</span>
+                            <span class="text-brand-gray-light">—</span>
+                        @endif
+                    </td>
+
+                    <td class="{{ $cell }}">
+                        <span class="{{ $label }}">Сборы чартерной <span class="text-xs">(уборка, transit log, race insurance)</span></span>
+                        <span class="whitespace-nowrap">{{ $yacht->charterFeeLabel() ?? '—' }}</span>
+                    </td>
+
+                    <td class="{{ $cell }}"><span class="{{ $label }}">Депозит за яхту</span><span class="whitespace-nowrap">{{ $yacht->depositLabel() ?? '—' }}</span></td>
+
+                    <td class="{{ $cell }}">
+                        <span class="{{ $label }}">Аренда спинакера/геннакера</span>
+                        <span class="text-right lg:text-left">
+                            @if ($sail === \App\Enums\DownwindSail::None)
+                                <span class="text-brand-gray-light">нет паруса</span>
+                            @else
+                                <span class="block whitespace-nowrap">{{ $yacht->downwindSailPriceLabel() ?? '—' }}</span>
+                                @if ($sail)
+                                    <span class="block text-xs text-brand-gray-light">{{ $sail->label() }}</span>
+                                @endif
+                            @endif
+                        </span>
+                    </td>
+
+                    <td class="{{ $cell }}">
+                        <span class="{{ $label }}">Депозит за спинакер/геннакер</span>
+                        <span class="whitespace-nowrap">{{ $sail === \App\Enums\DownwindSail::None ? '—' : ($yacht->downwindSailDepositLabel() ?? '—') }}</span>
+                    </td>
+
+                    <td class="block lg:table-cell lg:p-3 lg:align-top mt-3 lg:mt-0">
+                        @if ($availability->opensDetails())
+                            <button type="button" @click="details = true"
+                                    class="inline-block px-3 py-1.5 text-xs font-semibold uppercase tracking-wide whitespace-nowrap transition-colors {{ $badge }}">
+                                {{ $availability->label() }}
+                            </button>
+                        @else
+                            <span class="inline-block px-3 py-1.5 text-xs font-semibold uppercase tracking-wide whitespace-nowrap {{ $badge }}">
+                                {{ $availability->label() }}
+                            </span>
                         @endif
 
-                        <x-foreign-yacht-details :yacht="$yacht" :request-event="$requestEvent" />
+                        {{-- Карточка есть только у того, что можно взять. --}}
+                        @if ($availability->opensDetails())
+                            <x-foreign-yacht-details :yacht="$yacht" :request-event="$requestEvent" />
+                        @endif
                     </td>
                 </tr>
             @endforeach

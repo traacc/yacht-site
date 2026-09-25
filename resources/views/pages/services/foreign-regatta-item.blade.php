@@ -108,15 +108,9 @@
                                 // Монотип без выбора яхт продаёт места сам: у
                                 // него общий счётчик и свои кнопки заявки.
                                 $divisionOccupancy = $division?->occupancyLabels() ?? [];
-                                // Небольшой флот нагляднее карточками, длинный
-                                // список разных лодок читается только таблицей.
-                                $asTable = $group['yachts']->count() > 3;
-                                // Галерея дивизиона: у флота одинаковых лодок её
-                                // и так показывает каждая карточка — дублировать
-                                // незачем, а в таблице фотографий нет.
-                                $divisionPhotos = $division !== null && ($asTable || ! $division->sharesSpec())
-                                    ? $division->galleryPhotos()
-                                    : [];
+                                // Галерея дивизиона: в таблице флота фотографий
+                                // нет, они только в карточке лодки.
+                                $divisionPhotos = $division?->galleryPhotos() ?? [];
                             @endphp
 
                             <div class="mb-10">
@@ -172,14 +166,11 @@
                                     <div class="mb-4"></div>
                                 @endif
 
-                                @if ($asTable)
+                                {{-- Флот — таблицей по образцу «Данные яхт для
+                                     публикации», даже из одной лодки: посетитель
+                                     сравнивает лодки и цены по одним колонкам. --}}
+                                @if ($group['yachts']->isNotEmpty())
                                     <x-foreign-fleet-table :yachts="$group['yachts']" :request-event="$fleetRequestEvent" />
-                                @else
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        @foreach ($group['yachts'] as $yacht)
-                                            <x-foreign-yacht-card :yacht="$yacht" :request-event="$fleetRequestEvent" />
-                                        @endforeach
-                                    </div>
                                 @endif
                             </div>
                         @endforeach

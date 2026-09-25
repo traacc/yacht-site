@@ -50,6 +50,7 @@ class ForeignRegattaDivision extends Model implements HasMedia
         'year',
         'cabins',
         'downwind_sail',
+        'base_marina',
         'price',
         'price_unit',
         'seat_price',
@@ -57,6 +58,8 @@ class ForeignRegattaDivision extends Model implements HasMedia
         'cabin_price',
         'charter_fee',
         'deposit',
+        'downwind_sail_price',
+        'downwind_sail_deposit',
         'price_note',
         'yachts_count',
         'yachts_taken',
@@ -87,6 +90,8 @@ class ForeignRegattaDivision extends Model implements HasMedia
             'cabin_price' => 'integer',
             'charter_fee' => 'integer',
             'deposit' => 'integer',
+            'downwind_sail_price' => 'integer',
+            'downwind_sail_deposit' => 'integer',
             'yachts_count' => 'integer',
             'yachts_taken' => 'integer',
             'seats_total' => 'integer',
@@ -251,6 +256,12 @@ class ForeignRegattaDivision extends Model implements HasMedia
             'Депозит' => $this->deposit === null
                 ? null
                 : $this->formatPrice($this->deposit),
+            'Аренда спинакера/геннакера' => $this->downwind_sail_price === null
+                ? null
+                : $this->formatPrice($this->downwind_sail_price),
+            'Депозит за спинакер/геннакер' => $this->downwind_sail_deposit === null
+                ? null
+                : $this->formatPrice($this->downwind_sail_deposit),
         ], fn (?string $value): bool => $value !== null);
     }
 

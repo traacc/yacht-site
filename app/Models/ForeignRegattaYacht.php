@@ -8,6 +8,7 @@ use App\Enums\CharterPriceUnit;
 use App\Enums\CharterYachtStatus;
 use App\Enums\Currency;
 use App\Enums\DownwindSail;
+use App\Enums\FleetYachtAvailability;
 use App\Enums\ParticipationOption;
 use App\Models\Concerns\CountsFleetOccupancy;
 use App\Models\Concerns\HasCaptionedGallery;
@@ -52,10 +53,13 @@ class ForeignRegattaYacht extends Model implements HasMedia
         'description',
         'cabins',
         'downwind_sail',
+        'base_marina',
         'price',
         'price_unit',
         'charter_fee',
         'deposit',
+        'downwind_sail_price',
+        'downwind_sail_deposit',
         'price_note',
         'skipper_name',
         'skipper_note',
@@ -92,6 +96,8 @@ class ForeignRegattaYacht extends Model implements HasMedia
         'cabin_price',
         'charter_fee',
         'deposit',
+        'downwind_sail_price',
+        'downwind_sail_deposit',
         'price_note',
     ];
 
@@ -105,6 +111,8 @@ class ForeignRegattaYacht extends Model implements HasMedia
             'price_unit' => CharterPriceUnit::class,
             'charter_fee' => 'integer',
             'deposit' => 'integer',
+            'downwind_sail_price' => 'integer',
+            'downwind_sail_deposit' => 'integer',
             'seats_total' => 'integer',
             'seats_taken' => 'integer',
             'solo_seats_total' => 'integer',
@@ -273,6 +281,11 @@ class ForeignRegattaYacht extends Model implements HasMedia
         return $this->spec('downwind_sail');
     }
 
+    public function effectiveBaseMarina(): ?string
+    {
+        return $this->spec('base_marina');
+    }
+
     public function effectivePrice(): ?int
     {
         return $this->spec('price');
@@ -309,6 +322,16 @@ class ForeignRegattaYacht extends Model implements HasMedia
     public function effectiveDeposit(): ?int
     {
         return $this->spec('deposit');
+    }
+
+    public function effectiveDownwindSailPrice(): ?int
+    {
+        return $this->spec('downwind_sail_price');
+    }
+
+    public function effectiveDownwindSailDeposit(): ?int
+    {
+        return $this->spec('downwind_sail_deposit');
     }
 
     public function effectivePriceNote(): ?string
@@ -384,6 +407,41 @@ class ForeignRegattaYacht extends Model implements HasMedia
     public function isAvailable(): bool
     {
         return $this->status->isAvailable();
+    }
+
+    /**
+     * Занятость для таблицы флота: «свободна», «есть места» или «занята».
+     *
+     * «Свободна» — лодку можно взять целиком. Если целиком её уже забрали (или
+     * целиком она и не сдаётся), но в экипаж ещё набирают, — «есть места».
+     * Лодка без цены чартера и без мест в продаже, но со свободным статусом —
+     * тоже «свободна»: цены не пришли от чартера, а спросить про неё можно.
+     */
+    public function availability(): FleetYachtAvailability
+    {
+        if ($this->isAvailable() && $this->effectivePrice() !== null) {
+            return FleetYachtAvailability::Free;
+        }
+
+        if ($this->hasAnyVacancy()) {
+            return FleetYachtAvailability::SeatsLeft;
+        }
+
+        return $this->isAvailable()
+            ? FleetYachtAvailability::Free
+            : FleetYachtAvailability::Taken;
+    }
+
+    /** Остались ли у лодки свободные места хоть какого-то типа. */
+    public function hasAnyVacancy(): bool
+    {
+        foreach (ParticipationOption::cases() as $option) {
+            if ($option->isSeatLike() && $this->hasVacancy($option)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Показывается ли лодка на витрине вообще. */
@@ -521,58 +579,6 @@ class ForeignRegattaYacht extends Model implements HasMedia
         return $title === '' ? 'Яхта' : $title;
     }
 
-    /** Берёт ли лодка цены у дивизиона, а не несёт свои. */
-    public function inheritsPrices(): bool
-    {
-        return $this->division?->sharesPrices() === true;
-    }
-
-    /**
-     * Цены, заданные у самой лодки, — без унаследованных от дивизиона.
-     *
-     * Общие цены дивизиона-флота витрина печатает один раз над списком лодок
-     * (@see ForeignRegattaDivision::priceLabels()), поэтому в карточке остаются
-     * только собственные переопределения лодки: иначе одна и та же сумма стоит
-     * и в шапке дивизиона, и в каждой его карточке.
-     *
-     * @return array{charter: ?string, fee: ?string, deposit: ?string, seat: ?string, cabin: ?string, note: ?string}
-     */
-    /**
-     * Цена варианта, заданная у самой лодки, — без унаследованной.
-     *
-     * Общие цены дивизиона витрина печатает один раз над списком лодок, поэтому
-     * в карточке их повторять незачем.
-     */
-    public function ownParticipationPriceLabel(ParticipationOption $option): ?string
-    {
-        $own = $this->getAttribute($option->priceColumn());
-
-        if ($this->inheritsPrices() && ($own === null || $own === '')) {
-            return null;
-        }
-
-        return $this->participationPriceLabel($option);
-    }
-
-    public function ownPriceLabels(): array
-    {
-        $own = function (string $attribute): bool {
-            $value = $this->getAttribute($attribute);
-
-            return ! $this->inheritsPrices() || ($value !== null && $value !== '');
-        };
-
-        return [
-            'charter' => $own('price') ? $this->priceLabel() : null,
-            'fee' => $own('charter_fee') ? $this->charterFeeLabel() : null,
-            'deposit' => $own('deposit') ? $this->depositLabel() : null,
-            'seat' => $own('seat_price') ? $this->seatPriceLabel() : null,
-            'solo_seat' => $own('solo_seat_price') ? $this->participationPriceLabel(ParticipationOption::SoloSeat) : null,
-            'cabin' => $own('cabin_price') ? $this->cabinPriceLabel() : null,
-            'note' => $own('price_note') ? $this->effectivePriceNote() : null,
-        ];
-    }
-
     public function priceLabel(): ?string
     {
         $price = $this->effectivePrice();
@@ -597,6 +603,20 @@ class ForeignRegattaYacht extends Model implements HasMedia
     public function depositLabel(): ?string
     {
         $deposit = $this->effectiveDeposit();
+
+        return $deposit === null ? null : $this->formatPrice($deposit);
+    }
+
+    public function downwindSailPriceLabel(): ?string
+    {
+        $price = $this->effectiveDownwindSailPrice();
+
+        return $price === null ? null : $this->formatPrice($price);
+    }
+
+    public function downwindSailDepositLabel(): ?string
+    {
+        $deposit = $this->effectiveDownwindSailDeposit();
 
         return $deposit === null ? null : $this->formatPrice($deposit);
     }
@@ -659,6 +679,7 @@ class ForeignRegattaYacht extends Model implements HasMedia
             && $this->cabin_price === null
             && $this->status === CharterYachtStatus::Free
             && trim((string) $this->model) === ''
+            && trim((string) $this->base_marina) === ''
             && trim((string) $this->description) === ''
             && $this->getMedia('gallery')->isEmpty();
     }

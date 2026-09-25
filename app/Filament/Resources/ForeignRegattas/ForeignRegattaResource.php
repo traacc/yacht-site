@@ -470,6 +470,12 @@ class ForeignRegattaResource extends Resource
                 ->options(DownwindSail::options())
                 ->visible($isMonotype),
 
+            TextInput::make('base_marina')
+                ->label('База (марина)')
+                ->placeholder('Marina Kaštela')
+                ->maxLength(255)
+                ->visible($isMonotype),
+
             TextInput::make('price')
                 ->label('Стоимость яхты целиком')
                 ->helperText('Пусто — лодки дивизиона целиком не сдаются, продаются только места и каюты.')
@@ -517,6 +523,20 @@ class ForeignRegattaResource extends Resource
 
             TextInput::make('deposit')
                 ->label('Депозит')
+                ->numeric()
+                ->minValue(0)
+                ->suffix($divisionCurrency)
+                ->visible($sharesPrices),
+
+            TextInput::make('downwind_sail_price')
+                ->label('Аренда спинакера / геннакера')
+                ->numeric()
+                ->minValue(0)
+                ->suffix($divisionCurrency)
+                ->visible($sharesPrices),
+
+            TextInput::make('downwind_sail_deposit')
+                ->label('Депозит за спинакер / геннакер')
                 ->numeric()
                 ->minValue(0)
                 ->suffix($divisionCurrency)
@@ -673,6 +693,11 @@ class ForeignRegattaResource extends Resource
                 ->minValue(1900)
                 ->maxValue((int) now()->addYear()->format('Y')),
 
+            TextInput::make('base_marina')
+                ->label('База (марина)')
+                ->placeholder('Marina Kaštela')
+                ->maxLength(255),
+
             Select::make('status')
                 ->label('Занятость (целиком)')
                 ->helperText('Только про чартер целиком: места и каюты продаются и у занятой лодки.')
@@ -715,6 +740,34 @@ class ForeignRegattaResource extends Resource
 
             TextInput::make('cabin_price')
                 ->label('Стоимость двухместной каюты')
+                ->numeric()
+                ->minValue(0)
+                ->suffix($yachtCurrency)
+                ->visible($hasOwnPrices),
+
+            TextInput::make('charter_fee')
+                ->label('Сборы чартерной компании')
+                ->numeric()
+                ->minValue(0)
+                ->suffix($yachtCurrency)
+                ->visible($hasOwnPrices),
+
+            TextInput::make('deposit')
+                ->label('Депозит за яхту')
+                ->numeric()
+                ->minValue(0)
+                ->suffix($yachtCurrency)
+                ->visible($hasOwnPrices),
+
+            TextInput::make('downwind_sail_price')
+                ->label('Аренда спинакера / геннакера')
+                ->numeric()
+                ->minValue(0)
+                ->suffix($yachtCurrency)
+                ->visible($hasOwnPrices),
+
+            TextInput::make('downwind_sail_deposit')
+                ->label('Депозит за спинакер / геннакер')
                 ->numeric()
                 ->minValue(0)
                 ->suffix($yachtCurrency)
