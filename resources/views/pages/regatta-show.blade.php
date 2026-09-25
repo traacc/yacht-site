@@ -1,4 +1,6 @@
-<x-public-layout>
+<x-public-layout :title="$regatta->name . ' — регата'"
+    :description="$regatta->short_description ?: 'Регата ' . $regatta->name . ($regatta->water_area ? ', ' . $regatta->water_area : '') . '.'"
+    :og-image="$regatta->background_image ? asset('storage/' . $regatta->background_image) : null">
     <x-breadcrumbs_page :title="$regatta->name" />
 
     {{-- ===== КАРТОЧКА РЕГАТЫ ===== --}}
