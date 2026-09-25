@@ -21,10 +21,17 @@
         $yacht->effectiveDownwindSail()?->label(),
     ]));
 
-    // Порядок как на кнопках: место, каюта, яхта целиком, затем сопутствующее.
+    // Порядок как на кнопках: места, каюты, яхта целиком, затем сопутствующее.
+    $seats = collect(\App\Enums\ParticipationOption::cases())
+        ->filter(fn ($option) => $option->isSeatLike() && $yacht->countsOccupancy($option))
+        ->mapWithKeys(fn ($option) => [
+            $option->label() => trim((string) $yacht->participationPriceLabel($option)
+                .' · '.$yacht->occupancyLabel($option), ' ·'),
+        ])
+        ->all();
+
     $rows = array_filter([
-        'Место в экипаже' => $yacht->sellsSeats() ? $yacht->seatPriceLabel() : null,
-        'Двухместная каюта' => $yacht->sellsCabins() ? $yacht->cabinPriceLabel() : null,
+        ...$seats,
         'Стоимость чартера' => $yacht->priceLabel(),
         'Сборы чартерной компании' => $yacht->charterFeeLabel(),
         'Депозит' => $yacht->depositLabel(),
@@ -33,9 +40,6 @@
         'Шкипер' => $yacht->hasSkipper() ? $yacht->skipper_name : null,
         // Занятость — про лодку целиком; места у неё могут продаваться дальше.
         'Яхта целиком' => $yacht->isAvailable() ? null : $yacht->status->label(),
-        'Свободных мест' => $yacht->sellsSeats() || $yacht->sellsCabins()
-            ? (string) $yacht->freeSeats()
-            : null,
     ], fn (?string $value): bool => $value !== null && $value !== '');
 @endphp
 
@@ -76,7 +80,7 @@
                 <x-photo-gallery :photos="$photos" />
             @endif
 
-            <x-foreign-yacht-cta :yacht="$yacht" :request-event="$requestEvent" close-details class="mt-5" />
+            <x-foreign-yacht-cta :seller="$yacht" :request-event="$requestEvent" close-details class="mt-5" />
         </div>
     </div>
 </div>

@@ -47,6 +47,11 @@
                     ]));
 
                     $offers = $requestEvent === null ? [] : $yacht->offeredParticipations();
+
+                    $seatRows = collect(\App\Enums\ParticipationOption::cases())
+                        ->filter(fn ($option) => $option->isSeatLike() && $yacht->countsOccupancy($option))
+                        ->map(fn ($option) => $option->shortLabel().' — '.$yacht->occupancyShortLabel($option))
+                        ->all();
                 @endphp
 
                 <tr x-data="{ details: false }"
@@ -74,12 +79,12 @@
                             <div>Без шкипера</div>
                         @endif
 
-                        @if ($yacht->sellsSeats() || $yacht->sellsCabins())
-                            <div>{{ ucfirst($yacht->freeSeatsLabel()) }}</div>
-                        @else
-                            {{-- Места могут быть свободны, но без цены не продаются. --}}
+                        @forelse ($seatRows as $row)
+                            <div>{{ $row }} занято</div>
+                        @empty
+                            {{-- Мест не объявлено — предлагать по типам нечего. --}}
                             <div>Мест в продаже нет</div>
-                        @endif
+                        @endforelse
 
                         {{-- Занятость — только про лодку целиком: места у неё
                              могут продаваться и дальше. --}}
@@ -90,7 +95,7 @@
 
                     <td class="block md:table-cell md:p-3 mt-3 md:mt-0">
                         @if (count($offers) > 0)
-                            <x-foreign-yacht-cta :yacht="$yacht" :request-event="$requestEvent" compact />
+                            <x-foreign-yacht-cta :seller="$yacht" :request-event="$requestEvent" compact />
                         @else
                             <span class="text-brand-gray-light hidden md:inline">—</span>
                         @endif

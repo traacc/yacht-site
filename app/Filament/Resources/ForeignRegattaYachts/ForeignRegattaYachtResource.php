@@ -9,6 +9,7 @@ use App\Enums\CharterYachtStatus;
 use App\Enums\Currency;
 use App\Enums\DownwindSail;
 use App\Enums\FleetDivisionType;
+use App\Enums\ParticipationOption;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\CharterYachtModels\CharterYachtModelResource;
 use App\Filament\Resources\ForeignRegattaYachts\Pages\ManageForeignRegattaYachts;
@@ -26,6 +27,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
@@ -209,34 +211,34 @@ class ForeignRegattaYachtResource extends Resource
                     ])
                     ->columns(3),
 
-                Section::make('Шкипер и места в экипаже')
-                    ->description('Места и каюты продаются, пока есть свободные места и заполнены их цены. Шкипер на это не влияет: лодка может одновременно набирать экипаж и сдаваться целиком — на витрине это три отдельные кнопки. Шкипер просто показывается на карточке.')
+                Section::make('Шкипер, места и занятость')
+                    ->description('Каждый тип мест продаётся отдельно: у него своя цена и свой счётчик «всего / занято». Пустое «всего» означает, что вариант не предлагается; когда занято сравнялось с общим числом, витрина пишет «всё занято». Шкипер на продажу мест не влияет — он просто показывается на карточке.')
                     ->schema([
                         TextInput::make('skipper_name')
                             ->label('Шкипер')
                             ->placeholder('Иван Петров')
                             ->maxLength(255),
 
-                        TextInput::make('free_seats')
-                            ->label('Свободных мест')
-                            ->helperText('0 или пусто — ни места, ни каюты по лодке не продаются.')
+                        TextInput::make('seat_price')
+                            ->label('Стоимость места в двухместной каюте')
+                            ->helperText('Пусто здесь и у дивизиона — вариант не продаётся.')
                             ->numeric()
                             ->minValue(0)
-                            ->maxValue(50),
+                            ->suffix(fn (Get $get): string => self::currencySymbol($get)),
 
-                        TextInput::make('seat_price')
-                            ->label('Стоимость места')
-                            ->helperText('Пусто здесь и у дивизиона-флота — кнопка «Место» не горит.')
+                        TextInput::make('solo_seat_price')
+                            ->label('Стоимость места в одноместной каюте')
                             ->numeric()
                             ->minValue(0)
                             ->suffix(fn (Get $get): string => self::currencySymbol($get)),
 
                         TextInput::make('cabin_price')
                             ->label('Стоимость двухместной каюты')
-                            ->helperText('Заполнено (здесь или у дивизиона-флота) и есть свободные места — у лодки появится отдельная кнопка «Каюта».')
                             ->numeric()
                             ->minValue(0)
                             ->suffix(fn (Get $get): string => self::currencySymbol($get)),
+
+                        ...self::occupancyFields(),
 
                         TextInput::make('skipper_note')
                             ->label('О шкипере')
@@ -308,14 +310,19 @@ class ForeignRegattaYachtResource extends Resource
                     ->searchable()
                     ->placeholder('—'),
 
-                TextColumn::make('free_seats')
-                    ->label('Мест')
-                    // Места продаются и без шкипера, поэтому колонка смотрит
-                    // на сами места, а не на капитана.
-                    ->state(fn (ForeignRegattaYacht $record): string => $record->freeSeats() > 0
-                        ? (string) $record->freeSeats()
-                        : '—')
-                    ->sortable(),
+                TextColumn::make('occupancy')
+                    ->label('Места')
+                    ->state(fn (ForeignRegattaYacht $record): array => array_values(array_filter(
+                        array_map(
+                            fn (ParticipationOption $option): ?string => $option->isSeatLike()
+                                && $record->countsOccupancy($option)
+                                ? $option->shortLabel().': '.$record->occupancyShortLabel($option)
+                                : null,
+                            ParticipationOption::cases(),
+                        ),
+                    )))
+                    ->badge()
+                    ->placeholder('—'),
 
                 TextColumn::make('price')
                     ->label('Чартер')
@@ -375,7 +382,7 @@ class ForeignRegattaYachtResource extends Resource
                     ->label('Продают места')
                     ->query(fn (Builder $query): Builder => $query
                         ->where('is_hidden', false)
-                        ->where('free_seats', '>', 0)
+                        ->whereRaw('COALESCE(seats_taken, 0) < COALESCE(seats_total, 0)')
                         ->where(fn (Builder $inner) => $inner
                             ->whereNotNull('seat_price')
                             ->orWhereHas('division', fn (Builder $division) => $division
@@ -461,6 +468,42 @@ class ForeignRegattaYachtResource extends Resource
     private static function inheritsSpec(Get $get): bool
     {
         return self::division($get)?->sharesSpec() ?? false;
+    }
+
+    /**
+     * Пары «всего / занято» по каждому типу мест.
+     *
+     * Счётчики у лодки свои и от дивизиона не наследуются: там, где дивизион
+     * ведёт общий пул мест, лодки их не продают
+     * (@see App\Models\ForeignRegattaDivision::sellsDirectly()).
+     *
+     * @return list<Component>
+     */
+    private static function occupancyFields(): array
+    {
+        $fields = [];
+
+        foreach (ParticipationOption::cases() as $option) {
+            if (! $option->isSeatLike()) {
+                continue;
+            }
+
+            $fields[] = TextInput::make($option->totalColumn())
+                ->label($option->label().' — всего')
+                ->helperText('Пусто — вариант не продаётся.')
+                ->numeric()
+                ->minValue(0)
+                ->maxValue(500);
+
+            $fields[] = TextInput::make($option->takenColumn())
+                ->label($option->label().' — занято')
+                ->numeric()
+                ->minValue(0)
+                ->maxValue(500)
+                ->default(0);
+        }
+
+        return $fields;
     }
 
     /** Берёт ли лодка цены у дивизиона: у обоих монотипов они общие. */

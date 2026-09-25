@@ -424,6 +424,15 @@ class ForeignRegattaResource extends Resource
                 ->helperText('Необязательно — станет заголовком группы яхт на странице регаты.')
                 ->maxLength(255),
 
+            TextInput::make('yachts_taken')
+                ->label('Яхт целиком — занято')
+                ->helperText('Из указанного количества. Столько лодок уже забрали целиком.')
+                ->numeric()
+                ->minValue(0)
+                ->maxValue(200)
+                ->default(0)
+                ->visible($isMonotype),
+
             TextInput::make('yachts_count')
                 ->label('Количество яхт в дивизионе')
                 ->helperText('Столько карточек яхт появится в разделе «Услуги: Флот регат» — там укажете названия, годы, шкиперов и свободные места.')
@@ -483,9 +492,17 @@ class ForeignRegattaResource extends Resource
                 ->suffix($divisionCurrency)
                 ->visible($sharesPrices),
 
+            TextInput::make('solo_seat_price')
+                ->label('Стоимость места в одноместной каюте')
+                ->helperText('Пусто — такие места не продаются.')
+                ->numeric()
+                ->minValue(0)
+                ->suffix($divisionCurrency)
+                ->visible($sharesPrices),
+
             TextInput::make('cabin_price')
                 ->label('Стоимость двухместной каюты')
-                ->helperText('Пусто — каюты по этому дивизиону не продаются. Кнопка «Каюта» появится у лодок со свободными местами.')
+                ->helperText('Пусто — каюты по этому дивизиону не продаются.')
                 ->numeric()
                 ->minValue(0)
                 ->suffix($divisionCurrency)
@@ -511,6 +528,11 @@ class ForeignRegattaResource extends Resource
                 ->maxLength(255)
                 ->visible($sharesPrices)
                 ->columnSpan(2),
+
+            // Занятость по типам мест. Только у монотипа без выбора яхт: там
+            // лодки взаимозаменяемы и места продаются общим пулом, поэтому и
+            // счётчик один на дивизион (@see App\Models\ForeignRegattaDivision::sellsDirectly()).
+            ...self::occupancyFields($isMonotype),
 
             // Описание и галерея есть у всех типов: у монотипа без выбора яхт
             // они наследуются карточками лодок, у остальных — это единое
@@ -560,6 +582,45 @@ class ForeignRegattaResource extends Resource
                 ->visible($picksYachts)
                 ->columnSpanFull(),
         ];
+    }
+
+    /**
+     * Пары «всего / занято» по каждому типу мест.
+     *
+     * Занятость ведётся руками: чартер сообщает, что место продано, а сайт
+     * должен сразу показать «занято 4 из 5, осталось 1 место». Пустое «всего»
+     * означает «вариант не объявлен» — тогда его вообще нет на витрине.
+     *
+     * @param  \Closure(Get): bool  $visible
+     * @return list<Component>
+     */
+    private static function occupancyFields(\Closure $visible, string $prefix = ''): array
+    {
+        $fields = [];
+
+        foreach (ParticipationOption::cases() as $option) {
+            if (! $option->isSeatLike()) {
+                continue;
+            }
+
+            $fields[] = TextInput::make($prefix.$option->totalColumn())
+                ->label($option->label().' — всего')
+                ->helperText('Пусто — вариант не продаётся.')
+                ->numeric()
+                ->minValue(0)
+                ->maxValue(500)
+                ->visible($visible);
+
+            $fields[] = TextInput::make($prefix.$option->takenColumn())
+                ->label($option->label().' — занято')
+                ->numeric()
+                ->minValue(0)
+                ->maxValue(500)
+                ->default(0)
+                ->visible($visible);
+        }
+
+        return $fields;
     }
 
     /**
@@ -638,15 +699,15 @@ class ForeignRegattaResource extends Resource
                 ->default(CharterPriceUnit::Regatta->value)
                 ->visible($hasOwnPrices),
 
-            TextInput::make('free_seats')
-                ->label('Свободных мест')
-                ->helperText('Без свободных мест места и каюты не продаются.')
-                ->numeric()
-                ->minValue(0)
-                ->maxValue(50),
-
             TextInput::make('seat_price')
                 ->label('Стоимость места')
+                ->numeric()
+                ->minValue(0)
+                ->suffix($yachtCurrency)
+                ->visible($hasOwnPrices),
+
+            TextInput::make('solo_seat_price')
+                ->label('Стоимость места в одноместной каюте')
                 ->numeric()
                 ->minValue(0)
                 ->suffix($yachtCurrency)
@@ -658,6 +719,10 @@ class ForeignRegattaResource extends Resource
                 ->minValue(0)
                 ->suffix($yachtCurrency)
                 ->visible($hasOwnPrices),
+
+            // Места считаются по типам и у самой лодки: дивизион с выбором яхт
+            // общего пула не ведёт.
+            ...self::occupancyFields(fn (Get $get): bool => true),
 
             TextInput::make('skipper_name')
                 ->label('Шкипер')

@@ -8,6 +8,8 @@ use App\Enums\CharterPriceUnit;
 use App\Enums\Currency;
 use App\Enums\DownwindSail;
 use App\Enums\FleetDivisionType;
+use App\Enums\ParticipationOption;
+use App\Models\Concerns\CountsFleetOccupancy;
 use App\Models\Concerns\HasCaptionedGallery;
 use App\Models\Concerns\RegistersResponsiveFormats;
 use App\Support\Plural;
@@ -37,7 +39,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 class ForeignRegattaDivision extends Model implements HasMedia
 {
-    use HasCaptionedGallery, HasUuids, InteractsWithMedia, RegistersResponsiveFormats, SoftDeletes;
+    use CountsFleetOccupancy, HasCaptionedGallery, HasUuids, InteractsWithMedia, RegistersResponsiveFormats, SoftDeletes;
 
     protected $fillable = [
         'foreign_regatta_id',
@@ -51,11 +53,19 @@ class ForeignRegattaDivision extends Model implements HasMedia
         'price',
         'price_unit',
         'seat_price',
+        'solo_seat_price',
         'cabin_price',
         'charter_fee',
         'deposit',
         'price_note',
         'yachts_count',
+        'yachts_taken',
+        'seats_total',
+        'seats_taken',
+        'solo_seats_total',
+        'solo_seats_taken',
+        'cabins_total',
+        'cabins_taken',
         'sort_order',
     ];
 
@@ -73,10 +83,18 @@ class ForeignRegattaDivision extends Model implements HasMedia
             'price' => 'integer',
             'price_unit' => CharterPriceUnit::class,
             'seat_price' => 'integer',
+            'solo_seat_price' => 'integer',
             'cabin_price' => 'integer',
             'charter_fee' => 'integer',
             'deposit' => 'integer',
             'yachts_count' => 'integer',
+            'yachts_taken' => 'integer',
+            'seats_total' => 'integer',
+            'seats_taken' => 'integer',
+            'solo_seats_total' => 'integer',
+            'solo_seats_taken' => 'integer',
+            'cabins_total' => 'integer',
+            'cabins_taken' => 'integer',
             'sort_order' => 'integer',
         ];
     }
@@ -141,10 +159,75 @@ class ForeignRegattaDivision extends Model implements HasMedia
     }
 
     /**
+     * Продаёт ли дивизион места сам, а не через отдельные лодки.
+     *
+     * Так устроен монотип без выбора яхт: лодки в нём одинаковые и
+     * взаимозаменяемые, поэтому и счётчик занятости, и кнопки на витрине — на
+     * дивизионе, а заявка приходит на него же.
+     */
+    public function sellsDirectly(): bool
+    {
+        return $this->sharesSpec();
+    }
+
+    /** Цена варианта участия у дивизиона. */
+    public function priceFor(ParticipationOption $option): ?int
+    {
+        return $this->getAttribute($option->priceColumn());
+    }
+
+    public function occupancyTotal(ParticipationOption $option): ?int
+    {
+        // «Всего яхт» отдельной колонкой не заводим: это и есть количество
+        // лодок дивизиона.
+        return $option === ParticipationOption::Yacht
+            ? $this->yachts_count
+            : $this->getAttribute($option->totalColumn());
+    }
+
+    /**
+     * Варианты, которые дивизион предлагает сам.
+     *
+     * Нужны цена и свободные места: место без цены продать нельзя, а место без
+     * остатка — уже нечего. Для дивизионов, где лодки выбираются поимённо,
+     * список пуст — там предлагают сами лодки.
+     *
+     * @return list<ParticipationOption>
+     */
+    public function offeredParticipations(): array
+    {
+        if (! $this->sellsDirectly()) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            ParticipationOption::cases(),
+            fn (ParticipationOption $option): bool => $this->priceFor($option) !== null
+                && $this->hasVacancy($option),
+        ));
+    }
+
+    /** Подпись цены варианта — на кнопке заявки. */
+    public function participationPriceLabel(ParticipationOption $option): ?string
+    {
+        $price = $this->priceFor($option);
+
+        if ($price === null) {
+            return null;
+        }
+
+        $label = $this->formatPrice($price);
+
+        return $option === ParticipationOption::Yacht && $this->price_unit !== null
+            ? $label.' '.$this->price_unit->label()
+            : $label;
+    }
+
+    /**
      * Цены дивизиона для блока над списком лодок: «за что» => «сколько».
      *
-     * У дивизиона-списка цен нет — там они свои у каждой лодки, и блок над
-     * списком остаётся без строки стоимости.
+     * У гандикапного дивизиона цен нет — там они свои у каждой лодки, и блок
+     * над списком остаётся без строки стоимости.
      *
      * @return array<string, string>
      */
@@ -154,18 +237,14 @@ class ForeignRegattaDivision extends Model implements HasMedia
             return [];
         }
 
-        $unit = $this->price_unit?->label();
+        $prices = collect(ParticipationOption::cases())
+            ->mapWithKeys(fn (ParticipationOption $option): array => [
+                $option->label() => $this->participationPriceLabel($option),
+            ])
+            ->all();
 
         return array_filter([
-            'Яхта целиком' => $this->price === null
-                ? null
-                : $this->formatPrice($this->price).($unit === null ? '' : ' '.$unit),
-            'Место в двухместной каюте' => $this->seat_price === null
-                ? null
-                : $this->formatPrice($this->seat_price),
-            'Двухместная каюта' => $this->cabin_price === null
-                ? null
-                : $this->formatPrice($this->cabin_price),
+            ...$prices,
             'Сборы чартерной компании' => $this->charter_fee === null
                 ? null
                 : $this->formatPrice($this->charter_fee),
@@ -173,6 +252,27 @@ class ForeignRegattaDivision extends Model implements HasMedia
                 ? null
                 : $this->formatPrice($this->deposit),
         ], fn (?string $value): bool => $value !== null);
+    }
+
+    /**
+     * Занятость по объявленным вариантам: «за что» => «занято 4 из 5…».
+     *
+     * @return array<string, string>
+     */
+    public function occupancyLabels(): array
+    {
+        if (! $this->sellsDirectly()) {
+            return [];
+        }
+
+        return array_filter(
+            collect(ParticipationOption::cases())
+                ->mapWithKeys(fn (ParticipationOption $option): array => [
+                    $option->label() => $this->occupancyLabel($option),
+                ])
+                ->all(),
+            fn (?string $value): bool => $value !== null,
+        );
     }
 
     private function formatPrice(int $value): string

@@ -97,8 +97,8 @@ final class ParticipationOptions
                 'background_class' => 'bg-[#7B5FC4]',
                 // Флот зарубежной регаты живёт своей моделью, но считается так же:
                 // свободные лодки под чартер целиком и экипажи, добирающие людей.
-                'yachts_count' => $regatta->yachtsForWholeCharter()->count(),
-                'crews_count' => $regatta->yachtsSellingSeats()->count(),
+                'yachts_count' => $regatta->freeWholeYachts(),
+                'crews_count' => $regatta->freeCrewSeats(),
                 'seat_price' => $regatta->price_per_seat !== null ? (float) $regatta->price_per_seat : null,
                 'boat_price' => null,
                 'crew_limit' => null,
@@ -123,10 +123,14 @@ final class ParticipationOptions
         }
 
         // Сравниваем сами enum-случаи: array_intersect привёл бы их к строке.
-        return $kind === ParticipationKind::Crew
-            ? in_array(ParticipationOption::Yacht, $options, true)
-            : in_array(ParticipationOption::Seat, $options, true)
-                || in_array(ParticipationOption::Cabin, $options, true);
+        if ($kind === ParticipationKind::Crew) {
+            return in_array(ParticipationOption::Yacht, $options, true);
+        }
+
+        // Индивидуальное участие — любое место или каюта.
+        return collect($options)->contains(
+            fn (ParticipationOption $option): bool => $option->isSeatLike(),
+        );
     }
 
     /**

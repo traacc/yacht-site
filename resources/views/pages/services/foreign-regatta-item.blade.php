@@ -6,7 +6,7 @@
     $duration = $regatta->durationLabel();
     $participation = $regatta->participationOptions();
     $fleetGroups = $regatta->fleetGroups();
-    $freeYachts = $regatta->yachtsForWholeCharter()->count();
+    $freeYachts = $regatta->freeWholeYachts();
     $freeSeats = $regatta->freeCrewSeats();
     // Одна форма заявки на весь флот: кнопки у лодок открывают её событием и
     // подставляют выбранную лодку (@see components/service-request-button).
@@ -105,6 +105,9 @@
                                 $division = $group['division'];
                                 $divisionDescription = trim((string) $division?->description);
                                 $divisionPrices = $division?->priceLabels() ?? [];
+                                // Монотип без выбора яхт продаёт места сам: у
+                                // него общий счётчик и свои кнопки заявки.
+                                $divisionOccupancy = $division?->occupancyLabels() ?? [];
                                 // Небольшой флот нагляднее карточками, длинный
                                 // список разных лодок читается только таблицей.
                                 $asTable = $group['yachts']->count() > 3;
@@ -138,8 +141,26 @@
                                         </ul>
                                     @endif
 
+                                    @if (count($divisionOccupancy) > 0)
+                                        <ul class="flex flex-wrap gap-x-6 gap-y-1 text-sm mb-3">
+                                            @foreach ($divisionOccupancy as $term => $value)
+                                                <li class="text-brand-gray-light">
+                                                    {{ $term }} — <span class="text-[#2E325C]">{{ $value }}</span>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+
                                     @if ($division->price_note)
                                         <p class="text-brand-gray-light text-xs mb-3">{{ $division->price_note }}</p>
+                                    @endif
+
+                                    @if ($division->sellsDirectly())
+                                        <x-foreign-yacht-cta
+                                            :seller="$division"
+                                            :seller-label="'Дивизион «'.$division->title().'»'"
+                                            :request-event="$fleetRequestEvent"
+                                            class="mb-4" />
                                     @endif
 
                                     @if (count($divisionPhotos) > 0)

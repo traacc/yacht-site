@@ -9,6 +9,7 @@ use App\Enums\CharterYachtStatus;
 use App\Enums\Currency;
 use App\Enums\DownwindSail;
 use App\Enums\ParticipationOption;
+use App\Models\Concerns\CountsFleetOccupancy;
 use App\Models\Concerns\HasCaptionedGallery;
 use App\Models\Concerns\RegistersResponsiveFormats;
 use App\Support\Plural;
@@ -39,7 +40,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 class ForeignRegattaYacht extends Model implements HasMedia
 {
-    use HasCaptionedGallery, HasUuids, InteractsWithMedia, RegistersResponsiveFormats, SoftDeletes;
+    use CountsFleetOccupancy, HasCaptionedGallery, HasUuids, InteractsWithMedia, RegistersResponsiveFormats, SoftDeletes;
 
     protected $fillable = [
         'foreign_regatta_id',
@@ -58,8 +59,14 @@ class ForeignRegattaYacht extends Model implements HasMedia
         'price_note',
         'skipper_name',
         'skipper_note',
-        'free_seats',
+        'seats_total',
+        'seats_taken',
+        'solo_seats_total',
+        'solo_seats_taken',
+        'cabins_total',
+        'cabins_taken',
         'seat_price',
+        'solo_seat_price',
         'cabin_price',
         'seat_note',
         'status',
@@ -81,6 +88,7 @@ class ForeignRegattaYacht extends Model implements HasMedia
         'price',
         'price_unit',
         'seat_price',
+        'solo_seat_price',
         'cabin_price',
         'charter_fee',
         'deposit',
@@ -97,8 +105,14 @@ class ForeignRegattaYacht extends Model implements HasMedia
             'price_unit' => CharterPriceUnit::class,
             'charter_fee' => 'integer',
             'deposit' => 'integer',
-            'free_seats' => 'integer',
+            'seats_total' => 'integer',
+            'seats_taken' => 'integer',
+            'solo_seats_total' => 'integer',
+            'solo_seats_taken' => 'integer',
+            'cabins_total' => 'integer',
+            'cabins_taken' => 'integer',
             'seat_price' => 'integer',
+            'solo_seat_price' => 'integer',
             'cabin_price' => 'integer',
             'status' => CharterYachtStatus::class,
             'is_hidden' => 'boolean',
@@ -269,6 +283,12 @@ class ForeignRegattaYacht extends Model implements HasMedia
         return $this->spec('price_unit');
     }
 
+    /** Цена варианта участия: своя, а у лодки монотипа — общая цена дивизиона. */
+    public function priceFor(ParticipationOption $option): ?int
+    {
+        return $this->spec($option->priceColumn());
+    }
+
     /** Цена места: своя, а у лодки из флота — общая цена дивизиона. */
     public function effectiveSeatPrice(): ?int
     {
@@ -339,9 +359,19 @@ class ForeignRegattaYacht extends Model implements HasMedia
         return trim((string) $this->skipper_name) !== '';
     }
 
-    public function freeSeats(): int
+    /**
+     * Сколько всего мест этого типа у лодки.
+     *
+     * «Яхта целиком» счётчиком не считается: лодка одна, и её состояние
+     * описывает занятость (@see isAvailable()). Счётчики не наследуются от
+     * дивизиона: там, где он ведёт их сам, лодки мест не продают
+     * (@see ForeignRegattaDivision::sellsDirectly()).
+     */
+    public function occupancyTotal(ParticipationOption $option): ?int
     {
-        return max(0, (int) $this->free_seats);
+        return $option === ParticipationOption::Yacht
+            ? null
+            : $this->getAttribute($option->totalColumn());
     }
 
     /**
@@ -362,20 +392,40 @@ class ForeignRegattaYacht extends Model implements HasMedia
         return ! $this->is_hidden;
     }
 
-    /** Остались места и задана их цена — можно проситься в экипаж. */
-    public function sellsSeats(): bool
+    /**
+     * Есть ли у лодки что-то своё, ради чего её стоит показать отдельно.
+     *
+     * Нужно там, где места продаёт сам дивизион: лодки в нём одинаковые и
+     * взаимозаменяемые, поэтому три пустые карточки «№1, №2, №3» посетителю
+     * ничего не говорят — а вот лодка со шкипером, своим описанием, своими
+     * фотографиями или уже занятая говорит.
+     */
+    public function hasOwnDetails(): bool
     {
-        return $this->isPublished()
-            && $this->freeSeats() > 0
-            && $this->effectiveSeatPrice() !== null;
+        return $this->hasSkipper()
+            || trim((string) $this->description) !== ''
+            || ! $this->isAvailable()
+            || $this->getMedia('gallery')->isNotEmpty();
     }
 
-    /** Остались места и задана цена каюты — продаётся каюта целиком. */
-    public function sellsCabins(): bool
+    /** Продаёт ли лодка места этого типа: цена задана и свободные остались. */
+    public function sellsSeatsOf(ParticipationOption $option): bool
     {
         return $this->isPublished()
-            && $this->freeSeats() > 0
-            && $this->effectiveCabinPrice() !== null;
+            && $this->priceFor($option) !== null
+            && $this->hasVacancy($option);
+    }
+
+    /** Есть ли у лодки хоть какие-то места в продаже. */
+    public function sellsAnySeats(): bool
+    {
+        foreach (ParticipationOption::cases() as $option) {
+            if ($option->isSeatLike() && $this->sellsSeatsOf($option)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -395,20 +445,27 @@ class ForeignRegattaYacht extends Model implements HasMedia
     /**
      * Варианты участия, которые предлагаются по этой лодке.
      *
-     * Их может быть до трёх сразу: одна и та же лодка продаёт отдельные места,
-     * каюты и себя целиком — на витрине это отдельные кнопки с ценой каждого
-     * варианта. Пустой список — предлагать нечего: лодка снята с витрины, места
-     * кончились, чартер занят или цены не заведены.
+     * Их может быть несколько сразу: одна и та же лодка продаёт отдельные
+     * места, каюты и себя целиком — на витрине это отдельные кнопки с ценой
+     * каждого варианта. Пустой список — предлагать нечего: лодка снята с
+     * витрины, места разобраны, чартер занят или цены не заведены.
      *
      * @return list<ParticipationOption>
      */
     public function offeredParticipations(): array
     {
-        return array_values(array_filter([
-            $this->sellsSeats() ? ParticipationOption::Seat : null,
-            $this->sellsCabins() ? ParticipationOption::Cabin : null,
-            $this->offersWholeCharter() ? ParticipationOption::Yacht : null,
-        ]));
+        // Монотип без выбора яхт продаёт сам: там и счётчик, и кнопки на
+        // дивизионе, а лодки в нём взаимозаменяемы.
+        if ($this->division?->sellsDirectly()) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            ParticipationOption::cases(),
+            fn (ParticipationOption $option): bool => $option === ParticipationOption::Yacht
+                ? $this->offersWholeCharter()
+                : $this->sellsSeatsOf($option),
+        ));
     }
 
     public function offers(ParticipationOption $option): bool
@@ -424,11 +481,13 @@ class ForeignRegattaYacht extends Model implements HasMedia
      */
     public function participationPriceLabel(ParticipationOption $option): ?string
     {
-        return match ($option) {
-            ParticipationOption::Seat => $this->seatPriceLabel(),
-            ParticipationOption::Cabin => $this->cabinPriceLabel(),
-            ParticipationOption::Yacht => $this->priceLabel(),
-        };
+        if ($option === ParticipationOption::Yacht) {
+            return $this->priceLabel();
+        }
+
+        $price = $this->priceFor($option);
+
+        return $price === null ? null : $this->formatPrice($price);
     }
 
     // ──────────────────────────────────────────────
@@ -478,6 +537,23 @@ class ForeignRegattaYacht extends Model implements HasMedia
      *
      * @return array{charter: ?string, fee: ?string, deposit: ?string, seat: ?string, cabin: ?string, note: ?string}
      */
+    /**
+     * Цена варианта, заданная у самой лодки, — без унаследованной.
+     *
+     * Общие цены дивизиона витрина печатает один раз над списком лодок, поэтому
+     * в карточке их повторять незачем.
+     */
+    public function ownParticipationPriceLabel(ParticipationOption $option): ?string
+    {
+        $own = $this->getAttribute($option->priceColumn());
+
+        if ($this->inheritsPrices() && ($own === null || $own === '')) {
+            return null;
+        }
+
+        return $this->participationPriceLabel($option);
+    }
+
     public function ownPriceLabels(): array
     {
         $own = function (string $attribute): bool {
@@ -491,6 +567,7 @@ class ForeignRegattaYacht extends Model implements HasMedia
             'fee' => $own('charter_fee') ? $this->charterFeeLabel() : null,
             'deposit' => $own('deposit') ? $this->depositLabel() : null,
             'seat' => $own('seat_price') ? $this->seatPriceLabel() : null,
+            'solo_seat' => $own('solo_seat_price') ? $this->participationPriceLabel(ParticipationOption::SoloSeat) : null,
             'cabin' => $own('cabin_price') ? $this->cabinPriceLabel() : null,
             'note' => $own('price_note') ? $this->effectivePriceNote() : null,
         ];
@@ -545,11 +622,22 @@ class ForeignRegattaYacht extends Model implements HasMedia
         return $price === null ? null : $this->formatPrice($price);
     }
 
-    public function freeSeatsLabel(): ?string
+    /**
+     * Занятость по объявленным типам мест: «за что» => «занято 4 из 5…».
+     *
+     * @return array<string, string>
+     */
+    public function occupancyLabels(): array
     {
-        $seats = $this->freeSeats();
-
-        return $seats === 0 ? null : 'свободно '.Plural::with($seats, 'место', 'места', 'мест');
+        return array_filter(
+            collect(ParticipationOption::cases())
+                ->filter(fn (ParticipationOption $option): bool => $option->isSeatLike())
+                ->mapWithKeys(fn (ParticipationOption $option): array => [
+                    $option->label() => $this->occupancyLabel($option),
+                ])
+                ->all(),
+            fn (?string $value): bool => $value !== null,
+        );
     }
 
     /**
@@ -563,8 +651,11 @@ class ForeignRegattaYacht extends Model implements HasMedia
     {
         return ! $this->hasSkipper()
             && ! $this->is_hidden
-            && $this->free_seats === null
+            && $this->seats_total === null
+            && $this->solo_seats_total === null
+            && $this->cabins_total === null
             && $this->seat_price === null
+            && $this->solo_seat_price === null
             && $this->cabin_price === null
             && $this->status === CharterYachtStatus::Free
             && trim((string) $this->model) === ''

@@ -36,10 +36,20 @@
         $yacht->effectiveDownwindSail()?->label(),
     ]));
 
-    // Только свои цены: общие цены дивизиона-флота уже напечатаны над списком
-    // лодок (@see App\Models\ForeignRegattaYacht::ownPriceLabels()).
+    // Только свои цены: общие цены дивизиона уже напечатаны над списком лодок
+    // (@see App\Models\ForeignRegattaYacht::ownPriceLabels()).
     $prices = $yacht->ownPriceLabels();
     $hasPrices = count(array_filter([$prices['charter'], $prices['fee'], $prices['deposit'], $prices['note']])) > 0;
+
+    // Места по типам: сколько объявлено и сколько разобрали.
+    $seatRows = collect(\App\Enums\ParticipationOption::cases())
+        ->filter(fn ($option) => $option->isSeatLike() && $yacht->countsOccupancy($option))
+        ->map(fn ($option) => [
+            'label' => $option->label(),
+            'occupancy' => $yacht->occupancyLabel($option),
+            'price' => $yacht->ownParticipationPriceLabel($option),
+        ])
+        ->all();
 @endphp
 
 <div x-data="{ details: false }" class="border border-[#C6C6C6] flex flex-col">
@@ -84,9 +94,9 @@
         @endif
 
         {{-- ===== Шкипер и места =====
-             Места продаются и без шкипера, а шкипер бывает и у лодки, которую
-             берут целиком, — поэтому блок показывается по любому из поводов. --}}
-        @if ($yacht->hasSkipper() || $yacht->sellsSeats() || $yacht->sellsCabins())
+             Места считаются по типам: у каждого свой остаток и своё «занято»
+             (@see App\Models\Concerns\CountsFleetOccupancy). --}}
+        @if ($yacht->hasSkipper() || count($seatRows) > 0)
             <div class="text-sm border-t border-[#EAEAEA] pt-3 mb-3">
                 @if ($yacht->hasSkipper())
                     <div class="text-[#2E325C]">Шкипер — {{ $yacht->skipper_name }}</div>
@@ -95,29 +105,20 @@
                     @endif
                 @endif
 
-                @if ($yacht->sellsSeats())
+                @foreach ($seatRows as $row)
                     <div class="text-brand-gray-light mt-2">
-                        {{ ucfirst($yacht->freeSeatsLabel()) }}@if ($prices['seat']) по {{ $prices['seat'] }}@endif
+                        {{ $row['label'] }} — {{ $row['occupancy'] }}@if ($row['price']), {{ $row['price'] }}@endif
                     </div>
-                @elseif ($yacht->sellsCabins())
-                    <div class="text-brand-gray-light mt-2">{{ ucfirst($yacht->freeSeatsLabel()) }}</div>
-                @elseif ($yacht->hasSkipper())
-                    {{-- Места могут быть свободны, но без цены не продаются. --}}
-                    <div class="text-brand-gray-light mt-2">Мест в продаже нет</div>
-                @endif
+                @endforeach
 
-                @if ($yacht->sellsCabins() && $prices['cabin'])
-                    <div class="text-brand-gray-light mt-1">Каюта целиком — {{ $prices['cabin'] }}</div>
-                @endif
-
-                @if ($yacht->seat_note && ($yacht->sellsSeats() || $yacht->sellsCabins()))
+                @if ($yacht->seat_note && count($seatRows) > 0)
                     <div class="text-brand-gray-light text-xs mt-1">{{ $yacht->seat_note }}</div>
                 @endif
             </div>
         @endif
 
         <div class="mt-auto pt-2 flex flex-col gap-3">
-            <x-foreign-yacht-cta :yacht="$yacht" :request-event="$requestEvent" />
+            <x-foreign-yacht-cta :seller="$yacht" :request-event="$requestEvent" />
 
             <div class="flex flex-wrap items-center gap-3">
                 {{-- Занятость показывается сама по себе: она про лодку целиком,

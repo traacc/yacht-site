@@ -553,37 +553,30 @@ enum ServiceType: string
             ],
 
             self::ForeignRegatta => [
-                // Варианты обоих полей приходят от самой регаты: она объявляет,
-                // что предлагает, и какие из её яхт ещё свободны.
+                // Варианты и списки приходят от самой регаты: она объявляет,
+                // что предлагает, и где эти места ещё остались
+                // (@see App\Models\ForeignRegatta::serviceOptions()).
                 'participation' => [
                     'label' => 'Вариант участия',
                     'type' => 'select',
                     'required' => true,
                     'options' => ParticipationOption::options(),
                 ],
-                'charter_yacht' => [
-                    'label' => 'Яхта',
-                    'type' => 'select',
-                    'options' => [],
-                    'visible_when' => ['participation', ParticipationOption::Yacht->value],
-                ],
-                // Отдельно от charter_yacht: под «яхту целиком» подходят
-                // свободные лодки без шкипера, а в экипаж просятся к лодкам
-                // со шкипером, у которых остались места.
-                'crew_yacht' => [
-                    'label' => 'Яхта (место в экипаже)',
-                    'type' => 'select',
-                    'options' => [],
-                    'visible_when' => ['participation', ParticipationOption::Seat->value],
-                ],
-                // Каюту продают те же лодки со шкипером, но только те, где
-                // задана её цена, — поэтому список свой, а не общий с местами.
-                'cabin_yacht' => [
-                    'label' => 'Яхта (каюта)',
-                    'type' => 'select',
-                    'options' => [],
-                    'visible_when' => ['participation', ParticipationOption::Cabin->value],
-                ],
+                // Под каждый вариант свой список: где-то места ещё есть, а
+                // лодка целиком уже занята. В списке и лодки, и дивизионы —
+                // монотип без выбора яхт продаёт места общим пулом.
+                ...collect(ParticipationOption::cases())
+                    ->mapWithKeys(fn (ParticipationOption $option): array => [
+                        $option->payloadField() => [
+                            'label' => $option === ParticipationOption::Yacht
+                                ? 'Яхта'
+                                : 'Яхта или дивизион ('.mb_strtolower($option->label()).')',
+                            'type' => 'select',
+                            'options' => [],
+                            'visible_when' => ['participation', $option->value],
+                        ],
+                    ])
+                    ->all(),
             ],
 
             self::GiftCertificate => [

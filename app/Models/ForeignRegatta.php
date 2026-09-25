@@ -221,55 +221,80 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     // ──────────────────────────────────────────────
 
     /**
-     * Варианты участия — объявленные регатой, яхты — те, что ещё предлагаются.
+     * Варианты участия — объявленные регатой, предложения — те, что ещё есть.
      *
-     * Списков яхт три, потому что вопросы разные: под «яхту целиком» подходят
-     * лодки с ценой чартера, под «место» — лодки со свободными местами и ценой
-     * места, под «каюту» — они же с заданной ценой каюты. Одна лодка попадает
-     * в несколько списков: варианты не исключают друг друга.
+     * Под каждый вариант свой список: где-то места ещё остались, а лодка
+     * целиком уже занята. Предложить может как лодка, так и дивизион — монотип
+     * без выбора яхт продаёт места общим пулом
+     * (@see ForeignRegattaDivision::sellsDirectly()), поэтому значения
+     * помечены источником: `yacht:<id>` или `division:<id>`.
      *
      * @return array<string, array<string, string>>
      */
     public function serviceOptions(): array
     {
-        return [
+        $options = [
             'participation' => collect($this->participationOptions())
                 ->mapWithKeys(fn (ParticipationOption $option): array => [
                     $option->value => $option->label(),
                 ])
                 ->all(),
-
-            'charter_yacht' => $this->yachtsForWholeCharter()
-                ->mapWithKeys(fn (ForeignRegattaYacht $yacht): array => [
-                    (string) $yacht->getKey() => $yacht->title()
-                        .($yacht->priceLabel() === null ? '' : ' — '.$yacht->priceLabel()),
-                ])
-                ->all(),
-
-            // Шкипер в подписи — только если он есть: места продаёт и лодка
-            // без капитана, если владелец набирает экипаж сам.
-            'crew_yacht' => $this->yachtsSellingSeats()
-                ->mapWithKeys(fn (ForeignRegattaYacht $yacht): array => [
-                    (string) $yacht->getKey() => $yacht->title()
-                        .' — место '.$yacht->seatPriceLabel()
-                        .', '.$yacht->freeSeatsLabel()
-                        .($yacht->hasSkipper() ? ', шкипер '.$yacht->skipper_name : ''),
-                ])
-                ->all(),
-
-            'cabin_yacht' => $this->yachtsSellingCabins()
-                ->mapWithKeys(fn (ForeignRegattaYacht $yacht): array => [
-                    (string) $yacht->getKey() => $yacht->title()
-                        .' — каюта '.$yacht->cabinPriceLabel()
-                        .($yacht->hasSkipper() ? ', шкипер '.$yacht->skipper_name : ''),
-                ])
-                ->all(),
         ];
+
+        foreach (ParticipationOption::cases() as $option) {
+            $options[$option->payloadField()] = $this->offersFor($option);
+        }
+
+        return $options;
     }
 
     /**
-     * Подпись сохранённого значения: яхту ищем среди всех, включая занятые и
+     * Кто ещё предлагает этот вариант: ключ => подпись.
+     *
+     * @return array<string, string>
+     */
+    public function offersFor(ParticipationOption $option): array
+    {
+        $fromDivisions = $this->divisions
+            ->filter(fn (ForeignRegattaDivision $division): bool => in_array(
+                $option,
+                $division->offeredParticipations(),
+                strict: true,
+            ))
+            ->mapWithKeys(fn (ForeignRegattaDivision $division): array => [
+                self::offerKey($division) => 'Дивизион «'.$division->title().'» — '
+                    .mb_strtolower($option->label())
+                    .' '.$division->participationPriceLabel($option)
+                    .', '.$division->occupancyLabel($option),
+            ]);
+
+        $fromYachts = $this->visibleCharterYachts()
+            ->filter(fn (ForeignRegattaYacht $yacht): bool => $yacht->offers($option))
+            ->mapWithKeys(fn (ForeignRegattaYacht $yacht): array => [
+                self::offerKey($yacht) => $yacht->title()
+                    .' — '.mb_strtolower($option->label())
+                    .' '.$yacht->participationPriceLabel($option)
+                    .($yacht->occupancyLabel($option) === null ? '' : ', '.$yacht->occupancyLabel($option))
+                    .($yacht->hasSkipper() ? ', шкипер '.$yacht->skipper_name : ''),
+            ]);
+
+        return $fromDivisions->union($fromYachts)->all();
+    }
+
+    /** `yacht:<id>` или `division:<id>` — источник предложения в заявке. */
+    public static function offerKey(Model $seller): string
+    {
+        $prefix = $seller instanceof ForeignRegattaDivision ? 'division' : 'yacht';
+
+        return $prefix.':'.$seller->getKey();
+    }
+
+    /**
+     * Подпись сохранённого значения: ищем среди всех, включая занятые и
      * удалённые, — иначе поданная вчера заявка покажет в админке голый uuid.
+     *
+     * Значения без префикса остались от заявок, поданных до дивизионных
+     * предложений: тогда в поле лежал голый id лодки.
      */
     public function serviceOptionLabel(string $field, string $value): ?string
     {
@@ -277,14 +302,29 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
             return ParticipationOption::tryFrom($value)?->label();
         }
 
-        if (! in_array($field, ['charter_yacht', 'crew_yacht', 'cabin_yacht'], strict: true)) {
+        $fields = array_map(
+            fn (ParticipationOption $option): string => $option->payloadField(),
+            ParticipationOption::cases(),
+        );
+
+        if (! in_array($field, $fields, strict: true)) {
             return null;
+        }
+
+        [$kind, $id] = str_contains($value, ':')
+            ? explode(':', $value, 2)
+            : ['yacht', $value];
+
+        if ($kind === 'division') {
+            $division = $this->divisions()->withTrashed()->whereKey($id)->first();
+
+            return $division === null ? null : 'Дивизион «'.$division->title().'»';
         }
 
         return $this->charterYachts()
             ->withTrashed()
             ->with('division')
-            ->whereKey($value)
+            ->whereKey($id)
             ->first()
             ?->title();
     }
@@ -359,18 +399,22 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     /**
      * Варианты, которые следуют из состояния флота.
      *
-     * Кнопка на карточке лодки подставляет вариант участия в заявку, а форма
-     * принимает только объявленные варианты. Поэтому лодка со свободными
-     * местами объявляет «место», лодка с ценой каюты — «каюту», а лодка с ценой
-     * чартера — «яхту целиком», даже если галочку в форме регаты забыли
-     * поставить.
+     * Кнопка на витрине подставляет вариант участия в заявку, а форма
+     * принимает только объявленные варианты. Поэтому всё, что предлагают
+     * дивизионы и лодки, объявляется само — даже если галочку в форме регаты
+     * забыли поставить.
      *
      * @return Collection<int, ParticipationOption>
      */
     private function participationOfferedByFleet(): Collection
     {
-        return $this->visibleCharterYachts()
-            ->flatMap(fn (ForeignRegattaYacht $yacht): array => $yacht->offeredParticipations())
+        // И дивизионы, продающие общим пулом, и отдельные лодки: форма заявки
+        // принимает только объявленные варианты, поэтому пропустить нельзя ни
+        // тех, ни других.
+        return $this->divisions
+            ->flatMap(fn (ForeignRegattaDivision $division): array => $division->offeredParticipations())
+            ->concat($this->visibleCharterYachts()
+                ->flatMap(fn (ForeignRegattaYacht $yacht): array => $yacht->offeredParticipations()))
             ->unique()
             ->values();
     }
@@ -399,7 +443,7 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     /** Показывать ли флот на странице регаты. */
     public function showsCharterFleet(): bool
     {
-        return $this->visibleCharterYachts()->isNotEmpty();
+        return $this->fleetGroups()->isNotEmpty();
     }
 
     /**
@@ -415,11 +459,21 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
         $byDivision = $this->visibleCharterYachts()->groupBy('division_id');
 
         $groups = $this->divisions
-            ->map(fn (ForeignRegattaDivision $division): array => [
-                'division' => $division,
-                'yachts' => $byDivision->get((string) $division->getKey(), collect())->values(),
-            ])
-            ->filter(fn (array $group): bool => $group['yachts']->isNotEmpty());
+            ->map(function (ForeignRegattaDivision $division) use ($byDivision): array {
+                $yachts = $byDivision->get((string) $division->getKey(), collect())->values();
+
+                // Дивизион, продающий общим пулом, сам и рассказывает о флоте:
+                // из лодок показываем только те, у которых есть что добавить.
+                if ($division->sellsDirectly()) {
+                    $yachts = $yachts->filter(
+                        fn (ForeignRegattaYacht $yacht): bool => $yacht->hasOwnDetails(),
+                    )->values();
+                }
+
+                return ['division' => $division, 'yachts' => $yachts];
+            })
+            ->filter(fn (array $group): bool => $group['yachts']->isNotEmpty()
+                || ($group['division']?->offeredParticipations() ?? []) !== []);
 
         // groupBy приводит null-ключ к пустой строке.
         $orphans = $byDivision->get('', collect())->values();
@@ -444,35 +498,45 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     }
 
     /**
-     * Лодки, которые набирают экипаж: места остались и задана их цена.
+     * Сколько мест этого варианта ещё свободно по всему флоту.
      *
-     * @return Collection<int, ForeignRegattaYacht>
+     * Считаем и по дивизионам, которые продают сами, и по отдельным лодкам:
+     * на витрине это одна цифра «в экипажи набирается N человек».
      */
-    public function yachtsSellingSeats(): Collection
+    public function vacancies(ParticipationOption $option): int
     {
-        return $this->visibleCharterYachts()->filter(
-            fn (ForeignRegattaYacht $yacht): bool => $yacht->sellsSeats(),
-        )->values();
+        $fromDivisions = $this->divisions
+            ->filter(fn (ForeignRegattaDivision $division): bool => in_array(
+                $option,
+                $division->offeredParticipations(),
+                strict: true,
+            ))
+            ->sum(fn (ForeignRegattaDivision $division): int => $division->occupancyLeft($option) ?? 0);
+
+        $fromYachts = $this->visibleCharterYachts()
+            ->filter(fn (ForeignRegattaYacht $yacht): bool => $yacht->offers($option))
+            ->sum(function (ForeignRegattaYacht $yacht) use ($option): int {
+                // Лодка целиком счётчика не имеет: она либо свободна, либо нет.
+                return $option === ParticipationOption::Yacht
+                    ? 1
+                    : ($yacht->occupancyLeft($option) ?? 0);
+            });
+
+        return (int) $fromDivisions + (int) $fromYachts;
     }
 
-    /**
-     * Лодки, которые продают каюты: места остались и задана цена каюты.
-     *
-     * @return Collection<int, ForeignRegattaYacht>
-     */
-    public function yachtsSellingCabins(): Collection
-    {
-        return $this->visibleCharterYachts()->filter(
-            fn (ForeignRegattaYacht $yacht): bool => $yacht->sellsCabins(),
-        )->values();
-    }
-
-    /** Сколько всего мест в экипажи продаётся по всему флоту. */
+    /** Сколько мест в экипажи продаётся по всему флоту — местами и каютами. */
     public function freeCrewSeats(): int
     {
-        return $this->yachtsSellingSeats()->sum(
-            fn (ForeignRegattaYacht $yacht): int => $yacht->freeSeats(),
-        );
+        return collect(ParticipationOption::cases())
+            ->filter(fn (ParticipationOption $option): bool => $option->isSeatLike())
+            ->sum(fn (ParticipationOption $option): int => $this->vacancies($option));
+    }
+
+    /** Сколько лодок ещё можно взять целиком. */
+    public function freeWholeYachts(): int
+    {
+        return $this->vacancies(ParticipationOption::Yacht);
     }
 
     /**
@@ -487,17 +551,20 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
      */
     public function priceFromLabel(): ?string
     {
-        $offers = [
-            ['yachts' => $this->yachtsSellingSeats(), 'price' => fn (ForeignRegattaYacht $yacht): ?int => $yacht->effectiveSeatPrice(), 'unit' => 'за место'],
-            ['yachts' => $this->yachtsSellingCabins(), 'price' => fn (ForeignRegattaYacht $yacht): ?int => $yacht->effectiveCabinPrice(), 'unit' => 'за каюту'],
-            ['yachts' => $this->yachtsForWholeCharter(), 'price' => fn (ForeignRegattaYacht $yacht): ?int => $yacht->effectivePrice(), 'unit' => 'за яхту целиком'],
+        // От самого доступного входа к самому дорогому.
+        $units = [
+            ParticipationOption::Seat->value => 'за место',
+            ParticipationOption::SoloSeat->value => 'за место в одноместной каюте',
+            ParticipationOption::Cabin->value => 'за каюту',
+            ParticipationOption::Yacht->value => 'за яхту целиком',
         ];
 
-        foreach ($offers as $offer) {
-            $cheapest = $this->cheapestOffer($offer['yachts'], $offer['price']);
+        foreach ($units as $value => $unit) {
+            $option = ParticipationOption::from($value);
+            $cheapest = $this->cheapestOffer($option);
 
             if ($cheapest !== null) {
-                return 'от '.$this->priceCurrency()->format($cheapest).' '.$offer['unit'];
+                return 'от '.$this->priceCurrency()->format($cheapest).' '.$unit;
             }
         }
 
@@ -507,18 +574,27 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     }
 
     /**
-     * Самая низкая цена набора лодок.
+     * Самая низкая цена варианта по всему флоту — у дивизионов и у лодок.
      *
      * Сравнивать суммы можно напрямую: валюта у регаты одна и на дивизионы с
      * лодками не делится (@see ForeignRegattaYacht::effectiveCurrency()).
-     *
-     * @param  Collection<int, ForeignRegattaYacht>  $yachts
-     * @param  callable(ForeignRegattaYacht): ?int  $price
      */
-    private function cheapestOffer(Collection $yachts, callable $price): ?int
+    private function cheapestOffer(ParticipationOption $option): ?int
     {
-        return $yachts
-            ->map($price)
+        $fromDivisions = $this->divisions
+            ->filter(fn (ForeignRegattaDivision $division): bool => in_array(
+                $option,
+                $division->offeredParticipations(),
+                strict: true,
+            ))
+            ->map(fn (ForeignRegattaDivision $division): ?int => $division->priceFor($option));
+
+        $fromYachts = $this->visibleCharterYachts()
+            ->filter(fn (ForeignRegattaYacht $yacht): bool => $yacht->offers($option))
+            ->map(fn (ForeignRegattaYacht $yacht): ?int => $yacht->priceFor($option));
+
+        return $fromDivisions
+            ->concat($fromYachts)
             ->filter(fn (?int $amount): bool => $amount !== null)
             ->min();
     }

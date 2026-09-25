@@ -56,7 +56,7 @@
             {{-- Что осталось во флоте: лодки под чартер целиком и места в экипажи. --}}
             @if ($regatta->showsCharterFleet())
                 @php
-                    $freeYachts = $regatta->yachtsForWholeCharter()->count();
+                    $freeYachts = $regatta->freeWholeYachts();
                     $freeSeats = $regatta->freeCrewSeats();
                 @endphp
 
