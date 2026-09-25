@@ -168,9 +168,6 @@ class CharterYachtModelResource extends Resource
                     ->label('Лодок во флотах')
                     ->counts('yachts'),
 
-                TextColumn::make('divisions_count')
-                    ->label('Монотипных дивизионов')
-                    ->counts('divisions'),
             ])
             ->defaultSort('name')
             ->filters([

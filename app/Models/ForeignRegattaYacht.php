@@ -71,6 +71,22 @@ class ForeignRegattaYacht extends Model implements HasMedia
         'status' => CharterYachtStatus::Free->value,
     ];
 
+    /**
+     * Поля, которые наследуются от дивизиона с общей ценой.
+     *
+     * Остальные поля спецификации приходят только от монотипа без выбора яхт
+     * (@see inheritsFromDivision()).
+     */
+    private const SHARED_PRICING = [
+        'price',
+        'price_unit',
+        'seat_price',
+        'cabin_price',
+        'charter_fee',
+        'deposit',
+        'price_note',
+    ];
+
     protected function casts(): array
     {
         return [
@@ -154,8 +170,11 @@ class ForeignRegattaYacht extends Model implements HasMedia
      *
      * Три уровня, потому что заполнять одно и то же трижды никто не станет:
      * общее для всех лодок модели лежит в справочнике, общее для дивизиона —
-     * на дивизионе (там же цены), своё — здесь. У дивизиона-списка
-     * промежуточного уровня нет: он ничего не наследует лодкам.
+     * на дивизионе, своё — здесь.
+     *
+     * Что именно наследуется от дивизиона, решает его тип: спецификацию делит
+     * только монотип без выбора яхт, цены — оба монотипа, гандикап не делит
+     * ничего (@see App\Enums\FleetDivisionType).
      */
     private function spec(string $attribute): mixed
     {
@@ -167,7 +186,7 @@ class ForeignRegattaYacht extends Model implements HasMedia
 
         $division = $this->division;
 
-        if ($division?->sharesSpec()) {
+        if ($division !== null && $this->inheritsFromDivision($division, $attribute)) {
             $inherited = $division->getAttribute($attribute);
 
             if ($inherited !== null && $inherited !== '') {
@@ -178,9 +197,16 @@ class ForeignRegattaYacht extends Model implements HasMedia
         return $this->catalogSpec($attribute);
     }
 
+    /** Делится ли дивизион именно этим полем. */
+    private function inheritsFromDivision(ForeignRegattaDivision $division, string $attribute): bool
+    {
+        return in_array($attribute, self::SHARED_PRICING, true)
+            ? $division->sharesPrices()
+            : $division->sharesSpec();
+    }
+
     /**
-     * То же значение из справочника: своя модель, а у лодки монотипного
-     * дивизиона — модель дивизиона.
+     * То же значение из справочника — по модели, выбранной у самой лодки.
      *
      * Цен и года в справочнике нет (@see CharterYachtModel), поэтому отвечает
      * он только за то, что у всех лодок модели одинаково.
@@ -205,13 +231,7 @@ class ForeignRegattaYacht extends Model implements HasMedia
     /** Запись справочника, из которой лодка берёт характеристики. */
     public function catalogModel(): ?CharterYachtModel
     {
-        if ($this->yachtModel !== null) {
-            return $this->yachtModel;
-        }
-
-        $division = $this->division;
-
-        return $division?->sharesSpec() ? $division->yachtModel : null;
+        return $this->yachtModel;
     }
 
     public function effectiveModel(): ?string
@@ -442,10 +462,10 @@ class ForeignRegattaYacht extends Model implements HasMedia
         return $title === '' ? 'Яхта' : $title;
     }
 
-    /** Берёт ли лодка цены у дивизиона-флота, а не несёт свои. */
+    /** Берёт ли лодка цены у дивизиона, а не несёт свои. */
     public function inheritsPrices(): bool
     {
-        return $this->division?->sharesSpec() === true;
+        return $this->division?->sharesPrices() === true;
     }
 
     /**

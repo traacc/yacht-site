@@ -9,7 +9,7 @@ use App\Models\ForeignRegattaYacht;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
- * Приводит число лодок дивизиона-флота к заявленному `yachts_count`.
+ * Приводит число лодок монотипного дивизиона без выбора яхт к `yachts_count`.
  *
  * Строки нужны физически, даже когда все лодки одинаковые: шкипер, свободные
  * места и занятость — свойство конкретной лодки, а не дивизиона. Модель, цену
@@ -25,7 +25,7 @@ final class SyncFleetDivisionYachts
 {
     public function handle(ForeignRegattaDivision $division): void
     {
-        if (! $division->sharesSpec()) {
+        if (! $division->type->usesYachtsCount()) {
             return;
         }
 

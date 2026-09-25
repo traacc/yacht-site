@@ -379,7 +379,7 @@ class ForeignRegattaYachtResource extends Resource
                         ->where(fn (Builder $inner) => $inner
                             ->whereNotNull('seat_price')
                             ->orWhereHas('division', fn (Builder $division) => $division
-                                ->where('type', FleetDivisionType::Fleet->value)
+                                ->whereIn('type', FleetDivisionType::sharingPrices())
                                 ->whereNotNull('seat_price')))),
 
                 Filter::make('whole_charter')
@@ -390,7 +390,7 @@ class ForeignRegattaYachtResource extends Resource
                         ->where(fn (Builder $inner) => $inner
                             ->whereNotNull('price')
                             ->orWhereHas('division', fn (Builder $division) => $division
-                                ->where('type', FleetDivisionType::Fleet->value)
+                                ->whereIn('type', FleetDivisionType::sharingPrices())
                                 ->whereNotNull('price')))),
 
                 Filter::make('hidden')
@@ -463,6 +463,12 @@ class ForeignRegattaYachtResource extends Resource
         return self::division($get)?->sharesSpec() ?? false;
     }
 
+    /** Берёт ли лодка цены у дивизиона: у обоих монотипов они общие. */
+    private static function inheritsPrices(Get $get): bool
+    {
+        return self::division($get)?->sharesPrices() ?? false;
+    }
+
     /**
      * Предупреждает, что по лодке нечего предложить.
      *
@@ -492,18 +498,22 @@ class ForeignRegattaYachtResource extends Resource
     {
         $division = self::division($get);
 
-        if ($division === null || ! $division->sharesSpec()) {
-            return 'Характеристики этой лодки заполняются здесь.';
+        if ($division === null || (! $division->sharesSpec() && ! $division->sharesPrices())) {
+            return 'Характеристики и цены этой лодки заполняются здесь.';
         }
 
+        // Монотип с выбором яхт делится только ценой: модель у каждой лодки своя.
         $spec = array_filter([
-            trim((string) $division->model),
-            $division->cabins === null ? null : $division->cabins.' кают',
-            $division->year === null ? null : (string) $division->year,
+            $division->sharesSpec() ? trim((string) $division->model) : null,
+            $division->sharesSpec() && $division->cabins !== null ? $division->cabins.' кают' : null,
+            $division->sharesSpec() && $division->year !== null ? (string) $division->year : null,
             $division->price === null ? null : $division->priceCurrency()->format($division->price),
+            $division->seat_price === null ? null : $division->priceCurrency()->format($division->seat_price).' за место',
         ]);
 
-        return 'Пустые поля берутся из дивизиона «'.$division->title().'»'
+        $what = $division->sharesSpec() ? 'Пустые поля' : 'Цены';
+
+        return $what.' берутся из дивизиона «'.$division->title().'»'
             .($spec === [] ? '.' : ': '.implode(', ', $spec).'.');
     }
 

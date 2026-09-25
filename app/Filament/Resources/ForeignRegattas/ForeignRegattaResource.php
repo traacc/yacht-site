@@ -396,13 +396,14 @@ class ForeignRegattaResource extends Resource
      */
     private static function divisionFields(): array
     {
-        $isFleet = fn (Get $get): bool => $get('type') === FleetDivisionType::Fleet->value;
-        $isList = fn (Get $get): bool => ! $isFleet($get);
+        $type = fn (Get $get): ?FleetDivisionType => FleetDivisionType::tryFrom((string) $get('type'));
 
-        // Модель из справочника заменяет ручной ввод характеристик: своя
-        // строка «модель» остаётся только у дивизионов, заведённых до
-        // справочника (@see App\Models\ForeignRegattaDivision::effectiveModel()).
-        $hasCatalogModel = fn (Get $get): bool => filled($get('yacht_model_id'));
+        // Монотип без выбора яхт: одна модель на весь дивизион, вводится руками.
+        $isMonotype = fn (Get $get): bool => $type($get)?->sharesSpec() ?? false;
+        // Оба монотипа: цена общая и задаётся здесь.
+        $sharesPrices = fn (Get $get): bool => $type($get)?->sharesPrices() ?? false;
+        // Монотип с выбором и гандикап: лодки добавляются поимённо.
+        $picksYachts = fn (Get $get): bool => $type($get)?->picksYachts() ?? false;
 
         // Знак валюты внутри репитера: она одна на регату и лежит уровнем
         // выше (`../../`).
@@ -412,7 +413,7 @@ class ForeignRegattaResource extends Resource
             Select::make('type')
                 ->label('Тип дивизиона')
                 ->options(FleetDivisionType::options())
-                ->default(FleetDivisionType::Fleet->value)
+                ->default(FleetDivisionType::Monotype->value)
                 ->helperText(fn (?string $state): string => FleetDivisionType::tryFrom((string) $state)?->hint() ?? '')
                 ->required()
                 ->live(),
@@ -423,38 +424,22 @@ class ForeignRegattaResource extends Resource
                 ->helperText('Необязательно — станет заголовком группы яхт на странице регаты.')
                 ->maxLength(255),
 
-            // Монотипный дивизион собран из одной модели: описание, галерея и
-            // характеристики берутся из справочника, здесь остаются цены и
-            // количество лодок.
-            Select::make('yacht_model_id')
-                ->label('Модель из справочника')
-                ->helperText('Нет нужной — заведите кнопкой «+», она попадёт в общий справочник и будет доступна другим регатам.')
-                ->options(fn (): array => self::yachtModelOptions())
-                ->searchable()
-                ->preload()
-                ->live()
-                ->createOptionForm(CharterYachtModelResource::fields(withGallery: false))
-                ->createOptionUsing(fn (array $data): string => (string) CharterYachtModel::create($data)->getKey())
-                ->required(fn (Get $get): bool => $isFleet($get) && ! filled($get('model')))
-                ->visible($isFleet)
-                ->columnSpan(2),
-
             TextInput::make('yachts_count')
                 ->label('Количество яхт в дивизионе')
                 ->helperText('Столько карточек яхт появится в разделе «Услуги: Флот регат» — там укажете названия, годы, шкиперов и свободные места.')
                 ->numeric()
                 ->minValue(1)
                 ->maxValue(200)
-                ->required($isFleet)
-                ->visible($isFleet),
+                ->required($isMonotype)
+                ->visible($isMonotype),
 
-            // Поля ниже — для дивизионов, заведённых до справочника: пока у них
-            // модель записана строкой, они правятся по-старому.
+            // Монотип без выбора: модель одна на весь дивизион и вводится
+            // строкой — справочник здесь не участвует.
             TextInput::make('model')
-                ->label('Модель лодки (без справочника)')
+                ->label('Модель лодки')
                 ->placeholder('Bavaria 46')
-                ->required(fn (Get $get): bool => $isFleet($get) && ! $hasCatalogModel($get))
-                ->visible(fn (Get $get): bool => $isFleet($get) && ! $hasCatalogModel($get))
+                ->required($isMonotype)
+                ->visible($isMonotype)
                 ->maxLength(255),
 
             TextInput::make('cabins')
@@ -462,19 +447,19 @@ class ForeignRegattaResource extends Resource
                 ->numeric()
                 ->minValue(1)
                 ->maxValue(20)
-                ->visible(fn (Get $get): bool => $isFleet($get) && ! $hasCatalogModel($get)),
+                ->visible($isMonotype),
 
             TextInput::make('year')
                 ->label('Год выпуска')
                 ->numeric()
                 ->minValue(1900)
                 ->maxValue((int) now()->addYear()->format('Y'))
-                ->visible($isFleet),
+                ->visible($isMonotype),
 
             Select::make('downwind_sail')
                 ->label('Спинакер / геннакер')
                 ->options(DownwindSail::options())
-                ->visible(fn (Get $get): bool => $isFleet($get) && ! $hasCatalogModel($get)),
+                ->visible($isMonotype),
 
             TextInput::make('price')
                 ->label('Стоимость яхты целиком')
@@ -482,13 +467,13 @@ class ForeignRegattaResource extends Resource
                 ->numeric()
                 ->minValue(0)
                 ->suffix($divisionCurrency)
-                ->visible($isFleet),
+                ->visible($sharesPrices),
 
             Select::make('price_unit')
                 ->label('За что цена')
                 ->options(CharterPriceUnit::options())
                 ->default(CharterPriceUnit::Regatta->value)
-                ->visible($isFleet),
+                ->visible($sharesPrices),
 
             TextInput::make('seat_price')
                 ->label('Стоимость места в каюте')
@@ -496,7 +481,7 @@ class ForeignRegattaResource extends Resource
                 ->numeric()
                 ->minValue(0)
                 ->suffix($divisionCurrency)
-                ->visible($isFleet),
+                ->visible($sharesPrices),
 
             TextInput::make('cabin_price')
                 ->label('Стоимость двухместной каюты')
@@ -504,42 +489,41 @@ class ForeignRegattaResource extends Resource
                 ->numeric()
                 ->minValue(0)
                 ->suffix($divisionCurrency)
-                ->visible($isFleet),
+                ->visible($sharesPrices),
 
             TextInput::make('charter_fee')
                 ->label('Сборы чартерной компании')
                 ->numeric()
                 ->minValue(0)
                 ->suffix($divisionCurrency)
-                ->visible($isFleet),
+                ->visible($sharesPrices),
 
             TextInput::make('deposit')
                 ->label('Депозит')
                 ->numeric()
                 ->minValue(0)
                 ->suffix($divisionCurrency)
-                ->visible($isFleet),
+                ->visible($sharesPrices),
 
             TextInput::make('price_note')
                 ->label('Примечание к стоимости')
                 ->placeholder('Например: судовая касса оплачивается на месте')
                 ->maxLength(255)
-                ->visible($isFleet)
+                ->visible($sharesPrices)
                 ->columnSpan(2),
 
-            // Описание и галерея есть у обоих типов: у флота одинаковых лодок
-            // они наследуются карточками лодок, у списка конкретных — это
-            // единое описание дивизиона над таблицей яхт.
+            // Описание и галерея есть у всех типов: у монотипа без выбора яхт
+            // они наследуются карточками лодок, у остальных — это единое
+            // описание дивизиона над списком яхт.
             Textarea::make('description')
-                ->label(fn (Get $get): string => $isFleet($get) ? 'Описание лодки' : 'Описание дивизиона')
+                ->label(fn (Get $get): string => $isMonotype($get) ? 'Описание лодки' : 'Описание дивизиона')
                 ->rows(3)
                 ->maxLength(2000)
-                ->visible(fn (Get $get): bool => $isList($get) || ! $hasCatalogModel($get))
                 ->columnSpanFull(),
 
             SpatieMediaLibraryFileUpload::make('gallery')
-                ->label(fn (Get $get): string => $isFleet($get) ? 'Фотографии лодки' : 'Фотографии дивизиона')
-                ->helperText(fn (Get $get): string => $isFleet($get)
+                ->label(fn (Get $get): string => $isMonotype($get) ? 'Фотографии лодки' : 'Фотографии дивизиона')
+                ->helperText(fn (Get $get): string => $isMonotype($get)
                     ? 'Общая галерея для всех лодок дивизиона.'
                     : 'Общая галерея дивизиона: у каждой лодки своя галерея заводится в разделе «Услуги: Флот регат».')
                 ->collection('gallery')
@@ -552,13 +536,12 @@ class ForeignRegattaResource extends Resource
                 ->visibility('public')
                 ->maxSize(10240)
                 ->panelLayout('grid')
-                ->visible(fn (Get $get): bool => $isList($get) || ! $hasCatalogModel($get))
                 ->columnSpanFull(),
 
             // Кнопка «Добавить яхту» — прямо в дивизионе, чтобы не уходить в
-            // отдельный раздел. Только для списка разных лодок: у монотипа
-            // строки заводит наблюдатель по `yachts_count`, и репитер стёр бы
-            // их как «отсутствующие в состоянии формы»
+            // отдельный раздел. Не для монотипа без выбора яхт: там строки
+            // заводит наблюдатель по `yachts_count`, и репитер стёр бы их как
+            // «отсутствующие в состоянии формы»
             // (@see App\Observers\ForeignRegattaDivisionObserver).
             Repeater::make('yachts')
                 ->label('Яхты дивизиона')
@@ -574,7 +557,7 @@ class ForeignRegattaResource extends Resource
                 ->itemLabel(fn (array $state): ?string => self::yachtItemLabel($state))
                 ->schema(self::divisionYachtFields())
                 ->columns(3)
-                ->visible($isList)
+                ->visible($picksYachts)
                 ->columnSpanFull(),
         ];
     }
@@ -595,6 +578,10 @@ class ForeignRegattaResource extends Resource
         // репитера — до неё четыре уровня вверх (поле, лодка, репитер лодок,
         // дивизион).
         $yachtCurrency = fn (Get $get): string => self::currencySymbol($get, '../../../../currency');
+
+        // Цены у лодки свои только в гандикапном дивизионе: у монотипа с
+        // выбором яхт они общие и заданы на дивизионе двумя уровнями выше.
+        $hasOwnPrices = fn (Get $get): bool => ! (FleetDivisionType::tryFrom((string) $get('../../type'))?->sharesPrices() ?? false);
 
         return [
             Select::make('yacht_model_id')
@@ -642,12 +629,14 @@ class ForeignRegattaResource extends Resource
                 ->helperText('Пусто — лодка целиком не сдаётся.')
                 ->numeric()
                 ->minValue(0)
-                ->suffix($yachtCurrency),
+                ->suffix($yachtCurrency)
+                ->visible($hasOwnPrices),
 
             Select::make('price_unit')
                 ->label('За что цена')
                 ->options(CharterPriceUnit::options())
-                ->default(CharterPriceUnit::Regatta->value),
+                ->default(CharterPriceUnit::Regatta->value)
+                ->visible($hasOwnPrices),
 
             TextInput::make('free_seats')
                 ->label('Свободных мест')
@@ -660,13 +649,15 @@ class ForeignRegattaResource extends Resource
                 ->label('Стоимость места')
                 ->numeric()
                 ->minValue(0)
-                ->suffix($yachtCurrency),
+                ->suffix($yachtCurrency)
+                ->visible($hasOwnPrices),
 
             TextInput::make('cabin_price')
                 ->label('Стоимость двухместной каюты')
                 ->numeric()
                 ->minValue(0)
-                ->suffix($yachtCurrency),
+                ->suffix($yachtCurrency)
+                ->visible($hasOwnPrices),
 
             TextInput::make('skipper_name')
                 ->label('Шкипер')
@@ -766,11 +757,13 @@ class ForeignRegattaResource extends Resource
         $model = trim((string) ($state['model'] ?? ''));
         $count = (int) ($state['yachts_count'] ?? 0);
 
-        $isFleet = ($state['type'] ?? null) === FleetDivisionType::Fleet->value;
+        $type = FleetDivisionType::tryFrom((string) ($state['type'] ?? ''));
 
-        $spec = $isFleet
-            ? trim($model.($count > 0 ? ' × '.$count : ''))
-            : 'список яхт';
+        $spec = match (true) {
+            $type?->usesYachtsCount() => trim($model.($count > 0 ? ' × '.$count : '')),
+            $type === null => '',
+            default => mb_strtolower($type->label()),
+        };
 
         return match (true) {
             $name !== '' && $spec !== '' => $name.' — '.$spec,

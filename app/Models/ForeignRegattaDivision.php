@@ -24,13 +24,16 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 /**
  * Дивизион флота зарубежной регаты.
  *
- * Тип определяет, где живут характеристики лодок: у дивизиона-флота
- * (@see FleetDivisionType::Fleet) они общие и лежат здесь, у списка конкретных
- * лодок — у каждой свои. Наследование делает ForeignRegattaYacht::spec().
+ * Тип определяет две вещи (@see FleetDivisionType): общая ли у лодок
+ * спецификация — модель, описание, галерея — и общая ли цена. У монотипа без
+ * выбора общее и то и другое, у монотипа с выбором — только цена, у гандикапа
+ * ничего: там всё своё у каждой лодки. Наследование делает
+ * ForeignRegattaYacht::spec().
  *
- * Количество лодок дивизиона-флота задаётся полем `yachts_count`, а строки под
- * них заводит App\Actions\Service\SyncFleetDivisionYachts: шкипер и свободные
- * места — свойство конкретной лодки, поэтому виртуальными карточками не обойтись.
+ * Количество лодок монотипа без выбора задаётся полем `yachts_count`, а строки
+ * под них заводит App\Actions\Service\SyncFleetDivisionYachts: шкипер и
+ * свободные места — свойство конкретной лодки, поэтому виртуальными карточками
+ * не обойтись. В остальных дивизионах лодки добавляются поимённо.
  */
 class ForeignRegattaDivision extends Model implements HasMedia
 {
@@ -40,7 +43,6 @@ class ForeignRegattaDivision extends Model implements HasMedia
         'foreign_regatta_id',
         'type',
         'name',
-        'yacht_model_id',
         'model',
         'description',
         'year',
@@ -58,7 +60,7 @@ class ForeignRegattaDivision extends Model implements HasMedia
     ];
 
     protected $attributes = [
-        'type' => FleetDivisionType::Fleet->value,
+        'type' => FleetDivisionType::Monotype->value,
     ];
 
     protected function casts(): array
@@ -107,18 +109,6 @@ class ForeignRegattaDivision extends Model implements HasMedia
         return $this->hasMany(ForeignRegattaYacht::class, 'division_id')->ordered();
     }
 
-    /**
-     * Модель из справочника — для монотипного дивизиона.
-     *
-     * По ТЗ в таком дивизионе «вводятся только модели яхт с описанием и
-     * галереей»: характеристики берутся отсюда, а на самом дивизионе остаются
-     * цены и количество лодок.
-     */
-    public function yachtModel(): BelongsTo
-    {
-        return $this->belongsTo(CharterYachtModel::class, 'yacht_model_id');
-    }
-
     // ──────────────────────────────────────────────
     // Скоупы
     // ──────────────────────────────────────────────
@@ -144,49 +134,10 @@ class ForeignRegattaDivision extends Model implements HasMedia
         return $this->type->sharesSpec();
     }
 
-    /**
-     * Характеристики дивизиона: свои, а чего нет — из модели справочника.
-     *
-     * Своё поле остаётся приоритетом ради дивизионов, заведённых до появления
-     * справочника: у них модель записана строкой.
-     */
-    public function effectiveModel(): ?string
+    /** Общая ли цена у лодок дивизиона. */
+    public function sharesPrices(): bool
     {
-        return $this->firstFilled($this->model, $this->yachtModel?->name);
-    }
-
-    public function effectiveDescription(): ?string
-    {
-        return $this->firstFilled($this->description, $this->yachtModel?->description);
-    }
-
-    public function effectiveCabins(): ?int
-    {
-        return $this->cabins ?? $this->yachtModel?->cabins;
-    }
-
-    public function effectiveDownwindSail(): ?DownwindSail
-    {
-        return $this->downwind_sail ?? $this->yachtModel?->downwind_sail;
-    }
-
-    /**
-     * Фотографии дивизиона, а если своих нет — фотографии модели.
-     *
-     * @return list<array{src: string, webp: string|null, avif: string|null, caption: string}>
-     */
-    public function effectivePhotos(): array
-    {
-        $own = $this->galleryPhotos();
-
-        return $own !== [] ? $own : ($this->yachtModel?->galleryPhotos() ?? []);
-    }
-
-    private function firstFilled(?string $own, ?string $fallback): ?string
-    {
-        $own = trim((string) $own);
-
-        return $own !== '' ? $own : $fallback;
+        return $this->type->sharesPrices();
     }
 
     /**
@@ -199,7 +150,7 @@ class ForeignRegattaDivision extends Model implements HasMedia
      */
     public function priceLabels(): array
     {
-        if (! $this->sharesSpec()) {
+        if (! $this->sharesPrices()) {
             return [];
         }
 
@@ -238,7 +189,7 @@ class ForeignRegattaDivision extends Model implements HasMedia
             return $name;
         }
 
-        $model = trim((string) $this->effectiveModel());
+        $model = trim((string) $this->model);
 
         return $model !== '' ? $model : 'Дивизион';
     }
@@ -251,7 +202,7 @@ class ForeignRegattaDivision extends Model implements HasMedia
         }
 
         $count = (int) ($this->yachts_count ?? 0);
-        $model = trim((string) $this->effectiveModel());
+        $model = trim((string) $this->model);
 
         if ($count < 1) {
             return $model === '' ? null : $model;

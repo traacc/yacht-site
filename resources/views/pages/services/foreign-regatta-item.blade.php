@@ -103,7 +103,7 @@
                         @foreach ($fleetGroups as $group)
                             @php
                                 $division = $group['division'];
-                                $divisionDescription = trim((string) $division?->effectiveDescription());
+                                $divisionDescription = trim((string) $division?->description);
                                 $divisionPrices = $division?->priceLabels() ?? [];
                                 // Небольшой флот нагляднее карточками, длинный
                                 // список разных лодок читается только таблицей.
@@ -112,7 +112,7 @@
                                 // и так показывает каждая карточка — дублировать
                                 // незачем, а в таблице фотографий нет.
                                 $divisionPhotos = $division !== null && ($asTable || ! $division->sharesSpec())
-                                    ? $division->effectivePhotos()
+                                    ? $division->galleryPhotos()
                                     : [];
                             @endphp
 
