@@ -16,7 +16,7 @@ class FeedbackSubmitted extends Mailable
     public function build(): self
     {
         return $this
-            ->subject('Новая заявка с сайта - ' . $this->feedback->source . ': ' . $this->feedback->name)
+            ->subject('Запрос на обратную связь - ' . $this->feedback->source . ': ' . $this->feedback->name)
             ->markdown('mail.feedback-submitted');
     }
 }

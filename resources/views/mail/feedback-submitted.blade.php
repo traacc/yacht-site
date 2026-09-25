@@ -1,5 +1,5 @@
 <x-mail::message>
-# Новая заявка с сайта
+# Запрос на обратную связь
 
 | Поле | Значение |
 |------|----------|
@@ -11,7 +11,7 @@
 @if($feedback->message)
 | **Сообщение** | {{ $feedback->message }} |
 @endif
-| **Источник** | {{ $feedback->source }} |
+| **Откуда** | {{ $feedback->source }} |
 | **Дата** | {{ $feedback->created_at->format('d.m.Y H:i') }} |
 
 

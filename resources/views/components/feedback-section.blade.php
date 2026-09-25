@@ -20,7 +20,7 @@
                 loading: false,
                 error: '',
                 captchaToken: '',
-                successMessage: 'Спасибо! Ваша заявка успешно отправлена. Мы свяжемся с вами в ближайшее время.',
+                successMessage: 'Спасибо! Ваша запрос успешно отправлен. Мы свяжемся с вами в ближайшее время.',
 
                 async submitForm() {
                     this.error = '';
@@ -77,7 +77,7 @@
             {{-- Сообщение об успехе (fallback при обычной отправке) --}}
             @if (session('feedback_sent'))
                 <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 mb-4" role="alert">
-                    <span class="block sm:inline">Спасибо! Ваша заявка успешно отправлена. Мы свяжемся с вами в ближайшее время.</span>
+                    <span class="block sm:inline">Спасибо! Ваша запрос успешно отправлен. Мы свяжемся с вами в ближайшее время.</span>
                 </div>
             @endif
 
