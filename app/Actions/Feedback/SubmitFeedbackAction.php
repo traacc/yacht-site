@@ -13,7 +13,7 @@ class SubmitFeedbackAction
     /**
      * Сохраняет заявку обратной связи в БД и отправляет уведомление на email.
      *
-     * @param  array{name: string, phone: string, email?: string|null, message?: string|null, source?: string|null}  $data
+     * @param  array{name: string, phone: string, email?: string|null, message?: string|null, source?: string|null, page_title?: string|null}  $data
      */
     public function handle(array $data, ?string $userId = null): FeedbackRequests
     {
@@ -23,6 +23,7 @@ class SubmitFeedbackAction
             'email' => $data['email'] ?? null,
             'message' => $data['message'] ?? null,
             'source' => $data['source'] ?? request()->header('Referer', 'unknown'),
+            'page_title' => $data['page_title'] ?? null,
             'user_id' => $userId,
         ]);
 

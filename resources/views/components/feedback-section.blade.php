@@ -37,6 +37,7 @@
                             body: JSON.stringify({
                                 name: this.$refs.name.value,
                                 phone: this.$refs.phone.value,
+                                page_title: document.title,
                                 captchaToken: this.captchaToken,
                             }),
                         });

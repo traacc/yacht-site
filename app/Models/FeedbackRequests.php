@@ -19,6 +19,7 @@ class FeedbackRequests extends Model
         'email',
         'message',
         'source',
+        'page_title',
         'user_id',
     ];
 

@@ -1412,6 +1412,7 @@ Route::post('/feedback', function (Request $request) {
         'name' => ['required', 'string', 'max:255'],
         'phone' => ['required', 'string', 'max:20'],
         'message' => ['nullable', 'string', 'max:2000'],
+        'page_title' => ['nullable', 'string', 'max:255'],
         'captchaToken' => YandexCaptcha::rules(),
     ], messages: [
         'captchaToken.required' => 'Вам необходимо пройти проверку на бота',

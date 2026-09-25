@@ -11,7 +11,10 @@
 @if($feedback->message)
 | **Сообщение** | {{ $feedback->message }} |
 @endif
-| **Откуда** | {{ $feedback->source }} |
+@if($feedback->page_title)
+| **Страница** | {{ $feedback->page_title }} |
+@endif
+| **Источник** | {{ $feedback->source }} |
 | **Дата** | {{ $feedback->created_at->format('d.m.Y H:i') }} |
 
 
