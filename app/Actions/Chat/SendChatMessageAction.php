@@ -8,6 +8,7 @@ use App\Enums\ChatNotificationAudience;
 use App\Enums\ConversationStatus;
 use App\Enums\ConversationType;
 use App\Enums\MessageAuthorRole;
+use App\Jobs\ForwardChatMessageToLastBot;
 use App\Mail\SupportMessageReceived;
 use App\Models\ChatMessage;
 use App\Models\Conversation;
@@ -36,13 +37,17 @@ use RuntimeException;
  *
  * Обращение в поддержку дополнительно уходит письмом на общие адреса
  * администрации из настроек сайта (@see SettingsService::adminNotificationEmails()).
+ *
+ * Сообщения клиента в поддержку, кроме того, зеркалируются в LastBot — в очереди,
+ * чтобы недоступность их сервиса не задерживала и не роняла отправку
+ * (@see ForwardChatMessageToLastBot).
  */
 class SendChatMessageAction
 {
     /** Сообщений от одного пользователя в минуту. */
     private const MAX_PER_MINUTE = 20;
 
-    private const MAX_LENGTH = 5000;
+    public const MAX_LENGTH = 5000;
 
     /** Вложений в одном сообщении. */
     public const MAX_ATTACHMENTS = 5;
@@ -61,6 +66,8 @@ class SendChatMessageAction
 
     /**
      * @param  list<UploadedFile>  $attachments
+     * @param  array<string, mixed>  $attributes  дополнительные колонки сообщения
+     *                                            (id во внешней системе и т.п.)
      */
     public function handle(
         Conversation $conversation,
@@ -68,6 +75,7 @@ class SendChatMessageAction
         MessageAuthorRole $role,
         string $body = '',
         array $attachments = [],
+        array $attributes = [],
     ): ChatMessage {
         $body = trim($body);
 
@@ -98,8 +106,9 @@ class SendChatMessageAction
 
         $excerpt = $this->excerpt($body, count($prepared));
 
-        $message = DB::transaction(function () use ($conversation, $author, $role, $body, $excerpt): ChatMessage {
+        $message = DB::transaction(function () use ($conversation, $author, $role, $body, $excerpt, $attributes): ChatMessage {
             $message = $conversation->messages()->create([
+                ...$attributes,
                 'user_id' => $author?->getKey(),
                 'author_role' => $role,
                 'body' => $body === '' ? null : $body,
@@ -116,6 +125,8 @@ class SendChatMessageAction
         });
 
         $this->attachFiles($message, $prepared);
+
+        ForwardChatMessageToLastBot::dispatchFor($message, $conversation);
 
         if ($mailAdmins) {
             $this->mailAdmins($message);

@@ -36,12 +36,15 @@ class ChatMessage extends Model implements HasMedia
         'user_id',
         'author_role',
         'body',
+        'lastbot_message_id',
+        'lastbot_forwarded_at',
     ];
 
     protected function casts(): array
     {
         return [
             'author_role' => MessageAuthorRole::class,
+            'lastbot_forwarded_at' => 'datetime',
         ];
     }
 
@@ -91,6 +94,7 @@ class ChatMessage extends Model implements HasMedia
         return match ($this->author_role) {
             MessageAuthorRole::Support => 'Поддержка',
             MessageAuthorRole::System => 'Система',
+            MessageAuthorRole::Bot => 'Бот поддержки',
             MessageAuthorRole::Client => $this->author?->name ?? 'Пользователь',
         };
     }

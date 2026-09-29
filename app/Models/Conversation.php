@@ -38,6 +38,8 @@ class Conversation extends Model
         'created_by',
         'last_message_at',
         'support_read_at',
+        'lastbot_thread_id',
+        'lastbot_contact_uuid',
     ];
 
     protected function casts(): array

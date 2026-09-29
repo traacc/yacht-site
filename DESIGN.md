@@ -304,6 +304,14 @@ REST API для судейской программы «КАРТЕР 30». Middl
 
 **Админка**: дивизионы — репитер в форме регаты (`ForeignRegattaResource`), лодки — отдельный ресурс `ForeignRegattaYachtResource` («Услуги: Флот регат», переход с кнопки «Флот» в строке регаты). Разделение обязательно: вложенный репитер лодок при сохранении удалил бы автосозданные строки как «отсутствующие в состоянии формы» (`Repeater::saveToRelationship`).
 
+### 7.12. Чат поддержки ↔ LastBot
+
+Обращения в поддержку зеркалируются в LastBot ONE (ИИ-агент + их операторы), при этом вся переписка хранится у нас. Реплика клиента сохраняется как обычно (`SendChatMessageAction`), а job `ForwardChatMessageToLastBot` (afterCommit) пересылает её через `ForwardMessageToLastBotAction`: первая реплика создаёт диалог LastBot по REST (`conversations.lastbot_thread_id`, `lastbot_contact_uuid` — один контакт на пользователя), следующие уходят в него через ActionCable (`Chat::MessageThreadChannel`, `create_message`) — по REST продолжить диалог нельзя. Закрытый (`task.closed_at`) или удалённый в LastBot диалог — следующая реплика открывает новый.
+
+Ответы забирает `SyncLastBotThreadAction`: только `role=assistant`, без служебных (`metadata.field_name` = `tool_call` «Поиск информации», `submit_rating`) и только дописанные. `is_finished` у LastBot `true` с самого создания, а текст приходит потоком, поэтому ответ считается дописанным, когда его `updated_at` не менялся 8 с — по часам LastBot (заголовок `Date` ответа), не по нашим; если импортированный текст всё же изменился, он молча обновляется. Контакт LastBot заводится вместе с первым диалогом (`contact.uuid` в ответе на создание). ИИ — роль `MessageAuthorRole::Bot` («Бот поддержки»), живой оператор LastBot (`sender` задан) — `Support`. Повторный импорт отсекает уникальный `chat_messages.lastbot_message_id`. Вебхуков у LastBot нет, поэтому после пересылки ответ ждёт цепочка `SyncLastBotThread` (паузы 3 с … 2 мин, ~4,5 мин), а поздние ответы операторов подбирает `lastbot:sync` (ежеминутно, обращения с активностью за `LASTBOT_SYNC_WINDOW_HOURS`). Пересылка и опрос одного обращения сериализуются cache-lock'ом.
+
+Ограничения: ответы наших операторов из Filament в LastBot не уходят (писать в их диалог от имени оператора нечем); вложения не передаются (в тексте — пометка); протокол недокументированный — после обновлений их виджета прогонять `lastbot:check --send=… --follow=…`. Токен виджета выдаётся только с `Origin` домена, разрешённого в настройках виджета (`LASTBOT_ORIGIN`).
+
 ## 8. Интеграции
 
 | Интеграция | Реализация | Конфигурация (env) |
@@ -313,6 +321,7 @@ REST API для судейской программы «КАРТЕР 30». Middl
 | Яндекс.Карты / Геокодер | `YandexMapService`, `YandexGeocoderService`, filament-yandex-map, map-picker | `YANDEX_MAP_API_KEY`, `YANDEX_MAP_SUGGEST_API_KEY` |
 | Yandex SmartCaptcha | `Rules/YandexCaptcha` + компонент `<x-yandex-captcha>` (вход, регистрация, формы обратной связи); без ключей проверка отключается | `YANDEX_SMARTCAPTCHA_SITE_KEY/SERVER_KEY` |
 | Подтверждение телефона звонком (Flash Call) | `FlashCallService` — сервис «Звонок» (zvonok.com), POST `/phones/flashcall/`; код (последние цифры номера звонящего) присылает провайдер, сайт хранит его хеш (`PhoneVerificationCode`), проверка доступа — `flashcall:check` | `ZVONOK_PUBLIC_KEY`, `ZVONOK_CAMPAIGN_ID` |
+| LastBot ONE (зеркало чата поддержки) | `Services/LastBot` — повторяет протокол их JS-виджета (REST `/api/v1` + ActionCable), серверного API у LastBot нет; см. §7.12. Проверка — `lastbot:check --send="…"` | `LASTBOT_ENABLED`, `LASTBOT_BASE_URL`, `LASTBOT_WIDGET_ID`, `LASTBOT_ORIGIN`, `LASTBOT_SEND_USER_EMAIL` |
 | Погода | `WeatherService` (кэшируется) | — |
 | Почта | Mailable-классы `app/Mail`; в dev — Mailpit | `MAIL_*`, `FEEDBACK_NOTIFICATION_EMAIL` |
 | Эквайринг (онлайн-оплата) | `Services/Payments` (`PaymentGateway`/`PaymentManager`), пока только `TestPaymentProvider`; настройки — `settings`, группа `payments` | — (креденшелы реальных провайдеров добавятся в `config/services.php`) |
@@ -330,7 +339,8 @@ REST API для судейской программы «КАРТЕР 30». Middl
 | `regattas:update-statuses` | ежеминутно |
 | `news:publish-to-telegram`, `news:publish-to-vk` | ежеминутно, `withoutOverlapping` |
 | `model:prune` | ежедневно |
-| Jobs: `PublishNewsToTelegram`, `PublishNewsToVk` | очередь Redis |
+| `lastbot:sync` | ежеминутно, `withoutOverlapping` (только при `LASTBOT_ENABLED`) |
+| Jobs: `PublishNewsToTelegram`, `PublishNewsToVk`, `ForwardChatMessageToLastBot`, `SyncLastBotThread` | очередь Redis |
 
 Разовые команды: `ratings:recalculate`, `regattas:import-rgd`, `yachts:prune-orphans`, `users:update-names`, `users:list-multi-team`.
 

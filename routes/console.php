@@ -14,3 +14,4 @@ Schedule::command('news:publish-to-vk')->everyMinute()->withoutOverlapping();
 Schedule::command('news:discover-sailing')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('payments:reconcile')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('model:prune')->daily();
+Schedule::command('lastbot:sync')->everyMinute()->withoutOverlapping();

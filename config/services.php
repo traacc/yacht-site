@@ -137,4 +137,29 @@ return [
         'news_image_timeout' => (int) env('OPENAI_NEWS_IMAGE_TIMEOUT', 30),
         'news_max_output_tokens' => (int) env('OPENAI_NEWS_MAX_OUTPUT_TOKENS', 12000),
     ],
+
+    /*
+     * Зеркалирование чата поддержки в LastBot ONE (lastbot.com).
+     *
+     * ★ У LastBot нет серверного API: сайт ходит к ним тем же протоколом, что и
+     * их JS-виджет (REST /api/v1 + ActionCable /cable). Протокол не документирован
+     * и может смениться без предупреждения — см. App\Services\LastBot\LastBotClient.
+     *
+     * base_url — адрес аккаунта (атрибут data-base-url кода виджета),
+     * widget_id — атрибут data-widget-id. origin — домен сайта, добавленный в
+     * настройках виджета: без него LastBot не выдаёт токен (Unauthorized domain).
+     */
+    'lastbot' => [
+        'enabled' => (bool) env('LASTBOT_ENABLED', false),
+        'base_url' => rtrim((string) env('LASTBOT_BASE_URL', ''), '/'),
+        'widget_id' => env('LASTBOT_WIDGET_ID'),
+        'origin' => rtrim((string) env('LASTBOT_ORIGIN', env('APP_URL', '')), '/'),
+        // Передавать ли e-mail пользователя: так оператор LastBot видит, кто пишет,
+        // но это передача персональных данных третьей стороне (152-ФЗ).
+        'send_user_email' => (bool) env('LASTBOT_SEND_USER_EMAIL', false),
+        'timeout' => (int) env('LASTBOT_TIMEOUT', 20),
+        // Сколько часов после последнего сообщения опрашивать диалог плановой
+        // командой: столько ждём позднего ответа живого оператора LastBot.
+        'sync_window_hours' => (int) env('LASTBOT_SYNC_WINDOW_HOURS', 24),
+    ],
 ];
