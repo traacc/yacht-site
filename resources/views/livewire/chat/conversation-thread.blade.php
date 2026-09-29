@@ -159,9 +159,11 @@
                 Загружаем файлы…
             </div>
 
-            <form wire:submit="send" class="flex items-end gap-2">
+            {{-- items-stretch: скрепка и кнопка берут высоту поля ввода, иначе три
+                 элемента разной высоты торчали лесенкой. --}}
+            <form wire:submit="send" class="flex items-stretch gap-2">
                 <label
-                    class="shrink-0 cursor-pointer border border-gray-300 px-3 py-2 text-gray-500 transition-colors hover:bg-gray-100"
+                    class="flex shrink-0 cursor-pointer items-center justify-center rounded border border-gray-300 px-3 text-gray-500 transition-colors hover:bg-gray-100"
                     title="Прикрепить файлы (до {{ \App\Actions\Chat\SendChatMessageAction::MAX_ATTACHMENTS }}). Форматы: JPG, PNG, WEBP, HEIC, HEIF, PDF"
                 >
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
@@ -190,7 +192,7 @@
 
                 <button
                     type="submit"
-                    class="shrink-0 whitespace-nowrap bg-[#2D92CE] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#0074CC] disabled:opacity-50"
+                    class="shrink-0 whitespace-nowrap rounded bg-[#2D92CE] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#0074CC] disabled:opacity-50"
                     wire:loading.attr="disabled"
                     wire:target="send,attachments"
                 >
