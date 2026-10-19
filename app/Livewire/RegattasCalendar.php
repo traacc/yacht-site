@@ -3,8 +3,8 @@
 namespace App\Livewire;
 
 use App\Enums\RegattaType;
-use App\Models\Season;
 use App\Services\SeasonCalendar;
+use App\Services\SeasonContext;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -24,8 +24,9 @@ class RegattasCalendar extends Component
 
     public function mount(?int $year = null): void
     {
-        // Если год передан явно — используем его, иначе текущий год
-        $this->year = $year ?? (int) now()->format('Y');
+        // Если год передан явно — используем его, иначе текущий сезон
+        // (в межсезонье — последний сезон с регатами, см. SeasonContext).
+        $this->year = $year ?? app(SeasonContext::class)->current()?->year ?? (int) now()->format('Y');
     }
 
     /** Установить год и перезагрузить данные */
@@ -41,11 +42,7 @@ class RegattasCalendar extends Component
     {
         // Ключ === значение года, чтобы custom-select передавал в wire:model
         // сам год, а не индекс элемента массива.
-        return Season::query()
-            ->orderByDesc('year')
-            ->pluck('year')
-            ->mapWithKeys(fn ($year) => [$year => (string) $year])
-            ->toArray();
+        return app(SeasonContext::class)->yearOptions();
     }
 
     /**

@@ -10,6 +10,7 @@ use App\Enums\Currency;
 use App\Enums\DownwindSail;
 use App\Enums\FleetDivisionType;
 use App\Enums\ParticipationOption;
+use App\Filament\Concerns\FiltersBySeason;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\CharterYachtModels\CharterYachtModelResource;
 use App\Filament\Resources\ForeignRegattas\Pages\ManageForeignRegattas;
@@ -57,6 +58,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 class ForeignRegattaResource extends Resource
 {
+    use FiltersBySeason;
     use RestrictsAccessByRole;
 
     protected static ?string $model = ForeignRegatta::class;
@@ -934,6 +936,7 @@ class ForeignRegattaResource extends Resource
             ->defaultSort('sort_order')
             ->reorderable('sort_order')
             ->filters([
+                static::seasonFilter(),
                 TernaryFilter::make('is_published')
                     ->label('Опубликована'),
                 Filter::make('upcoming')
@@ -943,6 +946,7 @@ class ForeignRegattaResource extends Resource
                     ->label('Только прошедшие')
                     ->query(fn (Builder $query): Builder => $query->past()),
             ])
+            ->persistFiltersInSession()
             ->emptyStateHeading('Зарубежных регат пока нет')
             ->emptyStateDescription('Добавьте регату — она появится на странице «Регаты за рубежом» и в календаре сезона.')
             ->recordActions([

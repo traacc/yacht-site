@@ -60,6 +60,7 @@ use App\Services\MembershipFees;
 use App\Services\Payments\PaymentManager;
 use App\Services\Payments\Providers\TestPaymentProvider;
 use App\Services\RatingCalculator;
+use App\Services\SeasonContext;
 use App\Services\SeriesStageResultsService;
 use App\Services\ServiceSubjectResolver;
 use App\Services\SettingsService;
@@ -731,7 +732,13 @@ Route::get('/regattas/calendar/pdf', function (Request $request) {
     return app(GenerateCalendarPdfAction::class)->execute($year);
 })->name('regattas.calendar.pdf');
 
-Route::get('/competitions', function () {
+Route::get('/competitions', function (Request $request, SeasonContext $seasons) {
+    // Все блоки страницы (список, календарь, результаты, серии) показывают один
+    // выбранный сезон — иначе регаты разных лет смешиваются в общую ленту.
+    $season = $seasons->resolve($request->query('season'));
+    $seasonYear = $season?->year;
+    $seasonYears = $seasons->yearOptions();
+
     $regattas = Regatta::with([
         'results.items' => fn ($q) => $q->orderBy('final_position'),
         'results.items.team.organizer',
@@ -739,6 +746,7 @@ Route::get('/competitions', function () {
         'results.items.yacht',
         'season',
     ])
+        ->where('season_id', $season?->id)
         ->where(function ($query) {
             $query->where('date_end', '<', now())
                 ->orWhere(function ($q) {
@@ -752,18 +760,17 @@ Route::get('/competitions', function () {
 
     // Серии регат с входящими в них регатами (отсортированы по дате старта).
     $series = Series::query()
+        ->where('season_id', $season?->id)
         ->whereHas('regattas')
         ->with([
             'season',
             'regattas' => fn ($q) => $q->orderBy('date_start')->orderBy('time_start'),
         ])
-        ->get()
-        ->sortByDesc(fn ($s) => $s->season?->year)
-        ->values();
+        ->get();
 
     $documents = app(SettingsService::class)->documentLinks('help.site_guide_documents', 'competitions');
 
-    return view('pages.regattas', compact('regattas', 'series', 'documents'));
+    return view('pages.regattas', compact('regattas', 'series', 'documents', 'seasonYear', 'seasonYears'));
 })->name('competitions');
 Route::get('/regattas/entries', function () {
     // Все заявки по каждой регате (любой статус), сгруппированные по регате.
@@ -1091,16 +1098,20 @@ Route::get('/yachts', function () {
 
     return view('pages.yachts', compact('yachts', 'yachtsJson', 'documents'));
 })->name('yachts');
-Route::get('/ratings', function () {
+Route::get('/ratings', function (Request $request) {
     $calculator = app(RatingCalculator::class);
 
-    // Рейтинг показываем за один сезон — последний, по которому есть данные.
-    // Без фильтра строки разных сезонов склеиваются и участники дублируются.
-    $ratingSeason = Season::query()
-        ->where('year', '<=', now()->year)
+    // Рейтинг показываем за один сезон: выбранный в ?season= или последний, по
+    // которому есть данные. Без фильтра строки разных сезонов склеиваются и
+    // участники дублируются. В переключателе — только сезоны с рейтингами.
+    $ratedSeasons = Season::query()
         ->where(fn ($q) => $q->whereHas('teamRatings')->orWhereHas('personalRatings'))
         ->orderByDesc('year')
-        ->first();
+        ->get();
+
+    $ratingSeason = $ratedSeasons->firstWhere('year', $request->integer('season'))
+        ?? $ratedSeasons->firstWhere(fn (Season $s) => $s->year <= now()->year);
+    $seasonYears = $ratedSeasons->mapWithKeys(fn (Season $s) => [$s->year => (string) $s->year])->all();
 
     $teamBreakdownCache = [];
     $teamBreakdownFor = function ($season, $teamId) use (&$teamBreakdownCache, $calculator) {
@@ -1184,19 +1195,27 @@ Route::get('/ratings', function () {
     $ratingSeasonYear = $ratingSeason?->year;
     $documents = app(SettingsService::class)->documentLinks('help.site_guide_documents', 'ratings');
 
-    return view('pages.ratings', compact('teamRatings', 'personalRatings', 'ratingSeasonYear', 'documents'));
+    return view('pages.ratings', compact('teamRatings', 'personalRatings', 'ratingSeasonYear', 'seasonYears', 'documents'));
 })->name('ratings');
 // Подраздел «Серии» раздела «Соревнования»: описание каждой серии и результаты
 // по её этапам. Рейтинговая таблица серий живёт отдельно — в «Рейтингах»
 // (маршрут `series-results` ниже).
-Route::get('/series', function (SeriesStageResultsService $seriesStages) {
-    $series = $seriesStages->overview();
+Route::get('/series', function (Request $request, SeriesStageResultsService $seriesStages, SeasonContext $seasons) {
+    $season = $seasons->resolve($request->query('season'));
+    $seasonYear = $season?->year;
+    $seasonYears = $seasons->yearOptions();
+
+    $series = $seriesStages->overview($season);
     $documents = app(SettingsService::class)->documentLinks('help.site_guide_documents', 'series');
 
-    return view('pages.series', compact('series', 'documents'));
+    return view('pages.series', compact('series', 'documents', 'seasonYear', 'seasonYears'));
 })->name('series');
-Route::get('/series/results', function () {
+Route::get('/series/results', function (Request $request, SeasonContext $seasons) {
     $calculator = app(RatingCalculator::class);
+
+    $season = $seasons->resolve($request->query('season'));
+    $seasonYear = $season?->year;
+    $seasonYears = $seasons->yearOptions();
 
     // Состав команд для всплывающего окна (капитан, яхта, участники).
     $teamDetails = Team::with(['activeMembers', 'organizer', 'defaultYacht'])
@@ -1220,6 +1239,7 @@ Route::get('/series/results', function () {
 
     // Серии, в регатах которых есть опубликованные результаты.
     $series = Series::query()
+        ->where('season_id', $season?->id)
         ->whereHas('regattas.results.items')
         ->with('season')
         ->get()
@@ -1249,10 +1269,9 @@ Route::get('/series/results', function () {
             ];
         })
         ->filter(fn ($s) => ! empty($s['standings']['standings']))
-        ->sortByDesc('season')
         ->values();
 
-    return view('pages.series-results', compact('series'));
+    return view('pages.series-results', compact('series', 'seasonYear', 'seasonYears'));
 })->name('series-results');
 Route::get('/series/{series}', function (Series $series) {
     $series->loadMissing([

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,9 +22,9 @@ class Season extends Model
     protected function casts(): array
     {
         return [
-            'year'       => 'integer',
+            'year' => 'integer',
             'start_date' => 'date',
-            'end_date'   => 'date',
+            'end_date' => 'date',
         ];
     }
 
@@ -51,6 +52,37 @@ class Season extends Model
         return $this->hasMany(PersonalRating::class);
     }
 
+    public function foreignRegattas(): HasMany
+    {
+        return $this->hasMany(ForeignRegatta::class);
+    }
+
+    public function galleries(): HasMany
+    {
+        return $this->hasMany(Gallery::class);
+    }
+
+    // ──────────────────────────────────────────────
+    // Scopes
+    // ──────────────────────────────────────────────
+
+    /**
+     * Сезоны, в которых есть хоть какие-то данные.
+     *
+     * Пустые сезоны (заведённые «впрок» или оставшиеся от импорта) не должны
+     * засорять переключатели сезона на сайте и в админке.
+     */
+    public function scopeInUse(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $inner) => $inner
+            ->whereHas('regattas')
+            ->orWhereHas('series')
+            ->orWhereHas('foreignRegattas')
+            ->orWhereHas('teamRatings')
+            ->orWhereHas('personalRatings')
+            ->orWhereHas('galleries'));
+    }
+
     // ──────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────
@@ -60,11 +92,21 @@ class Season extends Model
         return now()->between($this->start_date, $this->end_date);
     }
 
+    /**
+     * Есть ли у сезона данные — тогда его нельзя удалять: серии и рейтинги
+     * удалятся каскадом, а регаты (в т.ч. удалённые в корзину) держат FK.
+     */
+    public function isInUse(): bool
+    {
+        return static::query()->inUse()->whereKey($this->getKey())->exists()
+            || $this->regattas()->withTrashed()->exists();
+    }
+
     public static function current(): ?static
     {
         return static::whereDate('start_date', '<=', now())
-                     ->whereDate('end_date', '>=', now())
-                     ->first();
+            ->whereDate('end_date', '>=', now())
+            ->first();
     }
 
     /** @return Collection<Team> */
@@ -88,5 +130,4 @@ class Season extends Model
             ->get()
             ->pluck('user');
     }
-    
 }

@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources\PersonalRatings;
 
+use App\Filament\Concerns\FiltersBySeason;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\PersonalRatings\Pages\ManagePersonalRatings;
 use App\Models\PersonalRating;
 use App\Models\Season;
+use App\Services\SeasonContext;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -19,6 +21,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rules\Unique;
@@ -26,6 +29,7 @@ use UnitEnum;
 
 class PersonalRatingResource extends Resource
 {
+    use FiltersBySeason;
     use RestrictsAccessByRole;
 
     protected static ?string $model = PersonalRating::class;
@@ -56,24 +60,25 @@ class PersonalRatingResource extends Resource
                     ->label('Сезон')
                     ->searchable()
                     ->preload()
+                    ->default(fn (): ?string => app(SeasonContext::class)->current()?->id)
                     ->createOptionForm([
-                            TextInput::make('year')
-                                ->label('Год')
-                                ->required()
-                                ->numeric()
-                                ->minValue(2000)
-                                ->maxValue(2099),
-                            Forms\Components\DatePicker::make('start_date')
-                                ->label('Дата начала сезона')
-                                ->displayFormat('d.m.Y')
-                                ->native(false)
-                                ->required(),
-                            Forms\Components\DatePicker::make('end_date')
-                                ->label('Дата окончания сезона')
-                                ->displayFormat('d.m.Y')
-                                ->native(false)
-                                ->required(),
-                        ])
+                        TextInput::make('year')
+                            ->label('Год')
+                            ->required()
+                            ->numeric()
+                            ->minValue(2000)
+                            ->maxValue(2099),
+                        Forms\Components\DatePicker::make('start_date')
+                            ->label('Дата начала сезона')
+                            ->displayFormat('d.m.Y')
+                            ->native(false)
+                            ->required(),
+                        Forms\Components\DatePicker::make('end_date')
+                            ->label('Дата окончания сезона')
+                            ->displayFormat('d.m.Y')
+                            ->native(false)
+                            ->required(),
+                    ])
                     ->createOptionUsing(fn (array $data): string => Season::create($data)->id)
                     ->required(),
                 Select::make('user_id')
@@ -127,8 +132,11 @@ class PersonalRatingResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
-            ])
+                static::seasonFilter(),
+            ], layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(3)
+            ->deferFilters(false)
+            ->persistFiltersInSession()
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать личный рейтинг'),
                 DeleteAction::make(),

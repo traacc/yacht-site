@@ -33,6 +33,7 @@ use App\Services\Ai\OpenAiNewsProvider;
 use App\Services\ImageConverter;
 use App\Services\Notifications\NotificationPreferences;
 use App\Services\PaymentRegistryLogger;
+use App\Services\SeasonContext;
 use App\Services\ServiceContent;
 use App\Support\UploadFormats;
 use Filament\Actions\Action;
@@ -67,6 +68,10 @@ class AppServiceProvider extends ServiceProvider
         // Синглтон ради мемоизации: меню и карточки спрашивают название каждого
         // подраздела «Услуг», а группа настроек читается одним запросом.
         $this->app->singleton(ServiceContent::class);
+
+        // Scoped ради мемоизации в пределах запроса: текущий сезон и список
+        // сезонов спрашивают и фильтры таблиц, и формы, и переключатели.
+        $this->app->scoped(SeasonContext::class);
 
         // Блок «Видео» в RichEditor отдаёт <iframe>, а санитайзер Filament
         // (Str::sanitizeHtml → HtmlSanitizerConfig) вырезает его целиком: iframe не входит

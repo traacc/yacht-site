@@ -5,7 +5,7 @@ namespace App\Livewire;
 use App\Enums\RegattaStatus;
 use App\Enums\RegattaType;
 use App\Models\Regatta;
-use App\Models\Season;
+use App\Services\SeasonContext;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -13,7 +13,8 @@ class RegattasList extends Component
 {
     use WithPagination;
 
-    protected $queryString = ['view', 'search', 'filter', 'year', 'type'];
+    // Год в адресе держит страница (?season=), компонент получает его в mount().
+    protected $queryString = ['view', 'search', 'filter', 'type'];
 
     public string $search = '';
 
@@ -30,25 +31,11 @@ class RegattasList extends Component
 
     public string $view = 'list';
 
-    /** Выбранный год для фильтрации; null — все годы */
+    /** Год сезона: регаты разных сезонов в одном списке не показываем. */
     public ?int $year = null;
-
-    /** Список доступных годов (из seasons) */
-    public function getYearsProperty(): array
-    {
-        return Season::query()
-            ->orderByDesc('year')
-            ->pluck('year')
-            ->toArray();
-    }
 
     // Сброс пагинации при изменении фильтров
     public function updatingSearch(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingYear(): void
     {
         $this->resetPage();
     }
@@ -66,13 +53,6 @@ class RegattasList extends Component
         $this->resetPage();
     }
 
-    /** Установить год фильтрации */
-    public function setYear(?int $year): void
-    {
-        $this->year = $year;
-        $this->resetPage();
-    }
-
     public function sort(string $field): void
     {
         if ($this->sortField === $field) {
@@ -83,8 +63,9 @@ class RegattasList extends Component
         }
     }
 
-    public function mount(): void
+    public function mount(?int $year = null): void
     {
+        $this->year = $year ?? app(SeasonContext::class)->current()?->year;
         $this->view = request()->query('view', session('regattas_view', 'list'));
     }
 
@@ -103,9 +84,7 @@ class RegattasList extends Component
             // Факт переноса показывается на карточке живой регаты, см. блейд.
             ->where('regatta_status', '!=', RegattaStatus::Postponed)
             ->with(['series', 'series.regattas:id,series_id,date_start,time_start', 'postponedFromRegattas'])
-            ->when($this->year, fn ($q) => $q->whereHas('season', fn ($sq) => $sq->where('year', $this->year)
-            )
-            )
+            ->whereHas('season', fn ($q) => $q->where('year', $this->year))
             ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%")
             )
             ->when($this->filter === 'upcoming', fn ($q) => $q->where('regatta_status', 'upcoming'))
@@ -117,7 +96,6 @@ class RegattasList extends Component
 
         return view('livewire.regattas-list', [
             'regattas' => $regattas,
-            'years' => $this->years,
             'types' => RegattaType::cases(),
         ]);
     }

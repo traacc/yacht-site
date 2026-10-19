@@ -8,6 +8,7 @@ use App\Actions\Document\SyncDocumentFilesAction;
 use App\Enums\RegattaEntrySource;
 use App\Enums\RegattaStatus;
 use App\Enums\TeamMemberRole;
+use App\Filament\Concerns\FiltersBySeason;
 use App\Filament\Concerns\OverwritesRegattaEntries;
 use App\Filament\Concerns\ResolvesCrewMembers;
 use App\Filament\Concerns\RestrictsAccessByRole;
@@ -47,6 +48,7 @@ use UnitEnum;
 
 class RegattaEntryResource extends Resource
 {
+    use FiltersBySeason;
     use ResolvesCrewMembers;
     use RestrictsAccessByRole;
     use ScopesToOwnedRegattas;
@@ -501,6 +503,7 @@ class RegattaEntryResource extends Resource
             ->stackedOnMobile()
             ->emptyStateHeading('Записей пока нет')
             ->filters([
+                static::seasonFilter('regatta', defaultToCurrent: false),
                 SelectFilter::make('regatta_id')
                     ->label('Регата')
                     ->relationship(

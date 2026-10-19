@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Series;
 
+use App\Filament\Concerns\FiltersBySeason;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\Series\Pages\ManageSeries;
 use App\Models\Series;
+use App\Services\SeasonContext;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -16,17 +18,18 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 class SeriesResource extends Resource
 {
+    use FiltersBySeason;
     use RestrictsAccessByRole;
 
     protected static ?string $model = Series::class;
@@ -63,6 +66,8 @@ class SeriesResource extends Resource
                         modifyQueryUsing: fn (Builder $query) => $query->orderByDesc('year'))
                     ->searchable()
                     ->preload()
+                    ->default(fn (): ?string => app(SeasonContext::class)->current()?->id)
+                    ->live()
                     ->required(),
                 Textarea::make('description')
                     ->label('Описание')
@@ -71,8 +76,11 @@ class SeriesResource extends Resource
                     ->columnSpanFull(),
                 Select::make('regattas')
                     ->label('Регаты')
+                    // Только регаты выбранного сезона, иначе список копится годами.
                     ->relationship('regattas', 'name',
-                        modifyQueryUsing: fn (Builder $query) => $query->orderByDesc('date_start'))
+                        modifyQueryUsing: fn (Builder $query, Get $get) => $query
+                            ->when($get('season_id'), fn (Builder $q, string $seasonId) => $q->where('season_id', $seasonId))
+                            ->orderByDesc('date_start'))
                     ->multiple()
                     ->searchable()
                     ->preload()
@@ -108,14 +116,11 @@ class SeriesResource extends Resource
             ->emptyStateHeading('Серий пока нет')
             ->defaultSort('created_at', 'desc')
             ->filters([
-                SelectFilter::make('season_id')
-                    ->label('Сезон')
-                    ->relationship('season', 'year')
-                    ->searchable()
-                    ->preload(),
+                static::seasonFilter(),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
             ->deferFilters(false)
+            ->persistFiltersInSession()
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать серию'),
                 DeleteAction::make(),

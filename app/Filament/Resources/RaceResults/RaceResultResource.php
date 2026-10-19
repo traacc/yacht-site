@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\RaceResults;
 
+use App\Filament\Concerns\FiltersBySeason;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Concerns\ScopesToOwnedRegattas;
 use App\Filament\Resources\RaceResults\Pages\ManageRaceResults;
@@ -20,11 +21,13 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 class RaceResultResource extends Resource
 {
+    use FiltersBySeason;
     use RestrictsAccessByRole;
     use ScopesToOwnedRegattas;
 
@@ -151,8 +154,11 @@ class RaceResultResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
-            ])
+                static::seasonFilter('regattaEntry.regatta'),
+            ], layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(3)
+            ->deferFilters(false)
+            ->persistFiltersInSession()
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),

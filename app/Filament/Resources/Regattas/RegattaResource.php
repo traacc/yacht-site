@@ -8,6 +8,7 @@ use App\Actions\Document\SyncDocumentFilesAction;
 use App\Actions\Regatta\ReplicateRegattaAction;
 use App\Enums\RegattaStatus;
 use App\Enums\RegattaType;
+use App\Filament\Concerns\FiltersBySeason;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Concerns\ScopesToOwnedRegattas;
 use App\Filament\Resources\Regattas\Pages\ManageRegattas;
@@ -16,6 +17,7 @@ use App\Models\Season;
 use App\Models\Series;
 use App\Models\YachtDocumentType;
 use App\Services\RegattaService;
+use App\Services\SeasonContext;
 use BackedEnum;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -62,6 +64,7 @@ use UnitEnum;
 
 class RegattaResource extends Resource
 {
+    use FiltersBySeason;
     use RestrictsAccessByRole;
     use ScopesToOwnedRegattas;
 
@@ -112,6 +115,25 @@ class RegattaResource extends Resource
 
         if (blank($end) || $autoFilled) {
             $set('date_end', Carbon::parse($state)->addDay()->toDateString());
+        }
+    }
+
+    /**
+     * Сезон следует за датой начала: по умолчанию в форме стоит текущий сезон,
+     * и регату следующего года легко сохранить не в тот сезон.
+     */
+    protected static function fillSeasonFromStart(?string $state, Set $set): void
+    {
+        if (blank($state)) {
+            return;
+        }
+
+        $seasonId = Season::query()
+            ->where('year', Carbon::parse($state)->year)
+            ->value('id');
+
+        if ($seasonId) {
+            $set('season_id', $seasonId);
         }
     }
 
@@ -187,10 +209,24 @@ class RegattaResource extends Resource
                             ->required(),
                     ])
                     ->createOptionUsing(fn (array $data): string => Season::create($data)->id)
+                    ->default(fn (): ?string => app(SeasonContext::class)->current()?->id)
+                    ->live()
+                    // Серия из другого сезона после смены сезона уже не подходит — сбрасываем.
+                    ->afterStateUpdated(function (Get $get, Set $set, ?string $state): void {
+                        $seriesId = $get('series_id');
+
+                        if (filled($seriesId) && filled($state)
+                            && ! Series::whereKey($seriesId)->where('season_id', $state)->exists()) {
+                            $set('series_id', null);
+                        }
+                    })
                     ->required(),
                 Select::make('series_id')
                     ->label('Серия')
-                    ->relationship('series', 'name')
+                    // Только серии выбранного сезона, иначе список копится годами.
+                    ->relationship('series', 'name',
+                        modifyQueryUsing: fn (Builder $query, Get $get) => $query
+                            ->when($get('season_id'), fn (Builder $q, string $seasonId) => $q->where('season_id', $seasonId)))
                     ->searchable()
                     ->preload()
                     ->hidden(fn (Get $get): bool => (bool) $get('create_as_series') || static::hidesSeries())
@@ -224,6 +260,7 @@ class RegattaResource extends Resource
                     ->maxDate(now()->addYears(100))
                     ->live(onBlur: true)
                     ->afterStateUpdated(static::fillEndDateFromStart(...))
+                    ->afterStateUpdated(static::fillSeasonFromStart(...))
                     // В режиме серии даты задаются в этапах.
                     ->hidden(fn (Get $get): bool => (bool) $get('create_as_series'))
                     ->required(fn (Get $get): bool => ! (bool) $get('create_as_series')),
@@ -796,6 +833,7 @@ class RegattaResource extends Resource
             ->stackedOnMobile()
             ->emptyStateHeading('Записей пока нет')
             ->filters([
+                static::seasonFilter(),
                 Filter::make('created_at_day')
                     ->label('Дата')
                     ->schema([
@@ -825,8 +863,9 @@ class RegattaResource extends Resource
                         RegattaStatus::Finished->value => RegattaStatus::Finished->getLabel(),
                     ]),
             ], layout: FiltersLayout::AboveContent)
-            ->filtersFormColumns(3)
+            ->filtersFormColumns(4)
             ->deferFilters(false)
+            ->persistFiltersInSession()
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать регату')
                     ->mountUsing(function (Schema $form, Regatta $record): void {

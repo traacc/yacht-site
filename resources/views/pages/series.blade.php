@@ -1,8 +1,8 @@
 <x-public-layout title="Серии регат — описание серий и результаты по этапам"
     description="Серии регат ассоциации: описание каждой серии, этапы с коэффициентами и результаты каждого этапа с сортировкой по рейтингу серии.">
-<x-breadcrumbs_page title="Серии регат">
+<x-breadcrumbs_page title="Серии регат {{ $seasonYear }}">
 </x-breadcrumbs_page>
-<x-hero-section title="Серии регат"
+<x-hero-section title="Серии регат {{ $seasonYear }}"
     desc="Описание каждой серии, её этапы с коэффициентами и результаты по каждому этапу."
     bgImage="{{ asset('images/bg/competitions.webp') }}"
 >
@@ -23,14 +23,18 @@
 @endphp
 
 <div class="container mx-auto">
+    <div class="flex justify-end mt-8">
+        <x-season-switcher :years="$seasonYears" :selected="$seasonYear" />
+    </div>
+
     {{-- Навигация подразделов «Соревнования» — как на странице календаря. --}}
-    <nav class="flex flex-col sm:flex-row border-b border-[#EAEAEA] mb-8 mt-8" role="tablist">
-        <a href="{{ route('competitions') }}"
+    <nav class="flex flex-col sm:flex-row border-b border-[#EAEAEA] mb-8 mt-4" role="tablist">
+        <a href="{{ route('competitions', ['season' => $seasonYear]) }}"
             class="px-3 py-2 text-sm sm:px-6 sm:py-3 sm:text-lg font-semibold border-l-2 sm:border-l-0 sm:border-b-2 border-transparent text-[#2E325C] hover:text-[#2D92CE] hover:border-[#C6C6C6] transition-colors duration-200 text-center"
             role="tab">
             Календарь регат
         </a>
-        <a href="{{ route('competitions') }}#results"
+        <a href="{{ route('competitions', ['season' => $seasonYear]) }}#results"
             class="px-3 py-2 text-sm sm:px-6 sm:py-3 sm:text-lg font-semibold border-l-2 sm:border-l-0 sm:border-b-2 border-transparent text-[#2E325C] hover:text-[#2D92CE] hover:border-[#C6C6C6] transition-colors duration-200 text-center"
             role="tab">
             Результаты
@@ -49,7 +53,7 @@
     <p class="text-brand-gray-light mb-8">
         В таблице каждого этапа команды идут в порядке их места на самом этапе.
         Текущее распределение мест по очкам за всю серию — в таблице в конце каждой серии.
-        <a href="{{ route('series-results') }}" class="text-brand-blue font-semibold hover:underline whitespace-nowrap">Рейтинг серий →</a>
+        <a href="{{ route('series-results', ['season' => $seasonYear]) }}" class="text-brand-blue font-semibold hover:underline whitespace-nowrap">Рейтинг серий →</a>
     </p>
 
     @forelse($series as $serie)
@@ -182,7 +186,7 @@
             @endif
         </section>
     @empty
-        <p class="text-center text-brand-gray-light py-20 text-lg">Серии регат пока не опубликованы.</p>
+        <p class="text-center text-brand-gray-light py-20 text-lg">В сезоне {{ $seasonYear }} серий пока нет.</p>
     @endforelse
 </div>
 

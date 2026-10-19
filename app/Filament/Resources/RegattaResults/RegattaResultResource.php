@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\RegattaResults;
 
 use App\Actions\Regatta\SyncRegattaRaceCountAction;
+use App\Filament\Concerns\FiltersBySeason;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Concerns\ScopesToOwnedRegattas;
 use App\Filament\Resources\RegattaResults\Pages\EditRegattaResult;
@@ -14,7 +15,6 @@ use App\Models\RegattaEntry;
 use App\Models\RegattaEvents;
 use App\Models\RegattaResult;
 use App\Models\RegattaResultItem;
-use App\Models\Season;
 use App\Models\Team;
 use App\Services\RatingCalculator;
 use BackedEnum;
@@ -42,7 +42,6 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -53,6 +52,7 @@ use UnitEnum;
 
 class RegattaResultResource extends Resource
 {
+    use FiltersBySeason;
     use RestrictsAccessByRole;
     use ScopesToOwnedRegattas;
 
@@ -1142,23 +1142,9 @@ class RegattaResultResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
-                SelectFilter::make('season')
-                    ->label('Сезон')
-                    ->options(fn (): array => Season::query()
-                        ->orderByDesc('year')
-                        ->pluck('year', 'id')
-                        ->all())
-                    ->query(function (Builder $query, array $data): Builder {
-                        if (blank($data['value'])) {
-                            return $query;
-                        }
-
-                        return $query->whereHas(
-                            'regatta',
-                            fn (Builder $q) => $q->where('season_id', $data['value']),
-                        );
-                    }),
+                static::seasonFilter('regatta'),
             ])
+            ->persistFiltersInSession()
             ->recordActions([
                 // Таблица ввода результатов шире модалки, поэтому редактирование —
                 // на отдельной странице (EditRegattaResult).

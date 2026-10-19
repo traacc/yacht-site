@@ -2,11 +2,13 @@
 
 namespace App\Filament\Resources\Galleries;
 
+use App\Filament\Concerns\FiltersBySeason;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\Galleries\Pages\ManageGalleries;
 use App\Models\Gallery;
 use App\Models\Regatta;
 use App\Models\Season;
+use App\Services\SeasonContext;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -51,6 +53,7 @@ use UnitEnum;
 
 class GalleryResource extends Resource
 {
+    use FiltersBySeason;
     use RestrictsAccessByRole;
 
     protected static ?string $model = Gallery::class;
@@ -90,6 +93,7 @@ class GalleryResource extends Resource
                         modifyQueryUsing: fn (Builder $query) => $query->orderByDesc('year'), )
                     ->searchable()
                     ->preload()
+                    ->default(fn (): ?string => app(SeasonContext::class)->current()?->id)
                     ->createOptionForm([
                         TextInput::make('year')
                             ->label('Год')
@@ -424,9 +428,7 @@ class GalleryResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('season_id')
-                    ->label('Сезон')
-                    ->relationship('season', 'year'),
+                static::seasonFilter(),
 
                 SelectFilter::make('regatta_id')
                     ->label('Регата')
@@ -437,6 +439,7 @@ class GalleryResource extends Resource
 
                 TrashedFilter::make(),
             ])
+            ->persistFiltersInSession()
             // Открываем редактирование по клику на строку, но саму кнопку прячем
             ->recordAction(EditAction::class)
             ->recordActions([

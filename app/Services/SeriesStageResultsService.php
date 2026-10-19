@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use App\Models\RegattaResultItem;
+use App\Models\Season;
 use App\Models\Series;
 use App\Support\Points;
 use Illuminate\Support\Collection;
@@ -22,13 +23,14 @@ class SeriesStageResultsService
     public function __construct(private readonly RatingCalculator $calculator) {}
 
     /**
-     * Все серии с регатами: описание серии + таблицы результатов по этапам.
+     * Серии сезона с регатами: описание серии + таблицы результатов по этапам.
      *
      * @return Collection<int, array<string, mixed>>
      */
-    public function overview(): Collection
+    public function overview(?Season $season): Collection
     {
         $series = Series::query()
+            ->where('season_id', $season?->id)
             ->whereHas('regattas')
             ->with([
                 'season',
@@ -41,9 +43,7 @@ class SeriesStageResultsService
                 'regattas.results.items.team',
                 'regattas.results.items.yacht',
             ])
-            ->get()
-            ->sortByDesc(fn (Series $s) => $s->season?->year)
-            ->values();
+            ->get();
 
         $captains = $this->captains($series);
 

@@ -6,6 +6,7 @@ namespace App\Filament\Resources\ArchivedRegattaEntries;
 
 use App\Actions\Document\SyncDocumentFilesAction;
 use App\Enums\RegattaStatus;
+use App\Filament\Concerns\FiltersBySeason;
 use App\Filament\Concerns\ResolvesCrewMembers;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Concerns\ScopesToOwnedRegattas;
@@ -31,12 +32,14 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 class ArchivedRegattaEntryResource extends Resource
 {
+    use FiltersBySeason;
     use ResolvesCrewMembers;
     use RestrictsAccessByRole;
     use ScopesToOwnedRegattas;
@@ -349,7 +352,12 @@ class ArchivedRegattaEntryResource extends Resource
             ])
             ->stackedOnMobile()
             ->emptyStateHeading('Архивных записей пока нет')
-            ->filters([])
+            ->filters([
+                static::seasonFilter('regatta'),
+            ], layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(3)
+            ->deferFilters(false)
+            ->persistFiltersInSession()
             ->recordActions([
                 EditAction::make()->modalHeading('Редактировать архивную заявку')
                     ->mountUsing(function (Schema $form, RegattaEntry $record): void {

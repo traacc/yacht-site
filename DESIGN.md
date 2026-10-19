@@ -69,7 +69,7 @@ graph TB
 - `yacht_options` / `yacht_option_values` / `yacht_option_selections` — справочник опций аренды и выбор значений для яхты.
 
 **Соревнования**
-- `seasons` — год, даты; `series` — группа регат внутри сезона.
+- `seasons` — год, даты; `series` — группа регат внутри сезона. Сезон — основной срез данных: сайт (`?season=ГГГГ`, `<x-season-switcher>`) и таблицы админки (трейт `FiltersBySeason`) показывают один сезон; какой сезон текущий и какие предлагать к выбору — решает `SeasonContext`.
 - `regattas` — season_id, series_id, `type` (club/regular/travel, см. ниже), name, `level_coefficient`, date/time start/end, location + coordinates, water_area, описания, regulations, races_count, entry_fee_required/amount, `entry_required_documents` (json), `regatta_status` (upcoming/closest/active/finished/cancelled/postponed), postponed_to_date/note/regatta_id; для регулярных — seat_price/boat_price/race_hours_per_day, для выездных — crew_size_limit; soft deletes.
 - `regatta_events` — **гонки** регаты (event_datetime); `regatta_schedule_events` — программа/расписание регаты.
 - `regatta_entries` — заявки: regatta_id, team_id (**nullable** — у индивидуальных и сборных заявок команды нет), yacht_id, `participation_kind` (crew/individual), user_id (автор заявки — адресат уведомлений), `status` (pending/approved/rejected/withdrawn), source, documents_complete, fee_paid, entry_password, open_for_join + join_conditions/join_contact_email (добор людей в экипаж).

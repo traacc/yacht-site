@@ -1,8 +1,8 @@
 <x-public-layout title="Результаты серий — командные итоги по сериям регат"
     description="Итоговые командные таблицы по каждой серии регат: очки за каждую регату и общий результат серии.">
-<x-breadcrumbs_page title="Результаты серий">
+<x-breadcrumbs_page title="Результаты серий {{ $seasonYear }}">
 </x-breadcrumbs_page>
-<x-hero-section title="Результаты серий"
+<x-hero-section title="Результаты серий {{ $seasonYear }}"
     desc="Командные итоги по каждой серии регат: очки за каждую регату серии и общий результат."
     bgImage="{{ asset('images/bg/results.webp') }}"
 >
@@ -35,10 +35,13 @@
     }"
     @keydown.escape.window="teamModal = false; scoresModal = false; resultModal = false"
 >
+    <div class="flex justify-end mb-4">
+        <x-season-switcher :years="$seasonYears" :selected="$seasonYear" />
+    </div>
     <x-ratings-tabs :tabs="[
-        'team' => ['label' => 'Командный рейтинг', 'url' => route('ratings')],
-        'personal' => ['label' => 'Личный рейтинг', 'url' => route('ratings') . '#personal'],
-        'series' => ['label' => 'Результаты серий', 'url' => route('series-results'), 'active' => true],
+        'team' => ['label' => 'Командный рейтинг', 'url' => route('ratings', ['season' => $seasonYear])],
+        'personal' => ['label' => 'Личный рейтинг', 'url' => route('ratings', ['season' => $seasonYear]) . '#personal'],
+        'series' => ['label' => 'Результаты серий', 'url' => route('series-results', ['season' => $seasonYear]), 'active' => true],
     ]" />
 
     @forelse($series as $serie)
@@ -137,7 +140,7 @@
             </div>
         </section>
     @empty
-        <p class="text-center text-brand-gray-light py-20 text-lg">Результаты серий пока не опубликованы.</p>
+        <p class="text-center text-brand-gray-light py-20 text-lg">Результаты серий сезона {{ $seasonYear }} пока не опубликованы.</p>
     @endforelse
 
     {{-- ─── Модальное окно: Команда ─── --}}
