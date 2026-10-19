@@ -49,6 +49,29 @@ final class FleetAvailability
             ->get();
     }
 
+    /** Сколько яхт свободно на весь диапазон — без загрузки самих яхт. */
+    public function availableCount(CarbonImmutable $from, CarbonImmutable $to): int
+    {
+        return $this->baseQuery()
+            ->availableForRent($from->toDateString(), $to->toDateString())
+            ->count();
+    }
+
+    /**
+     * Сколько яхт хотя бы частью периода аренды заходят в диапазон.
+     *
+     * Это верхняя граница свободного флота на любой день диапазона: если она
+     * меньше нужного, перебирать дни по одному незачем.
+     */
+    public function offeredCount(CarbonImmutable $from, CarbonImmutable $to): int
+    {
+        return $this->baseQuery()
+            ->whereHas('rentals', fn (Builder $rentals) => $rentals
+                ->whereDate('date_start', '<=', $to->toDateString())
+                ->whereDate('date_end', '>=', $from->toDateString()))
+            ->count();
+    }
+
     /**
      * Готовые данные для страницы подбора.
      *

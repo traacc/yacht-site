@@ -242,12 +242,40 @@
                         <p class="text-brand-gray-light">Выберите дату из списка.</p>
                     @else
                         @unless ($variant['enough'])
-                            <p class="bg-yellow-50 border border-yellow-300 text-[#2E325C] p-4 mb-6">
-                                На {{ $variant['date']->format('d.m.Y') }} свободно
-                                {{ \App\Support\Plural::with($variant['available'], 'яхта', 'яхты', 'яхт') }} —
-                                меньше, чем нужно ({{ $needed }}). Выберите другую дату или отправьте запрос:
-                                подберём флот вручную, в том числе у партнёров.
-                            </p>
+                            @php
+                                $alternatives = $this->alternatives[$variant['key']] ?? [];
+                            @endphp
+                            <div class="bg-yellow-50 border border-yellow-300 text-[#2E325C] p-4 mb-6">
+                                <p>
+                                    На {{ $variant['date']->format('d.m.Y') }} свободно
+                                    {{ \App\Support\Plural::with($variant['available'], 'яхта', 'яхты', 'яхт') }} —
+                                    меньше, чем нужно ({{ $needed }}). Выберите другую дату или отправьте запрос:
+                                    подберём флот вручную, в том числе у партнёров.
+                                </p>
+
+                                @if ($alternatives !== [])
+                                    <p class="mt-3 mb-2 font-semibold">
+                                        Ближайшие даты, когда свободно {{ \App\Support\Plural::with($needed, 'яхта', 'яхты', 'яхт') }}:
+                                    </p>
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach ($alternatives as $alternative)
+                                            <button type="button" wire:click="pickAlternative('{{ $alternative['key'] }}')"
+                                                    wire:key="alternative-{{ $alternative['key'] }}"
+                                                    class="px-3 py-2 bg-white border border-[#2D92CE] text-left hover:bg-[#2D92CE26] transition-colors cursor-pointer">
+                                                <span class="block font-semibold">{{ \Carbon\CarbonImmutable::parse($alternative['key'])->isoFormat('DD.MM.YYYY, dd') }}</span>
+                                                <span class="block text-sm text-brand-gray-light">
+                                                    свободно {{ \App\Support\Plural::with($alternative['available'], 'яхта', 'яхты', 'яхт') }}
+                                                </span>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <p class="mt-3 text-sm">
+                                        В ближайшие {{ \App\Services\EventPlanner::ALTERNATIVES_HORIZON }} дней после этой даты
+                                        столько свободных яхт тоже нет.
+                                    </p>
+                                @endif
+                            </div>
                         @endunless
 
                         @if ($variant['yachts']->isNotEmpty())

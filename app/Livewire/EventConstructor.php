@@ -14,6 +14,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
@@ -77,6 +78,18 @@ class EventConstructor extends Component
 
     /** @var array<int, string> id выбранных яхт. */
     public array $selectedYachts = [];
+
+    /**
+     * Ближайшие даты на замену тем, где яхт не хватает (@see EventPlanner::alternatives()).
+     *
+     * Перебор дней — десятки запросов, поэтому считается один раз при
+     * подборе, а не на каждый клик. Locked: список только для показа,
+     * выбранная из него дата всё равно проверяется заново.
+     *
+     * @var array<string, list<array{key: string, available: int}>>
+     */
+    #[Locked]
+    public array $alternatives = [];
 
     // ── Контакты ──
 
@@ -144,6 +157,7 @@ class EventConstructor extends Component
 
         $this->selectedDate = (string) ($best['key'] ?? '');
         $this->selectedYachts = (array) ($best['suggested'] ?? []);
+        $this->alternatives = $this->planner()->alternatives($this->variants, $this->needed());
 
         $this->step = 'fleet';
     }
@@ -205,6 +219,43 @@ class EventConstructor extends Component
         unset($this->quote);
     }
 
+    /**
+     * Взять предложенную дату: она встаёт в список дат и сразу выбирается.
+     *
+     * Свободное место в списке занимает новая дата; если все MAX_DATES
+     * заняты, она заменяет текущую — ту, на которую яхт не хватило и к
+     * которой подсказка показана.
+     */
+    public function pickAlternative(string $key): void
+    {
+        $date = $this->planner()->parseDates([$key])[0] ?? null;
+
+        if ($date === null) {
+            return;
+        }
+
+        $key = $date->toDateString();
+        $filled = array_values(array_filter($this->dates, fn ($value): bool => trim((string) $value) !== ''));
+
+        if (count($filled) < EventPlanner::MAX_DATES) {
+            $filled[] = $key;
+        } else {
+            $filled = array_map(
+                fn (string $value): string => ($this->planner()->parseDates([$value])[0] ?? null)?->toDateString() === $this->selectedDate
+                    ? $key
+                    : $value,
+                $filled,
+            );
+        }
+
+        $this->dates = $filled;
+
+        unset($this->variants);
+        $this->alternatives = $this->planner()->alternatives($this->variants, $this->needed());
+
+        $this->chooseDate($key);
+    }
+
     public function toggleYacht(string $id): void
     {
         $this->selectedYachts = in_array($id, $this->selectedYachts, true)
@@ -232,7 +283,7 @@ class EventConstructor extends Component
     {
         $this->reset(['eventName', 'details', 'activity', 'activityOther', 'guestsTotal',
             'guestsAfloat', 'startTime', 'needsVenue', 'venue', 'comment', 'privacy',
-            'selectedDate', 'selectedYachts']);
+            'selectedDate', 'selectedYachts', 'alternatives']);
         $this->dates = [''];
         $this->resetValidation();
         $this->step = 'params';

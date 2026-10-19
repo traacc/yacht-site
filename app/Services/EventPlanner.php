@@ -46,6 +46,12 @@ final class EventPlanner
     /** Доля суточной ставки яхты за один час, %. */
     public const DEFAULT_HOUR_SHARE = 25;
 
+    /** На сколько дней вперёд от неудачной даты искать замену. */
+    public const ALTERNATIVES_HORIZON = 30;
+
+    /** Сколько ближайших подходящих дат предлагать. */
+    public const ALTERNATIVES_LIMIT = 3;
+
     public function __construct(
         private readonly SettingsService $settings,
         private readonly FleetAvailability $fleet,
@@ -210,6 +216,64 @@ final class EventPlanner
         }
 
         return $variants;
+    }
+
+    /**
+     * Ближайшие даты на замену тем, где яхт не хватает.
+     *
+     * Ищем только вперёд, в пределах ALTERNATIVES_HORIZON дней от неудачной
+     * даты, любой день недели. Даты, уже перечисленные заказчиком, не
+     * предлагаем: они и так стоят в вариантах. Свободный флот на день
+     * считается тем же скоупом, что и варианты, — иначе подсказка могла бы
+     * разойтись с карточкой даты после того, как её выберут.
+     *
+     * Ключ результата — дата варианта, которому нужна замена; значения —
+     * простые массивы, чтобы их можно было хранить в свойстве Livewire.
+     *
+     * @param  list<array{key: string, date: CarbonImmutable, enough: bool}>  $variants
+     * @return array<string, list<array{key: string, available: int}>>
+     */
+    public function alternatives(array $variants, int $needed): array
+    {
+        $taken = array_column($variants, 'key');
+        // Горизонты соседних дат перекрываются: день считаем один раз.
+        $counts = [];
+        $result = [];
+
+        foreach ($variants as $variant) {
+            if ($variant['enough']) {
+                continue;
+            }
+
+            $from = $variant['date']->addDay();
+            $to = $variant['date']->addDays(self::ALTERNATIVES_HORIZON);
+
+            if ($this->fleet->offeredCount($from, $to) < $needed) {
+                $result[$variant['key']] = [];
+
+                continue;
+            }
+
+            $found = [];
+
+            for ($date = $from; $date->lte($to) && count($found) < self::ALTERNATIVES_LIMIT; $date = $date->addDay()) {
+                $key = $date->toDateString();
+
+                if (in_array($key, $taken, true)) {
+                    continue;
+                }
+
+                $counts[$key] ??= $this->fleet->availableCount($date, $date);
+
+                if ($counts[$key] >= $needed) {
+                    $found[] = ['key' => $key, 'available' => $counts[$key]];
+                }
+            }
+
+            $result[$variant['key']] = $found;
+        }
+
+        return $result;
     }
 
     /**
