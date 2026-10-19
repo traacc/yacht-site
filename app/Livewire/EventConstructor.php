@@ -91,6 +91,16 @@ class EventConstructor extends Component
     #[Locked]
     public array $alternatives = [];
 
+    /**
+     * Справочный расчёт: наличие яхт не проверяется (@see EventPlanner::checksFleet()).
+     *
+     * Режим решается один раз при подборе — по настройке и данным о флоте на
+     * даты заказчика. Тогда нет ни вариантов по датам, ни выбора лодок: в
+     * заявку уходят все даты, а флот подбирает менеджер.
+     */
+    #[Locked]
+    public bool $reference = false;
+
     // ── Контакты ──
 
     public string $name = '';
@@ -139,10 +149,23 @@ class EventConstructor extends Component
     {
         $this->validate($this->paramRules(), $this->paramMessages());
 
+        $dates = $this->planner()->parseDates($this->dates);
+
+        if ($dates === []) {
+            $this->addError('dates.0', 'Ни одна из дат не подходит: укажите будущие даты.');
+
+            return;
+        }
+
+        $this->reference = ! $this->planner()->checksFleet($dates);
+
         unset($this->variants, $this->quote);
 
-        if ($this->variants === []) {
-            $this->addError('dates.0', 'Ни одна из дат не подходит: укажите будущие даты.');
+        if ($this->reference) {
+            $this->selectedDate = '';
+            $this->selectedYachts = [];
+            $this->alternatives = [];
+            $this->step = 'fleet';
 
             return;
         }
@@ -283,7 +306,7 @@ class EventConstructor extends Component
     {
         $this->reset(['eventName', 'details', 'activity', 'activityOther', 'guestsTotal',
             'guestsAfloat', 'startTime', 'needsVenue', 'venue', 'comment', 'privacy',
-            'selectedDate', 'selectedYachts', 'alternatives']);
+            'selectedDate', 'selectedYachts', 'alternatives', 'reference']);
         $this->dates = [''];
         $this->resetValidation();
         $this->step = 'params';
@@ -312,6 +335,10 @@ class EventConstructor extends Component
     #[Computed]
     public function variants(): array
     {
+        if ($this->reference) {
+            return [];
+        }
+
         $dates = $this->planner()->parseDates($this->dates);
 
         return $dates === []
@@ -343,13 +370,7 @@ class EventConstructor extends Component
     #[Computed]
     public function quote(): ?array
     {
-        $variant = $this->variant();
-
-        if ($variant === null) {
-            return null;
-        }
-
-        return $this->planner()->quote($variant['date'], $this->selectedFleet(), [
+        $params = [
             'hours' => (int) $this->hoursAfloat,
             'guests_total' => (int) $this->guestsTotal,
             'guests_afloat' => (int) $this->guestsAfloat,
@@ -358,7 +379,36 @@ class EventConstructor extends Component
             'needs_venue' => $this->needsVenue,
             'venue' => $this->venue,
             'catering' => $this->catering,
-        ]);
+        ];
+
+        if ($this->reference) {
+            return $this->planner()->referenceQuote($this->needed(), $params);
+        }
+
+        $variant = $this->variant();
+
+        if ($variant === null) {
+            return null;
+        }
+
+        return $this->planner()->quote($variant['date'], $this->selectedFleet(), $params);
+    }
+
+    /**
+     * Дата мероприятия для заявки: выбранный вариант, а в справочном
+     * режиме — первая из перечисленных (остальные уходят в payload).
+     */
+    public function eventDate(): ?CarbonImmutable
+    {
+        return $this->reference
+            ? ($this->planner()->parseDates($this->dates)[0] ?? null)
+            : ($this->variant()['date'] ?? null);
+    }
+
+    /** Сколько яхт в заявке: выбранные лодки либо нужное число по справочнику. */
+    public function fleetCount(): int
+    {
+        return $this->reference ? $this->needed() : $this->selectedFleet()->count();
     }
 
     /** Активность своими словами важнее выбранной в списке. */
@@ -395,9 +445,17 @@ class EventConstructor extends Component
             return;
         }
 
-        RateLimiter::hit($key, 60);
+        $date = $this->eventDate();
 
-        $variant = $this->variant();
+        // Дата пропадает, только если состояние формы испорчено: пусть
+        // заказчик пройдёт подбор заново, а не получит ошибку сервера.
+        if ($date === null) {
+            $this->step = 'params';
+
+            return;
+        }
+
+        RateLimiter::hit($key, 60);
 
         $action->handle(
             type: ServiceType::Event,
@@ -408,8 +466,8 @@ class EventConstructor extends Component
                 'comment' => $this->comment,
                 // Водная часть укладывается в один день: дата начала и
                 // окончания совпадают, как и у однодневной аренды.
-                'date_start' => $variant['date']->toDateString(),
-                'date_end' => $variant['date']->toDateString(),
+                'date_start' => $date->toDateString(),
+                'date_end' => $date->toDateString(),
                 'quantity' => $this->guestsTotal,
                 'payload' => $this->payload(),
                 'source' => 'event-constructor',
@@ -435,6 +493,14 @@ class EventConstructor extends Component
         $quote = $this->quote;
         $variant = $this->variant();
 
+        $fleet = $this->reference
+            ? Plural::with($this->needed(), 'яхта', 'яхты', 'яхт').' — подбор вручную'
+            : $this->selectedFleet()
+                ->map(fn (Yacht $yacht): string => $yacht->name.' — '.$this->planner()->money(
+                    $this->planner()->yachtCost($yacht, $variant['date'], (int) $this->hoursAfloat),
+                ))
+                ->implode('; ');
+
         return [
             'event_name' => $this->eventName,
             'event_format' => $this->format,
@@ -450,11 +516,10 @@ class EventConstructor extends Component
             'needs_venue' => $this->needsVenue ? 'yes' : 'no',
             'venue' => (string) ($quote['venue']['title'] ?? $this->venue),
             'catering' => $this->catering,
-            'fleet_selected' => $this->selectedFleet()
-                ->map(fn (Yacht $yacht): string => $yacht->name.' — '.$this->planner()->money(
-                    $this->planner()->yachtCost($yacht, $variant['date'], (int) $this->hoursAfloat),
-                ))
-                ->implode('; '),
+            'fleet_selected' => $fleet,
+            'estimate_basis' => $this->reference
+                ? 'Справочные цены — наличие яхт не проверялось'
+                : 'Свободный флот на дату',
             // Ноль в итоге значит «тарифов нет», а не «бесплатно»: менеджер
             // должен увидеть в заявке ровно ту формулировку, что и заказчик.
             'estimate' => match (true) {

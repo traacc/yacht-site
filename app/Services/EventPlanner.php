@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\EventFleetMode;
 use App\Models\Yacht;
 use App\Support\Plural;
 use Carbon\CarbonImmutable;
@@ -85,6 +86,40 @@ final class EventPlanner
     public function minHours(): int
     {
         return max(1, (int) $this->settings->get(self::PREFIX.'min_hours', self::DEFAULT_MIN_HOURS));
+    }
+
+    public function fleetMode(): EventFleetMode
+    {
+        return EventFleetMode::tryFrom((string) $this->settings->get(self::PREFIX.'fleet_mode', ''))
+            ?? EventFleetMode::Auto;
+    }
+
+    /** Справочная цена яхты за час — для расчёта без проверки наличия. */
+    public function referenceYachtHour(): float
+    {
+        return max(0, (float) $this->settings->get(self::PREFIX.'reference_yacht_hour', 0));
+    }
+
+    /**
+     * Проверять ли свободный флот на эти даты.
+     *
+     * В авто-режиме проверка включается, только если хоть одна яхта
+     * объявила аренду на период дат с запасом на поиск замены
+     * (ALTERNATIVES_HORIZON): без этих данных проверка заведомо ответит
+     * «свободно 0 яхт», хотя флот на деле может быть.
+     *
+     * @param  list<CarbonImmutable>  $dates  отсортированные, как из parseDates()
+     */
+    public function checksFleet(array $dates): bool
+    {
+        return match ($this->fleetMode()) {
+            EventFleetMode::Check => true,
+            EventFleetMode::Reference => false,
+            EventFleetMode::Auto => $dates !== [] && $this->fleet->offeredCount(
+                $dates[0],
+                $dates[array_key_last($dates)]->addDays(self::ALTERNATIVES_HORIZON),
+            ) > 0,
+        };
     }
 
     /**
@@ -351,20 +386,57 @@ final class EventPlanner
     public function quote(CarbonImmutable $date, Collection $yachts, array $params): array
     {
         $hours = $this->billableHours((int) $params['hours']);
-        $guests = max(1, (int) $params['guests_total']);
-        $items = [];
 
         // Флот попадает в смету, только когда есть что считать: на дату без
         // свободных лодок строка «0 яхт» лишь мешала бы читать расчёт.
-        if ($yachts->isNotEmpty()) {
-            $items[] = $this->fleetItem($yachts, $date, $hours);
-        }
+        $fleet = $yachts->isNotEmpty() ? $this->fleetItem($yachts, $date, $hours) : null;
 
-        if (($skipper = (float) $this->settings->get(self::PREFIX.'skipper_hour', 0)) > 0 && $yachts->isNotEmpty()) {
+        return $this->assemble($fleet, $yachts->count(), $hours, $params);
+    }
+
+    /**
+     * Смета без проверки наличия: нужное число яхт по справочной цене.
+     *
+     * Конкретных лодок и даты здесь нет — их подбирает менеджер, поэтому
+     * флот считается по одной цене из настроек, а при нулевой цене остаётся
+     * строкой «по запросу», как любая нетарифицированная позиция.
+     *
+     * @param  array<string, mixed>  $params  как у quote()
+     * @return array<string, mixed> как у quote()
+     */
+    public function referenceQuote(int $yachts, array $params): array
+    {
+        $hours = $this->billableHours((int) $params['hours']);
+        $price = $this->referenceYachtHour();
+
+        $fleet = [
+            'title' => 'Яхты — '.Plural::with($yachts, 'яхта', 'яхты', 'яхт').' × '.$hours.' ч',
+            'amount' => $price > 0 ? $price * $hours * $yachts : null,
+            'note' => $price > 0
+                ? $this->money($price).'/ч × '.$hours.' ч × '.$yachts
+                : 'стоимость уточняется',
+        ];
+
+        return $this->assemble($fleet, $yachts, $hours, $params);
+    }
+
+    /**
+     * Общая часть сметы: флот уже посчитан, остальное — по тарифам настроек.
+     *
+     * @param  array{title: string, amount: float|null, note: string, partial?: bool}|null  $fleet
+     * @param  array<string, mixed>  $params
+     * @return array<string, mixed>
+     */
+    private function assemble(?array $fleet, int $yachts, int $hours, array $params): array
+    {
+        $guests = max(1, (int) $params['guests_total']);
+        $items = $fleet !== null ? [$fleet] : [];
+
+        if (($skipper = (float) $this->settings->get(self::PREFIX.'skipper_hour', 0)) > 0 && $yachts > 0) {
             $items[] = [
                 'title' => 'Шкиперы',
-                'amount' => $skipper * $hours * $yachts->count(),
-                'note' => $this->money($skipper).'/ч × '.$hours.' ч × '.$yachts->count(),
+                'amount' => $skipper * $hours * $yachts,
+                'note' => $this->money($skipper).'/ч × '.$hours.' ч × '.$yachts,
             ];
         }
 

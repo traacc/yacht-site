@@ -487,6 +487,11 @@ enum ServiceType: string
                     'type' => 'text',
                     'forms' => [ServiceForm::EventConstructor],
                 ],
+                'estimate_basis' => [
+                    'label' => 'Основа расчёта',
+                    'type' => 'text',
+                    'forms' => [ServiceForm::EventConstructor],
+                ],
                 'estimate_details' => [
                     'label' => 'Расчёт',
                     'type' => 'textarea',

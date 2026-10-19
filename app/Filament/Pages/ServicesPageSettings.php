@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Enums\EventFleetMode;
 use App\Enums\ServiceType;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Services\EventPlanner;
@@ -13,6 +14,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -141,6 +143,10 @@ class ServicesPageSettings extends Page
                 'services.event.constructor.hour_share',
                 EventPlanner::DEFAULT_HOUR_SHARE,
             ),
+            'events_constructor_fleet_mode' => EventFleetMode::tryFrom(
+                (string) $settings->get('services.event.constructor.fleet_mode', ''),
+            )?->value ?? EventFleetMode::Auto->value,
+            'events_constructor_reference_yacht_hour' => $settings->get('services.event.constructor.reference_yacht_hour', 0),
             'events_constructor_skipper_hour' => $settings->get('services.event.constructor.skipper_hour', 0),
             'events_constructor_base_fee' => $settings->get('services.event.constructor.base_fee', 0),
             'events_constructor_photo_price' => $settings->get('services.event.constructor.photo_price', 0),
@@ -524,7 +530,7 @@ class ServicesPageSettings extends Page
                 ]),
 
             Section::make('Конструктор мероприятия')
-                ->description('Заказчик задаёт параметры ивента, конструктор подбирает свободные яхты на каждую из его дат и считает минимальную стоимость. Тарифы ниже — единственный источник цифр в расчёте: нулевая цена показывается заказчику строкой «по запросу», а не пропадает из сметы.')
+                ->description('Заказчик задаёт параметры ивента, конструктор подбирает свободные яхты на каждую из его дат (или, без проверки наличия, берёт справочную цену) и считает минимальную стоимость. Тарифы ниже — единственный источник цифр в расчёте: нулевая цена показывается заказчику строкой «по запросу», а не пропадает из сметы.')
                 ->schema([
                     Toggle::make('events_constructor_enabled')
                         ->label('Показывать конструктор на странице')
@@ -543,6 +549,24 @@ class ServicesPageSettings extends Page
                         ->rows(2)
                         ->maxLength(500)
                         ->columnSpanFull(),
+
+                    // Опции — строки, а не enum::class: иначе в состояние формы
+                    // попадает экземпляр enum, и сохранение его не переварит.
+                    Select::make('events_constructor_fleet_mode')
+                        ->label('Проверка наличия яхт')
+                        ->helperText('Без проверки конструктор не подбирает конкретные яхты: считает нужное число лодок по справочной цене, а в заявку отправляет все даты заказчика — флот подбирает менеджер. «Авто» отключает проверку, пока на даты заказчика (и 30 дней после) не объявлена аренда ни одной яхты.')
+                        ->options(EventFleetMode::options())
+                        ->default(EventFleetMode::Auto->value)
+                        ->selectablePlaceholder(false)
+                        ->required()
+                        ->columnSpanFull(),
+
+                    TextInput::make('events_constructor_reference_yacht_hour')
+                        ->label('Справочная цена яхты, ₽ за час')
+                        ->helperText('Для расчёта без проверки наличия. Ноль — флот в смете «по запросу».')
+                        ->numeric()
+                        ->minValue(0)
+                        ->rules(['nullable', 'numeric', 'min:0']),
 
                     TextInput::make('events_constructor_yacht_capacity')
                         ->label('Гостей на одну яхту')
@@ -1195,6 +1219,9 @@ class ServicesPageSettings extends Page
                 1,
                 (int) ($data['events_constructor_hour_share'] ?: EventPlanner::DEFAULT_HOUR_SHARE),
             ),
+            'services.event.constructor.fleet_mode' => (EventFleetMode::tryFrom((string) ($data['events_constructor_fleet_mode'] ?? ''))
+                ?? EventFleetMode::Auto)->value,
+            'services.event.constructor.reference_yacht_hour' => (float) ($data['events_constructor_reference_yacht_hour'] ?? 0),
             'services.event.constructor.skipper_hour' => (float) ($data['events_constructor_skipper_hour'] ?? 0),
             'services.event.constructor.base_fee' => (float) ($data['events_constructor_base_fee'] ?? 0),
             'services.event.constructor.photo_price' => (float) ($data['events_constructor_photo_price'] ?? 0),

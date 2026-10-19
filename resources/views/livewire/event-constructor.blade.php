@@ -215,12 +215,27 @@
                 @endphp
 
                 <div class="border border-[#C6C6C6] p-6">
-                    <h3 class="a-font text-xl mb-4 text-[#2E325C]">Свободные яхты по вашим датам</h3>
+                    <h3 class="a-font text-xl mb-4 text-[#2E325C]">
+                        {{ $reference ? 'Предварительный расчёт' : 'Свободные яхты по вашим датам' }}
+                    </h3>
 
                     <p class="text-brand-gray-light mb-4">
                         Под {{ \App\Support\Plural::with((int) $guestsAfloat, 'гостя', 'гостей', 'гостей') }} на воде
                         нужно {{ \App\Support\Plural::with($needed, 'яхта', 'яхты', 'яхт') }}.
                     </p>
+
+                    {{-- Справочный режим: наличие не проверяем, флот подберёт менеджер --}}
+                    @if ($reference)
+                        <div class="border border-[#2D92CE] bg-[#2D92CE26] text-[#2E325C] p-4 mb-6">
+                            <p class="font-semibold mb-1">
+                                {{ collect($planner->parseDates($dates))->map->format('d.m.Y')->implode(', ') }}
+                            </p>
+                            <p class="text-sm">
+                                Наличие яхт на эти даты проверим вручную и предложим лучший вариант.
+                                Расчёт ниже — по справочным ценам.
+                            </p>
+                        </div>
+                    @else
 
                     {{-- Вариант на каждую перечисленную дату --}}
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
@@ -305,6 +320,9 @@
                             </p>
                         @endif
 
+                    @endif
+                    @endif
+
                         {{-- Смета: каждая позиция названа, сумма — минимальная --}}
                         @if ($quote !== null && count($quote['items']) > 0)
                             <div class="bg-brand-light-bg p-6 mb-6">
@@ -345,10 +363,9 @@
                             </div>
                         @endif
 
-                        @if ($planner->note() !== '')
+                        @if ($quote !== null && $planner->note() !== '')
                             <p class="text-sm text-brand-gray-light mb-6">{{ $planner->note() }}</p>
                         @endif
-                    @endif
 
                     <div class="flex flex-wrap gap-3">
                         <button type="button" wire:click="back"
@@ -371,8 +388,8 @@
                     <h3 class="a-font text-xl mb-2 text-[#2E325C]">Куда прислать ответ</h3>
 
                     <p class="text-brand-gray-light text-sm mb-4">
-                        {{ $eventName }}@if ($this->variant()), {{ $this->variant()['date']->format('d.m.Y') }}@endif,
-                        {{ \App\Support\Plural::with($this->selectedFleet()->count(), 'яхта', 'яхты', 'яхт') }}@if ($quote !== null),
+                        {{ $eventName }}@if ($reference), {{ collect($planner->parseDates($dates))->map->format('d.m.Y')->implode(', ') }}@elseif ($this->variant()), {{ $this->variant()['date']->format('d.m.Y') }}@endif,
+                        {{ \App\Support\Plural::with($this->fleetCount(), 'яхта', 'яхты', 'яхт') }}@if ($quote !== null),
                         от {{ $planner->money($quote['total']) }}@endif
                     </p>
 
