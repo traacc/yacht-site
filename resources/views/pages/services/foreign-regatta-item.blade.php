@@ -103,14 +103,14 @@
                         @foreach ($fleetGroups as $group)
                             @php
                                 $division = $group['division'];
-                                $divisionDescription = trim((string) $division?->description);
+                                $divisionDescription = trim((string) $division?->effectiveDescription());
                                 $divisionPrices = $division?->priceLabels() ?? [];
                                 // Монотип без выбора яхт продаёт места сам: у
                                 // него общий счётчик и свои кнопки заявки.
                                 $divisionOccupancy = $division?->occupancyLabels() ?? [];
                                 // Галерея дивизиона: в таблице флота фотографий
                                 // нет, они только в карточке лодки.
-                                $divisionPhotos = $division?->galleryPhotos() ?? [];
+                                $divisionPhotos = $division?->effectivePhotos() ?? [];
                             @endphp
 
                             <div class="mb-10">

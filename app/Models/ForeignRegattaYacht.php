@@ -253,7 +253,15 @@ class ForeignRegattaYacht extends Model implements HasMedia
     /** Запись справочника, из которой лодка берёт характеристики. */
     public function catalogModel(): ?CharterYachtModel
     {
-        return $this->yachtModel;
+        if ($this->yachtModel !== null) {
+            return $this->yachtModel;
+        }
+
+        // В монотипе модель одна на дивизион: у лодки своей нет и быть не должно
+        // (@see App\Enums\FleetDivisionType::sharesSpec()).
+        $division = $this->division;
+
+        return $division?->sharesSpec() ? $division->yachtModel : null;
     }
 
     public function effectiveModel(): ?string

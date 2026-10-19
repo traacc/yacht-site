@@ -28,8 +28,9 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  *
  * Тип определяет две вещи (@see FleetDivisionType): общая ли у лодок
  * спецификация — модель, описание, галерея — и общая ли цена. У монотипа без
- * выбора общее и то и другое, у монотипа с выбором — только цена, у гандикапа
- * ничего: там всё своё у каждой лодки. Наследование делает
+ * выбора общее и то и другое, у монотипа с выбором — только спецификация
+ * (модель одна на дивизион, выбирается из справочника), у гандикапа ничего:
+ * там всё своё у каждой лодки. Наследование делает
  * ForeignRegattaYacht::spec().
  *
  * Количество лодок монотипа без выбора задаётся полем `yachts_count`, а строки
@@ -45,6 +46,7 @@ class ForeignRegattaDivision extends Model implements HasMedia
         'foreign_regatta_id',
         'type',
         'name',
+        'yacht_model_id',
         'model',
         'description',
         'year',
@@ -127,6 +129,19 @@ class ForeignRegattaDivision extends Model implements HasMedia
         return $this->belongsTo(ForeignRegatta::class, 'foreign_regatta_id');
     }
 
+    /**
+     * Модель из справочника — одна на весь дивизион.
+     *
+     * Так устроен монотип с выбором яхт: лодки называются поимённо и считаются
+     * по отдельности, но модель у них общая (@see FleetDivisionType::MonotypeChoice).
+     * Монотип без выбора обходится строкой `model`, гандикапу модель задаётся
+     * у каждой лодки.
+     */
+    public function yachtModel(): BelongsTo
+    {
+        return $this->belongsTo(CharterYachtModel::class, 'yacht_model_id');
+    }
+
     public function yachts(): HasMany
     {
         return $this->hasMany(ForeignRegattaYacht::class, 'division_id')->ordered();
@@ -172,7 +187,7 @@ class ForeignRegattaDivision extends Model implements HasMedia
      */
     public function sellsDirectly(): bool
     {
-        return $this->sharesSpec();
+        return $this->type->usesYachtsCount();
     }
 
     /** Цена варианта участия у дивизиона. */
@@ -292,6 +307,43 @@ class ForeignRegattaDivision extends Model implements HasMedia
     }
 
     /** Заголовок секции на витрине: название, а без него — модель лодок. */
+    /** Модель лодок дивизиона: своя строка, иначе из справочника. */
+    public function effectiveModel(): ?string
+    {
+        $own = trim((string) $this->model);
+
+        return $own !== '' ? $own : $this->yachtModel?->name;
+    }
+
+    public function effectiveDescription(): ?string
+    {
+        $own = trim((string) $this->description);
+
+        return $own !== '' ? $own : $this->yachtModel?->description;
+    }
+
+    public function effectiveCabins(): ?int
+    {
+        return $this->cabins ?? $this->yachtModel?->cabins;
+    }
+
+    public function effectiveDownwindSail(): ?DownwindSail
+    {
+        return $this->downwind_sail ?? $this->yachtModel?->downwind_sail;
+    }
+
+    /**
+     * Фотографии дивизиона, а если своих нет — фотографии модели.
+     *
+     * @return list<array{src: string, webp: string|null, avif: string|null, caption: string}>
+     */
+    public function effectivePhotos(): array
+    {
+        $own = $this->galleryPhotos();
+
+        return $own !== [] ? $own : ($this->yachtModel?->galleryPhotos() ?? []);
+    }
+
     public function title(): string
     {
         $name = trim((string) $this->name);
@@ -300,7 +352,7 @@ class ForeignRegattaDivision extends Model implements HasMedia
             return $name;
         }
 
-        $model = trim((string) $this->model);
+        $model = trim((string) $this->effectiveModel());
 
         return $model !== '' ? $model : 'Дивизион';
     }
@@ -312,8 +364,10 @@ class ForeignRegattaDivision extends Model implements HasMedia
             return null;
         }
 
+        // Количество ведётся только там, где лодки заводятся по числу;
+        // в монотипе с выбором их столько, сколько завели поимённо.
         $count = (int) ($this->yachts_count ?? 0);
-        $model = trim((string) $this->model);
+        $model = trim((string) $this->effectiveModel());
 
         if ($count < 1) {
             return $model === '' ? null : $model;

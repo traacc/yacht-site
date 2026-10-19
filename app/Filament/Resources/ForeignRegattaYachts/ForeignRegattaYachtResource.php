@@ -114,9 +114,12 @@ class ForeignRegattaYachtResource extends Resource
                             ->live()
                             ->nullable(),
 
+                        // В монотипном дивизионе модель одна на всех и задана
+                        // на самом дивизионе — у лодки своей быть не должно.
                         Select::make('yacht_model_id')
                             ->label('Модель из справочника')
                             ->helperText('Описание, фотографии и каюты возьмутся отсюда. Нет нужной модели — заведите кнопкой «+».')
+                            ->visible(fn (Get $get): bool => ! self::inheritsSpec($get))
                             ->options(fn (): array => CharterYachtModel::query()
                                 ->ordered()
                                 ->get()
@@ -139,7 +142,7 @@ class ForeignRegattaYachtResource extends Resource
                             ->label('Модель (без справочника)')
                             ->placeholder('Bavaria 46')
                             ->required(fn (Get $get): bool => ! self::inheritsSpec($get) && ! filled($get('yacht_model_id')))
-                            ->visible(fn (Get $get): bool => ! filled($get('yacht_model_id')))
+                            ->visible(fn (Get $get): bool => ! self::inheritsSpec($get) && ! filled($get('yacht_model_id')))
                             ->maxLength(255),
 
                         TextInput::make('cabins')
@@ -148,7 +151,7 @@ class ForeignRegattaYachtResource extends Resource
                             ->numeric()
                             ->minValue(1)
                             ->maxValue(20)
-                            ->visible(fn (Get $get): bool => ! filled($get('yacht_model_id'))),
+                            ->visible(fn (Get $get): bool => ! self::inheritsSpec($get) && ! filled($get('yacht_model_id'))),
 
                         TextInput::make('year')
                             ->label('Год выпуска')
@@ -562,16 +565,16 @@ class ForeignRegattaYachtResource extends Resource
             return 'Характеристики и цены этой лодки заполняются здесь.';
         }
 
-        // Монотип с выбором яхт делится только ценой: модель у каждой лодки своя.
+        // Монотип с выбором яхт делится только моделью: цены у каждой лодки свои.
         $spec = array_filter([
-            $division->sharesSpec() ? trim((string) $division->model) : null,
-            $division->sharesSpec() && $division->cabins !== null ? $division->cabins.' кают' : null,
+            $division->sharesSpec() ? trim((string) $division->effectiveModel()) : null,
+            $division->sharesSpec() && $division->effectiveCabins() !== null ? $division->effectiveCabins().' кают' : null,
             $division->sharesSpec() && $division->year !== null ? (string) $division->year : null,
-            $division->price === null ? null : $division->priceCurrency()->format($division->price),
-            $division->seat_price === null ? null : $division->priceCurrency()->format($division->seat_price).' за место',
+            $division->sharesPrices() && $division->price !== null ? $division->priceCurrency()->format($division->price) : null,
+            $division->sharesPrices() && $division->seat_price !== null ? $division->priceCurrency()->format($division->seat_price).' за место' : null,
         ]);
 
-        $what = $division->sharesSpec() ? 'Пустые поля' : 'Цены';
+        $what = $division->sharesPrices() ? 'Пустые поля' : 'Модель и описание';
 
         return $what.' берутся из дивизиона «'.$division->title().'»'
             .($spec === [] ? '.' : ': '.implode(', ', $spec).'.');

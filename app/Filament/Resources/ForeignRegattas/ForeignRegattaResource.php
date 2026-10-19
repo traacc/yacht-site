@@ -400,9 +400,15 @@ class ForeignRegattaResource extends Resource
     {
         $type = fn (Get $get): ?FleetDivisionType => FleetDivisionType::tryFrom((string) $get('type'));
 
-        // Монотип без выбора яхт: одна модель на весь дивизион, вводится руками.
-        $isMonotype = fn (Get $get): bool => $type($get)?->sharesSpec() ?? false;
-        // Оба монотипа: цена общая и задаётся здесь.
+        // Монотип без выбора яхт: лодки заводятся по количеству, продаются
+        // общим пулом, и вся спецификация с ценами задаётся здесь.
+        $isMonotype = fn (Get $get): bool => $type($get)?->usesYachtsCount() ?? false;
+        // Монотип с выбором яхт: от гандикапа отличается только тем, что модель
+        // одна на дивизион и берётся из справочника.
+        $isMonotypeChoice = fn (Get $get): bool => $type($get) === FleetDivisionType::MonotypeChoice;
+        // Оба монотипа: модель и описание общие для всех лодок дивизиона.
+        $sharesSpec = fn (Get $get): bool => $type($get)?->sharesSpec() ?? false;
+        // Только монотип без выбора: цена общая и задаётся здесь.
         $sharesPrices = fn (Get $get): bool => $type($get)?->sharesPrices() ?? false;
         // Монотип с выбором и гандикап: лодки добавляются поимённо.
         $picksYachts = fn (Get $get): bool => $type($get)?->picksYachts() ?? false;
@@ -443,6 +449,22 @@ class ForeignRegattaResource extends Resource
                 ->maxValue(200)
                 ->required($isMonotype)
                 ->visible($isMonotype),
+
+            // Монотип с выбором: модель одна на весь дивизион и берётся из
+            // справочника — у лодок своей модели нет
+            // (@see App\Models\ForeignRegattaYacht::catalogModel()).
+            Select::make('yacht_model_id')
+                ->label('Модель яхт дивизиона')
+                ->helperText('Одна на все лодки дивизиона. Нет нужной — заведите кнопкой «+», она попадёт в общий справочник.')
+                ->options(fn (): array => self::yachtModelOptions())
+                ->searchable()
+                ->preload()
+                ->live()
+                ->createOptionForm(CharterYachtModelResource::fields(withGallery: false))
+                ->createOptionUsing(fn (array $data): string => (string) CharterYachtModel::create($data)->getKey())
+                ->required($isMonotypeChoice)
+                ->visible($isMonotypeChoice)
+                ->columnSpan(2),
 
             // Монотип без выбора: модель одна на весь дивизион и вводится
             // строкой — справочник здесь не участвует.
@@ -560,14 +582,14 @@ class ForeignRegattaResource extends Resource
             // они наследуются карточками лодок, у остальных — это единое
             // описание дивизиона над списком яхт.
             Textarea::make('description')
-                ->label(fn (Get $get): string => $isMonotype($get) ? 'Описание лодки' : 'Описание дивизиона')
+                ->label(fn (Get $get): string => $sharesSpec($get) ? 'Описание лодки' : 'Описание дивизиона')
                 ->rows(3)
                 ->maxLength(2000)
                 ->columnSpanFull(),
 
             SpatieMediaLibraryFileUpload::make('gallery')
-                ->label(fn (Get $get): string => $isMonotype($get) ? 'Фотографии лодки' : 'Фотографии дивизиона')
-                ->helperText(fn (Get $get): string => $isMonotype($get)
+                ->label(fn (Get $get): string => $sharesSpec($get) ? 'Фотографии лодки' : 'Фотографии дивизиона')
+                ->helperText(fn (Get $get): string => $sharesSpec($get)
                     ? 'Общая галерея для всех лодок дивизиона.'
                     : 'Общая галерея дивизиона: у каждой лодки своя галерея заводится в разделе «Услуги: Флот регат».')
                 ->collection('gallery')
@@ -662,9 +684,15 @@ class ForeignRegattaResource extends Resource
         // дивизион).
         $yachtCurrency = fn (Get $get): string => self::currencySymbol($get, '../../../../currency');
 
-        // Цены у лодки свои только в гандикапном дивизионе: у монотипа с
-        // выбором яхт они общие и заданы на дивизионе двумя уровнями выше.
-        $hasOwnPrices = fn (Get $get): bool => ! (FleetDivisionType::tryFrom((string) $get('../../type'))?->sharesPrices() ?? false);
+        // Тип дивизиона лежит двумя уровнями выше: поле → лодка → репитер лодок.
+        $divisionType = fn (Get $get): ?FleetDivisionType => FleetDivisionType::tryFrom((string) $get('../../type'));
+
+        // Цены у лодки свои везде, кроме монотипа без выбора яхт: там они общие
+        // и заданы на дивизионе.
+        $hasOwnPrices = fn (Get $get): bool => ! ($divisionType($get)?->sharesPrices() ?? false);
+
+        // Модель своя только в гандикапе: в монотипе она одна на дивизион.
+        $hasOwnModel = fn (Get $get): bool => ! ($divisionType($get)?->sharesSpec() ?? false);
 
         return [
             Select::make('yacht_model_id')
@@ -676,7 +704,8 @@ class ForeignRegattaResource extends Resource
                 ->live()
                 ->createOptionForm(CharterYachtModelResource::fields(withGallery: false))
                 ->createOptionUsing(fn (array $data): string => (string) CharterYachtModel::create($data)->getKey())
-                ->required(fn (Get $get): bool => ! filled($get('model')))
+                ->required(fn (Get $get): bool => $hasOwnModel($get) && ! filled($get('model')))
+                ->visible($hasOwnModel)
                 ->columnSpan(2),
 
             TextInput::make('name')
@@ -686,7 +715,7 @@ class ForeignRegattaResource extends Resource
 
             TextInput::make('model')
                 ->label('Модель (без справочника)')
-                ->visible(fn (Get $get): bool => ! filled($get('yacht_model_id')))
+                ->visible(fn (Get $get): bool => $hasOwnModel($get) && ! filled($get('yacht_model_id')))
                 ->maxLength(255),
 
             TextInput::make('year')
