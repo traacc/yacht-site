@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Tours;
 
 use App\Filament\Concerns\RestrictsAccessByRole;
+use App\Filament\Forms\DateRange;
 use App\Filament\Resources\Tours\Pages\ManageTours;
 use App\Models\Tour;
 use App\Models\Yacht;
@@ -125,13 +126,13 @@ class TourResource extends Resource
                         DatePicker::make('date_start')
                             ->label('Дата начала')
                             ->required()
-                            ->native(false)
-                            ->displayFormat('d.m.Y'),
+                            ->displayFormat('d.m.Y')
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(DateRange::syncEnd('date_end')),
 
                         DatePicker::make('date_end')
                             ->label('Дата окончания')
                             ->helperText('Пусто — однодневный выход.')
-                            ->native(false)
                             ->displayFormat('d.m.Y')
                             ->afterOrEqual('date_start'),
 

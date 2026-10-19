@@ -217,7 +217,6 @@ class RegattaEntryResource extends Resource
                 DatePicker::make('submitted_at')
                     ->label('Дата рассмотрения')
                     ->displayFormat('d.m.Y')
-                    ->native(false)
                     ->default(now())
                     ->required(),
                 Select::make('status')

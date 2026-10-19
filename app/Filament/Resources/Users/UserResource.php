@@ -138,7 +138,6 @@ class UserResource extends Resource
                     ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100))
                     ->displayFormat('d.m.Y')
-                    ->native(false)
                     ->label('Дата рождения')
                     ->required(),
                 TextInput::make('email')

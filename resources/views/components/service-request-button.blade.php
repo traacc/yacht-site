@@ -173,6 +173,7 @@
                             <label class="block">
                                 <span class="block text-sm text-brand-gray-light mb-1">Дата начала</span>
                                 <input type="date" x-model="form.date_start"
+                                       @change="if (! form.date_end || form.date_end < form.date_start) form.date_end = form.date_start"
                                        @if ($type->requiresDateRange()) required @endif
                                        class="block appearance-none border border-[#C6C6C6] w-full text-sm md:text-base p-3">
                             </label>

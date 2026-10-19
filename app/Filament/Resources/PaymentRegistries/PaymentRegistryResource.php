@@ -149,7 +149,6 @@ class PaymentRegistryResource extends Resource
                     ->label('Дата и время оплаты')
                     ->seconds(false)
                     ->displayFormat('d.m.Y H:i')
-                    ->native(false)
                     ->helperText('Для наличных заполняется вручную; при онлайн-оплате проставляется автоматически.'),
                 MorphToSelect::make('payable')
                     ->label('Источник платежа')
@@ -377,8 +376,8 @@ class PaymentRegistryResource extends Resource
                 Filter::make('paid_period')
                     ->label('Период оплаты')
                     ->schema([
-                        DatePicker::make('from')->label('С')->native(false)->displayFormat('d.m.Y'),
-                        DatePicker::make('until')->label('По')->native(false)->displayFormat('d.m.Y'),
+                        DatePicker::make('from')->label('С')->displayFormat('d.m.Y'),
+                        DatePicker::make('until')->label('По')->displayFormat('d.m.Y'),
                     ])
                     ->columns(2)
                     ->query(fn (Builder $query, array $data): Builder => $query

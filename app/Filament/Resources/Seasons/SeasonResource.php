@@ -85,12 +85,10 @@ class SeasonResource extends Resource
                 DatePicker::make('start_date')
                     ->label('Дата начала')
                     ->displayFormat('d.m.Y')
-                    ->native(false)
                     ->required(),
                 DatePicker::make('end_date')
                     ->label('Дата окончания')
                     ->displayFormat('d.m.Y')
-                    ->native(false)
                     ->afterOrEqual('start_date')
                     ->required(),
             ])->columns(2);

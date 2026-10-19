@@ -11,6 +11,7 @@ use App\Enums\RegattaType;
 use App\Filament\Concerns\FiltersBySeason;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Concerns\ScopesToOwnedRegattas;
+use App\Filament\Forms\DateRange;
 use App\Filament\Resources\Regattas\Pages\ManageRegattas;
 use App\Models\Regatta;
 use App\Models\Season;
@@ -100,27 +101,9 @@ class RegattaResource extends Resource
     }
 
     /**
-     * При создании регаты подставляет дату окончания = дата начала + 1 день.
-     * Дату окончания, введённую вручную, не трогает: перезаписывается только
-     * пустое значение или то, что было подставлено от предыдущей даты начала.
-     */
-    protected static function fillEndDateFromStart(?string $state, ?string $old, Get $get, Set $set, string $operation): void
-    {
-        if ($operation !== 'create' || blank($state)) {
-            return;
-        }
-
-        $end = $get('date_end');
-        $autoFilled = filled($old) && $end === Carbon::parse($old)->addDay()->toDateString();
-
-        if (blank($end) || $autoFilled) {
-            $set('date_end', Carbon::parse($state)->addDay()->toDateString());
-        }
-    }
-
-    /**
      * Сезон следует за датой начала: по умолчанию в форме стоит текущий сезон,
-     * и регату следующего года легко сохранить не в тот сезон.
+     * и регату следующего года легко сохранить не в тот сезон. Сезона на этот
+     * год может ещё не быть — тогда он заводится.
      */
     protected static function fillSeasonFromStart(?string $state, Set $set): void
     {
@@ -128,13 +111,7 @@ class RegattaResource extends Resource
             return;
         }
 
-        $seasonId = Season::query()
-            ->where('year', Carbon::parse($state)->year)
-            ->value('id');
-
-        if ($seasonId) {
-            $set('season_id', $seasonId);
-        }
+        $set('season_id', Season::forYear(Carbon::parse($state)->year)->id);
     }
 
     public static function getModelLabel(): string
@@ -200,12 +177,10 @@ class RegattaResource extends Resource
                         DatePicker::make('start_date')
                             ->label('Дата начала сезона')
                             ->displayFormat('d.m.Y')
-                            ->native(false)
                             ->required(),
                         DatePicker::make('end_date')
                             ->label('Дата окончания сезона')
                             ->displayFormat('d.m.Y')
-                            ->native(false)
                             ->required(),
                     ])
                     ->createOptionUsing(fn (array $data): string => Season::create($data)->id)
@@ -255,11 +230,10 @@ class RegattaResource extends Resource
                 DatePicker::make('date_start')
                     ->label('Дата начала')
                     ->displayFormat('d.m.Y')
-                    ->native(false)
                     ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100))
                     ->live(onBlur: true)
-                    ->afterStateUpdated(static::fillEndDateFromStart(...))
+                    ->afterStateUpdated(DateRange::syncEnd('date_end'))
                     ->afterStateUpdated(static::fillSeasonFromStart(...))
                     // В режиме серии даты задаются в этапах.
                     ->hidden(fn (Get $get): bool => (bool) $get('create_as_series'))
@@ -269,9 +243,7 @@ class RegattaResource extends Resource
                     ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100))
                     ->displayFormat('d.m.Y')
-                    ->native(false)
-                    // Подсветка «сегодня» путает при выборе даты окончания.
-                    ->extraAttributes(['class' => 'fi-no-today-highlight'])
+                    ->afterOrEqual('date_start')
                     ->hidden(fn (Get $get): bool => (bool) $get('create_as_series'))
                     ->required(fn (Get $get): bool => ! (bool) $get('create_as_series')),
 
@@ -425,15 +397,13 @@ class RegattaResource extends Resource
                                 DatePicker::make('date_start')
                                     ->label('Дата начала')
                                     ->displayFormat('d.m.Y')
-                                    ->native(false)
                                     ->live(onBlur: true)
-                                    ->afterStateUpdated(static::fillEndDateFromStart(...))
+                                    ->afterStateUpdated(DateRange::syncEnd('date_end'))
                                     ->required(),
                                 DatePicker::make('date_end')
                                     ->label('Дата окончания')
                                     ->displayFormat('d.m.Y')
-                                    ->native(false)
-                                    ->extraAttributes(['class' => 'fi-no-today-highlight'])
+                                    ->afterOrEqual('date_start')
                                     ->required(),
                             ]),
                     ]),
@@ -533,7 +503,6 @@ class RegattaResource extends Resource
                 DatePicker::make('postponed_to_date')
                     ->label('Дата переноса')
                     ->displayFormat('d.m.Y')
-                    ->native(false)
                     ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100))
                     ->visible(fn (Get $get): bool => (bool) $get('is_postponed'))
@@ -839,9 +808,7 @@ class RegattaResource extends Resource
                     ->schema([
                         DatePicker::make('date')
                             ->label('Выберите дату')
-                            ->displayFormat('d.m.Y')
-                            ->native(false)
-                            ->native(false),
+                            ->displayFormat('d.m.Y'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query->when(

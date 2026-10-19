@@ -106,13 +106,11 @@ class FinancialPeriodReport extends Page
                         DatePicker::make('from')
                             ->label('Период с')
                             ->required()
-                            ->native(false)
                             ->displayFormat('d.m.Y')
                             ->maxDate(fn (): string => Carbon::now()->toDateString()),
                         DatePicker::make('until')
                             ->label('Период по')
                             ->required()
-                            ->native(false)
                             ->displayFormat('d.m.Y')
                             ->afterOrEqual('from'),
                         Select::make('date_basis')

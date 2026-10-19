@@ -18,11 +18,12 @@
             {{-- ===== Форма подбора (GET: работает без JS и индексируется) ===== --}}
             <h2 class="section-title a-font text-2xl md:text-3xl mb-6">Подбор яхт</h2>
 
-            <form method="GET" action="{{ route('services.fleet-rental') }}"
+            <form method="GET" action="{{ route('services.fleet-rental') }}" x-data
                   class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <label class="block">
                     <span class="block text-sm text-brand-gray-light mb-1">Дата начала</span>
                     <input type="date" name="date_start"
+                           @change="if (! $refs.end.value || $refs.end.value < $el.value) $refs.end.value = $el.value"
                            value="{{ $summary['from']?->toDateString() }}"
                            class="block appearance-none border border-[#C6C6C6] w-full text-sm md:text-base p-3">
                 </label>
@@ -30,6 +31,7 @@
                 <label class="block">
                     <span class="block text-sm text-brand-gray-light mb-1">Дата окончания</span>
                     <input type="date" name="date_end"
+                           x-ref="end"
                            value="{{ $summary['to']?->toDateString() }}"
                            class="block appearance-none border border-[#C6C6C6] w-full text-sm md:text-base p-3">
                 </label>

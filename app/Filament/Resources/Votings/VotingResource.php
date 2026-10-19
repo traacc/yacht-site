@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Votings;
 
 use App\Enums\VotingStatus;
+use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\Votings\Pages\ManageVotings;
 use App\Models\Voting;
 use BackedEnum;
-use UnitEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -21,7 +21,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -29,10 +28,11 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class VotingResource extends Resource
 {
-    use \App\Filament\Concerns\RestrictsAccessByRole;
+    use RestrictsAccessByRole;
 
     protected static ?string $model = Voting::class;
 
@@ -92,13 +92,11 @@ class VotingResource extends Resource
                         DateTimePicker::make('starts_at')
                             ->label('Начало')
                             ->displayFormat('d.m.Y H:i')
-                            ->seconds(false)
-                            ->native(false),
+                            ->seconds(false),
                         DateTimePicker::make('ends_at')
                             ->label('Окончание')
                             ->displayFormat('d.m.Y H:i')
                             ->seconds(false)
-                            ->native(false)
                             ->after('starts_at'),
                     ]),
 

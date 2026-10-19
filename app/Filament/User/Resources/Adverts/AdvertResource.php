@@ -10,6 +10,7 @@ use App\Enums\AdvertPriceUnit;
 use App\Enums\AdvertStatus;
 use App\Enums\AdvertType;
 use App\Enums\SportCategory;
+use App\Filament\Forms\DateRange;
 use App\Filament\User\Resources\Adverts\Pages\ManageAdverts;
 use App\Models\Advert;
 use App\Models\AdvertCategory;
@@ -245,13 +246,13 @@ class AdvertResource extends Resource
 
                     DatePicker::make('date_from')
                         ->label(fn (Get $get): string => static::dateLabels($get)[0])
-                        ->native(false)
                         ->displayFormat('d.m.Y')
+                        ->live(onBlur: true)
+                        ->afterStateUpdated(DateRange::syncEnd('date_to'))
                         ->visible(fn (Get $get): bool => static::typeFrom($get('type'))?->usesDates() ?? false),
 
                     DatePicker::make('date_to')
                         ->label(fn (Get $get): string => static::dateLabels($get)[1])
-                        ->native(false)
                         ->displayFormat('d.m.Y')
                         ->afterOrEqual('date_from')
                         ->validationMessages(['after_or_equal' => 'Дата окончания не может быть раньше начала.'])

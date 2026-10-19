@@ -102,6 +102,18 @@ class Season extends Model
             || $this->regattas()->withTrashed()->exists();
     }
 
+    /**
+     * Сезон календарного года. Сезоны заводятся на год целиком, поэтому
+     * недостающий создаём сами — иначе регату нового года некуда отнести.
+     */
+    public static function forYear(int $year): static
+    {
+        return static::firstOrCreate(['year' => $year], [
+            'start_date' => "{$year}-01-01",
+            'end_date' => "{$year}-12-31",
+        ]);
+    }
+
     public static function current(): ?static
     {
         return static::whereDate('start_date', '<=', now())

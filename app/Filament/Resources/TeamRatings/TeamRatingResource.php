@@ -71,12 +71,10 @@ class TeamRatingResource extends Resource
                         Forms\Components\DatePicker::make('start_date')
                             ->label('Дата начала сезона')
                             ->displayFormat('d.m.Y')
-                            ->native(false)
                             ->required(),
                         Forms\Components\DatePicker::make('end_date')
                             ->label('Дата окончания сезона')
                             ->displayFormat('d.m.Y')
-                            ->native(false)
                             ->required(),
                     ])
                     ->createOptionUsing(fn (array $data): string => Season::create($data)->id)

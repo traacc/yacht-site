@@ -12,19 +12,21 @@ use App\Enums\FleetDivisionType;
 use App\Enums\ParticipationOption;
 use App\Filament\Concerns\FiltersBySeason;
 use App\Filament\Concerns\RestrictsAccessByRole;
+use App\Filament\Forms\DateRange;
 use App\Filament\Resources\CharterYachtModels\CharterYachtModelResource;
 use App\Filament\Resources\ForeignRegattas\Pages\ManageForeignRegattas;
 use App\Filament\Resources\ForeignRegattaYachts\ForeignRegattaYachtResource;
 use App\Models\CharterYachtModel;
 use App\Models\ForeignRegatta;
-use App\Models\Season;
 use BackedEnum;
+use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
@@ -133,29 +135,27 @@ class ForeignRegattaResource extends Resource
                     ->columns(2),
 
                 Section::make('Даты и место')
-                    ->description('Регата попадает в общий календарь регат сезона — по выбранному сезону, а если он не задан, по году начала.')
+                    ->description('Регата попадает в общий календарь регат сезона — по году даты начала.')
                     ->schema([
                         DatePicker::make('date_start')
                             ->label('Дата начала')
                             ->required()
-                            ->native(false)
-                            ->displayFormat('d.m.Y'),
+                            ->displayFormat('d.m.Y')
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(DateRange::syncEnd('date_end')),
 
                         DatePicker::make('date_end')
                             ->label('Дата окончания')
                             ->helperText('Пусто — однодневная гонка.')
-                            ->native(false)
                             ->displayFormat('d.m.Y')
                             ->afterOrEqual('date_start'),
 
-                        Select::make('season_id')
+                        // Сезон не выбирается: модель проставляет его по году начала.
+                        Placeholder::make('season_year')
                             ->label('Сезон')
-                            ->helperText('Пусто — подставится сезон по году начала регаты.')
-                            ->options(fn () => Season::query()
-                                ->orderByDesc('year')
-                                ->pluck('year', 'id')
-                                ->all())
-                            ->nullable(),
+                            ->content(fn (Get $get): string => filled($get('date_start'))
+                                ? Carbon::parse($get('date_start'))->year.' — по дате начала'
+                                : 'Определится по дате начала'),
 
                         TextInput::make('country')
                             ->label('Страна')

@@ -135,8 +135,8 @@ class PaymentRegistryLogResource extends Resource
                 Filter::make('period')
                     ->label('Период')
                     ->schema([
-                        DatePicker::make('from')->label('С')->native(false)->displayFormat('d.m.Y'),
-                        DatePicker::make('until')->label('По')->native(false)->displayFormat('d.m.Y'),
+                        DatePicker::make('from')->label('С')->displayFormat('d.m.Y'),
+                        DatePicker::make('until')->label('По')->displayFormat('d.m.Y'),
                     ])
                     ->query(fn (Builder $query, array $data): Builder => $query
                         ->when($data['from'] ?? null, fn (Builder $q, $date) => $q->whereDate('created_at', '>=', $date))

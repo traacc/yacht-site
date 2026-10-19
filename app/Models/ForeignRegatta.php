@@ -78,13 +78,11 @@ class ForeignRegatta extends Model implements HasMedia, ServiceOptionProvider, S
     protected static function booted(): void
     {
         static::saving(function (self $regatta): void {
-            // Сезон нужен календарю. Админ может выбрать его вручную, но чаще
-            // достаточно года начала — подставляем, как это делает Regatta со
-            // своими автополями в booted().
-            if ($regatta->season_id === null && $regatta->date_start !== null) {
-                $regatta->season_id = Season::query()
-                    ->where('year', (int) $regatta->date_start->format('Y'))
-                    ->value('id');
+            // Сезон нужен календарю и всегда равен году начала: при переносе
+            // дат на другой год регата переезжает в другой сезон вместе с ними.
+            if ($regatta->date_start !== null
+                && ($regatta->season_id === null || $regatta->isDirty('date_start'))) {
+                $regatta->season_id = Season::forYear((int) $regatta->date_start->format('Y'))->id;
             }
         });
     }

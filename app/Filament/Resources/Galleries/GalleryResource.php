@@ -104,12 +104,10 @@ class GalleryResource extends Resource
                         DatePicker::make('start_date')
                             ->label('Дата начала сезона')
                             ->displayFormat('d.m.Y')
-                            ->native(false)
                             ->required(),
                         DatePicker::make('end_date')
                             ->label('Дата окончания сезона')
                             ->displayFormat('d.m.Y')
-                            ->native(false)
                             ->required(),
                     ])
                     ->createOptionUsing(fn (array $data): string => Season::create($data)->id)
@@ -158,7 +156,6 @@ class GalleryResource extends Resource
                 DatePicker::make('date')
                     ->label('Дата')
                     ->displayFormat('d.m.Y')
-                    ->native(false)
                     ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100)),
 

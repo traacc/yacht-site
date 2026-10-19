@@ -133,7 +133,6 @@ class ArchivedRegattaEntryResource extends Resource
                 DatePicker::make('submitted_at')
                     ->label('Дата рассмотрения')
                     ->displayFormat('d.m.Y')
-                    ->native(false)
                     ->required(),
                 Select::make('status')
                     ->label('Статус')

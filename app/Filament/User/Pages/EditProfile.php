@@ -199,8 +199,7 @@ class EditProfile extends BaseEditProfile
                     ->label('Дата рождения')
                     ->minDate(now()->subYears(100))
                     ->maxDate(now()->addYears(100))
-                    ->displayFormat('d.m.Y')
-                    ->native(false),
+                    ->displayFormat('d.m.Y'),
                 Select::make('sport_category')
                     ->label('Спортивный разряд')
                     ->hintIcon('heroicon-o-question-mark-circle', 'б/р — без разряда, КМС — кандидат в мастера спорта, МС — мастер спорта, МСМК — мастер спорта международного класса, ЗМС — заслуженный мастер спорта.')
@@ -219,7 +218,6 @@ class EditProfile extends BaseEditProfile
                     ->placeholder('+7 (___) ___-__-__')
                     ->maxLength(255)
                     ->belowContent($this->phoneVerificationContent($user, static::getUrl())),
-
 
                 Textarea::make('about')
                     ->label('О себе')
