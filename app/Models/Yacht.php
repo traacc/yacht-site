@@ -147,7 +147,7 @@ class Yacht extends Model implements HasMedia
         return $this->hasMany(RegattaEntry::class);
     }
 
-    /** Предложения аренды: регата + стоимость аренды на неё */
+    /** Окна доступности для аренды и стоимость суток в каждом из них */
     public function rentals(): HasMany
     {
         return $this->hasMany(YachtRental::class);

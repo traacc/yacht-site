@@ -2,6 +2,7 @@
     <div
         x-data="{
             state: $wire.$entangle('{{ $getStatePath() }}'),
+            busy: @js($getBusyDates()),
             calMonth: (new Date()).getMonth(),
             calYear: (new Date()).getFullYear(),
             pendingStart: null,
@@ -30,6 +31,7 @@
             },
             dayStatus(dateStr) {
                 if (dateStr === this.pendingStart) return 'pending';
+                if (this.busy.includes(dateStr)) return 'busy';
                 if (this.periodIndexFor(dateStr) !== -1) return 'period';
                 if (this.inPreview(dateStr)) return 'preview';
                 return 'free';
@@ -38,10 +40,19 @@
                 const base = 'height:2.75rem;display:flex;align-items:center;justify-content:center;user-select:none;background:#fff;';
                 if (! cell.current) return base + 'color:#cbd5e1;';
                 const s = this.dayStatus(cell.date);
+                // Занятый день внутри окна доступности — с зелёной полосой, чтобы окно не выглядело разорванным.
+                if (s === 'busy')    return base + 'background:#F4C9C6;color:#1f2937;font-weight:600;cursor:pointer;'
+                    + (this.periodIndexFor(cell.date) !== -1 ? 'box-shadow:inset 0 -4px 0 #6FA88A;' : '');
                 if (s === 'period')  return base + 'background:#BAD5C6;color:#1f2937;font-weight:600;cursor:pointer;';
                 if (s === 'pending') return base + 'background:#2D92CE;color:#fff;font-weight:600;cursor:pointer;';
                 if (s === 'preview') return base + 'background:#DCEBE3;color:#1f2937;cursor:pointer;';
                 return base + 'cursor:pointer;color:#374151;';
+            },
+            cellTitle(cell) {
+                if (! cell.current) return '';
+                if (this.busy.includes(cell.date)) return 'Занято: одобренная бронь или регата';
+                if (this.periodIndexFor(cell.date) !== -1) return 'Доступна для аренды — клик снимает период';
+                return '';
             },
             clickDay(cell) {
                 if (! cell.current) return;
@@ -57,6 +68,8 @@
                     return;
                 }
                 this.state.push({ date_start: start, date_end: end, price_event: null, price_pro: null });
+                // Блок цен идёт по порядку дат, а не по порядку кликов.
+                this.state.sort((a, b) => a.date_start.localeCompare(b.date_start));
                 this.pendingStart = null;
                 this.message = '';
             },
@@ -81,7 +94,7 @@
                 return d + '.' + m + '.' + y;
             }
         }"
-        style="max-width:640px;"
+        style="max-width:640px;display:flex;flex-direction:column;gap:1.5rem;"
     >
         <style>
             .rc-price-input::-webkit-outer-spin-button,
@@ -89,76 +102,90 @@
             .rc-price-input { -moz-appearance: textfield; appearance: textfield; }
         </style>
 
-        {{-- Заголовок: месяц + переключение --}}
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
-            <span style="font-weight:600;font-size:1.05rem;color:#1f2937;" x-text="monthLabel"></span>
-            <div style="display:flex;gap:0.25rem;">
-                <button type="button" x-on:click="prevMonth()"
-                        style="width:2rem;height:2rem;border:1px solid #e5e7eb;background:#fff;color:#2D92CE;font-size:1.1rem;line-height:1;cursor:pointer;">‹</button>
-                <button type="button" x-on:click="nextMonth()"
-                        style="width:2rem;height:2rem;border:1px solid #e5e7eb;background:#fff;color:#2D92CE;font-size:1.1rem;line-height:1;cursor:pointer;">›</button>
+        {{-- ── Блок 1: когда яхта доступна ── --}}
+        <section style="border:1px solid #e5e7eb;padding:1rem;background:#fff;">
+            <h3 style="font-weight:600;font-size:1rem;color:#1f2937;margin:0;">Когда яхта доступна для аренды</h3>
+            <p style="margin:0.25rem 0 1rem;font-size:0.8rem;color:#6b7280;">
+                Отметьте периоды, в которые яхту можно арендовать: клик по дате начала, затем по дате окончания.
+                Клик по отмеченному периоду снимает его. Красным показаны дни, когда яхта уже занята.
+            </p>
+
+            {{-- Заголовок: месяц + переключение --}}
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                <span style="font-weight:600;font-size:1.05rem;color:#1f2937;" x-text="monthLabel"></span>
+                <div style="display:flex;gap:0.25rem;">
+                    <button type="button" x-on:click="prevMonth()"
+                            style="width:2rem;height:2rem;border:1px solid #e5e7eb;background:#fff;color:#2D92CE;font-size:1.1rem;line-height:1;cursor:pointer;">‹</button>
+                    <button type="button" x-on:click="nextMonth()"
+                            style="width:2rem;height:2rem;border:1px solid #e5e7eb;background:#fff;color:#2D92CE;font-size:1.1rem;line-height:1;cursor:pointer;">›</button>
+                </div>
             </div>
-        </div>
 
-        {{-- Легенда / подсказка --}}
-        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.5rem;font-size:0.8rem;color:#6b7280;">
-            <span style="display:inline-flex;align-items:center;gap:0.35rem;"><span style="width:0.75rem;height:0.75rem;border-radius:9999px;background:#BAD5C6;display:inline-block;"></span> Период аренды</span>
-            <span style="display:inline-flex;align-items:center;gap:0.35rem;"><span style="width:0.75rem;height:0.75rem;border-radius:9999px;background:#2D92CE;display:inline-block;"></span> Выбор начала</span>
-            <span x-show="message" x-text="message" style="color:#2D92CE;font-weight:500;"></span>
-        </div>
+            {{-- Легенда --}}
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.5rem;font-size:0.8rem;color:#6b7280;">
+                <span style="display:inline-flex;align-items:center;gap:0.35rem;"><span style="width:0.75rem;height:0.75rem;border-radius:9999px;background:#BAD5C6;display:inline-block;"></span> Доступна для аренды</span>
+                <span style="display:inline-flex;align-items:center;gap:0.35rem;"><span style="width:0.75rem;height:0.75rem;border-radius:9999px;background:#F4C9C6;display:inline-block;"></span> Занята (бронь или регата)</span>
+                <span style="display:inline-flex;align-items:center;gap:0.35rem;"><span style="width:0.75rem;height:0.75rem;border-radius:9999px;background:#2D92CE;display:inline-block;"></span> Начало периода</span>
+                <span x-show="message" x-text="message" style="color:#2D92CE;font-weight:500;"></span>
+            </div>
 
-        {{-- Заголовки дней недели --}}
-        <div style="display:grid;grid-template-columns:repeat(7,1fr);">
-            <template x-for="wd in weekdays" :key="wd">
-                <div style="text-align:center;font-weight:600;color:#374151;padding:0.35rem 0;font-size:0.85rem;" x-text="wd"></div>
-            </template>
-        </div>
+            {{-- Заголовки дней недели --}}
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);">
+                <template x-for="wd in weekdays" :key="wd">
+                    <div style="text-align:center;font-weight:600;color:#374151;padding:0.35rem 0;font-size:0.85rem;" x-text="wd"></div>
+                </template>
+            </div>
 
-        {{-- Сетка календаря --}}
-        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:#e5e7eb;border:1px solid #e5e7eb;">
-            <template x-for="(cell, i) in days" :key="i">
-                <div :style="cellStyle(cell)"
-                     x-on:click="clickDay(cell)"
-                     x-on:mouseenter="hoverDate = cell.current ? cell.date : null"
-                     x-on:mouseleave="hoverDate = null"
-                     x-text="cell.day"></div>
-            </template>
-        </div>
+            {{-- Сетка календаря --}}
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:#e5e7eb;border:1px solid #e5e7eb;">
+                <template x-for="(cell, i) in days" :key="i">
+                    <div :style="cellStyle(cell)"
+                         :title="cellTitle(cell)"
+                         x-on:click="clickDay(cell)"
+                         x-on:mouseenter="hoverDate = cell.current ? cell.date : null"
+                         x-on:mouseleave="hoverDate = null"
+                         x-text="cell.day"></div>
+                </template>
+            </div>
+        </section>
 
-        <p style="margin-top:0.5rem;font-size:0.8rem;color:#6b7280;">
-            Кликните по дате начала, затем по дате окончания, чтобы добавить период. Клик по добавленному периоду удаляет его.
-        </p>
+        {{-- ── Блок 2: стоимость ── --}}
+        <section style="border:1px solid #e5e7eb;padding:1rem;background:#fff;">
+            <h3 style="font-weight:600;font-size:1rem;color:#1f2937;margin:0;">Стоимость аренды</h3>
+            <p style="margin:0.25rem 0 1rem;font-size:0.8rem;color:#6b7280;">
+                Цена за сутки для каждого периода доступности. Если цену не указать, на сайте будет «Стоимость по запросу».
+            </p>
 
-        {{-- Список добавленных периодов с ценами --}}
-        <div style="margin-top:1rem;" x-show="state.length > 0">
-            <div style="font-weight:600;color:#1f2937;margin-bottom:0.5rem;">Периоды аренды и стоимость</div>
-            <div style="display:flex;flex-direction:column;gap:0.5rem;">
-                <template x-for="(period, i) in state" :key="i">
+            <p x-show="state.length === 0" style="margin:0;padding:0.75rem;background:#f9fafb;border:1px dashed #d1d5db;font-size:0.85rem;color:#6b7280;">
+                Сначала отметьте в календаре выше, когда яхта доступна, — здесь появится строка для цены этого периода.
+            </p>
+
+            <div x-show="state.length > 0" style="display:flex;flex-direction:column;gap:0.5rem;">
+                <template x-for="(period, i) in state" :key="period.date_start">
                     <div style="display:flex;flex-direction:column;gap:0.5rem;padding:0.5rem 0.75rem;background:#f9fafb;border:1px solid #e5e7eb;">
                         <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
                             <span style="font-weight:500;color:#1f2937;"
                                   x-text="formatRu(period.date_start) + ' — ' + formatRu(period.date_end)"></span>
                             <button type="button" x-on:click="state.splice(i, 1)"
-                                    style="color:#dc2626;background:none;border:none;cursor:pointer;font-size:0.85rem;">Удалить</button>
+                                    style="color:#dc2626;background:none;border:none;cursor:pointer;font-size:0.85rem;">Удалить период</button>
                         </div>
                         <div class="flex justify-between md:flex-row flex-col gap-2">
                             <label style="display:flex;flex-direction:column;font-size:0.75rem;color:#6b7280;">
-                                Стоимость для мероприятий, ₽/день
+                                Для мероприятий, ₽/сутки
                                 <input type="number" min="0" x-model="state[i].price_event" placeholder="напр. 50000"
                                     class="rc-price-input"
                                     style="border:1px solid #d1d5db;padding:0.3rem 0.5rem;width:100%;background:#fff;color:#111827;">
                             </label>
                             <label style="display:flex;flex-direction:column;font-size:0.75rem;color:#6b7280;">
-                                Стоимость для профессиональных команд, ₽/день
+                                Для профессиональных команд, ₽/сутки
                                 <input type="number" min="0" x-model="state[i].price_pro" placeholder="напр. 70000"
                                     class="rc-price-input"
                                     style="border:1px solid #d1d5db;padding:0.3rem 0.5rem;width:100%;background:#fff;color:#111827;">
                             </label>
                         </div>
-
                     </div>
                 </template>
             </div>
-        </div>
+        </section>
     </div>
 </x-dynamic-component>

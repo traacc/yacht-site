@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Forms\Components;
 
+use App\Models\Yacht;
+use App\Services\YachtBooking;
 use Filament\Forms\Components\Field;
 
 class RentalCalendar extends Field
@@ -22,13 +24,28 @@ class RentalCalendar extends Field
             return collect(is_array($state) ? $state : [])
                 ->filter(fn ($row) => ! empty($row['date_start']) && ! empty($row['date_end']))
                 ->map(fn ($row) => [
-                    'date_start'  => $row['date_start'],
-                    'date_end'    => $row['date_end'],
+                    'date_start' => $row['date_start'],
+                    'date_end' => $row['date_end'],
                     'price_event' => ($row['price_event'] ?? '') === '' ? null : $row['price_event'],
-                    'price_pro'   => ($row['price_pro'] ?? '') === '' ? null : $row['price_pro'],
+                    'price_pro' => ($row['price_pro'] ?? '') === '' ? null : $row['price_pro'],
                 ])
                 ->values()
                 ->all();
         });
+    }
+
+    /**
+     * Занятые дни яхты (одобренные брони и регаты) — в календаре только для
+     * просмотра. У новой яхты их ещё нет.
+     *
+     * @return list<string>
+     */
+    public function getBusyDates(): array
+    {
+        $record = $this->getRecord();
+
+        return $record instanceof Yacht && $record->exists
+            ? app(YachtBooking::class)->busyDates($record)
+            : [];
     }
 }

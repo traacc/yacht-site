@@ -319,7 +319,7 @@ final class YachtBooking
      *
      * @return list<string>
      */
-    private function busyDates(Yacht $yacht): array
+    public function busyDates(Yacht $yacht): array
     {
         $booked = $yacht->rentalRequests()
             ->where('status', RentalRequestStatus::Approved)

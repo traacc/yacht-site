@@ -223,12 +223,11 @@ class YachtResource extends Resource
                 Placeholder::make('Аренда')->columnSpanFull(),
                 Toggle::make('for_rent')
                     ->label('Сдаётся в аренду')
-                    ->helperText('Включите, чтобы указать регаты и стоимость аренды яхты.')
+                    ->helperText('Включите, чтобы указать, когда яхта доступна, и стоимость аренды.')
                     ->live()
                     ->columnSpanFull(),
                 RentalCalendar::make('rentals')
-                    ->label('Периоды аренды')
-                    ->helperText('Отметьте периоды аренды на календаре и укажите стоимость.')
+                    ->hiddenLabel()
                     ->columnSpanFull()
                     ->visible(fn (Get $get): bool => (bool) $get('for_rent')),
 
