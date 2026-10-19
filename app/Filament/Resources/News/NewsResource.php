@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\News;
 
+use App\Enums\NewsPublicationStatus;
 use App\Filament\Concerns\RestrictsAccessByRole;
+use App\Filament\Resources\News\Actions\NewsPublicationActions;
 use App\Filament\Resources\News\Pages\ManageNews;
 use App\Jobs\PublishNewsToTelegram;
 use App\Jobs\PublishNewsToVk;
@@ -30,6 +32,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -81,24 +84,9 @@ class NewsResource extends Resource
                     ->tools(RichContent::editorTools())
                     ->toolbarButtons(RichContent::toolbarButtons())
                     ->columnSpanFull(),
-                FileUpload::make('cover_image_url')
+                self::coverUpload('cover_image_url')
                     ->label('Обложка')
-                    ->helperText('После загрузки нажмите на карандаш, чтобы кадрировать, приблизить или повернуть изображение')
-                    ->image()
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif'])
-                    ->disk('public')
-                    ->directory('news/covers')
-                    ->visibility('public')
-                    ->imageEditor()
-                    ->imageEditorViewportWidth(1920)
-                    ->imageEditorViewportHeight(840)
-                    ->imageEditorAspectRatios([
-                        '16:7',
-                        '16:9',
-                        '4:3',
-                        '1:1',
-                        null,
-                    ]),
+                    ->helperText('После загрузки нажмите на карандаш, чтобы кадрировать, приблизить или повернуть изображение'),
                 DateTimePicker::make('published_at')
                     ->label('Дата публикации')
                     ->default(now())
@@ -135,6 +123,30 @@ class NewsResource extends Resource
             ]);
     }
 
+    /**
+     * Поле обложки новости. Общее для формы новости и AI-кандидатов: файл
+     * сразу ложится в news/covers, и путь подходит в News::$cover_image_url.
+     */
+    public static function coverUpload(string $name): FileUpload
+    {
+        return FileUpload::make($name)
+            ->image()
+            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif'])
+            ->disk('public')
+            ->directory('news/covers')
+            ->visibility('public')
+            ->imageEditor()
+            ->imageEditorViewportWidth(1920)
+            ->imageEditorViewportHeight(840)
+            ->imageEditorAspectRatios([
+                '16:7',
+                '16:9',
+                '4:3',
+                '1:1',
+                null,
+            ]);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -154,6 +166,12 @@ class NewsResource extends Resource
                     ->label('Дата публикации')
                     ->dateTime()->dateTime('d.m.Y')
                     ->sortable(),
+                TextColumn::make('publication_status')
+                    ->label('Статус')
+                    ->badge()
+                    ->state(fn (News $record): string => $record->publicationStatus()->value)
+                    ->formatStateUsing(fn (string $state): string => NewsPublicationStatus::from($state)->label())
+                    ->color(fn (string $state): string => NewsPublicationStatus::from($state)->color()),
                 IconColumn::make('published_to_tg')
                     ->label('В Telegram')
                     ->boolean(),
@@ -162,6 +180,12 @@ class NewsResource extends Resource
                     ->boolean(),
             ])->stackedOnMobile()->emptyStateHeading('Записей пока нет')
             ->filters([
+                SelectFilter::make('publication_status')
+                    ->label('Статус')
+                    ->options(NewsPublicationStatus::options())
+                    ->query(fn (Builder $query, array $data): Builder => filled($data['value'] ?? null)
+                        ? $query->withPublicationStatus(NewsPublicationStatus::from($data['value']))
+                        : $query),
                 TrashedFilter::make(),
             ])
             ->recordActions([
@@ -178,11 +202,7 @@ class NewsResource extends Resource
                     ->modalSubmitActionLabel('Отправить')
                     ->action(function (News $record): void {
                         if (! $record->isPublished()) {
-                            Notification::make()
-                                ->warning()
-                                ->title('Новость ещё не опубликована')
-                                ->body('Сначала задайте дату публикации не в будущем — иначе ссылка на новость не откроется.')
-                                ->send();
+                            self::notifyNotOnSite($record);
 
                             return;
                         }
@@ -218,11 +238,7 @@ class NewsResource extends Resource
                     ->modalSubmitActionLabel('Отправить')
                     ->action(function (News $record): void {
                         if (! $record->isPublished()) {
-                            Notification::make()
-                                ->warning()
-                                ->title('Новость ещё не опубликована')
-                                ->body('Сначала задайте дату публикации не в будущем — иначе ссылка на новость не откроется.')
-                                ->send();
+                            self::notifyNotOnSite($record);
 
                             return;
                         }
@@ -245,6 +261,8 @@ class NewsResource extends Resource
                             ->body('Новость будет отправлена в VK в ближайшее время.')
                             ->send();
                     }),
+                NewsPublicationActions::unpublish(fn (News $record): News => $record),
+                NewsPublicationActions::republish(fn (News $record): News => $record),
                 EditAction::make()->modalHeading('Редактировать новость'),
                 DeleteAction::make(),
                 ForceDeleteAction::make(),
@@ -257,6 +275,23 @@ class NewsResource extends Resource
                     RestoreBulkAction::make(),
                 ]),
             ]);
+    }
+
+    private static function notifyNotOnSite(News $record): void
+    {
+        $notification = Notification::make()->warning();
+
+        if ($record->isUnpublished()) {
+            $notification
+                ->title('Новость снята с публикации')
+                ->body('Сначала верните её на сайт — иначе ссылка на новость не откроется.');
+        } else {
+            $notification
+                ->title('Новость ещё не опубликована')
+                ->body('Сначала задайте дату публикации не в будущем — иначе ссылка на новость не откроется.');
+        }
+
+        $notification->send();
     }
 
     public static function getPages(): array

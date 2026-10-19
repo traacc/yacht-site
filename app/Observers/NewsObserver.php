@@ -7,6 +7,7 @@ use App\Jobs\PublishNewsToTelegram;
 use App\Jobs\PublishNewsToVk;
 use App\Models\News;
 use App\Services\SettingsService;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Отслеживает события новости.
@@ -15,6 +16,31 @@ use App\Services\SettingsService;
  */
 class NewsObserver
 {
+    /**
+     * При замене или удалении обложки убираем прежний файл: Filament его
+     * с диска не стирает, и обложки копились бы в news/covers.
+     */
+    public function updated(News $news): void
+    {
+        if (! $news->wasChanged('cover_image_url')) {
+            return;
+        }
+
+        $old = $news->getOriginal('cover_image_url');
+
+        if (! is_string($old) || $old === '' || str_starts_with($old, 'http')) {
+            return;
+        }
+
+        $stillUsed = News::withTrashed()
+            ->where('cover_image_url', $old)
+            ->exists();
+
+        if (! $stillUsed) {
+            Storage::disk('public')->delete($old);
+        }
+    }
+
     /**
      * После сохранения новости: если она уже опубликована и ещё не была
      * отправлена в Telegram / VK — ставим задачи на публикацию в соцсети.

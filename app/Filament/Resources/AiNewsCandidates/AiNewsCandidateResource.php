@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\AiNewsCandidates;
 
+use App\Actions\News\ReplaceNewsCoverAction;
 use App\Actions\WorldNews\PublishAiNewsCandidateAction;
+use App\Actions\WorldNews\RedownloadAiNewsCoverAction;
 use App\Actions\WorldNews\RefreshAiNewsCandidateImageAction;
 use App\Actions\WorldNews\RejectAiNewsCandidateAction;
 use App\Actions\WorldNews\RestoreAiNewsCandidateAction;
 use App\Enums\AiNewsCandidateStatus;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Resources\AiNewsCandidates\Pages\ManageAiNewsCandidates;
+use App\Filament\Resources\News\Actions\NewsPublicationActions;
+use App\Filament\Resources\News\NewsResource;
 use App\Models\AiNewsCandidate;
+use App\Models\News;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -19,7 +24,6 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Textarea;
@@ -159,9 +163,7 @@ class AiNewsCandidateResource extends Resource
 
                         Placeholder::make('published_news')
                             ->label('Созданная новость')
-                            ->content(fn (?AiNewsCandidate $record): string => $record?->news_id !== null
-                                ? (string) $record->news_id
-                                : '—'),
+                            ->content(fn (?AiNewsCandidate $record): HtmlString|string => self::newsLink($record)),
 
                         Placeholder::make('published')
                             ->label('Опубликовано')
@@ -174,6 +176,7 @@ class AiNewsCandidateResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('news'))
             ->extraAttributes(['class' => 'fi-sticky-thead'])
             ->columns([
                 /*
@@ -186,8 +189,14 @@ class AiNewsCandidateResource extends Resource
                 TextColumn::make('status')
                     ->label('Статус')
                     ->badge()
-                    ->formatStateUsing(fn (AiNewsCandidateStatus $state): string => $state->label())
-                    ->color(fn (AiNewsCandidateStatus $state): string => $state->color())
+                    // Снятие с публикации — состояние новости, а не кандидата:
+                    // кандидат остаётся Published, чтобы поиск не вернул материал.
+                    ->formatStateUsing(fn (AiNewsCandidateStatus $state, AiNewsCandidate $record): string => $record->news?->isUnpublished()
+                        ? 'Снято с сайта'
+                        : $state->label())
+                    ->color(fn (AiNewsCandidateStatus $state, AiNewsCandidate $record): string => $record->news?->isUnpublished()
+                        ? 'gray'
+                        : $state->color())
                     ->sortable(),
 
                 TextColumn::make('title')
@@ -278,24 +287,9 @@ class AiNewsCandidateResource extends Resource
                         // загруженные руками в NewsResource, и туда же качает
                         // картинку CoverImageDownloader — путь подходит в
                         // News::$cover_image_url без переноса.
-                        FileUpload::make('cover')
+                        NewsResource::coverUpload('cover')
                             ->label('Своя обложка')
                             ->helperText('Заменит картинку выше. Если оставить пустым, обложкой станет найденная картинка — а чтобы опубликовать вообще без обложки, очистите поле «Превью-картинка» в редактировании кандидата.')
-                            ->image()
-                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif'])
-                            ->disk('public')
-                            ->directory('news/covers')
-                            ->visibility('public')
-                            ->imageEditor()
-                            ->imageEditorViewportWidth(1920)
-                            ->imageEditorViewportHeight(840)
-                            ->imageEditorAspectRatios([
-                                '16:7',
-                                '16:9',
-                                '4:3',
-                                '1:1',
-                                null,
-                            ])
                             ->columnSpanFull(),
                     ])
                     ->action(function (AiNewsCandidate $record, array $data): void {
@@ -369,6 +363,56 @@ class AiNewsCandidateResource extends Resource
                             ->success()
                             ->send();
                     }),
+
+                Action::make('editCover')
+                    ->label('Обложка')
+                    ->icon(Heroicon::OutlinedPhoto)
+                    ->color('gray')
+                    ->visible(fn (AiNewsCandidate $record): bool => $record->news !== null)
+                    ->modalHeading('Обложка опубликованной новости')
+                    ->modalSubmitActionLabel('Сохранить')
+                    ->fillForm(fn (AiNewsCandidate $record): array => ['cover' => $record->news?->cover_image_url])
+                    ->schema([
+                        NewsResource::coverUpload('cover')
+                            ->label('Обложка')
+                            ->helperText('Загрузите другую картинку или нажмите на карандаш, чтобы кадрировать текущую. Очистите поле, чтобы убрать обложку.')
+                            ->columnSpanFull(),
+                    ])
+                    // Отдельная кнопка, а не галочка в форме: берёт картинку
+                    // со страницы источника и игнорирует то, что в поле.
+                    ->extraModalFooterActions(fn (Action $action): array => [
+                        $action->makeModalSubmitAction('redownloadCover', arguments: ['redownload' => true])
+                            ->label('Взять со страницы источника')
+                            ->color('gray'),
+                    ])
+                    ->action(function (AiNewsCandidate $record, array $data, array $arguments): void {
+                        if ($arguments['redownload'] ?? false) {
+                            if (! app(RedownloadAiNewsCoverAction::class)->handle($record)) {
+                                Notification::make()
+                                    ->title('Картинку со страницы источника получить не удалось')
+                                    ->body('Обложка осталась прежней.')
+                                    ->warning()
+                                    ->send();
+
+                                return;
+                            }
+                        } else {
+                            $cover = $data['cover'] ?? null;
+
+                            app(ReplaceNewsCoverAction::class)->handle(
+                                $record->news,
+                                is_string($cover) && $cover !== '' ? $cover : null,
+                            );
+                        }
+
+                        Notification::make()
+                            ->title('Обложка обновлена')
+                            ->success()
+                            ->send();
+                    }),
+
+                NewsPublicationActions::unpublish(fn (AiNewsCandidate $record): ?News => $record->news),
+                NewsPublicationActions::republish(fn (AiNewsCandidate $record): ?News => $record->news),
 
                 EditAction::make()
                     ->label('Редактировать')
@@ -458,6 +502,30 @@ class AiNewsCandidateResource extends Resource
             '<img src="%s" alt="" style="max-height:220px;border-radius:8px" '
             .'onerror="this.replaceWith(document.createTextNode(\'Картинка недоступна\'))">',
             e($record->image_url),
+        ));
+    }
+
+    /**
+     * Ссылка на созданную новость: открывает её форму в разделе «Новости»
+     * (там она редактируется целиком), если у пользователя есть туда доступ.
+     */
+    private static function newsLink(?AiNewsCandidate $record): HtmlString|string
+    {
+        $news = $record?->news;
+
+        if ($news === null) {
+            return $record?->news_id !== null ? 'Новость удалена' : '—';
+        }
+
+        if (! NewsResource::canAccess()) {
+            return $news->title;
+        }
+
+        return new HtmlString(sprintf(
+            '<a href="%s" style="text-decoration:underline" target="_blank">%s</a> (%s)',
+            e(NewsResource::getUrl('index', ['tableAction' => 'edit', 'tableActionRecord' => $news->getKey()])),
+            e($news->title),
+            e($news->publicationStatus()->label()),
         ));
     }
 

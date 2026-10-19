@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\NewsPublicationStatus;
 use App\Models\Concerns\NormalizesHeicImageColumns;
 use App\Models\Concerns\RegistersResponsiveFormats;
 use Illuminate\Database\Eloquent\Builder;
@@ -35,6 +36,7 @@ class News extends Model implements HasMedia
         'published_to_vk',
         'notified_users',
         'published_at',
+        'unpublished_at',
     ];
 
     protected static function booted(): void
@@ -60,6 +62,7 @@ class News extends Model implements HasMedia
             'notified_users' => 'boolean',
             'source_published_at' => 'datetime',
             'published_at' => 'datetime',
+            'unpublished_at' => 'datetime',
         ];
     }
 
@@ -79,7 +82,20 @@ class News extends Model implements HasMedia
     public function scopePublished(Builder $query): Builder
     {
         return $query->whereNotNull('published_at')
-            ->where('published_at', '<=', now());
+            ->where('published_at', '<=', now())
+            ->whereNull('unpublished_at');
+    }
+
+    public function scopeWithPublicationStatus(Builder $query, NewsPublicationStatus $status): Builder
+    {
+        return match ($status) {
+            NewsPublicationStatus::Published => $query->published(),
+            NewsPublicationStatus::Unpublished => $query->whereNotNull('unpublished_at'),
+            NewsPublicationStatus::Scheduled => $query->whereNull('unpublished_at')
+                ->where(fn (Builder $query): Builder => $query
+                    ->whereNull('published_at')
+                    ->orWhere('published_at', '>', now())),
+        };
     }
 
     public function scopeManual(Builder $query): Builder
@@ -113,7 +129,31 @@ class News extends Model implements HasMedia
 
     public function isPublished(): bool
     {
-        return $this->published_at !== null && $this->published_at->isPast();
+        return $this->published_at !== null
+            && $this->published_at->isPast()
+            && ! $this->isUnpublished();
+    }
+
+    /** Снята с публикации редактором (см. UnpublishNewsAction). */
+    public function isUnpublished(): bool
+    {
+        return $this->unpublished_at !== null;
+    }
+
+    public function publicationStatus(): NewsPublicationStatus
+    {
+        return match (true) {
+            $this->isUnpublished() => NewsPublicationStatus::Unpublished,
+            $this->isScheduled() => NewsPublicationStatus::Scheduled,
+            default => NewsPublicationStatus::Published,
+        };
+    }
+
+    /** Дата публикации ещё не наступила, и новость не снята. */
+    public function isScheduled(): bool
+    {
+        return ! $this->isUnpublished()
+            && ($this->published_at === null || $this->published_at->isFuture());
     }
 
     public function publish(): void
