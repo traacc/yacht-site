@@ -421,11 +421,14 @@
   justify-content: flex-start;
 }
 
-/* Липкая шапка таблицы: включается классом fi-sticky-thead через
-   ->extraAttributes(['class' => 'fi-sticky-thead']) у Table.
+/* Липкая шапка таблицы. В админке включена для всех таблиц (от sm: ниже
+   таблицы со stackedOnMobile превращаются в карточки без шапки), в ЛК —
+   классом fi-sticky-thead через ->extraAttributes(['class' => 'fi-sticky-thead']) у Table.
    Filament вешает overflow-x на .fi-ta-content-ctn, поэтому она уже
    является скролл-контейнером: даём ей вертикальный скролл (высота
-   ограничивается только у длинных таблиц) и закрепляем thead внутри неё. */
+   ограничивается только у длинных таблиц) и закрепляем thead внутри неё.
+   Заодно горизонтальный ползунок оказывается внизу видимой области,
+   а не в конце многоэкранного списка. */
 .fi-sticky-thead .fi-ta-content-ctn {
     max-height: calc(100dvh - 14rem);
     overflow-y: auto;
@@ -441,7 +444,25 @@
     background-color: #fff;
     box-shadow: inset 0 -1px 0 var(--color-gray-200, #e5e7eb);
 }
+
+@media (min-width: 640px) {
+    .fi-panel-admin .fi-ta-content-ctn {
+        max-height: calc(100dvh - 14rem);
+        overflow-y: auto;
+    }
+    .fi-panel-admin .fi-ta-table > thead {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
+    .fi-panel-admin .fi-ta-table > thead > tr > th {
+        background-color: #fff;
+        box-shadow: inset 0 -1px 0 var(--color-gray-200, #e5e7eb);
+    }
+}
+
 /* В модалках таблица и так в своём скролле — ограничение высоты только мешает. */
-.fi-modal .fi-sticky-thead .fi-ta-content-ctn {
+.fi-modal .fi-sticky-thead .fi-ta-content-ctn,
+.fi-panel-admin .fi-modal .fi-ta-content-ctn {
     max-height: none;
 }
