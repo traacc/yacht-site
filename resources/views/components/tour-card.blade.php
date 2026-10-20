@@ -39,7 +39,7 @@
         @if ($tour->route_summary)
             <p class="text-brand-gray font-medium text-sm mb-2">{{ $tour->route_summary }}</p>
         @elseif ($tour->summary)
-            <p class="text-brand-gray font-medium text-sm mb-2">{{ Str::limit($tour->summary, 120) }}</p>
+            <p class="text-brand-gray font-medium text-sm mb-2 whitespace-pre-line">{{ Str::limit($tour->summary, 120) }}</p>
         @endif
 
         @if ($vessel)

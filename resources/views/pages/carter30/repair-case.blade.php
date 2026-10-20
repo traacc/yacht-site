@@ -3,7 +3,7 @@
     $videos = $case->videos();
     $drawings = $case->getMedia('drawings');
 @endphp
-<x-public-layout :title="$case->title . ' — ремонт и модернизация Carter 30'" :description="Str::limit(strip_tags($case->summary ?: $case->content), 160)">
+<x-public-layout :title="$case->title . ' — ремонт и модернизация Carter 30'" :description="Str::limit(Str::squish(\App\Support\RichContent::toPlainText($case->summary ?: $case->content)), 160)">
 <x-breadcrumbs_page :title="$case->title">
 </x-breadcrumbs_page>
 
@@ -24,7 +24,7 @@
             @endif
 
             @if ($case->summary)
-                <p class="text-brand-gray font-medium text-lg mb-6">{{ $case->summary }}</p>
+                <p class="text-brand-gray font-medium text-lg mb-6 whitespace-pre-line">{{ $case->summary }}</p>
             @endif
 
             @if (trim(strip_tags($case->content ?? '', '<img>')) !== '')

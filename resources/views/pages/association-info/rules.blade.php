@@ -29,7 +29,7 @@ bgImage="{{ asset('images/bg/rules.webp') }}"
   </section>
   <section class="container mx-auto md:mb-24 mb-8">
     <h2 class="section-title a-font text-[#2E325C] text-5xl mb-8">Условия членства в Ассоциации</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="card bg-[#F8F8F8] md:p-6 p-3 text-center">
             <img src="{{ asset('images/rules/rules_1.svg') }}" class="m-auto max-w-12 md:max-w-full mb-4" alt="">
             <p class="text-[#2E325C] md:text-lg text-sm">Соблюдение устава и регламентов</p>

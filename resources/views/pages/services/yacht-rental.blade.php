@@ -168,7 +168,7 @@
             @endif
 
             @if (trim((string) $note) !== '')
-                <p class="text-sm text-brand-gray-light mt-6">{{ $note }}</p>
+                <p class="text-sm text-brand-gray-light mt-6 whitespace-pre-line">{{ $note }}</p>
             @endif
 
             {{-- ===== Как забронировать ===== --}}
@@ -181,7 +181,7 @@
                                 <div class="text-[#2D92CE] a-font text-3xl mb-1">{{ $index + 1 }}</div>
                                 <h3 class="a-font text-xl mb-2 text-[#2E325C]">{{ $step['title'] }}</h3>
                                 @if (! empty($step['text']))
-                                    <p class="text-brand-gray-light text-sm">{{ $step['text'] }}</p>
+                                    <p class="text-brand-gray-light text-sm whitespace-pre-line">{{ $step['text'] }}</p>
                                 @endif
                             </div>
                         @endforeach

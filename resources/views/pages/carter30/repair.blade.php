@@ -32,7 +32,7 @@ bgImage="{{ asset('images/bg/regulations.webp') }}"
                     </div>
                     <div>
                         <div class="text-[#2E325C] text-sm md:text-lg font-semibold mb-4">{{ $document['title'] }}</div>
-                        <div class="text-brand-gray-light font-medium mb-4 text-xs md:text-base">{{ $document['desc'] }}</div>
+                        <div class="text-brand-gray-light font-medium mb-4 text-xs md:text-base whitespace-pre-line">{{ $document['desc'] }}</div>
                         @if ($document['file_url'])
                         <a href="{{ $document['file_url'] }}" class="text-[#2E325C] text-sm md:text-lg font-semibold flex gap-4 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> <span>Скачать</span></a>
                         @endif
@@ -69,7 +69,7 @@ bgImage="{{ asset('images/bg/regulations.webp') }}"
                                 <div class="text-brand-gray-light text-sm mb-2">Яхта: {{ $case->yacht->name }}</div>
                             @endif
                             @if ($case->summary)
-                                <p class="text-brand-gray font-medium text-sm mb-3">{{ Str::limit($case->summary, 140) }}</p>
+                                <p class="text-brand-gray font-medium text-sm mb-3 whitespace-pre-line">{{ Str::limit($case->summary, 140) }}</p>
                             @endif
                             <span class="text-[#2D92CE] font-semibold text-sm">Подробнее →</span>
                         </div>

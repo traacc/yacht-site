@@ -14,7 +14,7 @@
 
 <x-public-layout
     :title="$tour->title . ' — яхтенный поход'"
-    :description="Str::limit(strip_tags($tour->summary ?: $tour->content), 160)">
+    :description="Str::limit(Str::squish(\App\Support\RichContent::toPlainText($tour->summary ?: $tour->content)), 160)">
 
     <x-breadcrumbs_page :title="$tour->title"></x-breadcrumbs_page>
 
@@ -38,7 +38,7 @@
                 @endif
 
                 @if ($tour->summary)
-                    <p class="text-brand-gray font-medium md:text-lg mb-8">{{ $tour->summary }}</p>
+                    <p class="text-brand-gray font-medium md:text-lg mb-8 whitespace-pre-line">{{ $tour->summary }}</p>
                 @endif
 
                 {{-- ===== Маршрут, судно, стоимость ===== --}}
@@ -77,7 +77,7 @@
                                 @endforeach
                             </ul>
                             @if ($tour->price_note)
-                                <p class="text-sm text-brand-gray-light mt-3">{{ $tour->price_note }}</p>
+                                <p class="text-sm text-brand-gray-light mt-3 whitespace-pre-line">{{ $tour->price_note }}</p>
                             @endif
                         </div>
                     @endif

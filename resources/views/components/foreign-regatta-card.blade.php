@@ -39,7 +39,7 @@
         @if ($place)
             <p class="text-brand-gray font-medium text-sm mb-2">{{ $place }}</p>
         @elseif ($regatta->summary)
-            <p class="text-brand-gray font-medium text-sm mb-2">{{ Str::limit($regatta->summary, 120) }}</p>
+            <p class="text-brand-gray font-medium text-sm mb-2 whitespace-pre-line">{{ Str::limit($regatta->summary, 120) }}</p>
         @endif
 
         @if ($regatta->route_summary)

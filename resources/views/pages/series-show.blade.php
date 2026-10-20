@@ -3,7 +3,7 @@
 <x-breadcrumbs_page :title="$series->name">
 </x-breadcrumbs_page>
 <x-hero-section :title="$series->name"
-    :desc="$series->description ?: ($series->season ? 'Сезон ' . $series->season->year : 'Серия регат')"
+    :desc="$series->description ? nl2br(e($series->description)) : ($series->season ? 'Сезон ' . $series->season->year : 'Серия регат')"
     bgImage="{{ asset('images/bg/competitions.webp') }}"
 >
 </x-hero-section>
@@ -13,10 +13,10 @@
         <div>
             <h2 class="section-title a-font">Регаты серии</h2>
             @if($series->description)
-                <p class="text-brand-gray-light mt-1 max-w-3xl">{{ $series->description }}</p>
+                <p class="text-brand-gray-light mt-1 max-w-3xl whitespace-pre-line">{{ $series->description }}</p>
             @endif
         </div>
-        <div class="flex items-center gap-4">
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
             @if($series->season)
                 <span class="text-brand-dark text-lg font-semibold">Сезон {{ $series->season->year }}</span>
             @endif

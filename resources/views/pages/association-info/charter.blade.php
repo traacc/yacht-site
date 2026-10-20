@@ -69,7 +69,7 @@ bgImage="{{ asset('images/bg/charter.webp') }}"
                     </div>
                     <div class="">
                         <div class="text-[#2E325C] text-sm md:text-lg font-semibold mb-4">{{ $document['title'] }}</div>
-                        <div class="text-brand-gray-light font-medium mb-4 text-xs md:text-base">{{ $document['desc'] }}</div>
+                        <div class="text-brand-gray-light font-medium mb-4 text-xs md:text-base whitespace-pre-line">{{ $document['desc'] }}</div>
                         @if ($document['file_url'])
                         <a href="{{ $document['file_url'] }}" class="text-[#2E325C] text-sm md:text-lg font-semibold flex gap-4 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> <span>Скачать PDF</span></a>
                         @endif

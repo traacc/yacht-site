@@ -49,7 +49,7 @@
                             @endif
                         </div>
                         @if($serie->description)
-                            <p class="text-sm text-brand-gray-light mt-1">{{ $serie->description }}</p>
+                            <p class="text-sm text-brand-gray-light mt-1 whitespace-pre-line">{{ $serie->description }}</p>
                         @endif
                     </a>
 
@@ -58,18 +58,19 @@
                         @forelse($serie->regattas as $regatta)
                             <li>
                                 <a href="{{ route('competition-details', $regatta) }}"
-                                   class="flex items-center justify-between gap-4 px-5 py-3 hover:bg-brand-light-bg transition-colors">
+                                   class="flex flex-col gap-1 xl:flex-row xl:items-center xl:justify-between xl:gap-4 px-5 py-3 hover:bg-brand-light-bg transition-colors">
+                                    {{-- До xl дата уходит под название: рядом с ней название обрезалось до «Гран При …» --}}
                                     <span class="flex items-center gap-3 min-w-0">
                                         <span class="w-2.5 h-2.5 rounded-full flex-shrink-0"
                                               style="background-color: {{ $color }}"></span>
                                         <span class="min-w-0">
-                                            <span class="block font-medium text-brand-dark truncate">{{ $regatta->name }}</span>
+                                            <span class="block font-medium text-brand-dark xl:truncate">{{ $regatta->name }}</span>
                                             @if($regatta->location)
-                                                <span class="block text-xs text-brand-gray-light truncate">{{ $regatta->location }}</span>
+                                                <span class="block text-xs text-brand-gray-light xl:truncate">{{ $regatta->location }}</span>
                                             @endif
                                         </span>
                                     </span>
-                                    <span class="text-sm text-brand-gray-light whitespace-nowrap text-right">
+                                    <span class="pl-5.5 xl:pl-0 text-sm text-brand-gray-light whitespace-nowrap xl:text-right">
                                         {{ $regatta->dateRange() }}
                                     </span>
                                 </a>

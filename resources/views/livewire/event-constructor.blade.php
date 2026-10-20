@@ -13,7 +13,7 @@
             <h2 class="section-title a-font text-2xl md:text-3xl mb-6">Конструктор мероприятия</h2>
 
             @if ($planner->intro() !== '')
-                <p class="text-brand-gray-light mb-6">{{ $planner->intro() }}</p>
+                <p class="text-brand-gray-light mb-6 whitespace-pre-line">{{ $planner->intro() }}</p>
             @endif
 
             {{-- Прогресс: видно, где ты и сколько осталось --}}
@@ -334,7 +334,7 @@
                                             <span class="text-sm text-brand-gray">
                                                 {{ $item['title'] }}
                                                 @if ($item['note'] !== '')
-                                                    <span class="block text-xs text-brand-gray-light">{{ $item['note'] }}</span>
+                                                    <span class="block text-xs text-brand-gray-light whitespace-pre-line">{{ $item['note'] }}</span>
                                                 @endif
                                             </span>
                                             <span class="text-sm whitespace-nowrap {{ $item['amount'] === null ? 'text-brand-gray-light' : 'font-semibold' }}">
@@ -364,7 +364,7 @@
                         @endif
 
                         @if ($quote !== null && $planner->note() !== '')
-                            <p class="text-sm text-brand-gray-light mb-6">{{ $planner->note() }}</p>
+                            <p class="text-sm text-brand-gray-light mb-6 whitespace-pre-line">{{ $planner->note() }}</p>
                         @endif
 
                     <div class="flex flex-wrap gap-3">

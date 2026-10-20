@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\News;
 use App\Services\Telegram\TelegramSendResult;
+use App\Support\RichContent;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
@@ -339,9 +340,7 @@ class TelegramService
      */
     private function plainContent(News $news): string
     {
-        $text = preg_replace('/<\/(p|div|br|li|h[1-6])\s*\/?>/i', "\n", (string) $news->content);
-
-        return trim(preg_replace("/\n{3,}/", "\n\n", strip_tags(html_entity_decode($text))));
+        return RichContent::toPlainText($news->content);
     }
 
     /**

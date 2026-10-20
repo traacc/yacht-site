@@ -2,7 +2,7 @@
     $cover = $pressMention->getFirstMedia('cover');
     $host = $pressMention->sourceHost();
 @endphp
-<x-public-layout :title="$pressMention->title . ' — пресса о нас'" :description="Str::limit(strip_tags($pressMention->summary ?: $pressMention->content), 160)">
+<x-public-layout :title="$pressMention->title . ' — пресса о нас'" :description="Str::limit(Str::squish(\App\Support\RichContent::toPlainText($pressMention->summary ?: $pressMention->content)), 160)">
 <x-breadcrumbs_page :title="$pressMention->title">
 </x-breadcrumbs_page>
 
@@ -25,7 +25,7 @@
                 @endif
 
                 @if ($pressMention->summary)
-                    <p class="text-brand-gray font-medium text-lg mb-6">{{ $pressMention->summary }}</p>
+                    <p class="text-brand-gray font-medium text-lg mb-6 whitespace-pre-line">{{ $pressMention->summary }}</p>
                 @endif
 
                 <x-rich-content :content="$pressMention->content" />

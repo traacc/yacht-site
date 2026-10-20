@@ -32,7 +32,7 @@
                                 <h3 class="a-font text-xl mb-2 text-[#2E325C]">{{ $program['title'] }}</h3>
 
                                 @if (! empty($program['desc']))
-                                    <p class="text-brand-gray-light text-sm mb-4">{{ $program['desc'] }}</p>
+                                    <p class="text-brand-gray-light text-sm mb-4 whitespace-pre-line">{{ $program['desc'] }}</p>
                                 @endif
 
                                 <div class="mt-auto text-sm">

@@ -41,14 +41,14 @@
                             <div class="border-l-2 border-[#2D92CE] pl-4">
                                 <h3 class="a-font text-xl mb-2 text-[#2E325C]">{{ $step['title'] }}</h3>
                                 @if (! empty($step['text']))
-                                    <p class="text-brand-gray-light text-sm">{{ $step['text'] }}</p>
+                                    <p class="text-brand-gray-light text-sm whitespace-pre-line">{{ $step['text'] }}</p>
                                 @endif
                             </div>
                         @endforeach
                     </div>
 
                     @if (trim((string) $note) !== '')
-                        <p class="text-sm text-brand-gray-light mt-4">{{ $note }}</p>
+                        <p class="text-sm text-brand-gray-light mt-4 whitespace-pre-line">{{ $note }}</p>
                     @endif
                 </div>
             @endif

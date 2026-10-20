@@ -7,6 +7,7 @@ namespace App\Jobs;
 use App\Models\News;
 use App\Models\User;
 use App\Notifications\NewsPublishedNotification;
+use App\Support\RichContent;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Collection;
@@ -87,9 +88,6 @@ class NotifyUsersAboutNews implements ShouldQueue
 
     private function excerpt(News $news): string
     {
-        $text = preg_replace('/<\/(p|div|br|li|h[1-6])\s*\/?>/i', "\n", (string) $news->content);
-        $text = trim(preg_replace("/\n{3,}/", "\n\n", strip_tags(html_entity_decode((string) $text))));
-
-        return Str::limit($text, 400, '…');
+        return Str::limit(RichContent::toPlainText($news->content), 400, '…');
     }
 }

@@ -19,7 +19,7 @@ bgImage="{{ asset('images/bg/decisions.webp') }}"
                     </div>
                     <div class="">
                         <div class="text-[#2E325C] text-sm md:text-lg font-semibold mb-4">{{ $document['title'] }}</div>
-                        <div class="text-brand-gray-light font-medium mb-4 text-xs md:text-base">{{ $document['desc'] }}</div>
+                        <div class="text-brand-gray-light font-medium mb-4 text-xs md:text-base whitespace-pre-line">{{ $document['desc'] }}</div>
                         @if ($document['file_url'])
                         <a href="{{ $document['file_url'] }}" class="text-[#2E325C] text-sm md:text-lg font-semibold flex gap-4 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> <span>Скачать PDF</span></a>
                         @endif
@@ -41,7 +41,7 @@ bgImage="{{ asset('images/bg/decisions.webp') }}"
         <p class="text-brand-gray font-medium text-sm md:text-lg mb-4">Решения общего собрания принимаются участниками Ассоциации и регулируют ключевые вопросы её деятельности, включая проведение соревнований, изменения в регламенте и развитие класса Carter 30.</p>
         <p class="text-brand-gray font-medium text-sm md:text-lg">Все решения фиксируются в протоколах и являются обязательными для исполнения участниками Ассоциации.</p>
     </div>
-    <div class="pic max-w-[720px] shrink-0">
+    <div class="pic w-full md:w-2/5 xl:w-auto shrink-0 max-w-[720px]">
         <img class="w-full" src="{{ asset('images/decisions.webp') }}" alt="">
     </div>
 </div>

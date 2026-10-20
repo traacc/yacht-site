@@ -1,12 +1,12 @@
 <x-public-layout :title="$news->title . ' — новости ассоциации'"
-    :description="Str::limit(strip_tags($news->content), 160)"
+    :description="Str::limit(Str::squish(\App\Support\RichContent::toPlainText($news->content)), 160)"
     :og-image="$news->cover_image_url ? asset('storage/' . $news->cover_image_url) : null">
 <x-breadcrumbs_page :title="$news->title">
 </x-breadcrumbs_page>
 <main class="main">
     <section class="py-12">
-        <div class="container mx-auto flex flex-col md:flex-row gap-12 justify-between">
-            <div class="content max-w-[902px]">
+        <div class="container mx-auto flex flex-col lg:flex-row gap-12 justify-between">
+            <div class="content min-w-0 lg:flex-1 max-w-[902px]">
                 <h2 class="section-title a-font text-5xl mb-4">{{ $news->title }}</h2>
                 <p class="date text-brand-gray-light mb-4">{{ $news->published_at->isoFormat('D MMMM Y') }}</p>
 
@@ -112,13 +112,13 @@
             </div>
 
             {{-- Другие новости (сайдбар) --}}
-            <div class="aside max-w-full md:max-w-[490px] flex-1">
+            <div class="aside max-w-full lg:w-[380px] xl:w-[490px] lg:shrink-0">
                 <h3 class="section-title a-font text-lg md:text-3xl mb-4 text-center">Другие новости</h3>
                 @if($otherNews->isNotEmpty())
                     <div class="col flex flex-col gap-8">
                         @foreach($otherNews as $other)
                             <div class="item flex">
-                                <div class="overflow-hidden md:h-52 shrink-0 max-w-[200px]">
+                                <div class="overflow-hidden md:h-52 shrink-0 max-w-[200px] lg:max-w-[160px] xl:max-w-[200px]">
                                     @if($other->cover_image_url)
                                         <img
                                             class="w-full max-w-[150px] md:max-w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -130,9 +130,9 @@
                                         <x-news-cover-placeholder class="w-full max-w-[150px] md:max-w-full h-full" />
                                     @endif
                                 </div>
-                                <div class="info p-2 bg-[#F8F8F8]">
+                                <div class="info min-w-0 break-words p-2 bg-[#F8F8F8]">
                                     <h4 class="text-sm md:text-lg font-semibold mb-3">{{ $other->title }}</h4>
-                                    <p class="mb-3 font-medium text-xs md:text-base">{{ Str::limit(strip_tags($other->content), 30) }}</p>
+                                    <p class="mb-3 font-medium text-xs md:text-base">{{ Str::limit(Str::squish(\App\Support\RichContent::toPlainText($other->content)), 30) }}</p>
                                     <div class="date mb-3 text-brand-gray-light text-xs md:text-base">{{ $other->published_at->isoFormat('D MMMM Y') }}</div>
                                     <a href="{{ route('news-details', $other) }}" class="text-xs md:text-lg font-semibold hover:underline">Читать далее →</a>
                                 </div>

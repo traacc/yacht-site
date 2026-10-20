@@ -41,7 +41,7 @@
         </h3>
 
         @if ($mention->summary)
-            <p class="text-brand-gray font-medium text-sm mb-3">{{ Str::limit($mention->summary, 140) }}</p>
+            <p class="text-brand-gray font-medium text-sm mb-3 whitespace-pre-line">{{ Str::limit($mention->summary, 140) }}</p>
         @endif
 
         <div class="mt-auto flex flex-wrap gap-4 items-center">

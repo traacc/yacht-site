@@ -56,7 +56,7 @@
                                         @endif
                                     @elseif($regatta->postponed_note)
                                         <p class="text-brand-dark font-bold text-lg">Регата перенесена</p>
-                                        <p class="text-brand-gray mt-1">{{ $regatta->postponed_note }}</p>
+                                        <p class="text-brand-gray mt-1 whitespace-pre-line">{{ $regatta->postponed_note }}</p>
                                     @endif
                                 </div>
                             </div>
@@ -64,7 +64,7 @@
                     @endif
 
                     <div class="short-desc">
-                        <p class="text-brand-gray text-lg">{{ $regatta->short_description }}</p>
+                        <p class="text-brand-gray text-lg whitespace-pre-line">{{ $regatta->short_description }}</p>
                         <div class="flex flex-col pt-3 pb-6">
                             <div>
                                 <strong class="text-brand-dark">Гоночных дней:</strong>
@@ -77,7 +77,7 @@
                             <div class="flex">
                                 <div>
                                     <strong class="text-brand-dark">Призы:</strong>
-                                    <span>{{ $regatta->prizes }}</span>
+                                    <span class="whitespace-pre-line">{{ $regatta->prizes }}</span>
                                 </div>
                             </div>
                         </div>
@@ -164,15 +164,15 @@
                             <x-icon-2 name="download" /> Скачать документы регаты
                         </a>
                     </div>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         @foreach($documents as $doc)
                             <div class="bg-brand-light-bg flex gap-4 hover:shadow-md transition-shadow cursor-pointer p-4">
-                                <div class="max-w-16">
+                                <div class="max-w-16 shrink-0">
                                     <img class="w-full" src="{{ asset('images/icons/pdf.png') }}" alt="PDF" />
                                 </div>
-                                <div>
+                                <div class="min-w-0 break-words">
                                     <div class="text-brand-dark text-lg font-semibold mb-4">{{ $doc->title }}</div>
-                                    <div class="text-brand-gray-light font-medium mb-4">{{ $doc->description }}</div>
+                                    <div class="text-brand-gray-light font-medium mb-4 whitespace-pre-line">{{ $doc->description }}</div>
                                     <a href="{{ $doc->file_url }}" download
                                        class="text-brand-dark text-lg font-semibold flex gap-4 items-center">
                                         <x-icon-2 name="download" /> <span>Скачать PDF</span>
@@ -196,12 +196,12 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         @foreach($requiredEntryDocuments as $doc)
                             <div class="bg-brand-light-bg flex gap-4 hover:shadow-md transition-shadow p-4">
-                                <div class="max-w-16">
+                                <div class="max-w-16 shrink-0">
                                     <img class="w-full" src="{{ asset('images/icons/pdf.png') }}" alt="Документ" />
                                 </div>
-                                <div>
+                                <div class="min-w-0 break-words">
                                     <div class="text-brand-dark text-lg font-semibold mb-4">{{ $doc['title'] }}</div>
-                                    <div class="text-brand-gray-light font-medium">{{ $doc['description'] }}</div>
+                                    <div class="text-brand-gray-light font-medium whitespace-pre-line">{{ $doc['description'] }}</div>
                                 </div>
                             </div>
                         @endforeach
@@ -320,7 +320,7 @@
                                         </div>
                                         <div class="info">
                                             <h4 class="pb-3 font-medium">{{ $event['title'] }}</h4>
-                                            <p class="text-sm">{{ $event['description'] }}</p>
+                                            <p class="text-sm whitespace-pre-line">{{ $event['description'] }}</p>
                                         </div>
                                     </div>
                                 @endforeach

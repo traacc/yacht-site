@@ -36,7 +36,7 @@
         <div class="text-[#2E325C] font-semibold mb-2">{{ $certificate->priceLabel() }}</div>
 
         @if ($certificate->summary)
-            <p class="text-brand-gray font-medium text-sm mb-2">{{ $certificate->summary }}</p>
+            <p class="text-brand-gray font-medium text-sm mb-2 whitespace-pre-line">{{ $certificate->summary }}</p>
         @endif
 
         @if ($validity)
@@ -44,7 +44,7 @@
         @endif
 
         @if ($certificate->price_note)
-            <p class="text-brand-gray-light text-sm mb-2">{{ $certificate->price_note }}</p>
+            <p class="text-brand-gray-light text-sm mb-2 whitespace-pre-line">{{ $certificate->price_note }}</p>
         @endif
 
         @if ($details)

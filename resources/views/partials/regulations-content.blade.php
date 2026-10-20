@@ -21,7 +21,7 @@
                     </div>
                     <div class="">
                         <div class="text-[#2E325C] text-sm md:text-lg font-semibold mb-4">{{ $document['title'] }}</div>
-                        <div class="text-brand-gray-light font-medium mb-4 text-xs md:text-base">{{ $document['desc'] }}</div>
+                        <div class="text-brand-gray-light font-medium mb-4 text-xs md:text-base whitespace-pre-line">{{ $document['desc'] }}</div>
                         @if ($document['file_url'])
                         <a href="{{ $document['file_url'] }}" class="text-[#2E325C] text-sm md:text-lg font-semibold flex gap-4 items-center"><img src="{{ asset('images/icons/download.svg') }}" alt=""> <span>Скачать PDF</span></a>
                         @endif
@@ -52,7 +52,7 @@
 <section class="py-10 bg-white">
 <div class="container mx-auto bg-[#F8F8F8] flex flex-col md:flex-row gap-10 items-center">
     <div class="info px-4 sm:px-6 lg:px-8">
-        <h2 class="section-title a-font text-[#2E325C] md:text-5xl text-3xl mb-8">Допуск яхты к соревнованиям</h2>
+        <h2 class="section-title a-font text-[#2E325C] lg:text-5xl text-3xl mb-8">Допуск яхты к соревнованиям</h2>
         <p class="text-brand-gray font-medium md:text-lg text-sm mb-8">Для участия в регате яхта должна быть зарегистрирована в базе Ассоциации и соответствовать техническому регламенту.</p>
         @guest
         <button @click.prevent="$dispatch('open-login-modal', { tab: 'register' })" class="mt-6 bg-[#2D92CE] text-white py-2 px-6 hover:bg-[#0074CC] transition-colors md:text-lg text-sm font-semibold w-full max-w-[300px]">
@@ -64,7 +64,7 @@
         </a>
         @endguest
     </div>
-    <div class="pic shrink-0">
+    <div class="pic w-full md:w-2/5 xl:w-auto shrink-0 max-w-[720px]">
         <img class="w-full" src="{{ asset('images/regulation.webp') }}" alt="">
     </div>
 </div>

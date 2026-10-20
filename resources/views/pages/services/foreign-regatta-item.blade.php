@@ -15,7 +15,7 @@
 
 <x-public-layout
     :title="$regatta->title . ' — регата за рубежом'"
-    :description="Str::limit(strip_tags($regatta->summary ?: $regatta->content), 160)">
+    :description="Str::limit(Str::squish(\App\Support\RichContent::toPlainText($regatta->summary ?: $regatta->content)), 160)">
 
     <x-breadcrumbs_page :title="$regatta->title"></x-breadcrumbs_page>
 
@@ -39,7 +39,7 @@
                 @endif
 
                 @if ($regatta->summary)
-                    <p class="text-brand-gray font-medium md:text-lg mb-8">{{ $regatta->summary }}</p>
+                    <p class="text-brand-gray font-medium md:text-lg mb-8 whitespace-pre-line">{{ $regatta->summary }}</p>
                 @endif
 
                 {{-- ===== Маршрут, флот, стоимость ===== --}}
@@ -54,7 +54,7 @@
                     @if ($regatta->fleet_note)
                         <div class="border border-[#C6C6C6] p-6">
                             <h2 class="a-font text-xl mb-2 text-[#2E325C]">Флот</h2>
-                            <p class="text-brand-gray-light">{{ $regatta->fleet_note }}</p>
+                            <p class="text-brand-gray-light whitespace-pre-line">{{ $regatta->fleet_note }}</p>
                         </div>
                     @endif
 
@@ -64,7 +64,7 @@
                     @if ($regatta->price_note)
                         <div class="border border-[#C6C6C6] p-6">
                             <h2 class="a-font text-xl mb-2 text-[#2E325C]">Стоимость</h2>
-                            <p class="text-brand-gray-light">{{ $regatta->price_note }}</p>
+                            <p class="text-brand-gray-light whitespace-pre-line">{{ $regatta->price_note }}</p>
                         </div>
                     @endif
                 </div>
@@ -146,7 +146,7 @@
                                     @endif
 
                                     @if ($division->price_note)
-                                        <p class="text-brand-gray-light text-xs mb-3">{{ $division->price_note }}</p>
+                                        <p class="text-brand-gray-light text-xs mb-3 whitespace-pre-line">{{ $division->price_note }}</p>
                                     @endif
 
                                     @if ($division->sellsDirectly())

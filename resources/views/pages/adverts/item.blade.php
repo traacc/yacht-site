@@ -2,7 +2,7 @@
     $photos = $advert->photos();
     $isAuthor = auth()->check() && auth()->id() === $advert->user_id;
 @endphp
-<x-public-layout :title="$advert->title" :description="Str::limit(strip_tags($advert->description), 160)">
+<x-public-layout :title="$advert->title" :description="Str::limit(Str::squish(\App\Support\RichContent::toPlainText($advert->description)), 160)">
 <x-breadcrumbs_page :title="$advert->title">
 </x-breadcrumbs_page>
 

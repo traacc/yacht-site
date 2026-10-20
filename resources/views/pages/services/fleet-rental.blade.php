@@ -80,7 +80,7 @@
                     @endif
 
                     @if (trim((string) $note) !== '')
-                        <p class="text-sm text-brand-gray-light mt-3">{{ $note }}</p>
+                        <p class="text-sm text-brand-gray-light mt-3 whitespace-pre-line">{{ $note }}</p>
                     @endif
 
                     <div class="mt-6">
@@ -153,7 +153,7 @@
                             <div class="border-l-2 border-[#2D92CE] pl-4">
                                 <h3 class="a-font text-xl mb-2 text-[#2E325C]">{{ $advantage['title'] }}</h3>
                                 @if (! empty($advantage['text']))
-                                    <p class="text-brand-gray-light text-sm">{{ $advantage['text'] }}</p>
+                                    <p class="text-brand-gray-light text-sm whitespace-pre-line">{{ $advantage['text'] }}</p>
                                 @endif
                             </div>
                         @endforeach

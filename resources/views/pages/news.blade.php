@@ -37,10 +37,10 @@
                                 @endif
                             </div>
                             <div class="md:p-4 p-2 bg-[#F8F8F8]">
-                                <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2 md:h-14">
+                                <h3 class="font-semibold text-[#2E325C] text-sm md:text-lg mb-2 md:min-h-14">
                                     {{ $item->title }}
                                 </h3>
-                                <p class="font-medium text-brand-gray mb-3 text-xs md:text-base">{{ Str::limit(strip_tags($item->content), 60) }}</p>
+                                <p class="font-medium text-brand-gray mb-3 text-xs md:text-base">{{ Str::limit(Str::squish(\App\Support\RichContent::toPlainText($item->content)), 60) }}</p>
                                 <div class="mb-2 text-brand-gray-light text-xs md:text-base">{{ $item->published_at->translatedFormat('j F Y') }}</div>
                                 <div class="">
                                     <a href="{{ route('news-details', $item) }}" class="text-[#2E325C] font-semibold hover:underline text-xs md:text-lg">Читать далее →</a>

@@ -70,7 +70,7 @@
                     @if(!empty($team['description']))
                         <div>
                             <div class="text-sm text-brand-gray-light mb-1">О команде</div>
-                            <p class="text-sm text-brand-dark">{{ $team['description'] }}</p>
+                            <p class="text-sm text-brand-dark whitespace-pre-line">{{ $team['description'] }}</p>
                         </div>
                     @endif
 

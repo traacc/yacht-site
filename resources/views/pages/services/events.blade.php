@@ -31,7 +31,7 @@
                             <div class="border border-[#C6C6C6] p-6">
                                 <h3 class="a-font text-xl mb-2 text-[#2E325C]">{{ $format['title'] }}</h3>
                                 @if (! empty($format['desc']))
-                                    <p class="text-brand-gray-light text-sm">{{ $format['desc'] }}</p>
+                                    <p class="text-brand-gray-light text-sm whitespace-pre-line">{{ $format['desc'] }}</p>
                                 @endif
                             </div>
                         @endforeach
@@ -45,7 +45,7 @@
                     <h2 class="section-title a-font text-2xl md:text-3xl mb-6">Наш флот</h2>
 
                     @if (trim((string) $fleetNote) !== '')
-                        <p class="text-brand-gray-light mb-6">{{ $fleetNote }}</p>
+                        <p class="text-brand-gray-light mb-6 whitespace-pre-line">{{ $fleetNote }}</p>
                     @endif
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -96,7 +96,7 @@
                                         <p class="text-sm text-brand-gray-light">{{ $venue['capacity'] }}</p>
                                     @endif
                                     @if (! empty($venue['desc']))
-                                        <p class="text-brand-gray-light text-sm mt-2">{{ $venue['desc'] }}</p>
+                                        <p class="text-brand-gray-light text-sm mt-2 whitespace-pre-line">{{ $venue['desc'] }}</p>
                                     @endif
                                 </div>
                             </div>
@@ -124,7 +124,7 @@
                                     <p class="text-sm text-brand-gray-light mb-2">{{ $case['date'] }}</p>
                                 @endif
                                 @if (! empty($case['desc']))
-                                    <p class="text-brand-gray-light text-sm">{{ $case['desc'] }}</p>
+                                    <p class="text-brand-gray-light text-sm whitespace-pre-line">{{ $case['desc'] }}</p>
                                 @endif
                             </div>
                         @endforeach

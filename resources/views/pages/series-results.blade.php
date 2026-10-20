@@ -60,7 +60,7 @@
                             <a href="{{ $serie['url'] }}" class="hover:text-brand-blue hover:underline transition-colors">{{ $serie['name'] }}</a>
                         </h2>
                         @if($serie['description'] && request()->boolean('desc'))
-                            <p class="text-brand-gray-light mt-1">{{ $serie['description'] }}</p>
+                            <p class="text-brand-gray-light mt-1 whitespace-pre-line">{{ $serie['description'] }}</p>
                         @endif
                     </div>
                     @if($serie['season'])

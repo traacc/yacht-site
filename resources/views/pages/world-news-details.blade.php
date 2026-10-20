@@ -8,7 +8,7 @@
         : null;
 @endphp
 
-<x-public-layout :title="$news->title . ' — новости парусного мира'" :description="Str::limit(strip_tags($news->content), 160)">
+<x-public-layout :title="$news->title . ' — новости парусного мира'" :description="Str::limit(Str::squish(\App\Support\RichContent::toPlainText($news->content)), 160)">
 <x-breadcrumbs_page :title="$news->title">
 </x-breadcrumbs_page>
 

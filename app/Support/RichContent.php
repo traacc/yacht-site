@@ -82,4 +82,26 @@ class RichContent
             ->customBlocks(self::BLOCKS)
             ->toHtml();
     }
+
+    /**
+     * HTML из RichEditor → обычный текст с переводами строк (для анонсов, meta, мессенджеров).
+     *
+     * Голый strip_tags() склеивает абзацы: «<p>Конец.</p><p>Начало</p>» → «Конец.Начало»,
+     * поэтому границы блоков и <br> сначала превращаются в переводы строк.
+     * Для однострочного вывода (meta description, короткий анонс) оборачивай в Str::squish().
+     */
+    public static function toPlainText(?string $html): string
+    {
+        if (blank($html)) {
+            return '';
+        }
+
+        $text = preg_replace('~<br\s*/?>|</(p|div|li|h[1-6]|blockquote|tr)>~i', "\n", $html);
+        $text = preg_replace('~</t[dh]>~i', ' ', $text);
+        $text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace('/[^\S\n]+/u', ' ', $text);
+        $text = preg_replace('/ ?\n ?/', "\n", $text);
+
+        return trim(preg_replace("/\n{3,}/", "\n\n", $text));
+    }
 }
