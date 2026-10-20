@@ -11,6 +11,7 @@ use App\Models\Season;
 use App\Models\Series;
 use App\Models\Team;
 use App\Models\TeamRating;
+use Closure;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -243,11 +244,15 @@ class RatingCalculator
             $byTeam[$teamId]['total'] += $score;
         }
 
+        // Места — по тому же правилу, что и в рейтинге сезона: равные очки
+        // дают одно место (@see rankByPoints()).
+        $ranks = $this->rankByPoints(array_map(fn ($row) => $row['total'], $byTeam));
+
         $standings = collect($byTeam)
             ->sortByDesc('total')
             ->values()
-            ->map(fn ($row, $i) => [
-                'rank' => $i + 1,
+            ->map(fn ($row) => [
+                'rank' => $ranks[$row['team_id']]['rank'],
                 'team_id' => $row['team_id'],
                 'name' => $row['name'],
                 'points' => collect($regattas)
@@ -275,8 +280,125 @@ class RatingCalculator
         ];
     }
 
+    /**
+     * Командный рейтинг сезона таблицей «команда × регата» — для выгрузки в PDF.
+     * Регаты вне зачёта (коэффициент 0) колонок не получают: очков они не дают.
+     *
+     * @return array{regattas: array, standings: array} @see teamTable()
+     */
+    public function seasonTeamTable(Season $season): array
+    {
+        return $this->teamTable($this->scoredResultItems($season), ratedOnly: true);
+    }
+
+    /**
+     * Командные результаты серии таблицей «команда × регата» — для выгрузки в PDF.
+     *
+     * @return array{regattas: array, standings: array} @see teamTable()
+     */
+    public function seriesTeamTable(Series $series): array
+    {
+        return $this->teamTable(
+            $this->scoreResultItems(fn ($query) => $query->where('regattas.series_id', $series->id))
+        );
+    }
+
     // ──────────────────────────────────────────────
     // Private
+
+    /**
+     * Таблица «команда × регата»: регаты пронумерованы по дате старта, в ячейке —
+     * места команды (несколько, если лодок было больше одной) и очки за регату.
+     *
+     * @return array{
+     *     regattas: array<int, array{id:string, number:int, name:string, dates:?string}>,
+     *     standings: array<int, array{rank:int, name:string, cells:array<string, ?array{places:int[], points:float}>, total:float}>
+     * }
+     */
+    private function teamTable(Collection $scoredItems, bool $ratedOnly = false): array
+    {
+        // Сборные и индивидуальные экипажи в командный зачёт не идут.
+        $items = $scoredItems->filter(fn ($item) => $item->team_id !== null);
+
+        $regattas = $items
+            ->unique('regatta_id')
+            ->when($ratedOnly, fn ($regattas) => $regattas->filter(fn ($item) => (float) $item->level_coefficient > 0))
+            ->sortBy('regatta_date')
+            ->values()
+            ->map(fn ($item, $i) => [
+                'id' => $item->regatta_id,
+                'number' => $i + 1,
+                'name' => $item->regatta_name,
+                'dates' => $this->formatDates($item->regatta_date, $item->regatta_date_end),
+            ])
+            ->all();
+
+        $teamNames = Team::whereIn('id', $items->pluck('team_id')->unique())->pluck('name', 'id');
+
+        $rows = [];
+        foreach ($items as $item) {
+            $teamId = $item->team_id;
+            $rows[$teamId] ??= [
+                'name' => $teamNames[$teamId] ?? '—',
+                'points' => [],
+                'places' => [],
+                'total' => 0.0,
+            ];
+            $rows[$teamId]['points'][$item->regatta_id] = ($rows[$teamId]['points'][$item->regatta_id] ?? 0) + $item->score;
+            $rows[$teamId]['places'][$item->regatta_id][] = (int) $item->final_position;
+            $rows[$teamId]['total'] += $item->score;
+        }
+
+        // Внутри одного места команды идут по алфавиту: сортировка в
+        // rankByPoints() устойчивая и сохраняет этот порядок.
+        uasort($rows, fn ($a, $b) => strnatcasecmp($a['name'], $b['name']));
+        $ranks = $this->rankByPoints(array_map(fn ($row) => $row['total'], $rows));
+
+        $standings = [];
+        foreach ($ranks as $teamId => $rank) {
+            $row = $rows[$teamId];
+
+            $standings[] = [
+                'rank' => $rank['rank'],
+                'name' => $row['name'],
+                'cells' => collect($regattas)
+                    ->mapWithKeys(fn ($r) => [
+                        $r['id'] => isset($row['points'][$r['id']]) ? [
+                            'places' => collect($row['places'][$r['id']])->unique()->sort()->values()->all(),
+                            'points' => round($row['points'][$r['id']], 3),
+                        ] : null,
+                    ])
+                    ->all(),
+                'total' => round($row['total'], 3),
+            ];
+        }
+
+        return [
+            'regattas' => $regattas,
+            'standings' => $standings,
+        ];
+    }
+
+    /**
+     * Даты регаты одной строкой: «12.05.2026», «12–14.05.2026» или «30.05–01.06.2026».
+     */
+    private function formatDates(?string $start, ?string $end): ?string
+    {
+        if (! $start) {
+            return null;
+        }
+
+        $start = Carbon::parse($start);
+        $end = $end ? Carbon::parse($end) : null;
+
+        if (! $end || $end->isSameDay($start)) {
+            return $start->format('d.m.Y');
+        }
+
+        return $start->isSameMonth($end)
+            ? $start->format('d').'–'.$end->format('d.m.Y')
+            : $start->format('d.m').'–'.$end->format('d.m.Y');
+    }
 
     /**
      * Приводит карту [entity_id][regatta_id => данные] к списку регат,
@@ -314,11 +436,20 @@ class RatingCalculator
      */
     private function scoredResultItems(Season $season): Collection
     {
+        return $this->scoreResultItems(fn ($query) => $query->where('regattas.season_id', $season->id));
+    }
+
+    /**
+     * То же, что scoredResultItems(), но выборку регат задаёт $scope
+     * (сезон, серия) — условие на таблицу `regattas`.
+     */
+    private function scoreResultItems(Closure $scope): Collection
+    {
         // цепочка: regatta_result_items → regatta_results → regattas
         $items = RegattaResultItem::query()
             ->join('regatta_results', 'regatta_results.id', '=', 'regatta_result_items.regatta_result_id')
             ->join('regattas', 'regattas.id', '=', 'regatta_results.regatta_id')
-            ->where('regattas.season_id', $season->id)
+            ->where($scope)
             // join в обход глобального скоупа SoftDeletes: удалённые регаты
             // иначе продолжают начислять очки в рейтинг.
             ->whereNull('regattas.deleted_at')
@@ -330,6 +461,7 @@ class RatingCalculator
                 'regattas.id as regatta_id',
                 'regattas.name as regatta_name',
                 'regattas.date_start as regatta_date',
+                'regattas.date_end as regatta_date_end',
                 'regattas.level_coefficient',
             ]);
 

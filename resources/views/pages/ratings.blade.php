@@ -61,7 +61,14 @@ bgImage="{{ asset('images/bg/results.webp') }}"
                 <p><b>Итоговый рейтинг</b> рассчитывается и публикуется как сумма рейтинговых очков за все прошедшие регаты сезона. Рейтинги прошлых сезонов можно открыть переключателем «Сезон».</p>
             </div>
             @if ($seasonYears !== [])
-                <div class="flex justify-end mb-4">
+                <div class="flex flex-wrap items-center justify-end gap-4 mb-4">
+                    @if ($teamRatings !== [])
+                        <x-pdf-download-button x-show="activeTab === 'team'"
+                            :href="route('ratings.pdf', ['season' => $ratingSeasonYear])"
+                            title="Скачать командный рейтинг сезона в PDF">
+                            Скачать рейтинг
+                        </x-pdf-download-button>
+                    @endif
                     <x-season-switcher :years="$seasonYears" :selected="$ratingSeasonYear" />
                 </div>
             @endif

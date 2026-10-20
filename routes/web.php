@@ -8,6 +8,8 @@ use App\Actions\Notifications\UnsubscribeAction;
 use App\Actions\Payment\ApplyPaymentResultAction;
 use App\Actions\Payment\HandleWebhookAction;
 use App\Actions\Question\SubmitUserQuestionAction;
+use App\Actions\Rating\GenerateSeriesRatingPdfAction;
+use App\Actions\Rating\GenerateTeamRatingPdfAction;
 use App\Actions\Regatta\DownloadRegattaDocumentsAction;
 use App\Actions\Regatta\DownloadRegattaTeamsAction;
 use App\Actions\Regatta\GenerateRegattaTeamsPdfAction;
@@ -1197,6 +1199,12 @@ Route::get('/ratings', function (Request $request) {
 
     return view('pages.ratings', compact('teamRatings', 'personalRatings', 'ratingSeasonYear', 'seasonYears', 'documents'));
 })->name('ratings');
+Route::get('/ratings/pdf', function (Request $request, SeasonContext $seasons) {
+    $season = $seasons->resolve($request->query('season'));
+    abort_unless($season, 404);
+
+    return app(GenerateTeamRatingPdfAction::class)->execute($season);
+})->name('ratings.pdf');
 // Подраздел «Серии» раздела «Соревнования»: описание каждой серии и результаты
 // по её этапам. Рейтинговая таблица серий живёт отдельно — в «Рейтингах»
 // (маршрут `series-results` ниже).
@@ -1273,6 +1281,12 @@ Route::get('/series/results', function (Request $request, SeasonContext $seasons
 
     return view('pages.series-results', compact('series', 'seasonYear', 'seasonYears'));
 })->name('series-results');
+Route::get('/series/results/pdf', function (Request $request, SeasonContext $seasons) {
+    $season = $seasons->resolve($request->query('season'));
+    abort_unless($season, 404);
+
+    return app(GenerateSeriesRatingPdfAction::class)->execute($season);
+})->name('series-results.pdf');
 Route::get('/series/{series}', function (Series $series) {
     $series->loadMissing([
         'season',

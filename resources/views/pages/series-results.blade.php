@@ -35,7 +35,13 @@
     }"
     @keydown.escape.window="teamModal = false; scoresModal = false; resultModal = false"
 >
-    <div class="flex justify-end mb-4">
+    <div class="flex flex-wrap items-center justify-end gap-4 mb-4">
+        @if ($series->isNotEmpty())
+            <x-pdf-download-button :href="route('series-results.pdf', ['season' => $seasonYear])"
+                title="Скачать рейтинг всех серий сезона в PDF">
+                Скачать рейтинг серий
+            </x-pdf-download-button>
+        @endif
         <x-season-switcher :years="$seasonYears" :selected="$seasonYear" />
     </div>
     <x-ratings-tabs :tabs="[
