@@ -42,6 +42,7 @@ class SitemapGenerator
         'world-news',
         'press',
         'carter30.history',
+        'carter30.hall-of-fame',
         'carter30.regulations',
         'carter30.repair',
         'carter30.technical-help',

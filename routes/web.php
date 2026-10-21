@@ -57,6 +57,7 @@ use App\Rules\YandexCaptcha;
 use App\Services\AdvertBoard;
 use App\Services\Chat\ChatAttachments;
 use App\Services\FleetAvailability;
+use App\Services\HallOfFame;
 use App\Services\HelpDirectory;
 use App\Services\MembershipFees;
 use App\Services\Payments\PaymentManager;
@@ -293,6 +294,14 @@ Route::get('/carter30/history', function () {
         'documents' => $settings->documentLinks('help.site_guide_documents', 'carter30_history'),
     ]);
 })->name('carter30.history');
+
+// «Зал славы»: лидеры командного и личного рейтинга по сезонам. Текущий сезон
+// показывается с пометкой, что он ещё идёт.
+Route::get('/carter30/hall-of-fame', function (HallOfFame $hallOfFame) {
+    return view('pages.carter30.hall-of-fame', [
+        'seasons' => $hallOfFame->seasons(),
+    ]);
+})->name('carter30.hall-of-fame');
 
 // Технический регламент: один источник контента с /association/regulations,
 // две страницы — по ТЗ он должен быть и в разделе класса.

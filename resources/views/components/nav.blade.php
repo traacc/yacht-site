@@ -98,6 +98,7 @@
                     <div x-show="open" x-cloak x-transition
                         class="absolute top-full left-0 mt-1 w-56 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
                         <a href="{{ route('carter30.history') }}" class="block px-4 py-2 text-gray-700">История</a>
+                        <a href="{{ route('carter30.hall-of-fame') }}" class="block px-4 py-2 text-gray-700">Зал славы</a>
                         <a href="{{ route('carter30.regulations') }}" class="block px-4 py-2 text-gray-700">Технический регламент класса</a>
                         <a href="{{ route('carter30.repair') }}" class="block px-4 py-2 text-gray-700">Ремонт и модернизация</a>
                         <a href="{{ route('carter30.technical-help') }}" class="block px-4 py-2 text-gray-700">Техническая помощь</a>
@@ -331,6 +332,7 @@
                         </button>
                         <div x-show="open" x-cloak x-transition class="">
                             <a href="{{ route('carter30.history') }}" class="block px-4 py-2 text-sm">История</a>
+                            <a href="{{ route('carter30.hall-of-fame') }}" class="block px-4 py-2 text-sm">Зал славы</a>
                             <a href="{{ route('carter30.regulations') }}" class="block px-4 py-2 text-sm">Технический регламент класса</a>
                             <a href="{{ route('carter30.repair') }}" class="block px-4 py-2 text-sm">Ремонт и модернизация</a>
                             <a href="{{ route('carter30.technical-help') }}" class="block px-4 py-2 text-sm">Техническая помощь</a>
