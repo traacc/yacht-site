@@ -15,6 +15,9 @@
 @source '../../../../resources/views/livewire/chat/**/*';
 @source '../../../../resources/views/filament/pages/**/*';
 
+/* Шаблоны модалок ресурсов админки (списки участников, журнал платежей). */
+@source '../../../../resources/views/filament/resources/**/*';
+
 
   @font-face {
     font-family: 'TTLakesCondensed-DemiBold';

@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Enums\ParticipantSort;
 use App\Enums\PenaltyCode;
+use App\Enums\RegattaStatus;
 use App\Models\PersonalRating;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
@@ -11,6 +13,7 @@ use App\Models\Season;
 use App\Models\Series;
 use App\Models\Team;
 use App\Models\TeamRating;
+use App\Models\User;
 use Closure;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -301,6 +304,126 @@ class RatingCalculator
         return $this->teamTable(
             $this->scoreResultItems(fn ($query) => $query->where('regattas.series_id', $series->id))
         );
+    }
+
+    /**
+     * Участники сезона таблицей «человек × регата» — для админки (раздел
+     * «Личные рейтинги»). Колонки — прошедшие регаты сезона по номерам: с
+     * результатами либо уже закончившиеся по датам (кроме отменённых и
+     * перенесённых). Строки — все, кто был в экипаже одобренной заявки на
+     * любую из них или получил за неё очки.
+     *
+     * В ячейке — очки за регату (0, если человек был в экипаже, но очков нет:
+     * сошёл, регата вне зачёта, протокол ещё не загружен), null — не участвовал.
+     * Очки и места считаются так же, как личный рейтинг, поэтому итог строки
+     * совпадает с personal_ratings; у кого нет ни одной строки протокола,
+     * места нет. Команды — все, за которые человек выступал в этих регатах.
+     *
+     * @return array{
+     *     regattas: array<int, array{id:string, number:int, name:string, dates:?string}>,
+     *     rows: array<int, array{name:string, birth_date:?Carbon, team:?string, cells:array<string, ?float>, total:float, rank:?int}>
+     * }
+     */
+    public function seasonPersonalTable(Season $season): array
+    {
+        $scoredItems = $this->scoredResultItems($season);
+        $crewMaps = $this->crewMaps($season);
+        $today = today()->toDateString();
+
+        $regattas = Regatta::query()
+            ->where('season_id', $season->id)
+            ->where(fn ($query) => $query
+                ->whereIn('id', $scoredItems->pluck('regatta_id')->unique())
+                ->orWhere(fn ($query) => $query
+                    ->whereNotIn('regatta_status', [RegattaStatus::Cancelled, RegattaStatus::Postponed])
+                    ->where(fn ($query) => $query
+                        ->where('date_end', '<', $today)
+                        ->orWhere(fn ($query) => $query->whereNull('date_end')->where('date_start', '<', $today)))))
+            ->orderBy('date_start')
+            ->get(['id', 'name', 'date_start', 'date_end'])
+            ->values()
+            ->map(fn (Regatta $regatta, int $i) => [
+                'id' => $regatta->id,
+                'number' => $i + 1,
+                'name' => $regatta->name,
+                'dates' => $this->formatDates($regatta->date_start?->toDateString(), $regatta->date_end?->toDateString()),
+            ])
+            ->all();
+
+        // [user_id][regatta_id] => очки; [user_id][team_id] => team_id
+        $points = [];
+        $teamIds = [];
+
+        foreach ($scoredItems as $item) {
+            foreach ($this->crewUserIdsFor($crewMaps, $item) as $userId) {
+                $points[$userId][$item->regatta_id] = ($points[$userId][$item->regatta_id] ?? 0) + $item->score;
+
+                if ($item->team_id !== null) {
+                    $teamIds[$userId][$item->team_id] = $item->team_id;
+                }
+            }
+        }
+
+        // Места — как в recalculatePersonalRatings(): по всем, у кого есть очки.
+        $ranks = $this->rankByPoints(array_map('array_sum', $points));
+
+        $entries = RegattaEntry::query()
+            ->whereIn('regatta_id', array_column($regattas, 'id'))
+            ->where('status', 'approved')
+            ->with('crew.teamMember:id,user_id')
+            ->get(['id', 'regatta_id', 'team_id']);
+
+        foreach ($entries as $entry) {
+            foreach ($entry->crew as $crewMember) {
+                $userId = $crewMember->resolvedUserId();
+
+                if ($userId === null) {
+                    continue;
+                }
+
+                $points[$userId][$entry->regatta_id] ??= 0.0;
+
+                if ($entry->team_id !== null) {
+                    $teamIds[$userId][$entry->team_id] = $entry->team_id;
+                }
+            }
+        }
+
+        $users = User::whereIn('id', array_keys($points))->get(['id', 'name', 'birth_date'])->keyBy('id');
+        $teamNames = Team::whereIn('id', collect($teamIds)->flatten()->unique())->pluck('name', 'id');
+
+        $rows = [];
+        foreach ($points as $userId => $byRegatta) {
+            $user = $users->get($userId);
+
+            if (! $user) {
+                continue;
+            }
+
+            $teams = collect($teamIds[$userId] ?? [])
+                ->map(fn ($teamId) => trim((string) ($teamNames[$teamId] ?? '')))
+                ->filter()
+                ->sort()
+                ->implode(', ');
+
+            $rows[] = [
+                'name' => $user->name,
+                'birth_date' => $user->birth_date,
+                'team' => $teams !== '' ? $teams : null,
+                'cells' => collect($regattas)
+                    ->mapWithKeys(fn ($r) => [
+                        $r['id'] => isset($byRegatta[$r['id']]) ? round($byRegatta[$r['id']], 3) : null,
+                    ])
+                    ->all(),
+                'total' => round(array_sum($byRegatta), 3),
+                'rank' => $ranks[$userId]['rank'] ?? null,
+            ];
+        }
+
+        return [
+            'regattas' => $regattas,
+            'rows' => ParticipantSort::Name->apply($rows),
+        ];
     }
 
     // ──────────────────────────────────────────────

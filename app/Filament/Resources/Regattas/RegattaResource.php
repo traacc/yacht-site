@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Regattas;
 
 use App\Actions\Document\SyncDocumentFilesAction;
+use App\Actions\Regatta\GenerateRegattaParticipantsPdfAction;
 use App\Actions\Regatta\ReplicateRegattaAction;
+use App\Enums\ParticipantSort;
 use App\Enums\RegattaStatus;
 use App\Enums\RegattaType;
 use App\Filament\Concerns\FiltersBySeason;
@@ -17,6 +19,7 @@ use App\Models\Regatta;
 use App\Models\Season;
 use App\Models\Series;
 use App\Models\YachtDocumentType;
+use App\Services\RegattaParticipants;
 use App\Services\RegattaService;
 use App\Services\SeasonContext;
 use BackedEnum;
@@ -46,7 +49,9 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
@@ -898,6 +903,34 @@ class RegattaResource extends Resource
 
                         return $record;
                     }),
+                Action::make('participants')
+                    ->label('Участники')
+                    ->icon('heroicon-o-users')
+                    ->color('gray')
+                    ->modalHeading(fn (Regatta $record): string => "Участники: {$record->name}")
+                    ->modalDescription('Экипажи одобренных заявок.')
+                    ->modalWidth(Width::FourExtraLarge)
+                    ->fillForm(['sort' => ParticipantSort::Name->value])
+                    ->schema([
+                        Select::make('sort')
+                            ->label('Сортировка')
+                            ->options(ParticipantSort::options(withRank: false))
+                            ->selectablePlaceholder(false)
+                            ->required()
+                            ->live(),
+                        View::make('filament.resources.participants-table')
+                            ->viewData(fn (Get $get, Regatta $record): array => [
+                                'regattas' => null,
+                                'rows' => app(RegattaParticipants::class)->forRegatta(
+                                    $record,
+                                    ParticipantSort::tryFrom((string) $get('sort')) ?? ParticipantSort::Name,
+                                ),
+                            ]),
+                    ])
+                    ->modalSubmitActionLabel('Скачать PDF')
+                    ->modalCancelActionLabel('Закрыть')
+                    ->action(fn (Regatta $record, array $data) => app(GenerateRegattaParticipantsPdfAction::class)
+                        ->execute($record, ParticipantSort::from($data['sort']))),
                 Action::make('replicate')
                     ->label('Дублировать')
                     ->icon('heroicon-o-document-duplicate')
