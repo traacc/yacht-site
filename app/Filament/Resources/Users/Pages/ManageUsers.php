@@ -16,6 +16,7 @@ class ManageUsers extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
+            UserResource::replaceUserAction(pickFrom: true),
             CreateAction::make()
                 ->createAnother(false)
                 ->modalHeading('Новый пользователь')

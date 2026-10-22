@@ -82,6 +82,16 @@ class EditRegattaEntryModal extends Component
 
     public string $newMemberSportCategory = '';
 
+    /**
+     * Зарегистрированные тёзки нового участника (фамилия + имя) и ФИО,
+     * для которого их показали.
+     *
+     * @var array<int, array{id: string, name: string, year: ?int}>
+     */
+    public array $similarMembers = [];
+
+    public string $similarFor = '';
+
     // ──────────────────────────────────────────────
     // Документы
     // ──────────────────────────────────────────────
@@ -115,7 +125,7 @@ class EditRegattaEntryModal extends Component
             'entryId', 'authenticated', 'password', 'saved',
             'yachtId', 'yachtMode', 'newYachtName', 'newYachtVfps', 'freeYachts',
             'crew', 'searchQuery', 'searchResults',
-            'newMemberName', 'newMemberBirthDate', 'newMemberSportCategory',
+            'newMemberName', 'newMemberBirthDate', 'newMemberSportCategory', 'similarMembers', 'similarFor',
             'documentFiles', 'existingDocuments', 'removedDocuments',
         ]);
         $this->resetErrorBag();
@@ -307,8 +317,16 @@ class EditRegattaEntryModal extends Component
         $this->searchResults = [];
     }
 
-    public function addUnregisteredMember(): void
+    /**
+     * @param  bool  $force  true — пользователь подтвердил, что это не кто-то
+     *                       из уже зарегистрированных тёзок (действует, только
+     *                       пока ФИО не изменилось после предупреждения)
+     */
+    public function addUnregisteredMember(bool $force = false): void
     {
+        $confirmedFor = $force ? $this->similarFor : null;
+        $this->similarMembers = [];
+
         if (count($this->crew) >= self::MAX_MEMBERS) {
             $this->addError('crew', 'Можно добавить не более '.self::MAX_MEMBERS.' участников.');
 
@@ -342,6 +360,29 @@ class EditRegattaEntryModal extends Component
             return;
         }
 
+        // Тёзки по фамилии и имени: часто это тот же человек, внесённый
+        // без отчества или с другой датой — предлагаем выбрать его.
+        if ($confirmedFor !== $name) {
+            $this->similarMembers = User::query()
+                ->sameSurnameAndName($name)
+                ->whereNotIn('id', array_values(array_filter(array_column($this->crew, 'user_id'))))
+                ->orderBy('name')
+                ->limit(5)
+                ->get(['id', 'name', 'birth_date'])
+                ->map(fn (User $user): array => [
+                    'id' => (string) $user->id,
+                    'name' => $user->name,
+                    'year' => $user->birth_date?->year,
+                ])
+                ->all();
+
+            if ($this->similarMembers !== []) {
+                $this->similarFor = $name;
+
+                return;
+            }
+        }
+
         $this->crew[] = [
             'ref' => (string) Str::uuid(),
             'team_member_id' => null,
@@ -353,7 +394,14 @@ class EditRegattaEntryModal extends Component
             'role' => 'main',
         ];
 
-        $this->reset(['newMemberName', 'newMemberBirthDate', 'newMemberSportCategory']);
+        $this->reset(['newMemberName', 'newMemberBirthDate', 'newMemberSportCategory', 'similarFor']);
+    }
+
+    /** Выбрать зарегистрированного тёзку вместо создания нового участника. */
+    public function pickSimilarMember(string $userId): void
+    {
+        $this->addMember($userId);
+        $this->reset(['newMemberName', 'newMemberBirthDate', 'newMemberSportCategory', 'similarMembers', 'similarFor']);
     }
 
     public function removeMember(string $ref): void

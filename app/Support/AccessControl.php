@@ -25,6 +25,7 @@ use App\Filament\Resources\RegattaResults\RegattaResultResource;
 use App\Filament\Resources\Regattas\RegattaResource;
 use App\Filament\Resources\TeamRatings\TeamRatingResource;
 use App\Filament\Resources\Teams\TeamResource;
+use App\Filament\Resources\UserReplacements\UserReplacementResource;
 use App\Filament\Resources\Users\UserResource;
 use App\Filament\Resources\Yachts\YachtResource;
 use App\Models\User;
@@ -152,6 +153,8 @@ final class AccessControl
             PaymentRegistryResource::class,
             PaymentRegistryLogResource::class,
             FinancialPeriodReport::class,
+            // Журнал замен пользователей: собственное ограничение «только администратор».
+            UserReplacementResource::class,
         ];
     }
 

@@ -175,7 +175,8 @@ class JoinRegattaModal extends Component
      *     ref: string, mode: string, registered: ?bool, user_id: ?string,
      *     name: string, email: string, birth_date: ?string, sport_category: ?string,
      *     role: string, query: string, results: array<int, array<string, mixed>>,
-     *     newName: string, newBirthDate: string, newSportCategory: string
+     *     newName: string, newBirthDate: string, newSportCategory: string,
+     *     similar: array<int, array{id: string, name: string, year: ?int}>, similarFor: string
      * }>
      */
     public array $guestMembers = [];
@@ -583,6 +584,8 @@ class JoinRegattaModal extends Component
             'newName' => '',
             'newBirthDate' => '',
             'newSportCategory' => '',
+            'similar' => [],
+            'similarFor' => '',
         ];
     }
 
@@ -734,12 +737,21 @@ class JoinRegattaModal extends Component
         }
     }
 
-    /** Подтвердить нового незарегистрированного участника в слоте. */
-    public function addSlotNew(int $i): void
+    /**
+     * Подтвердить нового незарегистрированного участника в слоте.
+     *
+     * @param  bool  $force  true — пользователь подтвердил, что это не кто-то
+     *                       из уже зарегистрированных тёзок (действует, только
+     *                       пока ФИО не изменилось после предупреждения)
+     */
+    public function addSlotNew(int $i, bool $force = false): void
     {
         if (! isset($this->guestMembers[$i])) {
             return;
         }
+
+        $confirmedFor = $force ? ($this->guestMembers[$i]['similarFor'] ?? '') : null;
+        $this->guestMembers[$i]['similar'] = [];
 
         $rules = [
             "guestMembers.$i.newName" => ['required', 'string', 'max:255', new FullName],
@@ -768,6 +780,30 @@ class JoinRegattaModal extends Component
             $this->addError("guestMembers.$i.newName", 'Пользователь с таким ФИО и датой рождения уже зарегистрирован');
 
             return;
+        }
+
+        // Тёзки по фамилии и имени: часто это тот же человек, внесённый
+        // без отчества или с другой датой — предлагаем выбрать его.
+        if ($confirmedFor !== $name) {
+            $similar = User::query()
+                ->sameSurnameAndName($name)
+                ->whereNotIn('id', $this->excludedMemberUserIds($i))
+                ->orderBy('name')
+                ->limit(5)
+                ->get(['id', 'name', 'birth_date'])
+                ->map(fn (User $user): array => [
+                    'id' => (string) $user->id,
+                    'name' => $user->name,
+                    'year' => $user->birth_date?->year,
+                ])
+                ->all();
+
+            if ($similar !== []) {
+                $this->guestMembers[$i]['similar'] = $similar;
+                $this->guestMembers[$i]['similarFor'] = $name;
+
+                return;
+            }
         }
 
         $ref = $this->guestMembers[$i]['ref'];

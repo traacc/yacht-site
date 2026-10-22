@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Users;
 
 use App\Actions\Auth\RequestPhoneVerificationCallAction;
 use App\Actions\Auth\SendEmailVerificationLinkAction;
+use App\Actions\User\ReplaceUserAction;
 use App\Enums\CreationSource;
 use App\Enums\SportCategory;
 use App\Enums\SystemRole;
@@ -29,6 +30,7 @@ use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -37,11 +39,14 @@ use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
@@ -434,6 +439,10 @@ class UserResource extends Resource
                         false: fn (Builder $query) => $query->whereDoesntHave('telegramAccount', fn (Builder $q) => $q->whereNull('blocked_at')),
                         blank: fn (Builder $query) => $query,
                     ),
+                Filter::make('possible_duplicates')
+                    ->label('Возможные дубли (фамилия + имя)')
+                    ->toggle()
+                    ->query(fn (Builder $query): Builder => $query->possibleDuplicates()),
                 TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)->deferFilters(false)
             ->headerActions([
@@ -526,6 +535,7 @@ class UserResource extends Resource
                 ])->label('Телефон')->icon(Heroicon::OutlinedPhoneArrowUpRight)->button()->color('gray')
                     ->visible(fn (User $record): bool => ! $record->hasVerifiedPhone() && filled($record->phone)),
                 EditAction::make()->modalHeading('Редактировать пользователя'),
+                static::replaceUserAction(pickFrom: false),
                 DeleteAction::make()->label('Удалить')
                     ->modalHeading('Удалить пользователя')
                     ->hidden(false) // показывать и для уже удалённых записей
@@ -541,6 +551,163 @@ class UserResource extends Resource
                     RestoreBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /** Замена пользователя затрагивает все заявки и рейтинги — только администратор. */
+    public static function canReplaceUsers(): bool
+    {
+        return auth()->user()?->system_role === SystemRole::Admin;
+    }
+
+    /**
+     * Замена одного пользователя другим во всех заявках и командах.
+     *
+     * @param  bool  $pickFrom  true — «кого» выбирается в форме (кнопка над таблицей),
+     *                          false — это пользователь строки таблицы.
+     */
+    public static function replaceUserAction(bool $pickFrom): Action
+    {
+        return Action::make($pickFrom ? 'replaceUserManually' : 'replaceUser')
+            ->label($pickFrom ? 'Замена пользователя' : 'Заменить на…')
+            ->icon(Heroicon::OutlinedArrowsRightLeft)
+            ->color($pickFrom ? 'white' : 'warning')
+            ->visible(fn (?User $record): bool => static::canReplaceUsers() && ! $record?->trashed())
+            ->modalHeading('Замена пользователя в заявках и командах')
+            ->modalDescription('Во всех заявках, включая архивные, и в командах первая учётка будет заменена второй. Личный рейтинг пересчитается.')
+            ->modalSubmitActionLabel('Заменить')
+            ->modalWidth(Width::ThreeExtraLarge)
+            ->fillForm(fn (?User $record): array => $pickFrom ? [] : [
+                'from_id' => $record?->id,
+                'to_id' => $record ? static::likelyOriginalOf($record)?->id : null,
+            ])
+            ->schema([
+                $pickFrom
+                    ? Select::make('from_id')
+                        ->label('Кого заменить (дубль)')
+                        ->searchable()
+                        ->getSearchResultsUsing(fn (string $search, Get $get): array => static::userSearchResults($search, $get('to_id')))
+                        ->getOptionLabelUsing(fn ($value): ?string => static::userOptionLabel(User::find($value)))
+                        ->required()
+                        ->live()
+                    : Hidden::make('from_id'),
+                Select::make('to_id')
+                    ->label('На кого заменить (основная учётка)')
+                    ->searchable()
+                    ->getSearchResultsUsing(fn (string $search, Get $get): array => static::userSearchResults($search, $get('from_id')))
+                    ->getOptionLabelUsing(fn ($value): ?string => static::userOptionLabel(User::find($value)))
+                    ->different('from_id')
+                    ->required()
+                    ->live(),
+                View::make('filament.resources.user-replace-preview')
+                    ->viewData(fn (Get $get): array => static::replacePreviewData($get('from_id'), $get('to_id'))),
+            ])
+            ->action(function (array $data, Action $action): void {
+                // visible() прячет кнопку, но не защищает сам вызов.
+                abort_unless(static::canReplaceUsers(), 403);
+
+                $from = User::find($data['from_id'] ?? null);
+                $to = User::find($data['to_id'] ?? null);
+
+                if ($from === null || $to === null) {
+                    Notification::make()->title('Пользователь не найден')->danger()->send();
+                    $action->halt();
+                }
+
+                try {
+                    $log = app(ReplaceUserAction::class)->handle($from, $to, auth()->user());
+                } catch (ValidationException $e) {
+                    Notification::make()
+                        ->title('Замена не выполнена')
+                        ->body(collect($e->errors())->flatten()->first())
+                        ->danger()
+                        ->send();
+                    $action->halt();
+                }
+
+                Notification::make()
+                    ->title('Пользователь заменён')
+                    ->body('Экипажей: '.count($log->summary['entries']).', команд: '.count($log->summary['teams']).'. '
+                        .($log->from_deleted
+                            ? "Учётка «{$log->from_name}» удалена."
+                            : "Учётка «{$log->from_name}» не удалена: ".implode('; ', $log->summary['blockers']).'.'))
+                    ->success()
+                    ->persistent()
+                    ->send();
+            });
+    }
+
+    /**
+     * Вероятная основная учётка для дубля: тот же «фамилия + имя»; сначала
+     * зарегистрированная самим человеком (под ней он входит на сайт), затем
+     * созданная админом, учётки из быстрой заявки — последними.
+     */
+    public static function likelyOriginalOf(User $user): ?User
+    {
+        return User::query()
+            ->sameSurnameAndName($user->name)
+            ->whereKeyNot($user->getKey())
+            ->orderByRaw('FIELD(creation_source, ?, ?, ?, ?) DESC', [
+                CreationSource::QuickRequest->value,
+                CreationSource::Unknown->value,
+                CreationSource::Admin->value,
+                CreationSource::Registration->value,
+            ])
+            ->orderByDesc('email_verified_at')
+            ->orderBy('created_at')
+            ->first();
+    }
+
+    /** @return array<string, string> */
+    public static function userSearchResults(string $search, ?string $exceptId = null): array
+    {
+        return User::query()
+            ->where(fn (Builder $q) => $q
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%"))
+            ->when($exceptId, fn (Builder $q) => $q->whereKeyNot($exceptId))
+            ->orderBy('name')
+            ->limit(30)
+            ->get()
+            ->mapWithKeys(fn (User $user): array => [$user->id => static::userOptionLabel($user)])
+            ->all();
+    }
+
+    /** «ФИО · ДР · источник · e-mail» — чтобы различать тёзок в списке. */
+    public static function userOptionLabel(?User $user): ?string
+    {
+        if ($user === null) {
+            return null;
+        }
+
+        return collect([
+            $user->name,
+            $user->birth_date?->format('d.m.Y'),
+            $user->creation_source?->label(),
+            $user->hasTechnicalEmail() ? null : $user->email,
+        ])->filter()->implode(' · ');
+    }
+
+    /** Данные окна подтверждения замены. */
+    public static function replacePreviewData(?string $fromId, ?string $toId): array
+    {
+        $from = $fromId ? User::find($fromId) : null;
+        $to = $toId ? User::find($toId) : null;
+
+        if ($from === null || $to === null || $from->is($to)) {
+            return ['plan' => null];
+        }
+
+        return [
+            'plan' => app(ReplaceUserAction::class)->preview($from, $to),
+            'fromLabel' => static::userOptionLabel($from),
+            'toLabel' => static::userOptionLabel($to),
+            'fromName' => $from->name,
+            'warning' => match (true) {
+                $from->creation_source === CreationSource::Registration && $to->creation_source !== CreationSource::Registration => 'Заменяется учётка, которую человек зарегистрировал сам и под которой входит на сайт. Проверьте направление замены.',
+                $to->creation_source === CreationSource::QuickRequest && $from->creation_source !== CreationSource::QuickRequest => 'Основной выбрана учётка из быстрой заявки. Проверьте направление замены.',
+                default => null,
+            },
+        ];
     }
 
     public static function getPages(): array

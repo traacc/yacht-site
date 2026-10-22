@@ -184,11 +184,31 @@
                                 <option value="{{ $cat->value }}">{{ $cat->getLabel() }}</option>
                             @endforeach
                         </select>
-                        <button type="button" wire:click="addUnregisteredMember"
+                        <button type="button" wire:click="addUnregisteredMember({{ $similarMembers === [] ? 'false' : 'true' }})"
                                 class="bg-white border border-[#2D92CE] text-[#2D92CE] rounded px-3 py-2 text-sm font-medium hover:bg-[#2D92CE]/5">
-                            + Добавить участника
+                            {{ $similarMembers === [] ? '+ Добавить участника' : 'Нет, это другой человек — добавить' }}
                         </button>
                     </div>
+                    @if ($similarMembers !== [])
+                        {{-- Тёзки по фамилии и имени — чтобы не завести человеку вторую учётку --}}
+                        <div class="mt-2 p-2 rounded border border-amber-200 bg-amber-50 text-sm space-y-1">
+                            <p class="text-gray-700">Похоже, этот участник уже есть на сайте. Выберите его, чтобы не создавать вторую учётку:</p>
+                            @foreach ($similarMembers as $match)
+                                <div wire:key="similar-{{ $match['id'] }}" class="flex items-center justify-between gap-2">
+                                    <span>
+                                        {{ $match['name'] }}
+                                        @if ($match['year'])
+                                            <span class="text-gray-400 text-xs">{{ $match['year'] }} г.р.</span>
+                                        @endif
+                                    </span>
+                                    <button type="button" wire:click="pickSimilarMember('{{ $match['id'] }}')"
+                                            class="text-[#2D92CE] text-sm hover:underline shrink-0">
+                                        Выбрать
+                                    </button>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                     @error('newMemberName')
                         <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
                     @enderror

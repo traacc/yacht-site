@@ -627,10 +627,30 @@
                                                         @enderror
                                                     </div>
                                                 </div>
-                                                <div class="flex gap-2 pt-1">
-                                                    <button type="button" wire:click="addSlotNew({{ $i }})"
+                                                @if (! empty($slot['similar']))
+                                                    {{-- Тёзки по фамилии и имени — чтобы не завести человеку вторую учётку --}}
+                                                    <div class="p-2 rounded border border-amber-200 bg-amber-50 text-sm space-y-1">
+                                                        <p class="text-gray-700">Похоже, этот участник уже есть на сайте. Выберите его, чтобы не создавать вторую учётку:</p>
+                                                        @foreach ($slot['similar'] as $match)
+                                                            <div wire:key="similar-{{ $slot['ref'] }}-{{ $match['id'] }}" class="flex items-center justify-between gap-2">
+                                                                <span>
+                                                                    {{ $match['name'] }}
+                                                                    @if ($match['year'])
+                                                                        <span class="text-gray-400 text-xs">{{ $match['year'] }} г.р.</span>
+                                                                    @endif
+                                                                </span>
+                                                                <button type="button" wire:click="selectSlotUser({{ $i }}, '{{ $match['id'] }}')"
+                                                                        class="text-[#2D92CE] text-sm hover:underline shrink-0">
+                                                                    Выбрать
+                                                                </button>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+                                                <div class="flex flex-wrap gap-2 pt-1">
+                                                    <button type="button" wire:click="addSlotNew({{ $i }}, {{ empty($slot['similar']) ? 'false' : 'true' }})"
                                                             class="bg-[#2D92CE] text-white text-sm px-3 py-1.5 rounded hover:bg-[#2D92CE]/90">
-                                                        Добавить
+                                                        {{ empty($slot['similar']) ? 'Добавить' : 'Нет, это другой человек — добавить' }}
                                                     </button>
                                                     <button type="button" wire:click="clearSlot({{ $i }})"
                                                             class="text-gray-500 text-sm px-3 py-1.5 hover:text-gray-700">

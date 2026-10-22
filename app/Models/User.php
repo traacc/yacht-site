@@ -384,6 +384,48 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         });
     }
 
+    /**
+     * Ключ «фамилия + имя» — первые два слова ФИО с схлопнутыми пробелами.
+     * Регистр и ё/е сравнение не различает само (utf8mb4_unicode_ci).
+     */
+    private const SURNAME_AND_NAME_SQL = "SUBSTRING_INDEX(REGEXP_REPLACE(TRIM(name), '[[:space:]]+', ' '), ' ', 2)";
+
+    /**
+     * Scope: возможные дубли — пользователи, чьи фамилия и имя совпадают
+     * с кем-то ещё. Отсортированы по этому ключу, чтобы дубли шли рядом.
+     */
+    public function scopePossibleDuplicates(Builder $query): Builder
+    {
+        $groups = static::query()
+            ->selectRaw(self::SURNAME_AND_NAME_SQL.' AS dup_key')
+            ->groupBy('dup_key')
+            ->havingRaw('COUNT(*) > 1');
+
+        // Через производную таблицу: подзапрос IN (... GROUP BY) MySQL превращает
+        // в semi-join и падает на only_full_group_by.
+        return $query
+            ->whereIn(DB::raw(self::SURNAME_AND_NAME_SQL), DB::query()->fromSub($groups, 'duplicates')->select('dup_key'))
+            ->orderByRaw(self::SURNAME_AND_NAME_SQL);
+    }
+
+    /**
+     * Scope: пользователи с теми же фамилией и именем, что в $fullName
+     * (в любом порядке слов: «Иванов Иван» найдёт и «Иван Иванов»).
+     */
+    public function scopeSameSurnameAndName(Builder $query, string $fullName): Builder
+    {
+        $words = preg_split('/\s+/u', trim($fullName), -1, PREG_SPLIT_NO_EMPTY);
+
+        if (count($words) < 2) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereRaw(self::SURNAME_AND_NAME_SQL.' IN (?, ?)', [
+            "{$words[0]} {$words[1]}",
+            "{$words[1]} {$words[0]}",
+        ]);
+    }
+
     // Дней до следующего дня рождения
     protected function daysUntilBirthday(): Attribute
     {
