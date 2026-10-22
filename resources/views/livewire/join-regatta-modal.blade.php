@@ -539,7 +539,12 @@
                 {{-- Экипаж: сразу девять полей — выбор существующего или добавление нового участника --}}
                 <div class="border-t border-gray-200 pt-4">
                     <p class="text-sm font-medium text-[#2E325C] mb-2">Экипаж</p>
-                    <p class="text-xs text-gray-500 mb-3">Рулевым команды будет указанный выше пользователь. Можно добавить до {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} участников — заполните нужные поля.</p>
+                    <p class="text-xs text-gray-500 mb-3">
+                        Рулевым команды будет указанный выше пользователь. Можно добавить до {{ \App\Livewire\JoinRegattaModal::MAX_ADDED_MEMBERS }} участников — заполните нужные поля.
+                        @if ($teamMode === 'select' && $teamId)
+                            Состав подставлен из команды — проверьте его и уберите тех, кто не идёт на регату.
+                        @endif
+                    </p>
 
                     <div class="space-y-2">
                         @foreach ($guestMembers as $i => $slot)
@@ -699,6 +704,35 @@
                             </div>
                         @endforeach
                     </div>
+
+                    {{-- Участники команды сверх мест в экипаже: при подаче в заявку не попадут --}}
+                    @if ($overflowMembers !== [])
+                        <div class="mt-3 p-3 rounded border border-red-200 bg-red-50">
+                            <p class="text-sm font-medium text-red-800">Не войдут в заявку ({{ count($overflowMembers) }})</p>
+                            <p class="text-xs text-red-700 mt-0.5 mb-2">
+                                @if ($this->hasFreeMemberSlot)
+                                    Перенесите нужных участников в экипаж — остальные в заявку не попадут. Из команды никто не удаляется.
+                                @else
+                                    Мест в экипаже нет. Чтобы заменить участника, удалите его выше (×) и перенесите нужного отсюда.
+                                @endif
+                            </p>
+                            @error('overflowMembers')
+                                <span class="text-xs text-red-600 mb-2 block">{{ $message }}</span>
+                            @enderror
+                            <div class="space-y-1">
+                                @foreach ($overflowMembers as $k => $member)
+                                    <div wire:key="overflow-{{ $member['user_id'] }}" class="flex items-center gap-2 py-1.5 px-3 bg-white/70 rounded">
+                                        <span class="text-sm flex-1 truncate text-gray-700">{{ $member['name'] }}</span>
+                                        <button type="button" wire:click="promoteOverflow({{ $k }})"
+                                                @disabled(! $this->hasFreeMemberSlot)
+                                                class="text-sm shrink-0 {{ $this->hasFreeMemberSlot ? 'text-[#2D92CE] hover:underline' : 'text-gray-400 cursor-not-allowed' }}">
+                                            ↑ В экипаж
+                                        </button>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Документы --}}

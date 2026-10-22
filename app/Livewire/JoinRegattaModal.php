@@ -6,6 +6,7 @@ use App\Actions\Auth\SendEmailVerificationLinkAction;
 use App\Actions\Payment\StartOnlinePaymentAction;
 use App\Actions\Regatta\SubmitRegattaEntryAction;
 use App\Actions\RegattaEntry\RecalculateEntryDocumentsCompleteAction;
+use App\Actions\Team\BuildTeamEntryPrefillAction;
 use App\Enums\CreationSource;
 use App\Enums\PaymentStatus;
 use App\Enums\SportCategory;
@@ -176,10 +177,20 @@ class JoinRegattaModal extends Component
      *     name: string, email: string, birth_date: ?string, sport_category: ?string,
      *     role: string, query: string, results: array<int, array<string, mixed>>,
      *     newName: string, newBirthDate: string, newSportCategory: string,
-     *     similar: array<int, array{id: string, name: string, year: ?int}>, similarFor: string
+     *     similar: array<int, array{id: string, name: string, year: ?int}>, similarFor: string,
+     *     fromTeam: bool
      * }>
      */
     public array $guestMembers = [];
+
+    /**
+     * Участники выбранной команды, не поместившиеся в слоты экипажа.
+     * В заявку не попадают, пока их не перенесут в основной список;
+     * из команды при этом никто не удаляется.
+     *
+     * @var array<int, array{user_id: string, name: string, role: string}>
+     */
+    public array $overflowMembers = [];
 
     #[On('open-join-regatta-modal')]
     public function openModal(?string $regattaId = null): void
@@ -219,6 +230,7 @@ class JoinRegattaModal extends Component
         $this->newYachtName = '';
         $this->newYachtVfps = '';
         $this->initMemberSlots();
+        $this->overflowMembers = [];
         $this->loadFreeYachts();
     }
 
@@ -233,7 +245,7 @@ class JoinRegattaModal extends Component
             'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'guestBirthDate', 'guestSportCategory',
             'captainMode', 'captainUserId', 'captainName', 'captainSearchQuery', 'captainSearchResults',
             'teamMode', 'teamId', 'teamSelectedName', 'teamName', 'teamSearchQuery', 'teamSearchResults',
-            'yachtMode', 'newYachtName', 'newYachtVfps', 'guestMembers',
+            'yachtMode', 'newYachtName', 'newYachtVfps', 'guestMembers', 'overflowMembers',
         ]);
     }
 
@@ -272,6 +284,13 @@ class JoinRegattaModal extends Component
         unset($this->selectedRegatta);
         $this->loadFreeYachts();
         $this->resetErrorBag(['yachtId', 'newYachtName', 'regattaId']);
+
+        // Команда уже выбрана — подставляем её яхту заново: занятость зависит от регаты.
+        $team = $this->teamMode === 'select' && $this->teamId ? Team::find($this->teamId) : null;
+        $teamYachtId = $team ? app(BuildTeamEntryPrefillAction::class)->yachtId($team, $this->regattaId) : null;
+        if ($teamYachtId) {
+            $this->selectYacht($teamYachtId);
+        }
     }
 
     /** Выбранная регата — для показа информации о сборах в форме. */
@@ -402,6 +421,95 @@ class JoinRegattaModal extends Component
         $this->teamSearchQuery = '';
         $this->teamSearchResults = [];
         $this->resetErrorBag(['teamId', 'teamName']);
+
+        $this->prefillFromTeam($team);
+    }
+
+    /**
+     * Заполнить яхту, рулевого и экипаж по составу команды.
+     * Экипаж перезаписывается целиком; кто не уместился в слоты — в $overflowMembers.
+     */
+    private function prefillFromTeam(Team $team): void
+    {
+        $prefill = app(BuildTeamEntryPrefillAction::class)->handle(
+            $team,
+            $this->regattaId,
+            $this->captainMode === 'select' ? $this->captainUserId : null,
+        );
+
+        // Вводимую вручную новую яхту / нового рулевого не затираем.
+        if ($prefill['yacht_id'] && $this->yachtMode === 'select') {
+            $this->selectYacht($prefill['yacht_id']);
+        }
+
+        if ($prefill['captain'] && $this->captainMode === 'select') {
+            $this->selectCaptain($prefill['captain']['id']);
+        }
+
+        $this->initMemberSlots();
+        $this->overflowMembers = [];
+        $this->resetErrorBag('overflowMembers');
+
+        foreach ($prefill['members'] as $idx => $member) {
+            if ($idx < self::MAX_ADDED_MEMBERS) {
+                $this->fillSlotFromTeam($idx, $member);
+            } else {
+                $this->overflowMembers[] = $member;
+            }
+        }
+    }
+
+    /** @param  array{user_id: string, name: string, role: string}  $member */
+    private function fillSlotFromTeam(int $i, array $member): void
+    {
+        $this->guestMembers[$i] = array_merge($this->emptySlot(), [
+            'ref' => $this->guestMembers[$i]['ref'],
+            'mode' => 'filled',
+            'registered' => true,
+            'user_id' => $member['user_id'],
+            'name' => $member['name'],
+            'role' => $member['role'],
+            'fromTeam' => true,
+        ]);
+    }
+
+    /** Есть ли свободный слот экипажа — для переноса участников из «лишних». */
+    #[Computed]
+    public function hasFreeMemberSlot(): bool
+    {
+        return collect($this->guestMembers)->contains('mode', 'empty');
+    }
+
+    /** Перенести участника из «лишних» в первый свободный слот экипажа. */
+    public function promoteOverflow(int $k): void
+    {
+        if (! isset($this->overflowMembers[$k])) {
+            return;
+        }
+
+        $free = collect($this->guestMembers)->search(fn (array $slot): bool => $slot['mode'] === 'empty');
+
+        if ($free === false) {
+            $this->addError('overflowMembers', 'Основной список заполнен: удалите кого-нибудь из экипажа, чтобы освободить место.');
+
+            return;
+        }
+
+        $member = $this->overflowMembers[$k];
+        unset($this->overflowMembers[$k]);
+        $this->overflowMembers = array_values($this->overflowMembers);
+        $this->resetErrorBag('overflowMembers');
+
+        $this->fillSlotFromTeam($free, $member);
+    }
+
+    /** Убрать пользователя из «лишних» — он выбран рулевым или в слот вручную. */
+    private function forgetOverflow(string $userId): void
+    {
+        $this->overflowMembers = array_values(array_filter(
+            $this->overflowMembers,
+            fn (array $m): bool => $m['user_id'] !== $userId,
+        ));
     }
 
     /** Начать создание новой команды (название берётся из поискового запроса). */
@@ -413,6 +521,7 @@ class JoinRegattaModal extends Component
         $this->teamName = trim($name);
         $this->teamSearchQuery = '';
         $this->teamSearchResults = [];
+        $this->overflowMembers = [];
         $this->resetErrorBag(['teamId', 'teamName']);
     }
 
@@ -452,6 +561,7 @@ class JoinRegattaModal extends Component
         $this->teamSelectedName = null;
         $this->teamName = '';
         $this->teamSearchQuery = '';
+        $this->overflowMembers = [];
         $this->loadTeams();
         $this->resetErrorBag(['teamId', 'teamName']);
     }
@@ -500,6 +610,7 @@ class JoinRegattaModal extends Component
         $this->guestPhone = '';
         $this->guestBirthDate = '';
         $this->guestSportCategory = '';
+        $this->forgetOverflow((string) $user->id);
         $this->resetErrorBag(['captainUserId', 'guestName', 'guestEmail', 'guestPhone', 'guestBirthDate', 'guestSportCategory']);
     }
 
@@ -586,6 +697,7 @@ class JoinRegattaModal extends Component
             'newSportCategory' => '',
             'similar' => [],
             'similarFor' => '',
+            'fromTeam' => false,
         ];
     }
 
@@ -680,6 +792,7 @@ class JoinRegattaModal extends Component
             'email' => (string) $user->email,
             'role' => 'main',
         ]);
+        $this->forgetOverflow((string) $user->id);
     }
 
     /** Начать ввод нового (незарегистрированного) участника в слот. */
@@ -818,11 +931,23 @@ class JoinRegattaModal extends Component
         ]);
     }
 
-    /** Очистить слот — вернуть его в режим поиска. */
+    /**
+     * Очистить слот — вернуть его в режим поиска.
+     * Участник, подставленный из команды, уходит в «лишние»: его можно вернуть обратно.
+     */
     public function clearSlot(int $i): void
     {
         if (! isset($this->guestMembers[$i])) {
             return;
+        }
+
+        $slot = $this->guestMembers[$i];
+        if (($slot['fromTeam'] ?? false) && $slot['mode'] === 'filled' && ! empty($slot['user_id'])) {
+            $this->overflowMembers[] = [
+                'user_id' => (string) $slot['user_id'],
+                'name' => $slot['name'],
+                'role' => $slot['role'],
+            ];
         }
 
         $ref = $this->guestMembers[$i]['ref'];
