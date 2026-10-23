@@ -1672,9 +1672,10 @@ Route::get('unsubscribe/{user}/{category}/{channel?}', function (
     ]);
 })->middleware(['signed', 'throttle:10,1'])->name('notifications.unsubscribe');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth'])
-    ->name('dashboard');
+// Личный кабинет — Filament-панель user. Breeze-страница dashboard на её месте
+// падала (её меню конфликтует с компонентами TallStackUI), имя маршрута оставлено
+// ради старых ссылок; гостя на вход отправит сама панель.
+Route::redirect('dashboard', '/user')->name('dashboard');
 
 Route::view('profile', 'profile')
     ->middleware(['auth'])
