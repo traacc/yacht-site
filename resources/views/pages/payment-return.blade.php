@@ -3,6 +3,12 @@
 
     $status = $transaction->status;
     $isPending = $status === PaymentTransactionStatus::Pending;
+
+    // Возврат в ЛК (Filament-панель user): по заявке — в список заявок, где видны
+    // остальные неоплаченные сборы. Breeze-маршрут dashboard для этого не годится.
+    $cabinetUrl = $transaction->registry?->payable instanceof \App\Models\RegattaEntry
+        ? \App\Filament\User\Resources\RegattaEntries\RegattaEntryResource::getUrl(panel: 'user')
+        : route('filament.user.home');
 @endphp
 <x-public-layout title="Результат оплаты">
     @if ($isPending)
@@ -33,7 +39,7 @@
                         </p>
                     @endif
 
-                    <a href="{{ route('dashboard') }}" class="inline-block bg-blue-600 text-white rounded-lg px-6 py-3 hover:bg-blue-700 transition">
+                    <a href="{{ $cabinetUrl }}" class="inline-block bg-blue-600 text-white rounded-lg px-6 py-3 hover:bg-blue-700 transition">
                         Перейти в личный кабинет
                     </a>
                 </div>
