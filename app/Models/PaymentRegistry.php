@@ -8,6 +8,7 @@ use App\Enums\PaymentSettlement;
 use App\Enums\PaymentStatus;
 use App\Models\Concerns\NormalizesHeicImageColumns;
 use App\Models\Scopes\OwnedScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -121,8 +122,35 @@ class PaymentRegistry extends Model
     }
 
     // ──────────────────────────────────────────────
+    // Scopes
+    // ──────────────────────────────────────────────
+
+    /**
+     * Платежи, которые плательщик ещё может оплатить онлайн.
+     *
+     * «Частично оплачено» сюда не входит: сумма записи — полная, и повторная
+     * оплата взяла бы её целиком. Такие случаи разбирает бухгалтер вручную.
+     */
+    public function scopeAwaitingPayment(Builder $query): Builder
+    {
+        return $query->whereIn('status', [PaymentStatus::Pending->value, PaymentStatus::Overdue->value]);
+    }
+
+    // ──────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────
+
+    /**
+     * Влияет ли запись на отметку «взнос оплачен» у заявки.
+     *
+     * Только стартовый взнос (и старые записи без назначения — до справочника
+     * они создавались лишь под взнос): оплата береговой программы или ужина
+     * не должна отмечать взнос оплаченным и наоборот.
+     */
+    public function isEntryFee(): bool
+    {
+        return $this->purpose === null || $this->purpose === PaymentPurpose::EntryFee;
+    }
 
     /** Бухгалтер подтвердил фактический приход средств. */
     public function isConfirmed(): bool

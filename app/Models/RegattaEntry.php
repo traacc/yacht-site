@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 
 class RegattaEntry extends Model
@@ -24,6 +25,7 @@ class RegattaEntry extends Model
         'yacht_id',
         'participation_kind',
         'seats',
+        'shore_program_persons',
         'user_id',
         'status',
         'source',
@@ -50,6 +52,7 @@ class RegattaEntry extends Model
             'source' => RegattaEntrySource::class,
             'participation_kind' => ParticipationKind::class,
             'seats' => 'integer',
+            'shore_program_persons' => 'integer',
             'open_for_join' => 'boolean',
         ];
     }
@@ -214,6 +217,22 @@ class RegattaEntry extends Model
     public function joinNotificationEmail(): ?string
     {
         return $this->join_contact_email ?: $this->notifiableUser()?->email;
+    }
+
+    /**
+     * Неоплаченные счета заявки, которые участник может оплатить онлайн:
+     * стартовый взнос первым, затем береговая программа и прочие сборы.
+     *
+     * @return Collection<int, PaymentRegistry>
+     */
+    public function awaitingPayments(): Collection
+    {
+        return $this->paymentRegistries()
+            ->awaitingPayment()
+            ->oldest()
+            ->get()
+            ->sortBy(fn (PaymentRegistry $registry): int => $registry->isEntryFee() ? 0 : 1)
+            ->values();
     }
 
     /** Поданы ли не все обязательные документы (заявка помечена для проверки) */

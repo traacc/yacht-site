@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Regatta;
 
+use App\Actions\RegattaEntry\SyncShoreProgramPaymentAction;
 use App\Enums\ParticipationKind;
 use App\Enums\PaymentPurpose;
 use App\Enums\PaymentStatus;
@@ -27,13 +28,21 @@ final class SubmitRegattaEntryAction
      * @param  array<string, 'main'|'reserve'|'captain'>  $crew  team_member_id => role
      * @param  array{open_for_join?: bool, join_conditions?: ?string, join_contact_email?: ?string}  $joinOptions
      *                                                                                                             Добор людей со стороны: экипаж объявляет условия и почту для откликов.
+     * @param  ?int  $shoreProgramPersons  За сколько человек платится береговая программа (если у регаты есть сбор).
      *
      * @throws InsufficientTeamRoleException
      * @throws ValidationException
      */
-    public function handle(Regatta $regatta, Team $team, Yacht $yacht, User $actor, array $crew = [], ?string $entryPassword = null, bool $feePaid = false, array $joinOptions = []): RegattaEntry
+    public function handle(Regatta $regatta, Team $team, Yacht $yacht, User $actor, array $crew = [], ?string $entryPassword = null, bool $feePaid = false, array $joinOptions = [], ?int $shoreProgramPersons = null): RegattaEntry
     {
         TeamRoleGuard::authorize($team, $actor, TeamMemberRole::ACTION_SUBMIT_ENTRY);
+
+        // Береговая программа — не больше, чем людей в экипаже.
+        $shoreProgramPersons = SyncShoreProgramPaymentAction::validatePersons(
+            $regatta,
+            $shoreProgramPersons,
+            count(array_filter($crew, fn (?string $role): bool => filled($role))),
+        );
 
         // Проверяем, что яхта принадлежит пользователю
         /*
@@ -127,6 +136,11 @@ final class SubmitRegattaEntryAction
                     'role' => $role,
                 ]);
             }
+        }
+
+        // После экипажа: счёт за береговую программу выставит обсервер заявки.
+        if ($shoreProgramPersons !== null) {
+            $entry->update(['shore_program_persons' => $shoreProgramPersons]);
         }
 
         return $entry;

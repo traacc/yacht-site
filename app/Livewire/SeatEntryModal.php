@@ -40,6 +40,9 @@ class SeatEntryModal extends Component
     /** Остальные участники экипажа: [['name' => ..., 'email' => ..., 'phone' => ...]] */
     public array $crew = [];
 
+    /** За сколько человек платится береговая программа (если у регаты есть сбор). */
+    public string $shoreProgramPersons = '';
+
     public bool $submitted = false;
 
     protected function rules(): array
@@ -87,6 +90,7 @@ class SeatEntryModal extends Component
             'race_hours_per_day' => $regatta->race_hours_per_day,
             'crew_limit' => $regatta->maxCrewSize(),
             'allows_individual' => $regatta->allowsIndividualEntry(),
+            'shore_fee' => $regatta->hasShoreProgramFee() ? (float) $regatta->shore_fee_per_person : null,
         ];
 
         $this->kind = $regatta->allowsIndividualEntry()
@@ -98,6 +102,7 @@ class SeatEntryModal extends Component
         $this->email = $user?->email ?? '';
         $this->phone = $user?->phone ?? '';
         $this->crew = [];
+        $this->shoreProgramPersons = '';
 
         $this->isOpen = true;
     }
@@ -120,6 +125,26 @@ class SeatEntryModal extends Component
         $this->crew = array_values($this->crew);
     }
 
+    /**
+     * Предел числа человек на береговой программе для текущего состояния формы.
+     * Индивидуальная заявка из этой формы — всегда одно место.
+     */
+    public function shoreProgramCapacity(): int
+    {
+        $regatta = Regatta::find($this->regattaId);
+
+        if (! $regatta instanceof Regatta) {
+            return 1;
+        }
+
+        $kind = ParticipationKind::from($this->kind);
+        $people = $kind === ParticipationKind::Individual
+            ? 1
+            : 1 + count(array_filter($this->crew, fn (array $member): bool => filled($member['name'] ?? null)));
+
+        return SubmitSeatEntryAction::shoreProgramCapacity($regatta, $kind, $people);
+    }
+
     public function submit(SubmitSeatEntryAction $action): void
     {
         $data = $this->validate();
@@ -140,6 +165,8 @@ class SeatEntryModal extends Component
             ],
             crew: $data['crew'] ?? [],
             actor: auth()->user(),
+            // Одно место — выбирать не из чего, береговая программа за этого человека.
+            shoreProgramPersons: $this->shoreProgramCapacity() === 1 ? 1 : (int) $this->shoreProgramPersons,
         );
 
         $this->submitted = true;
@@ -151,7 +178,7 @@ class SeatEntryModal extends Component
         $this->regattaId = null;
         $this->regattaInfo = null;
         $this->submitted = false;
-        $this->reset(['name', 'email', 'phone', 'crew']);
+        $this->reset(['name', 'email', 'phone', 'crew', 'shoreProgramPersons']);
         $this->resetValidation();
     }
 

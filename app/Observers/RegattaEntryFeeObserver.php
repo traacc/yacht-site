@@ -27,6 +27,11 @@ class RegattaEntryFeeObserver
         $status = $entry->fee_paid ? PaymentStatus::Paid : PaymentStatus::Pending;
 
         foreach ($entry->paymentRegistries as $registry) {
+            // Галочка относится только к стартовому взносу: береговую программу не трогаем.
+            if (! $registry->isEntryFee()) {
+                continue;
+            }
+
             // Уже в нужном состоянии — не трогаем (в т.ч. ручные Partial/Overdue/Canceled
             // перетираем только при явной смене галочки оплаты).
             if ($registry->status === $status) {

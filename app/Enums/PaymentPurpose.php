@@ -19,6 +19,7 @@ enum PaymentPurpose: string implements HasColor, HasLabel
 {
     case MembershipFee = 'membership_fee';
     case EntryFee = 'entry_fee';
+    case ShoreProgram = 'shore_program';
     case Dinner = 'dinner';
     case Sponsorship = 'sponsorship';
     case YachtRental = 'yacht_rental';
@@ -31,6 +32,7 @@ enum PaymentPurpose: string implements HasColor, HasLabel
         return match ($this) {
             self::MembershipFee => 'Членский взнос',
             self::EntryFee => 'Стартовый взнос',
+            self::ShoreProgram => 'Береговая программа',
             self::Dinner => 'Участие в ужине',
             self::Sponsorship => 'Спонсорский взнос',
             self::YachtRental => 'Аренда яхты',
@@ -45,6 +47,7 @@ enum PaymentPurpose: string implements HasColor, HasLabel
         return match ($this) {
             self::MembershipFee => 'primary',
             self::EntryFee => 'success',
+            self::ShoreProgram => 'warning',
             self::Dinner => 'warning',
             self::Sponsorship => 'info',
             self::YachtRental => 'info',

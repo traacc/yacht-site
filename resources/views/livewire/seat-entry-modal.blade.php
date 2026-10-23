@@ -55,6 +55,9 @@
                             @if($regattaInfo['boat_price'])
                                 <p>Лодка целиком: <span class="font-semibold">{{ number_format((float) $regattaInfo['boat_price'], 0, ',', ' ') }} ₽</span></p>
                             @endif
+                            @if($regattaInfo['shore_fee'])
+                                <p>Береговая программа: <span class="font-semibold">{{ number_format($regattaInfo['shore_fee'], 0, ',', ' ') }} ₽</span> за человека</p>
+                            @endif
                             @if($regattaInfo['crew_limit'])
                                 <p>Мест в экипаже: <span class="font-semibold">{{ $regattaInfo['crew_limit'] }}</span></p>
                             @endif
@@ -122,6 +125,36 @@
                                         </div>
                                         @error('crew.'.$index.'.email') <p class="text-brand-red text-sm mb-2">{{ $message }}</p> @enderror
                                     @endforeach
+                                </div>
+                            @endif
+
+                            {{-- Береговая программа: сбор за каждого человека --}}
+                            @if($regattaInfo['shore_fee'])
+                                @php
+                                    $shoreCapacity = $this->shoreProgramCapacity();
+                                @endphp
+                                <div class="border-t border-brand-border pt-4"
+                                     x-data="{ persons: $wire.entangle('shoreProgramPersons'), price: {{ $regattaInfo['shore_fee'] }} }">
+                                    <span class="block text-sm font-medium text-brand-dark mb-1">Береговая программа</span>
+                                    @if($shoreCapacity === 1)
+                                        <p class="text-sm text-brand-gray">
+                                            За вас: <span class="font-semibold">{{ number_format($regattaInfo['shore_fee'], 0, ',', ' ') }} ₽</span>
+                                        </p>
+                                    @else
+                                        <p class="text-xs text-brand-gray-light mb-2">
+                                            За сколько человек экипажа платите: от 1 до {{ $shoreCapacity }}.
+                                        </p>
+                                        <div class="flex items-center gap-3">
+                                            <input id="seat-entry-shore" type="number" x-model="persons"
+                                                   min="1" max="{{ $shoreCapacity }}" step="1" inputmode="numeric"
+                                                   class="w-24 border border-brand-border px-3 py-2 focus:outline-none focus:border-brand-blue">
+                                            <span class="text-sm text-brand-gray" x-show="Number(persons) > 0">
+                                                к оплате: <span class="font-semibold"
+                                                    x-text="(Number(persons) * price).toLocaleString('ru-RU') + ' ₽'"></span>
+                                            </span>
+                                        </div>
+                                    @endif
+                                    @error('shoreProgramPersons') <p class="text-brand-red text-sm mt-1">{{ $message }}</p> @enderror
                                 </div>
                             @endif
 

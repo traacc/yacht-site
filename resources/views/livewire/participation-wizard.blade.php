@@ -309,6 +309,34 @@
                                 @error('comment') <p class="text-brand-red text-sm mt-1">{{ $message }}</p> @enderror
                             </div>
 
+                            {{-- Береговая программа: сбор за каждого человека --}}
+                            @if($this->asksShoreProgram())
+                                @php($shorePrice = (float) $this->regatta()->shore_fee_per_person)
+                                @php($shoreCapacity = $this->shoreProgramCapacity())
+                                <div x-data="{ persons: $wire.entangle('shoreProgramPersons'), price: {{ $shorePrice }} }">
+                                    <span class="block text-sm font-medium text-brand-dark mb-1">Береговая программа</span>
+                                    @if($shoreCapacity === 1)
+                                        <p class="text-sm text-brand-gray">
+                                            За вас: <span class="font-semibold">{{ number_format($shorePrice, 0, ',', ' ') }} ₽</span>
+                                        </p>
+                                    @else
+                                        <p class="text-xs text-brand-gray-light mb-2">
+                                            {{ number_format($shorePrice, 0, ',', ' ') }} ₽ за человека. За сколько человек платите: от 1 до {{ $shoreCapacity }}.
+                                        </p>
+                                        <div class="flex items-center gap-3">
+                                            <input id="wizard-shore" type="number" x-model="persons"
+                                                   min="1" max="{{ $shoreCapacity }}" step="1" inputmode="numeric"
+                                                   class="w-24 border border-brand-border px-3 py-2 focus:outline-none focus:border-brand-blue">
+                                            <span class="text-sm text-brand-gray" x-show="Number(persons) > 0">
+                                                к оплате: <span class="font-semibold"
+                                                    x-text="(Number(persons) * price).toLocaleString('ru-RU') + ' ₽'"></span>
+                                            </span>
+                                        </div>
+                                    @endif
+                                    @error('shoreProgramPersons') <p class="text-brand-red text-sm mt-1">{{ $message }}</p> @enderror
+                                </div>
+                            @endif
+
                             @if($this->isRentalBranch())
                                 <label class="flex items-start gap-2 cursor-pointer">
                                     <input type="checkbox" wire:model="agreement" class="mt-1 border-gray-300 text-brand-blue">

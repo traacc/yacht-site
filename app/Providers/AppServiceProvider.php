@@ -23,6 +23,7 @@ use App\Observers\RegattaEntryFeeObserver;
 use App\Observers\RegattaEntryModerationObserver;
 use App\Observers\RegattaEntryPaymentLinksObserver;
 use App\Observers\RegattaEntryResultObserver;
+use App\Observers\RegattaEntryShoreProgramObserver;
 use App\Observers\RegattaRequiredDocumentsObserver;
 use App\Observers\RegattaResultItemObserver;
 use App\Observers\TeamMemberObserver;
@@ -110,6 +111,7 @@ class AppServiceProvider extends ServiceProvider
         News::observe(NewsObserver::class);
         RegattaEntry::observe(RegattaEntryFeeObserver::class);
         RegattaEntry::observe(RegattaEntryPaymentLinksObserver::class);
+        RegattaEntry::observe(RegattaEntryShoreProgramObserver::class);
         RegattaEntry::observe(RegattaEntryResultObserver::class);
         RegattaEntry::observe(RegattaEntryModerationObserver::class);
         Regatta::observe(RegattaRequiredDocumentsObserver::class);

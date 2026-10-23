@@ -431,6 +431,13 @@ class RegattaResource extends Resource
                             ->suffix('₽')
                             ->visible(fn (Get $get): bool => (bool) $get('entry_fee_required'))
                             ->required(fn (Get $get): bool => (bool) $get('entry_fee_required')),
+                        TextInput::make('shore_fee_per_person')
+                            ->label('Береговая программа, за человека')
+                            ->helperText('Пусто — сбора нет. Иначе при подаче заявки указывают, за сколько человек экипажа платят (от 1 до размера экипажа), и выставляется отдельный счёт.')
+                            ->numeric()
+                            ->minValue(0)
+                            ->step(0.01)
+                            ->suffix('₽'),
                     ]),
 
                 // ── Регулярная регата: продажа мест ───────

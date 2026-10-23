@@ -13,6 +13,7 @@ use App\Filament\Concerns\OverwritesRegattaEntries;
 use App\Filament\Concerns\ResolvesCrewMembers;
 use App\Filament\Concerns\RestrictsAccessByRole;
 use App\Filament\Concerns\ScopesToOwnedRegattas;
+use App\Filament\Forms\Components\ShoreProgramPersonsInput;
 use App\Filament\Resources\RegattaEntries\Pages\ManageRegattaEntries;
 use App\Models\RegattaEntry;
 use App\Models\RegattaEntryCrew;
@@ -38,6 +39,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Enums\FiltersLayout;
@@ -316,6 +318,12 @@ class RegattaEntryResource extends Resource
                             ->iconButton()
                     )->extraAttributes(['class' => 'hide-repeater-header-label']),
 
+                // ── Береговая программа ───────────────
+                ShoreProgramPersonsInput::make()
+                    // Администратор правит заявку вручную — без предела по экипажу.
+                    ->withoutCrewLimit()
+                    ->columnSpanFull(),
+
                 // ── Документы заявки ──────────────────
                 Repeater::make('required_documents')
                     ->label('Документы')
@@ -480,6 +488,14 @@ class RegattaEntryResource extends Resource
                     ->visible(fn (): bool => RegattaEntry::query()
                         ->whereHas('regatta', fn ($q) => $q->where('entry_fee_required', true))
                         ->exists())
+                    ->sortable()
+                    ->toggleable(),
+                // Итог по выборке — сколько человек заказать на береговую программу.
+                TextColumn::make('shore_program_persons')
+                    ->label('Береговая программа')
+                    ->suffix(' чел.')
+                    ->placeholder('—')
+                    ->summarize(Sum::make()->label('Всего человек'))
                     ->sortable()
                     ->toggleable(),
                 TextColumn::make('source')

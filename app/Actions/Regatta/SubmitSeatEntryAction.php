@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Regatta;
 
+use App\Actions\RegattaEntry\SyncShoreProgramPaymentAction;
 use App\Enums\ParticipationKind;
 use App\Enums\PaymentPurpose;
 use App\Enums\PaymentStatus;
@@ -37,6 +38,7 @@ final class SubmitSeatEntryAction
      * @param  list<array{name: string, email?: ?string, phone?: ?string}>  $crew  Остальные участники — только для заявки экипажем.
      * @param  int  $seats  Сколько мест берёт индивидуальная заявка (для экипажа считается по людям).
      * @param  ?Yacht  $yacht  Выбранная свободная лодка, если человек указал её сам.
+     * @param  ?int  $shoreProgramPersons  За сколько человек платится береговая программа (если у регаты есть сбор).
      *
      * @throws ValidationException
      */
@@ -48,6 +50,7 @@ final class SubmitSeatEntryAction
         ?User $actor = null,
         int $seats = 1,
         ?Yacht $yacht = null,
+        ?int $shoreProgramPersons = null,
     ): RegattaEntry {
         if (! $regatta->isOpenForRegistration()) {
             throw ValidationException::withMessages([
@@ -79,13 +82,19 @@ final class SubmitSeatEntryAction
             ]);
         }
 
+        $shoreProgramPersons = SyncShoreProgramPaymentAction::validatePersons(
+            $regatta,
+            $shoreProgramPersons,
+            self::shoreProgramCapacity($regatta, $kind, $seats),
+        );
+
         if ($actor !== null && $regatta->entries()->where('user_id', $actor->id)->whereIn('status', ['pending', 'approved'])->exists()) {
             throw ValidationException::withMessages([
                 'regatta' => 'Вы уже подали заявку на эту регату.',
             ]);
         }
 
-        $entry = DB::transaction(function () use ($regatta, $kind, $applicant, $members, $actor, $seats, $yacht): RegattaEntry {
+        $entry = DB::transaction(function () use ($regatta, $kind, $applicant, $members, $actor, $seats, $yacht, $shoreProgramPersons): RegattaEntry {
             $entry = RegattaEntry::create([
                 'regatta_id' => $regatta->id,
                 'team_id' => null,
@@ -135,12 +144,34 @@ final class SubmitSeatEntryAction
                 ]);
             }
 
+            // После экипажа: счёт за береговую программу выставит обсервер заявки.
+            if ($shoreProgramPersons !== null) {
+                $entry->update(['shore_program_persons' => $shoreProgramPersons]);
+            }
+
             return $entry;
         });
 
         $this->notifyAdmins($entry);
 
         return $entry;
+    }
+
+    /**
+     * Сколько человек можно записать на береговую программу.
+     *
+     * Индивидуально — по купленным местам. Экипаж берёт лодку ассоциации
+     * целиком, а состав часто добирается уже после заявки (мастер «Хочу
+     * участвовать» спрашивает только заявителя), поэтому предел — вместимость
+     * лодки, если она задана, иначе названные в заявке люди.
+     */
+    public static function shoreProgramCapacity(Regatta $regatta, ParticipationKind $kind, int $seats): int
+    {
+        if ($kind === ParticipationKind::Individual) {
+            return max($seats, 1);
+        }
+
+        return max($seats, $regatta->maxCrewSize() ?? $seats);
     }
 
     /** Сбой почты не отменяет поданную заявку — она уже ждёт админа в очереди. */

@@ -70,9 +70,12 @@ final class StartOnlinePaymentAction
         }
 
         // Переиспользуем недавнюю незавершённую попытку вместо создания дубля.
+        // Сумма должна совпадать: счёт за береговую программу пересчитывается
+        // при смене числа человек, и старая ссылка взяла бы прежнюю сумму.
         $existing = $registry->transactions()
             ->where('status', PaymentTransactionStatus::Pending->value)
             ->where('provider', $provider->code()->value)
+            ->where('amount', $registry->amount)
             ->whereNotNull('confirmation_url')
             ->where('created_at', '>=', now()->subMinutes(self::REUSE_WINDOW_MINUTES))
             ->latest()

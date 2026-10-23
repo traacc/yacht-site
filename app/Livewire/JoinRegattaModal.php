@@ -8,7 +8,6 @@ use App\Actions\Regatta\SubmitRegattaEntryAction;
 use App\Actions\RegattaEntry\RecalculateEntryDocumentsCompleteAction;
 use App\Actions\Team\BuildTeamEntryPrefillAction;
 use App\Enums\CreationSource;
-use App\Enums\PaymentStatus;
 use App\Enums\SportCategory;
 use App\Enums\TeamMemberRole;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
@@ -16,6 +15,7 @@ use App\Filament\User\Resources\RegattaEntries\RegattaEntryResource;
 use App\Mail\RegattaEntrySubmitted;
 use App\Mail\SendLoginCredentials;
 use App\Mail\SendRegattaEntryPassword;
+use App\Models\PaymentRegistry;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use App\Models\RegattaEntryCrew;
@@ -69,6 +69,9 @@ class JoinRegattaModal extends Component
 
     /** Отметка участника об оплате сбора (если регата требует сбор) */
     public bool $feePaid = false;
+
+    /** За сколько человек экипажа платится береговая программа (если у регаты есть сбор). */
+    public string $shoreProgramPersons = '';
 
     /** ID только что поданной заявки — для кнопки «Оплатить онлайн» на экране успеха */
     public ?string $submittedEntryId = null;
@@ -205,6 +208,7 @@ class JoinRegattaModal extends Component
         $this->quickEntryChosen = false;
         $this->isOpen = true;
         $this->feePaid = false;
+        $this->shoreProgramPersons = '';
         $this->entryPassword = '';
         $this->entryPasswordConfirmation = '';
         $this->guestRegistered = false;
@@ -240,7 +244,7 @@ class JoinRegattaModal extends Component
         $this->reset([
             'regattaId', 'yachtId', 'documentFiles', 'submitted', 'submittedEntryId',
             'verificationEmailSent', 'leftCrew', 'quickEntryChosen',
-            'feePaid', 'entryPassword', 'entryPasswordConfirmation', 'freeYachts',
+            'feePaid', 'shoreProgramPersons', 'entryPassword', 'entryPasswordConfirmation', 'freeYachts',
             'openForJoin', 'joinConditions', 'joinContactEmail',
             'guestRegistered', 'guestName', 'guestEmail', 'guestPhone', 'guestBirthDate', 'guestSportCategory',
             'captainMode', 'captainUserId', 'captainName', 'captainSearchQuery', 'captainSearchResults',
@@ -281,6 +285,7 @@ class JoinRegattaModal extends Component
         $this->newYachtVfps = '';
         $this->documentFiles = [];
         $this->feePaid = false;
+        $this->shoreProgramPersons = '';
         unset($this->selectedRegatta);
         $this->loadFreeYachts();
         $this->resetErrorBag(['yachtId', 'newYachtName', 'regattaId']);
@@ -998,6 +1003,11 @@ class JoinRegattaModal extends Component
             'joinConditions' => ['nullable', 'string', 'max:2000'],
         ];
 
+        // Береговая программа — хотя бы за одного и не больше, чем людей в экипаже.
+        if ($this->selectedRegatta?->hasShoreProgramFee()) {
+            $rules['shoreProgramPersons'] = ['required', 'integer', 'min:1', 'max:'.$this->crewSize()];
+        }
+
         // Почта для откликов обязательна: без неё экипаж не узнает о желающих.
         if ($this->openForJoin) {
             $rules['joinContactEmail'] = ['required', 'email', 'max:255'];
@@ -1049,6 +1059,9 @@ class JoinRegattaModal extends Component
             'guestEmail.unique' => 'Пользователь с таким email уже зарегистрирован',
             'guestPhone.unique' => 'Пользователь с таким телефоном уже зарегистрирован',
             'entryPasswordConfirmation.same' => 'Пароли не совпадают',
+            'shoreProgramPersons.required' => 'Укажите, за сколько человек оплачивается береговая программа.',
+            'shoreProgramPersons.min' => 'Береговая программа оплачивается хотя бы за одного человека.',
+            'shoreProgramPersons.max' => 'Не больше, чем людей в экипаже (:max).',
         ], [
             'regattaId' => 'регата',
             'entryPassword' => 'пароль заявки',
@@ -1064,6 +1077,7 @@ class JoinRegattaModal extends Component
             'newYachtName' => 'название яхты',
             'newYachtVfps' => 'номер паруса',
             'captainUserId' => 'капитан',
+            'shoreProgramPersons' => 'береговая программа',
         ]);
 
         $regatta = Regatta::findOrFail($this->regattaId);
@@ -1255,6 +1269,7 @@ class JoinRegattaModal extends Component
                         'join_conditions' => $this->joinConditions ?: null,
                         'join_contact_email' => $this->joinContactEmail ?: null,
                     ],
+                    $regatta->hasShoreProgramFee() ? (int) $this->shoreProgramPersons : null,
                 );
 
                 return [$entry, $captain];
@@ -1358,23 +1373,46 @@ class JoinRegattaModal extends Component
     }
 
     // ──────────────────────────────────────────────
-    // Онлайн-оплата стартового взноса
+    // Береговая программа
     // ──────────────────────────────────────────────
 
-    /** Есть ли по поданной заявке неоплаченный взнос с доступной онлайн-оплатой. */
-    private function feeIsPayable(): bool
+    /**
+     * Сколько людей в экипаже формы: рулевой плюс заполненные слоты.
+     * Это предел числа человек на береговой программе.
+     */
+    public function crewSize(): int
     {
-        return $this->submittedEntryId !== null
-            && (bool) $this->selectedRegatta?->entry_fee_required
-            && ! $this->feePaid
-            && app(PaymentManager::class)->isEnabled();
+        return 1 + count(array_filter(
+            $this->guestMembers,
+            fn (array $slot): bool => ($slot['registered'] ?? null) !== null,
+        ));
     }
 
-    /** Доступна ли онлайн-оплата взноса для только что поданной заявки. */
+    // ──────────────────────────────────────────────
+    // Онлайн-оплата сборов поданной заявки
+    // ──────────────────────────────────────────────
+
+    /**
+     * Неоплаченные счета только что поданной заявки (взнос, береговая программа),
+     * если онлайн-оплата включена.
+     *
+     * @return Collection<int, PaymentRegistry>
+     */
+    #[Computed]
+    public function awaitingPayments(): Collection
+    {
+        if ($this->submittedEntryId === null || ! app(PaymentManager::class)->isEnabled()) {
+            return collect();
+        }
+
+        return RegattaEntry::find($this->submittedEntryId)?->awaitingPayments() ?? collect();
+    }
+
+    /** Доступна ли онлайн-оплата сборов для только что поданной заявки. */
     #[Computed]
     public function canPayOnline(): bool
     {
-        return $this->feeIsPayable()
+        return $this->awaitingPayments->isNotEmpty()
             && (bool) Auth::user()?->hasVerifiedEmail();
     }
 
@@ -1384,7 +1422,7 @@ class JoinRegattaModal extends Component
     {
         $user = Auth::user();
 
-        return $this->feeIsPayable()
+        return $this->awaitingPayments->isNotEmpty()
             && $user instanceof User
             && ! $user->hasVerifiedEmail()
             && ! $user->hasTechnicalEmail();
@@ -1414,26 +1452,13 @@ class JoinRegattaModal extends Component
         $this->verificationEmailSent = true;
     }
 
-    /** Редирект на страницу оплаты стартового взноса поданной заявки. */
-    public function payOnline(): void
+    /** Редирект на страницу оплаты выбранного счёта поданной заявки. */
+    public function payOnline(string $registryId): void
     {
-        $entry = $this->submittedEntryId
-            ? RegattaEntry::find($this->submittedEntryId)
-            : null;
-
-        if ($entry === null) {
-            $this->addError('general', 'Заявка не найдена. Оплатить взнос можно из личного кабинета.');
-
-            return;
-        }
-
-        $registry = $entry->paymentRegistries()
-            ->where('status', '!=', PaymentStatus::Paid->value)
-            ->latest()
-            ->first();
+        $registry = $this->awaitingPayments->firstWhere('id', $registryId);
 
         if ($registry === null) {
-            $this->addError('general', 'Платёж не найден. Оплатить взнос можно из личного кабинета.');
+            $this->addError('general', 'Платёж не найден. Оплатить сборы можно из личного кабинета.');
 
             return;
         }

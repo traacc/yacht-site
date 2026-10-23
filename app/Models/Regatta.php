@@ -52,6 +52,7 @@ class Regatta extends Model
         'prizes',
         'entry_fee_required',
         'entry_fee_amount',
+        'shore_fee_per_person',
         'seat_price',
         'boat_price',
         'race_hours_per_day',
@@ -84,6 +85,7 @@ class Regatta extends Model
             'entry_required_documents' => 'array',
             'entry_fee_required' => 'boolean',
             'entry_fee_amount' => 'decimal:2',
+            'shore_fee_per_person' => 'decimal:2',
             'seat_price' => 'decimal:2',
             'boat_price' => 'decimal:2',
             'race_hours_per_day' => 'decimal:1',
@@ -391,6 +393,20 @@ class Regatta extends Model
         return $this->type === RegattaType::Travel
             ? $this->crew_size_limit
             : $this->type->crewSizeLimit();
+    }
+
+    /** Есть ли у регаты сбор за береговую программу (платится за каждого человека). */
+    public function hasShoreProgramFee(): bool
+    {
+        return $this->shore_fee_per_person !== null && (float) $this->shore_fee_per_person > 0;
+    }
+
+    /** Сумма сбора за береговую программу на указанное число человек; null — сбора нет. */
+    public function shoreProgramPrice(int $persons): ?float
+    {
+        return $this->hasShoreProgramFee()
+            ? round((float) $this->shore_fee_per_person * max($persons, 0), 2)
+            : null;
     }
 
     /** Можно ли заявиться одному, без экипажа. */

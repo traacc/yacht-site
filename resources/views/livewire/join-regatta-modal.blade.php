@@ -53,24 +53,29 @@
                 @endif
                 @if ($this->canPayOnline)
                     <div class="mt-4 rounded bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
-                        Для участия необходимо оплатить стартовый взнос
-                        @if ($this->selectedRegatta?->entry_fee_amount !== null)
-                            в размере <span class="font-semibold">{{ number_format((float) $this->selectedRegatta->entry_fee_amount, 2, ',', ' ') }} ₽</span>
-                        @endif
+                        Для участия необходимо оплатить сборы — каждый отдельной оплатой.
                     </div>
-                    <button type="button" wire:click="payOnline" wire:loading.attr="disabled"
-                            class="mt-4 inline-flex justify-center bg-[#2D92CE] px-6 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90">
-                        Оплатить онлайн
-                    </button>
+                    <div class="mt-4 space-y-3">
+                        @foreach ($this->awaitingPayments as $payment)
+                            <div wire:key="pay-{{ $payment->id }}" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-left">
+                                <span class="text-sm text-gray-700">
+                                    {{ $payment->purposeLabel() }}:
+                                    <span class="font-semibold">{{ number_format((float) $payment->amount, 2, ',', ' ') }} ₽</span>
+                                </span>
+                                <button type="button" wire:click="payOnline('{{ $payment->id }}')" wire:loading.attr="disabled"
+                                        class="inline-flex justify-center bg-[#2D92CE] px-6 py-2 text-sm font-semibold text-white shadow hover:bg-[#2D92CE]/90">
+                                    Оплатить онлайн
+                                </button>
+                            </div>
+                        @endforeach
+                    </div>
                     <p class="text-xs text-gray-500 mt-2">Оплатить можно и позже — из личного кабинета.</p>
                 @elseif ($this->needsEmailVerification)
                     <div class="mt-4 rounded bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
-                        Для участия необходимо оплатить стартовый взнос
-                        @if ($this->selectedRegatta?->entry_fee_amount !== null)
-                            в размере <span class="font-semibold">{{ number_format((float) $this->selectedRegatta->entry_fee_amount, 2, ',', ' ') }} ₽</span>.
-                        @else
-                            .
-                        @endif
+                        Для участия необходимо оплатить
+                        @foreach ($this->awaitingPayments as $payment)
+                            {{ mb_strtolower($payment->purposeLabel()) }} — <span class="font-semibold">{{ number_format((float) $payment->amount, 2, ',', ' ') }} ₽</span>@if (! $loop->last), @else.@endif
+                        @endforeach
                         Онлайн-оплата станет доступна после подтверждения e-mail — мы отправили письмо со ссылкой на
                         <span class="font-semibold">{{ auth()->user()->email }}</span>.
                     </div>
@@ -82,7 +87,7 @@
                             Отправить письмо ещё раз
                         </button>
                     @endif
-                    <p class="text-xs text-gray-500 mt-2">После подтверждения оплатить взнос можно в личном кабинете.</p>
+                    <p class="text-xs text-gray-500 mt-2">После подтверждения оплатить сборы можно в личном кабинете.</p>
                 @endif
                 @error('general')
                     <p class="text-sm text-red-600 mt-3">{{ $message }}</p>
@@ -781,6 +786,33 @@
                                 Оплатить онлайн можно будет сразу после подачи заявки или позже из личного кабинета.
                             @endif
                         </div>
+                    </div>
+                @endif
+
+                {{-- Береговая программа: сбор за каждого человека --}}
+                @if ($this->selectedRegatta?->hasShoreProgramFee())
+                    @php($shorePrice = (float) $this->selectedRegatta->shore_fee_per_person)
+                    <div class="border-t border-gray-200 pt-4"
+                         x-data="{ persons: $wire.entangle('shoreProgramPersons'), price: {{ $shorePrice }} }">
+                        <label for="shoreProgramPersons" class="block text-sm font-medium text-[#2E325C]">
+                            Береговая программа <span class="text-red-500">*</span>
+                        </label>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Сбор — <span class="font-semibold">{{ number_format($shorePrice, 2, ',', ' ') }} ₽</span> за человека.
+                            Укажите, за сколько человек экипажа платите: от 1 до {{ $this->crewSize() }}.
+                        </p>
+                        <div class="mt-2 flex items-center gap-3">
+                            <input type="number" id="shoreProgramPersons" x-model="persons"
+                                   min="1" max="{{ $this->crewSize() }}" step="1" inputmode="numeric"
+                                   class="block w-24 border-none font-medium shadow-sm bg-[#F8F8F8] sm:text-sm @error('shoreProgramPersons') border-red-300 @enderror">
+                            <span class="text-sm text-gray-700" x-show="Number(persons) > 0">
+                                к оплате: <span class="font-semibold"
+                                    x-text="(Number(persons) * price).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₽'"></span>
+                            </span>
+                        </div>
+                        @error('shoreProgramPersons')
+                            <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span>
+                        @enderror
                     </div>
                 @endif
 

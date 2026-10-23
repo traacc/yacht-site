@@ -12,7 +12,9 @@ use App\Enums\PaymentStatus;
 use App\Enums\RegattaStatus;
 use App\Enums\SystemRole;
 use App\Filament\Concerns\ResolvesCrewMembers;
+use App\Filament\Forms\Components\ShoreProgramPersonsInput;
 use App\Filament\User\Resources\RegattaEntries\Pages\ManageRegattaEntries;
+use App\Models\PaymentRegistry;
 use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use App\Models\RegattaEntryCrew;
@@ -229,6 +231,9 @@ class RegattaEntryResource extends Resource
                             ->iconButton()
                     )->extraAttributes(['class' => 'hide-repeater-header-label']),
 
+                ShoreProgramPersonsInput::make()
+                    ->columnSpanFull(),
+
                 Repeater::make('required_documents')
                     ->label('Документы')
                     ->columnSpanFull()
@@ -345,10 +350,8 @@ class RegattaEntryResource extends Resource
                     ->visible(fn (RegattaEntry $record): bool => static::feeIsPayable($record)
                         && (bool) auth()->user()?->hasVerifiedEmail())
                     ->action(function (RegattaEntry $record) {
-                        $registry = $record->paymentRegistries()
-                            ->where('status', '!=', PaymentStatus::Paid->value)
-                            ->latest()
-                            ->first();
+                        $registry = $record->awaitingPayments()
+                            ->first(fn (PaymentRegistry $registry): bool => $registry->isEntryFee());
 
                         // Заявка могла быть создана до внедрения сборов — реестра нет.
                         $registry ??= $record->paymentRegistries()->create([
@@ -358,27 +361,28 @@ class RegattaEntryResource extends Resource
                             'status' => PaymentStatus::Pending,
                         ]);
 
-                        try {
-                            $transaction = app(StartOnlinePaymentAction::class)
-                                ->handle($registry, auth()->user());
-                        } catch (ValidationException $e) {
-                            Notification::make()
-                                ->title('Оплата недоступна')
-                                ->body(collect($e->errors())->flatten()->first())
-                                ->danger()
-                                ->send();
+                        return static::startOnlinePayment($registry);
+                    }),
+                Action::make('payShoreProgram')
+                    ->label(fn (RegattaEntry $record): string => 'Оплатить береговую программу ('
+                        .number_format((float) static::shoreProgramPayment($record)?->amount, 0, ',', ' ').' ₽)')
+                    ->icon(Heroicon::OutlinedCreditCard)
+                    ->color('success')
+                    ->visible(fn (RegattaEntry $record): bool => static::shoreProgramPayment($record) !== null
+                        && app(PaymentManager::class)->isEnabled()
+                        && (bool) auth()->user()?->hasVerifiedEmail())
+                    ->action(function (RegattaEntry $record) {
+                        $registry = static::shoreProgramPayment($record);
 
-                            return null;
-                        }
-
-                        return redirect()->away($transaction->confirmation_url);
+                        return $registry !== null ? static::startOnlinePayment($registry) : null;
                     }),
                 // Пока e-mail не подтверждён, вместо оплаты предлагаем подтвердить его.
                 Action::make('verifyEmailFirst')
                     ->label('Подтвердите e-mail')
                     ->icon(Heroicon::OutlinedEnvelope)
                     ->color('warning')
-                    ->visible(fn (RegattaEntry $record): bool => static::feeIsPayable($record)
+                    ->visible(fn (RegattaEntry $record): bool => (static::feeIsPayable($record)
+                            || (static::shoreProgramPayment($record) !== null && app(PaymentManager::class)->isEnabled()))
                         && ! auth()->user()?->hasVerifiedEmail())
                     ->requiresConfirmation()
                     ->modalHeading('Подтверждение e-mail')
@@ -400,7 +404,7 @@ class RegattaEntryResource extends Resource
 
                         Notification::make()
                             ->title('Письмо отправлено')
-                            ->body('Перейдите по ссылке из письма — после этого можно будет оплатить взнос.')
+                            ->body('Перейдите по ссылке из письма — после этого можно будет оплатить сборы.')
                             ->success()
                             ->send();
                     }),
@@ -464,6 +468,32 @@ class RegattaEntryResource extends Resource
         return (bool) $record->regatta?->entry_fee_required
             && ! $record->fee_paid
             && app(PaymentManager::class)->isEnabled();
+    }
+
+    /** Неоплаченный счёт за береговую программу заявки, если он есть. */
+    protected static function shoreProgramPayment(RegattaEntry $record): ?PaymentRegistry
+    {
+        return $record->awaitingPayments()
+            ->first(fn (PaymentRegistry $registry): bool => $registry->purpose === PaymentPurpose::ShoreProgram);
+    }
+
+    /** Создаёт попытку онлайн-оплаты и уводит плательщика на страницу банка. */
+    protected static function startOnlinePayment(PaymentRegistry $registry): mixed
+    {
+        try {
+            $transaction = app(StartOnlinePaymentAction::class)
+                ->handle($registry, auth()->user());
+        } catch (ValidationException $e) {
+            Notification::make()
+                ->title('Оплата недоступна')
+                ->body(collect($e->errors())->flatten()->first())
+                ->danger()
+                ->send();
+
+            return null;
+        }
+
+        return redirect()->away($transaction->confirmation_url);
     }
 
     /**

@@ -55,6 +55,9 @@ class ParticipationWizard extends Component
 
     public int $seats = 1;
 
+    /** За сколько человек платится береговая программа (если у регаты есть сбор). */
+    public string $shoreProgramPersons = '';
+
     public string $name = '';
 
     public string $email = '';
@@ -72,6 +75,7 @@ class ParticipationWizard extends Component
         $this->reset(['kind', 'type', 'regattaId', 'yachtId', 'entryId', 'typeFilter', 'comment', 'agreement']);
         $this->resetValidation();
         $this->seats = 1;
+        $this->shoreProgramPersons = '';
         $this->step = 'kind';
 
         $user = auth()->user();
@@ -366,6 +370,33 @@ class ParticipationWizard extends Component
         return $regatta->entryPrice(ParticipationKind::from($this->kind), $this->seats);
     }
 
+    /**
+     * Предел числа человек на береговой программе: купленные места либо
+     * вместимость лодки, если экипаж берёт её целиком.
+     */
+    public function shoreProgramCapacity(): int
+    {
+        $regatta = $this->regatta();
+
+        if ($regatta === null || $this->kind === null) {
+            return 1;
+        }
+
+        $kind = ParticipationKind::from($this->kind);
+
+        return SubmitSeatEntryAction::shoreProgramCapacity(
+            $regatta,
+            $kind,
+            $kind === ParticipationKind::Individual ? $this->seats : 1,
+        );
+    }
+
+    /** Показывать ли выбор береговой программы на шаге заявки. */
+    public function asksShoreProgram(): bool
+    {
+        return ! $this->isRentalBranch() && (bool) $this->regatta()?->hasShoreProgramFee();
+    }
+
     /** Клубная регата с арендной лодкой — сначала бронь, потом заявка. */
     public function isRentalBranch(): bool
     {
@@ -448,6 +479,8 @@ class ParticipationWizard extends Component
             yacht: $this->yachtId && $this->yachtId !== self::OWN_YACHT
                 ? Yacht::find($this->yachtId)
                 : null,
+            // Одно место — выбирать не из чего, береговая программа за этого человека.
+            shoreProgramPersons: $this->shoreProgramCapacity() === 1 ? 1 : (int) $this->shoreProgramPersons,
         );
     }
 

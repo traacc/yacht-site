@@ -9,7 +9,8 @@ use App\Models\RegattaEntry;
 
 /**
  * Синхронизирует статус записи реестра платежей с отметкой об оплате
- * на связанной заявке (RegattaEntry::fee_paid).
+ * на связанной заявке (RegattaEntry::fee_paid) — только для стартового
+ * взноса (@see PaymentRegistry::isEntryFee()).
  *
  * Обновление заявки выполняется через updateQuietly(), чтобы не запускать
  * RegattaEntryFeeObserver и не создавать циклов.
@@ -44,7 +45,8 @@ class PaymentRegistryObserver
 
         $payable = $registry->payable;
 
-        if (! $payable instanceof RegattaEntry) {
+        // Береговая программа и прочие сборы по заявке на отметку взноса не влияют.
+        if (! $payable instanceof RegattaEntry || ! $registry->isEntryFee()) {
             return;
         }
 
