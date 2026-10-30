@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Season;
-use App\Models\TeamRating;
-use Illuminate\Support\Collection;
 
 final class HomeResultsService
 {
@@ -26,9 +24,9 @@ final class HomeResultsService
     }
 
     /**
-     * Returns the latest season with published team-rating data.
+     * Данные последнего сезона с командным рейтингом.
      *
-     * @return array{season: Season|null, ratings: Collection}
+     * @return array{season: Season|null, ratings: array}
      */
     public function teamRatingData(): array
     {
@@ -38,13 +36,7 @@ final class HomeResultsService
             ->orderByDesc('year')
             ->first();
 
-        $ratings = $season
-            ? TeamRating::query()
-                ->with('team')
-                ->forSeason($season)
-                ->ranked()
-                ->get()
-            : collect();
+        $ratings = app(TeamRatingViewData::class)->forSeason($season);
 
         return compact('season', 'ratings');
     }

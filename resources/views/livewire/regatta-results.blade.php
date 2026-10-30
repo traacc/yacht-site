@@ -17,7 +17,28 @@
     @if($hideHomeResults ?? false)
         {{-- Блок скрыт настройками главной страницы. --}}
     @elseif(($homeRatingMode ?? false) && $mode === 'home')
-        <section class="py-12">
+        <section class="py-12"
+            x-data="{
+                teams: {{ Js::from($homeTeamRatings) }},
+                teamModal: false,
+                teamModalData: null,
+                regattaModal: false,
+                regattaModalData: null,
+                openTeam(team) {
+                    this.teamModalData = team;
+                    this.teamModal = true;
+                },
+                openTeamRegattas(team) {
+                    this.regattaModalData = { participants: [team] };
+                    this.regattaModal = true;
+                },
+                initials(name) {
+                    if (!name) return '?';
+                    return name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+                }
+            }"
+            @keydown.escape.window="teamModal = false; regattaModal = false"
+        >
             <div class="container mx-auto sm:px-6 py-4 bg-[#F8F8F8]">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="section-title a-font">Командный рейтинг@if($homeRatingSeason) — сезон {{ $homeRatingSeason->year }}@endif</h2>
@@ -35,11 +56,23 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y text-center font-medium">
-                            @forelse($homeTeamRatings as $rating)
+                            @forelse($homeTeamRatings as $index => $rating)
                                 <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
-                                    <td class="py-3">{{ $rating->rank_position }}</td>
-                                    <td class="py-3">{{ $rating->team?->name ?? '—' }}</td>
-                                    <td class="py-3">{{ (float) $rating->total_points }}</td>
+                                    <td class="py-3">{{ $rating['rank'] }}</td>
+                                    <td class="py-3">
+                                        <button type="button"
+                                            class="text-[#2E325C] hover:text-[#2D92CE] hover:underline transition-colors cursor-pointer font-medium"
+                                            @click="openTeam(teams[{{ $index }}])">
+                                            {{ $rating['name'] }}
+                                        </button>
+                                    </td>
+                                    <td class="py-3">
+                                        <button type="button"
+                                            class="text-[#2D92CE] hover:text-[#2D92CE] hover:underline transition-colors cursor-pointer font-semibold"
+                                            @click="openTeamRegattas(teams[{{ $index }}])">
+                                            {{ $rating['total_points'] }}
+                                        </button>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
@@ -53,6 +86,8 @@
                     Полный рейтинг →
                 </a>
             </div>
+            @include('partials.ratings.team-modal')
+            @include('partials.ratings.regatta-points-modal')
         </section>
     @elseif($mode === 'list')
 

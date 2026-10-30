@@ -47,7 +47,6 @@ use App\Models\Season;
 use App\Models\Series;
 use App\Models\Team;
 use App\Models\TeamMember;
-use App\Models\TeamRating;
 use App\Models\Tour;
 use App\Models\User;
 use App\Models\Vote;
@@ -67,6 +66,7 @@ use App\Services\SeasonContext;
 use App\Services\SeriesStageResultsService;
 use App\Services\ServiceSubjectResolver;
 use App\Services\SettingsService;
+use App\Services\TeamRatingViewData;
 use App\Services\WeatherService;
 use App\Services\YachtBooking;
 use App\Services\YandexMapService;
@@ -1124,46 +1124,7 @@ Route::get('/ratings', function (Request $request) {
         ?? $ratedSeasons->firstWhere(fn (Season $s) => $s->year <= now()->year);
     $seasonYears = $ratedSeasons->mapWithKeys(fn (Season $s) => [$s->year => (string) $s->year])->all();
 
-    $teamBreakdownCache = [];
-    $teamBreakdownFor = function ($season, $teamId) use (&$teamBreakdownCache, $calculator) {
-        if (! $season || ! $teamId) {
-            return [];
-        }
-
-        $teamBreakdownCache[$season->id] ??= $calculator->teamRegattaBreakdown($season);
-
-        return $teamBreakdownCache[$season->id][$teamId] ?? [];
-    };
-
-    $teamRatings = TeamRating::with(['team.activeMembers', 'team.organizer', 'team.defaultYacht', 'season'])
-        ->where('season_id', $ratingSeason?->id)
-        ->ranked()
-        ->get()
-        ->map(function ($r) use ($teamBreakdownFor) {
-            $yacht = $r->team?->defaultYacht;
-
-            return [
-                'name' => $r->team?->name ?? '—',
-                'total_points' => (float) $r->total_points,
-                'rank' => $r->rank_position,
-                'captain' => $r->team?->organizer?->name ?? '—',
-                'captain_id' => $r->team?->organizer?->id,
-                'captain_avatar' => $r->team?->organizer?->photo_url ? asset('storage/'.$r->team->organizer->photo_url) : null,
-                'yacht' => $yacht
-                    ? trim($yacht->name.($yacht->vfps_number ? ' ('.$yacht->vfps_number.')' : ''))
-                    : '—',
-                'regattas' => $teamBreakdownFor($r->season, $r->team_id),
-                'members' => $r->team?->activeMembers
-                    ?->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
-                    ->map(fn ($m) => [
-                        'id' => $m->id,
-                        'name' => $m->name,
-                        'birthday' => $m->birth_date?->format('d.m.Y') ?? '—',
-                        'category' => SportCategory::labelOrNone($m->sport_category),
-                        'avatar' => $m->photo_url ? asset('storage/'.$m->photo_url) : null,
-                    ])->values()->toArray() ?? [],
-            ];
-        })->values()->toArray();
+    $teamRatings = app(TeamRatingViewData::class)->forSeason($ratingSeason);
 
     $breakdownCache = [];
     $breakdownFor = function ($season, $userId) use (&$breakdownCache, $calculator) {
