@@ -14,8 +14,47 @@
 <div x-data="{ get modalOpen() { return {{ ($activeTeamModal || $activeRacesModal) ? 'true' : 'false' }}; } }"
      x-effect="modalOpen ? document.body.classList.add('overflow-hidden') : document.body.classList.remove('overflow-hidden')">
 
-    @if($mode === 'list')
-    {{-- ===== РЕЖИМ: СПИСОК РЕГАТ С ФИЛЬТРАМИ ===== --}}
+    @if($hideHomeResults ?? false)
+        {{-- Блок скрыт настройками главной страницы. --}}
+    @elseif(($homeRatingMode ?? false) && $mode === 'home')
+        <section class="py-12">
+            <div class="container mx-auto sm:px-6 py-4 bg-[#F8F8F8]">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="section-title a-font">Командный рейтинг@if($homeRatingSeason) — сезон {{ $homeRatingSeason->year }}@endif</h2>
+                    <a href="{{ route('ratings', ['season' => $homeRatingSeason?->year]) }}" class="text-[#2E325C] text-lg font-semibold hover:underline hidden md:block">
+                        Полный рейтинг →
+                    </a>
+                </div>
+                <div class="overflow-x-auto relative p-2 md:p-6 md:pt-0 bg-white">
+                    <table class="w-full">
+                        <thead class="sticky top-0 bg-white">
+                            <tr class="text-2xl text-[#2E325C] border-b border-[#EAEAEA]">
+                                <th class="pb-2 text-center font-medium pt-6 w-16 a-font">Место</th>
+                                <th class="pb-2 text-center font-medium pt-6 a-font">Команда</th>
+                                <th class="pb-2 text-center font-medium pt-6 a-font">Очки</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y text-center font-medium">
+                            @forelse($homeTeamRatings as $rating)
+                                <tr class="hover:bg-white transition-colors border-b border-[#EAEAEA]">
+                                    <td class="py-3">{{ $rating->rank_position }}</td>
+                                    <td class="py-3">{{ $rating->team?->name ?? '—' }}</td>
+                                    <td class="py-3">{{ (float) $rating->total_points }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="py-6 text-gray-400">Данные рейтинга пока не опубликованы</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                <a href="{{ route('ratings', ['season' => $homeRatingSeason?->year]) }}" class="text-[#2E325C] text-sm text-center font-semibold hover:underline md:hidden block mt-4">
+                    Полный рейтинг →
+                </a>
+            </div>
+        </section>
+    @elseif($mode === 'list')
 
         <section class="container mx-auto mb-3 md:mb-8 mt-4 flex justify-between flex-col md:flex-row gap-y-2">
             <h2 class="a-font md:text-5xl text-2xl">Результаты регат</h2>

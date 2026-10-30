@@ -104,6 +104,8 @@ class HomePageSettings extends Page
             'gallery_count' => (int) $settings->get('home.gallery_count', 10),
             'gallery_random' => (bool) $settings->get('home.gallery_random', false),
             'gallery_sort' => $settings->get('home.gallery_sort', 'manual') ?? 'manual',
+            // Блок результатов
+            'results_mode' => $settings->get('home.results_mode', 'latest_regatta') ?? 'latest_regatta',
             // Hero-фон главной страницы
             'hero_media' => $heroMedia,
             'hero_crop_x' => (float) $settings->get('home.hero_crop_x', 0.0),
@@ -359,6 +361,22 @@ class HomePageSettings extends Page
                             ]),
                     ]),
 
+                // ── Блок результатов ──────────────────────────
+                Section::make('Блок «Результаты»')
+                    ->description('Выберите содержимое блока на главной странице.')
+                    ->schema([
+                        Select::make('results_mode')
+                            ->label('Отображать')
+                            ->options([
+                                'latest_regatta' => 'Результат последней регаты',
+                                'team_rating' => 'Командный рейтинг сезона',
+                                'hidden' => 'Ничего',
+                            ])
+                            ->default('latest_regatta')
+                            ->required()
+                            ->rules(['required', 'in:latest_regatta,team_rating,hidden']),
+                    ]),
+
                 // ── Галерея главной страницы ──────────────────
                 Section::make('Галерея главной страницы')
                     ->description('Настройте фотографии, отображаемые в слайдере галереи на главной странице.')
@@ -443,6 +461,7 @@ class HomePageSettings extends Page
             'data.gallery_count' => ['required', 'integer', 'min:1', 'max:50'],
             'data.gallery_random' => ['boolean'],
             'data.gallery_sort' => ['required', 'in:manual,newest,oldest'],
+            'data.results_mode' => ['required', 'in:latest_regatta,team_rating,hidden'],
             'data.banner_enabled' => ['boolean'],
             'data.banner_title' => ['nullable', 'string', 'max:255'],
             'data.banner_text' => ['nullable', 'string', 'max:1000'],
@@ -500,6 +519,7 @@ class HomePageSettings extends Page
         $settings->set('home.gallery_count', (int) $data['gallery_count'], 'home');
         $settings->set('home.gallery_random', (bool) $data['gallery_random'], 'home');
         $settings->set('home.gallery_sort', $data['gallery_sort'] ?? 'manual', 'home');
+        $settings->set('home.results_mode', $data['results_mode'] ?? 'latest_regatta', 'home');
 
         // Hero-фон: нормализуем к списку путей.
         // HEIC сперва декодируем в webp через Imagick, затем общий toWebp (jpg/png → webp).

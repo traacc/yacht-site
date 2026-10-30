@@ -8,6 +8,7 @@ use App\Models\Regatta;
 use App\Models\RegattaEntry;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\HomeResultsService;
 use App\Services\SettingsService;
 use Illuminate\Support\Collection;
 use Livewire\Component;
@@ -404,13 +405,40 @@ class RegattaResults extends Component
 
     public function render()
     {
+        if ($this->mode === 'home') {
+            $homeResults = app(HomeResultsService::class);
+            $homeMode = $homeResults->mode();
+
+            if ($homeMode === HomeResultsService::MODE_HIDDEN) {
+                return view('livewire.regatta-results', [
+                    'hideHomeResults' => true,
+                    'activeTeamModal' => null,
+                    'activeRacesModal' => null,
+                ]);
+            }
+
+            if ($homeMode === HomeResultsService::MODE_TEAM_RATING) {
+                $ratingData = $homeResults->teamRatingData();
+
+                return view('livewire.regatta-results', [
+                    'hideHomeResults' => false,
+                    'homeRatingSeason' => $ratingData['season'],
+                    'homeTeamRatings' => $ratingData['ratings'],
+                    'homeRatingMode' => true,
+                ]);
+            }
+        }
+
         $data = match ($this->mode) {
             'show', 'home' => $this->renderSingle(),
             'list' => $this->renderList(),
             default => $this->renderSingle(),
         };
 
-        return view('livewire.regatta-results', $data);
+        return view('livewire.regatta-results', $data + [
+            'hideHomeResults' => false,
+            'homeRatingMode' => false,
+        ]);
     }
 
     private function renderSingle(): array
