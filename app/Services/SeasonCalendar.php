@@ -41,7 +41,7 @@ final class SeasonCalendar
     ];
 
     /**
-     * Двенадцать месяцев года с событиями каждого.
+     * Месяцы года, в которых есть хотя бы одно соревнование.
      *
      * @return list<array{name: string, year: int|null, is_current: bool, events: list<array<string, mixed>>}>
      */
@@ -54,7 +54,13 @@ final class SeasonCalendar
         $months = [];
 
         foreach (self::MONTH_NAMES as $number => $name) {
-            $months[] = $this->month($name, $year, $number === $currentMonth, $events->get($number));
+            $monthEvents = $events->get($number);
+
+            if ($monthEvents === null || $monthEvents->isEmpty()) {
+                continue;
+            }
+
+            $months[] = $this->month($name, $year, $number === $currentMonth, $monthEvents);
         }
 
         return $months;
@@ -64,10 +70,8 @@ final class SeasonCalendar
      * Сплошная лента месяцев через все сезоны — для главной, где календарь
      * листается без переключателя года.
      *
-     * Лента тянется от первого до последнего года, в котором есть регаты
-     * (текущий год входит всегда, чтобы было с чего начать), без разрывов
-     * между годами. Пустые сезоны по краям в неё не попадают: иначе главная
-     * открывалась бы на сотне месяцев с «Нет регат». Месяц события берётся
+     * Лента содержит только месяцы, в которых есть хотя бы одна регата.
+     * Пустые сезоны и месяцы в неё не попадают. Месяц события берётся
      * по дате начала, а не по сезону, — карточка «Январь 2027» показывает
      * ровно январь 2027-го.
      *
@@ -87,11 +91,17 @@ final class SeasonCalendar
 
         foreach (range($years->min(), $years->max()) as $year) {
             foreach (self::MONTH_NAMES as $number => $name) {
+                $monthEvents = $byMonth->get($year.'-'.$number);
+
+                if ($monthEvents === null || $monthEvents->isEmpty()) {
+                    continue;
+                }
+
                 $months[] = $this->month(
                     $name,
                     $year,
                     $year === $currentYear && $number === $currentMonth,
-                    $byMonth->get($year.'-'.$number),
+                    $monthEvents,
                 );
             }
         }
