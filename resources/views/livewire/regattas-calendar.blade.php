@@ -2,10 +2,22 @@
 {{-- ВАЖНО: у Livewire-компонента должен быть ОДИН корневой элемент.
      <style> и <script> держим ВНУТРИ корневого <div>, иначе Livewire
      примет за корень первый тег (<style>) и не будет обновлять календарь. --}}
-{{-- Стартовая карточка — текущий месяц; в сплошной ленте он где-то в
-     середине, поэтому индекс считаем по данным, а не по номеру месяца. --}}
-<div x-data="regattaCalendar({{ count($months) }})"
-     data-current-month="{{ collect($months)->search(fn (array $month): bool => $month['is_current']) ?: 0 }}"
+{{-- Стартовая карточка — текущий месяц или ближайший будущий в сплошной ленте. --}}
+@php
+    $initialMonth = collect($months)->search(fn (array $month): bool => $month['is_current']);
+
+    if ($continuous && $initialMonth === false) {
+        $today = now()->toDateString();
+        $initialMonth = collect($months)->search(fn (array $month): bool => collect($month['events'])
+            ->contains(fn (array $event): bool => $event['sort_date'] >= $today));
+
+        if ($initialMonth === false) {
+            $initialMonth = max(0, count($months) - 1);
+        }
+    }
+@endphp
+<div x-data="regattaCalendar({{ count($months) }}, {{ $continuous ? 'true' : 'false' }})"
+     data-current-month="{{ $initialMonth === false ? 0 : $initialMonth }}"
      class="py-12 bg-brand-light">
     <style>
         .slides   { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -199,9 +211,10 @@
 
     {{-- Alpine-логика слайдера --}}
     <script>
-function regattaCalendar(total = 12) {
+function regattaCalendar(total = 12, continuous = false) {
     return {
         total,
+        continuous,
         visible: 5,
         gap: 16,
         offset: 0,
@@ -247,7 +260,7 @@ function regattaCalendar(total = 12) {
         },
 
         get maxOffset() {
-            return Math.max(0, this.total - this.visible);
+            return Math.max(0, this.total - (this.continuous ? 1 : this.visible));
         },
 
         prev() { if (this.offset > 0) this.offset--; },
