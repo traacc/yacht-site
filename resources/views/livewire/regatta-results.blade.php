@@ -43,7 +43,7 @@
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="section-title a-font">Командный рейтинг@if($homeRatingSeason) — сезон {{ $homeRatingSeason->year }}@endif</h2>
                     <a href="{{ route('ratings', ['season' => $homeRatingSeason?->year]) }}" class="text-[#2E325C] text-lg font-semibold hover:underline hidden md:block">
-                        Полный рейтинг →
+                        Все рейтинги →
                     </a>
                 </div>
                 <div class="overflow-x-auto relative p-2 md:p-6 md:pt-0 bg-white">
@@ -83,7 +83,7 @@
                     </table>
                 </div>
                 <a href="{{ route('ratings', ['season' => $homeRatingSeason?->year]) }}" class="text-[#2E325C] text-sm text-center font-semibold hover:underline md:hidden block mt-4">
-                    Полный рейтинг →
+                    Все рейтинги →
                 </a>
             </div>
             @include('partials.ratings.team-modal')
