@@ -94,7 +94,7 @@
             @endforeach
         </div>
         @else
-        <p class="text-center text-brand-gray py-6">В ближайшие дни поздравления никто не принимает</p>
+        <p class="text-center text-brand-gray-light py-6">В ближайшие дни поздравления никто не принимает</p>
         @endif
     </div>
 </section>
