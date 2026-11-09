@@ -64,11 +64,11 @@
 </div>
 
 {{-- ===== БЛИЖАЙШИЕ ДНИ РОЖДЕНИЯ ===== --}}
-@if($birthdays->isNotEmpty())
+
 <section class="py-12 bg-white">
     <div class="container mx-auto">
         <h2 class="section-title a-font mb-6">Ближайшие дни рождения</h2>
-
+        @if($birthdays->isNotEmpty())
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             @foreach($birthdays as $person)
             <div class="flex items-center justify-between gap-4 bg-[#F8F8F8] p-4 shadow-xs hover:shadow-md transition-shadow">
@@ -93,9 +93,12 @@
             </div>
             @endforeach
         </div>
+        @else
+        <p class="text-center text-brand-gray py-6">В ближайшие дни поздравления никто не принимает</p>
+        @endif
     </div>
 </section>
-@endif
+
 
 {{-- ===== РЕЗУЛЬТАТЫ РЕГАТ ===== --}}
 <livewire:regatta-results mode="home" />
